@@ -21,6 +21,7 @@ namespace Mikodev.Test
                 .Push("addr", IPAddress.Parse("192.168.1.1"))
                 .Push("endpoint", new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7500))
                 .Push("bytes", 0xFF7F4000)
+                .Push("temp", "temp value")
                 .PushList("array", new int[] { 1, 2, 3, 4 })
                 .PushList("value", new string[] { "hello", "sharp", "net" })
                 .Push("inner", new PacketWriter()
@@ -44,10 +45,10 @@ namespace Mikodev.Test
 
             // dynamic
             var src = new PacketWriter() as dynamic;
-            src.one.value = 123;
-            src.tmp = "alice";
+            src.one.value = new byte[] { 0xFF, 0xFF, 0x00, 0x00 };
+            src.tmp = "temp";
             var dyn = new PacketReader(src.GetBytes()) as dynamic;
-            Console.WriteLine((int)dyn.one.value);
+            Console.WriteLine((int)dyn.one.value); // byte[] -> int
             Console.WriteLine((string)dyn.tmp);
         }
     }

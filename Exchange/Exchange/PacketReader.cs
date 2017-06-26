@@ -1,5 +1,4 @@
-﻿using Mikodev.Network.Extensions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
@@ -75,7 +74,7 @@ namespace Mikodev.Network
                 return (buf, idx, len) => PacketExtensions.GetValue(buf, idx, len, type);
             if (nothrow)
                 return null;
-            throw new InvalidOperationException();
+            throw new InvalidCastException();
         }
 
         /// <summary>

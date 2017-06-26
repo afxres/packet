@@ -1,5 +1,4 @@
-﻿using Mikodev.Network.Extensions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
@@ -45,7 +44,7 @@ namespace Mikodev.Network
                 return (val) => PacketExtensions.GetBytes(val, type);
             if (nothrow)
                 return null;
-            throw new InvalidOperationException();
+            throw new InvalidCastException();
         }
 
         internal PacketWriter _Push(string key, byte[] buffer)
@@ -137,15 +136,24 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 动态写入对象
+        /// 动态写入对象 不支持集合
         /// </summary>
         public override bool TrySetMember(SetMemberBinder binder, object value)
         {
+            var key = binder.Name;
+            if (value == null)
+                return false;
+
+            if (value is byte[] dat)
+            {
+                _Push(key, dat);
+                return true;
+            }
+
             var fun = _GetFunc(value.GetType(), true);
             if (fun == null)
                 return false;
-            var dat = fun.Invoke(value);
-            _Push(binder.Name, dat);
+            _Push(key, fun.Invoke(value));
             return true;
         }
     }

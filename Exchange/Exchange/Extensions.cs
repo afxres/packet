@@ -8,12 +8,12 @@ using System.Text;
 using PullFunc = System.Func<byte[], int, int, object>;
 using PushFunc = System.Func<object, byte[]>;
 
-namespace Mikodev.Network.Extensions
+namespace Mikodev.Network
 {
     /// <summary>
     /// 扩展方法模块
     /// </summary>
-    public static partial class PacketExtensions
+    internal static partial class PacketExtensions
     {
         /// <summary>
         /// 判断类型是否为值类型
@@ -39,7 +39,7 @@ namespace Mikodev.Network.Extensions
         {
             // 防止内存溢出
             if (length > buffer.Length || offset + length > buffer.Length)
-                throw new ArgumentOutOfRangeException();
+                throw new PacketException();
             var buf = new byte[length];
             Array.Copy(buffer, offset, buf, 0, length);
             return buf;
@@ -78,7 +78,7 @@ namespace Mikodev.Network.Extensions
                 stream.Read(buf, 0, buf.Length);
                 len = BitConverter.ToInt32(buf, 0);
                 if (len > lengthOrLimit)
-                    throw new ArgumentOutOfRangeException();
+                    throw new PacketException();
             }
             var res = new byte[len];
             stream.Read(res, 0, res.Length);
@@ -114,7 +114,7 @@ namespace Mikodev.Network.Extensions
         {
             var len = Marshal.SizeOf(type);
             if (len > length)
-                throw new ArgumentOutOfRangeException();
+                throw new PacketException();
             var ptr = IntPtr.Zero;
             try
             {
