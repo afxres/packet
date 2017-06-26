@@ -13,17 +13,17 @@ namespace Mikodev.Network
     /// <summary>
     /// 扩展方法模块
     /// </summary>
-    internal static partial class PacketExtensions
+    public static partial class PacketExtensions
     {
         /// <summary>
         /// 判断类型是否为值类型
         /// </summary>
-        public static bool IsValueType(this Type type) => type.GetTypeInfo().IsValueType;
+        internal static bool IsValueType(this Type type) => type.GetTypeInfo().IsValueType;
 
         /// <summary>
         /// 合并多个字节数组
         /// </summary>
-        public static byte[] Merge(this byte[] buffer, params byte[][] values)
+        internal static byte[] Merge(this byte[] buffer, params byte[][] values)
         {
             var str = new MemoryStream();
             str.Write(buffer, 0, buffer.Length);
@@ -35,7 +35,7 @@ namespace Mikodev.Network
         /// <summary>
         /// 分割出字节数组中的特定部分
         /// </summary>
-        public static byte[] Split(this byte[] buffer, int offset, int length)
+        internal static byte[] Split(this byte[] buffer, int offset, int length)
         {
             // 防止内存溢出
             if (length > buffer.Length || offset + length > buffer.Length)
@@ -48,7 +48,7 @@ namespace Mikodev.Network
         /// <summary>
         /// 将字节数组写入流中
         /// </summary>
-        public static void Write(this Stream stream, byte[] buffer, bool withLengthInfo = false)
+        internal static void Write(this Stream stream, byte[] buffer, bool withLengthInfo = false)
         {
             if (withLengthInfo)
             {
@@ -61,7 +61,7 @@ namespace Mikodev.Network
         /// <summary>
         /// 先将结构体转换成字节数组 然后写入流中
         /// </summary>
-        public static void Write<T>(this Stream stream, T value, bool withLengthInfo = false) where T : struct => stream.Write(value.GetBytes(typeof(T)), withLengthInfo);
+        internal static void Write<T>(this Stream stream, T value, bool withLengthInfo = false) where T : struct => stream.Write(value.GetBytes(typeof(T)), withLengthInfo);
 
         /// <summary>
         /// 从流中读取数据
@@ -69,7 +69,7 @@ namespace Mikodev.Network
         /// <param name="stream">待读取的流</param>
         /// <param name="lengthOrLimit">待读取的数据长度或数据长度限制</param>
         /// <param name="withLengthInfo">是否从流中读取长度信息</param>
-        public static byte[] Read(this Stream stream, int lengthOrLimit, bool withLengthInfo = false)
+        internal static byte[] Read(this Stream stream, int lengthOrLimit, bool withLengthInfo = false)
         {
             var len = lengthOrLimit;
             if (withLengthInfo)
@@ -88,7 +88,7 @@ namespace Mikodev.Network
         /// <summary>
         /// 使用非托管内存将对象转化为字节数组 (仅针对结构体)
         /// </summary>
-        public static byte[] GetBytes(this object str, Type type)
+        internal static byte[] GetBytes(this object str, Type type)
         {
             var len = Marshal.SizeOf(type);
             var buf = new byte[len];
@@ -110,7 +110,7 @@ namespace Mikodev.Network
         /// <summary>
         /// 使用非托管内存将字节数组转换成结构体
         /// </summary>
-        public static object GetValue(this byte[] buffer, int offset, int length, Type type)
+        internal static object GetValue(this byte[] buffer, int offset, int length, Type type)
         {
             var len = Marshal.SizeOf(type);
             if (len > length)
@@ -155,21 +155,21 @@ namespace Mikodev.Network
             return dic;
         }
 
-        public static byte[] GetBytes(this string str) => Encoding.UTF8.GetBytes(str);
+        internal static byte[] GetBytes(this string str) => Encoding.UTF8.GetBytes(str);
 
-        public static string GetString(this byte[] buffer, int offset, int length) => Encoding.UTF8.GetString(buffer, offset, length);
+        internal static string GetString(this byte[] buffer, int offset, int length) => Encoding.UTF8.GetString(buffer, offset, length);
 
-        public static byte[] GetBytes(this DateTime value) => value.ToBinary().GetBytes(typeof(long));
+        internal static byte[] GetBytes(this DateTime value) => value.ToBinary().GetBytes(typeof(long));
 
-        public static DateTime GetDateTime(this byte[] buffer, int offset, int length) => DateTime.FromBinary((long)buffer.GetValue(offset, length, typeof(long)));
+        internal static DateTime GetDateTime(this byte[] buffer, int offset, int length) => DateTime.FromBinary((long)buffer.GetValue(offset, length, typeof(long)));
 
-        public static byte[] GetBytes(this IPAddress value) => value.GetAddressBytes();
+        internal static byte[] GetBytes(this IPAddress value) => value.GetAddressBytes();
 
-        public static IPAddress GetIPAddress(this byte[] buffer, int offset, int length) => new IPAddress(buffer.Split(offset, length));
+        internal static IPAddress GetIPAddress(this byte[] buffer, int offset, int length) => new IPAddress(buffer.Split(offset, length));
 
-        public static byte[] GetBytes(this IPEndPoint value) => value.Address.GetAddressBytes().Merge(((ushort)value.Port).GetBytes(typeof(ushort)));
+        internal static byte[] GetBytes(this IPEndPoint value) => value.Address.GetAddressBytes().Merge(((ushort)value.Port).GetBytes(typeof(ushort)));
 
-        public static IPEndPoint GetIPEndPoint(this byte[] buffer, int offset, int length)
+        internal static IPEndPoint GetIPEndPoint(this byte[] buffer, int offset, int length)
         {
             var len = sizeof(ushort);
             var add = new IPAddress(buffer.Split(offset, length - len));
