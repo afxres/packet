@@ -90,7 +90,8 @@ namespace Mikodev.Network
         /// <param name="withLengthInfo">是否写入长度信息 (仅针对值类型)</param>
         public PacketWriter PushList<T>(string key, IEnumerable<T> value, bool withLengthInfo = false)
         {
-            var inf = withLengthInfo || (default(T) is ValueType) == false;
+            var typ = typeof(T);
+            var inf = withLengthInfo || typ.IsValueType() == false;
             var str = new MemoryStream();
             var fun = _GetFunc(typeof(T));
             foreach (var v in value)
