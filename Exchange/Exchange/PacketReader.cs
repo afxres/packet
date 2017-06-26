@@ -5,6 +5,7 @@ using System.Dynamic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using PullFunc = System.Func<byte[], int, int, object>;
 
 namespace Mikodev.Network
 {
@@ -18,16 +19,16 @@ namespace Mikodev.Network
         internal byte[] _buf = null;
         internal string _key = null;
         internal Dictionary<string, PacketReader> _dic = null;
-        internal Dictionary<Type, Func<byte[], int, int, object>> _funs = null;
+        internal Dictionary<Type, PullFunc> _funs = null;
 
-        internal PacketReader(Dictionary<Type, Func<byte[], int, int, object>> funcs) => _funs = funcs;
+        internal PacketReader(Dictionary<Type, PullFunc> funcs) => _funs = funcs;
 
         /// <summary>
         /// 创建新的数据包解析器
         /// </summary>
         /// <param name="buffer">待读取的数据包</param>
         /// <param name="funcs">类型转换工具词典 为空时使用默认词典</param>
-        public PacketReader(byte[] buffer, Dictionary<Type, Func<byte[], int, int, object>> funcs = null)
+        public PacketReader(byte[] buffer, Dictionary<Type, PullFunc> funcs = null)
         {
             _buf = buffer;
             _len = buffer.Length;
@@ -66,7 +67,7 @@ namespace Mikodev.Network
             return null;
         }
 
-        internal Func<byte[], int, int, object> _GetFunc(Type type, bool nothrow = false)
+        internal PullFunc _GetFunc(Type type, bool nothrow = false)
         {
             if (_funs.TryGetValue(type, out var fun))
                 return fun;

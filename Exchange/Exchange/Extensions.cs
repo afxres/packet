@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using PullFunc = System.Func<byte[], int, int, object>;
+using PushFunc = System.Func<object, byte[]>;
 
 namespace Mikodev.Network.Extensions
 {
@@ -12,6 +15,11 @@ namespace Mikodev.Network.Extensions
     /// </summary>
     public static partial class PacketExtensions
     {
+        /// <summary>
+        /// 判断类型是否为值类型
+        /// </summary>
+        public static bool IsValueType(this Type type) => type.GetTypeInfo().IsValueType;
+
         /// <summary>
         /// 合并多个字节数组
         /// </summary>
@@ -124,9 +132,9 @@ namespace Mikodev.Network.Extensions
         /// <summary>
         /// 默认的对象写入转换工具词典
         /// </summary>
-        public static Dictionary<Type, Func<object, byte[]>> PushFuncs()
+        public static Dictionary<Type, PushFunc> PushFuncs()
         {
-            var dic = new Dictionary<Type, Func<object, byte[]>>();
+            var dic = new Dictionary<Type, PushFunc>();
             dic.Add(typeof(string), (obj) => GetBytes((string)obj));
             dic.Add(typeof(DateTime), (obj) => GetBytes((DateTime)obj));
             dic.Add(typeof(IPAddress), (obj) => GetBytes((IPAddress)obj));
@@ -137,9 +145,9 @@ namespace Mikodev.Network.Extensions
         /// <summary>
         /// 默认的对象读取转换工具词典
         /// </summary>
-        public static Dictionary<Type, Func<byte[], int, int, object>> PullFuncs()
+        public static Dictionary<Type, PullFunc> PullFuncs()
         {
-            var dic = new Dictionary<Type, Func<byte[], int, int, object>>();
+            var dic = new Dictionary<Type, PullFunc>();
             dic.Add(typeof(string), GetString);
             dic.Add(typeof(DateTime), (a, b, c) => GetDateTime(a, b, c));
             dic.Add(typeof(IPAddress), GetIPAddress);

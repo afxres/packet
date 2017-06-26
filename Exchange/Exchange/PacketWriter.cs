@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using PushFunc = System.Func<object, byte[]>;
 
 namespace Mikodev.Network
 {
@@ -13,13 +14,13 @@ namespace Mikodev.Network
     {
         internal byte[] _dat = null;
         internal Dictionary<string, PacketWriter> _dic = null;
-        internal Dictionary<Type, Func<object, byte[]>> _funs = null;
+        internal Dictionary<Type, PushFunc> _funs = null;
 
         /// <summary>
         /// 创建新的数据包生成器
         /// </summary>
         /// <param name="funcs">类型转换工具词典 为空时使用默认词典</param>
-        public PacketWriter(Dictionary<Type, Func<object, byte[]>> funcs = null)
+        public PacketWriter(Dictionary<Type, PushFunc> funcs = null)
         {
             _funs = funcs ?? PacketExtensions.PushFuncs();
         }
@@ -36,7 +37,7 @@ namespace Mikodev.Network
             return val;
         }
 
-        internal Func<object, byte[]> _GetFunc(Type type, bool nothrow = false)
+        internal PushFunc _GetFunc(Type type, bool nothrow = false)
         {
             if (_funs.TryGetValue(type, out var fun))
                 return fun;
