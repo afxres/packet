@@ -48,6 +48,7 @@ namespace Mikodev.Test
             src.one.value = new byte[] { 0xFF, 0xFF, 0x00, 0x00 };
             src.tmp = "temp";
             var dyn = new PacketReader(src.GetBytes()) as dynamic;
+            var res = dyn.one;
             Console.WriteLine((int)dyn.one.value); // byte[] -> int
             Console.WriteLine((string)dyn.tmp);
         }

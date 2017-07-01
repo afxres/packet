@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Text;
 using PullFunc = System.Func<byte[], int, int, object>;
@@ -11,7 +12,7 @@ namespace Mikodev.Network
     /// <summary>
     /// 数据包解析器
     /// </summary>
-    public partial class PacketReader : DynamicObject
+    public partial class PacketReader : IDynamicMetaObjectProvider
     {
         internal int _off = 0;
         internal int _len = 0;
@@ -59,11 +60,11 @@ namespace Mikodev.Network
                 _dic = new Dictionary<string, PacketReader>();
                 _Read();
             }
-            if (nothrow == false)
-                return _dic[key];
             if (_dic.TryGetValue(key, out var val))
                 return val;
-            return null;
+            if (nothrow)
+                return null;
+            throw new KeyNotFoundException();
         }
 
         internal PullFunc _GetFunc(Type type, bool nothrow = false)
@@ -78,7 +79,20 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 根据键读取内部数据包对象
+        /// 将当前节点转换成目标类型
+        /// Convert current node to target type.
+        /// </summary>
+        /// <typeparam name="T">目标类型</typeparam>
+        public T Pull<T>()
+        {
+            var fun = _GetFunc(typeof(T));
+            var res = fun.Invoke(_buf, _off, _len);
+            return (T)res;
+        }
+
+        /// <summary>
+        /// 根据键读取子节点
+        /// Get child node by key
         /// </summary>
         /// <param name="key">字符串标签</param>
         public PacketReader Pull(string key) => _GetValue(key);
@@ -88,7 +102,6 @@ namespace Mikodev.Network
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
         /// <param name="key">字符串标签</param>
-        /// <returns></returns>
         public T Pull<T>(string key)
         {
             var rcd = _GetValue(key);
@@ -98,7 +111,16 @@ namespace Mikodev.Network
         }
 
         /// <summary>
+        /// 将当前节点转换成字节数组
+        /// Convert current node to byte array
+        public byte[] PullList()
+        {
+            return _buf.Split(_off, _len);
+        }
+
+        /// <summary>
         /// 根据键读取字节数据
+        /// Get byte array by key
         /// </summary>
         public byte[] PullList(string key)
         {
@@ -107,7 +129,27 @@ namespace Mikodev.Network
         }
 
         /// <summary>
+        /// 将当前节点转换成目标类型数据集合
+        /// Convert current node to collection of target type
+        /// </summary>
+        /// <typeparam name="T">目标类型</typeparam>
+        /// <param name="withLengthInfo">数据是否包含长度信息 (仅针对值类型)</param>
+        public IList<T> PullList<T>(bool withLengthInfo = false)
+        {
+            var typ = typeof(T);
+            var inf = typ.IsValueType() == false || withLengthInfo == true;
+            var fun = new Func<byte[], T>((val) => (T)_GetFunc(typ).Invoke(val, 0, val.Length));
+            // 读取数据并生成集合
+            var lst = new List<T>();
+            var str = new MemoryStream(_buf, _off, _len);
+            while (str.Position < str.Length)
+                lst.Add(fun.Invoke(str.Read(inf ? _buf.Length : Marshal.SizeOf<T>(), inf)));
+            return lst;
+        }
+
+        /// <summary>
         /// 根据键读取目标类型数据集合
+        /// Get collection of target type by key
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
         /// <param name="key">字符串标签</param>
@@ -126,23 +168,17 @@ namespace Mikodev.Network
             return lst;
         }
 
-        /// <summary>
-        /// 动态读取元素
-        /// </summary>
-        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
         {
-            result = _GetValue(binder.Name, true);
-            return result != null;
+            return new DynamicPacketReader(parameter, this);
         }
 
         /// <summary>
-        /// 动态转换元素
+        /// 在字符串中输出键值和元素个数
         /// </summary>
-        public override bool TryConvert(ConvertBinder binder, out object result)
+        public override string ToString()
         {
-            var fun = _GetFunc(binder.ReturnType, true);
-            result = fun?.Invoke(_buf, _off, _len);
-            return fun != null;
+            return $"{nameof(PacketReader)} with key \"{_key ?? "null"}\" and {_dic?.Count ?? 0} element(s)";
         }
     }
 }

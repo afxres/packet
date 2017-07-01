@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using System.Text;
 using PushFunc = System.Func<object, byte[]>;
 
 namespace Mikodev.Network
@@ -156,6 +157,22 @@ namespace Mikodev.Network
                 return false;
             _Push(key, fun.Invoke(value));
             return true;
+        }
+
+        /// <summary>
+        /// 在字符串中输出键值和元素
+        /// </summary>
+        public override string ToString()
+        {
+            var stb = new StringBuilder(nameof(PacketWriter));
+            stb.Append(" with ");
+            if (_dat != null)
+                stb.AppendFormat("{0} byte(s)", _dat.Length);
+            else if (_dic != null)
+                stb.AppendFormat("{0} element(s)", _dic.Count);
+            else
+                stb.Append("none");
+            return stb.ToString();
         }
     }
 }

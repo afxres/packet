@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DynamicPacketReader.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="PacketException.cs" />
     <Compile Include="PacketReader.cs" />
