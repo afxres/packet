@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using System.Linq.Expressions;
 using System.Text;
 using PushFunc = System.Func<object, byte[]>;
 
@@ -10,7 +11,7 @@ namespace Mikodev.Network
     /// <summary>
     /// 数据包生成器
     /// </summary>
-    public partial class PacketWriter : DynamicObject
+    public partial class PacketWriter : IDynamicMetaObjectProvider
     {
         internal byte[] _dat = null;
         internal Dictionary<string, PacketWriter> _dic = null;
@@ -152,35 +153,9 @@ namespace Mikodev.Network
             _GetBytes(stream, _dic);
         }
 
-        /// <summary>
-        /// 动态创建对象
-        /// </summary>
-        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
         {
-            result = _GetValue(binder.Name);
-            return true;
-        }
-
-        /// <summary>
-        /// 动态写入对象 不支持集合
-        /// </summary>
-        public override bool TrySetMember(SetMemberBinder binder, object value)
-        {
-            var key = binder.Name;
-            if (value == null)
-                return false;
-
-            if (value is byte[] dat)
-            {
-                _Push(key, dat);
-                return true;
-            }
-
-            var fun = _GetFunc(value.GetType(), true);
-            if (fun == null)
-                return false;
-            _Push(key, fun.Invoke(value));
-            return true;
+            return new DynamicPacketWriter(parameter, this);
         }
 
         /// <summary>
@@ -193,7 +168,7 @@ namespace Mikodev.Network
             if (_dat != null)
                 stb.AppendFormat("{0} byte(s)", _dat.Length);
             else if (_dic != null)
-                stb.AppendFormat("{0} element(s)", _dic.Count);
+                stb.AppendFormat("{0} node(s)", _dic.Count);
             else
                 stb.Append("none");
             return stb.ToString();

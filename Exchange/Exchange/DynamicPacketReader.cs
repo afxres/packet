@@ -1,5 +1,4 @@
-﻿using System;
-using System.Dynamic;
+﻿using System.Dynamic;
 using System.Linq.Expressions;
 
 namespace Mikodev.Network
@@ -18,7 +17,7 @@ namespace Mikodev.Network
             if (val == null)
                 throw new PacketException();
             var exp = Expression.Constant(val);
-            return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(exp, typeof(PacketReader)));
+            return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
 
         /// <summary>
@@ -27,13 +26,10 @@ namespace Mikodev.Network
         public override DynamicMetaObject BindConvert(ConvertBinder binder)
         {
             var rdr = (PacketReader)Value;
-            var fun = rdr._GetFunc(binder.Type, true);
-            if (fun == null)
-                throw new InvalidCastException();
+            var fun = rdr._GetFunc(binder.Type);
             var val = fun.Invoke(rdr._buf, rdr._off, rdr._len);
             var exp = Expression.Constant(val);
-            var res = new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(exp, binder.Type));
-            return res;
+            return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
     }
 }

@@ -179,7 +179,7 @@ namespace Mikodev.Network
         /// </summary>
         public override string ToString()
         {
-            return $"{nameof(PacketReader)} with key \"{_key ?? "null"}\" and {_dic?.Count ?? 0} element(s)";
+            return $"{nameof(PacketReader)} with key \"{_key ?? "null"}\" and {_dic?.Count ?? 0} node(s)";
         }
     }
 }
