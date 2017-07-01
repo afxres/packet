@@ -34,7 +34,7 @@ namespace Mikodev.Network
                 return (val) => PacketExtensions.GetBytes(val, type);
             if (nothrow)
                 return null;
-            throw new InvalidCastException();
+            throw new PacketException(PacketErrorCode.InvalidType);
         }
 
         internal PacketWriter _Push(string key, PacketWriter another = null)

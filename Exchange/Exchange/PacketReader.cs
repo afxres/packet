@@ -61,7 +61,7 @@ namespace Mikodev.Network
                 return (buf, idx, len) => PacketExtensions.GetValue(buf, idx, len, type);
             if (nothrow)
                 return null;
-            throw new InvalidCastException();
+            throw new PacketException(PacketErrorCode.InvalidType);
         }
 
         internal PacketReader _Pull(string key, bool nothrow = false)
@@ -75,7 +75,7 @@ namespace Mikodev.Network
                 return val;
             if (nothrow)
                 return null;
-            throw new KeyNotFoundException();
+            throw new PacketException(PacketErrorCode.KeyNotFound);
         }
 
         /// <summary>

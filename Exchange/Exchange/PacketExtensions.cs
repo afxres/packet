@@ -39,7 +39,7 @@ namespace Mikodev.Network
         {
             // 防止内存溢出
             if (length > buffer.Length || offset + length > buffer.Length)
-                throw new PacketException();
+                throw new PacketException(PacketErrorCode.LengthOverflow);
             var buf = new byte[length];
             Array.Copy(buffer, offset, buf, 0, length);
             return buf;
@@ -78,7 +78,7 @@ namespace Mikodev.Network
                 stream.Read(buf, 0, buf.Length);
                 len = BitConverter.ToInt32(buf, 0);
                 if (len > lengthOrLimit)
-                    throw new PacketException();
+                    throw new PacketException(PacketErrorCode.LengthOverflow);
             }
             var res = new byte[len];
             stream.Read(res, 0, res.Length);
@@ -114,7 +114,7 @@ namespace Mikodev.Network
         {
             var len = Marshal.SizeOf(type);
             if (len > length)
-                throw new PacketException();
+                throw new PacketException(PacketErrorCode.LengthOverflow);
             var ptr = IntPtr.Zero;
             try
             {
