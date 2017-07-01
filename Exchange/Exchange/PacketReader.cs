@@ -99,6 +99,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 根据键读取目标类型数据
+        /// Get value of target type by key
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
         /// <param name="key">字符串标签</param>

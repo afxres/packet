@@ -100,22 +100,31 @@ namespace Mikodev.Network
             return _Push(key, str.ToArray());
         }
 
-        internal byte[] _GetBytes(Dictionary<string, PacketWriter> dic)
+        internal void _GetBytes(Stream str, Dictionary<string, PacketWriter> dic)
         {
-            var str = new MemoryStream();
             foreach (var i in dic)
             {
-                var key = i.Key;
+                str.Write(i.Key.GetBytes(), true);
                 var val = i.Value;
-                str.Write(key.GetBytes(), true);
                 if (val._dat != null)
+                {
                     str.Write(val._dat, true);
-                else if (val._dic != null)
-                    str.Write(_GetBytes(val._dic), true);
-                else
+                    continue;
+                }
+                if (val._dic == null)
+                {
                     str.Write(0);
+                    continue;
+                }
+
+                var pos = str.Position;
+                str.Write(0);
+                _GetBytes(str, val._dic);
+                var end = str.Position;
+                str.Seek(pos, SeekOrigin.Begin);
+                str.Write((int)(end - pos - sizeof(int)));
+                str.Seek(end, SeekOrigin.Begin);
             }
-            return str.ToArray();
         }
 
         /// <summary>
@@ -123,9 +132,24 @@ namespace Mikodev.Network
         /// </summary>
         public byte[] GetBytes()
         {
-            if (_dic != null)
-                return _GetBytes(_dic);
-            return new byte[0];
+            if (_dic == null)
+                return new byte[0];
+            var mst = new MemoryStream();
+            _GetBytes(mst, _dic);
+            return mst.ToArray();
+        }
+
+        /// <summary>
+        /// 将所有数据写入到目标流中
+        /// Write all data to target stream
+        /// </summary>
+        public void WriteTo(Stream stream)
+        {
+            if (stream.CanSeek == false || stream.CanWrite == false)
+                throw new ArgumentException();
+            if (_dic == null)
+                return;
+            _GetBytes(stream, _dic);
         }
 
         /// <summary>
