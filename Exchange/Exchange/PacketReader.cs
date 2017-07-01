@@ -53,7 +53,18 @@ namespace Mikodev.Network
             }
         }
 
-        internal PacketReader _GetValue(string key, bool nothrow = false)
+        internal PullFunc _Func(Type type, bool nothrow = false)
+        {
+            if (_funs.TryGetValue(type, out var fun))
+                return fun;
+            if (type.IsValueType())
+                return (buf, idx, len) => PacketExtensions.GetValue(buf, idx, len, type);
+            if (nothrow)
+                return null;
+            throw new InvalidCastException();
+        }
+
+        internal PacketReader _Pull(string key, bool nothrow = false)
         {
             if (_dic == null)
             {
@@ -67,16 +78,12 @@ namespace Mikodev.Network
             throw new KeyNotFoundException();
         }
 
-        internal PullFunc _GetFunc(Type type, bool nothrow = false)
-        {
-            if (_funs.TryGetValue(type, out var fun))
-                return fun;
-            if (type.IsValueType())
-                return (buf, idx, len) => PacketExtensions.GetValue(buf, idx, len, type);
-            if (nothrow)
-                return null;
-            throw new InvalidCastException();
-        }
+        /// <summary>
+        /// 根据键读取子节点
+        /// Get child node by key
+        /// </summary>
+        /// <param name="key">字符串标签</param>
+        public PacketReader Pull(string key) => _Pull(key);
 
         /// <summary>
         /// 将当前节点转换成目标类型
@@ -85,17 +92,10 @@ namespace Mikodev.Network
         /// <typeparam name="T">目标类型</typeparam>
         public T Pull<T>()
         {
-            var fun = _GetFunc(typeof(T));
+            var fun = _Func(typeof(T));
             var res = fun.Invoke(_buf, _off, _len);
             return (T)res;
         }
-
-        /// <summary>
-        /// 根据键读取子节点
-        /// Get child node by key
-        /// </summary>
-        /// <param name="key">字符串标签</param>
-        public PacketReader Pull(string key) => _GetValue(key);
 
         /// <summary>
         /// 根据键读取目标类型数据
@@ -105,8 +105,8 @@ namespace Mikodev.Network
         /// <param name="key">字符串标签</param>
         public T Pull<T>(string key)
         {
-            var rcd = _GetValue(key);
-            var fun = _GetFunc(typeof(T));
+            var rcd = _Pull(key);
+            var fun = _Func(typeof(T));
             var res = fun.Invoke(_buf, rcd._off, rcd._len);
             return (T)res;
         }
@@ -125,7 +125,7 @@ namespace Mikodev.Network
         /// </summary>
         public byte[] PullList(string key)
         {
-            var rcd = _GetValue(key);
+            var rcd = _Pull(key);
             return _buf.Split(rcd._off, rcd._len);
         }
 
@@ -139,7 +139,7 @@ namespace Mikodev.Network
         {
             var typ = typeof(T);
             var inf = typ.IsValueType() == false || withLengthInfo == true;
-            var fun = new Func<byte[], T>((val) => (T)_GetFunc(typ).Invoke(val, 0, val.Length));
+            var fun = new Func<byte[], T>((val) => (T)_Func(typ).Invoke(val, 0, val.Length));
             // 读取数据并生成集合
             var lst = new List<T>();
             var str = new MemoryStream(_buf, _off, _len);
@@ -158,9 +158,9 @@ namespace Mikodev.Network
         public IList<T> PullList<T>(string key, bool withLengthInfo = false)
         {
             var typ = typeof(T);
-            var rcd = _GetValue(key);
+            var rcd = _Pull(key);
             var inf = typ.IsValueType() == false || withLengthInfo == true;
-            var fun = new Func<byte[], T>((val) => (T)_GetFunc(typ).Invoke(val, 0, val.Length));
+            var fun = new Func<byte[], T>((val) => (T)_Func(typ).Invoke(val, 0, val.Length));
             // 读取数据并生成集合
             var lst = new List<T>();
             var str = new MemoryStream(_buf, rcd._off, rcd._len);

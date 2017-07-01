@@ -10,8 +10,7 @@ namespace Mikodev.Test
     {
         static void Main(string[] args)
         {
-            // basic
-            var pkt = new PacketWriter()
+            var wtr = new PacketWriter()
                 .Push("len", 1F)
                 .Push("long", 1L)
                 .Push("number", 1.00M)
@@ -21,36 +20,37 @@ namespace Mikodev.Test
                 .Push("addr", IPAddress.Parse("192.168.1.1"))
                 .Push("endpoint", new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7500))
                 .Push("bytes", 0xFF7F4000)
-                .Push("temp", "temp value")
                 .PushList("array", new int[] { 1, 2, 3, 4 })
                 .PushList("value", new string[] { "hello", "sharp", "net" })
                 .Push("inner", new PacketWriter()
-                    .Push("one", "inner.one"))
-                .GetBytes();
+                    .Push("one", "inner.one")
+                );
 
-            var rdr = new PacketReader(pkt);
-            Console.WriteLine(rdr.Pull<int>("long"));   // long -> int
-            Console.WriteLine(rdr.Pull<decimal>("number"));
-            Console.WriteLine(rdr.Pull<int>("len").ToString("x"));  // float -> int
-            Console.WriteLine(rdr.Pull<Guid>("guid"));
-            Console.WriteLine(rdr.Pull<string>("first"));
-            Console.WriteLine(rdr.Pull<DateTime>("time"));
-            Console.WriteLine(rdr.Pull<IPAddress>("addr"));
-            Console.WriteLine(rdr.Pull<IPEndPoint>("endpoint"));
-            Console.WriteLine(rdr.PullList("bytes").GetView()); // uint -> byte[] RAW Mode
-            Console.WriteLine(rdr.PullList<int>("array").GetView());
-            Console.WriteLine(rdr.PullList<string>("value").GetView());
-            Console.WriteLine(rdr.Pull("inner").Pull<string>("one"));
+            var dwt = wtr as dynamic;
+            dwt.temp = "hello";
+            dwt.list.one = (object)1;
+
+            var buf = wtr.GetBytes();
+            var res = new PacketReader(buf);
+            var dre = res as dynamic;
+
+            Console.WriteLine(res.Pull<int>("long"));   // long -> int
+            Console.WriteLine(res.Pull<decimal>("number"));
+            Console.WriteLine(res.Pull<int>("len").ToString("x"));  // float -> int
+            Console.WriteLine(res.Pull<Guid>("guid"));
+            Console.WriteLine(res.Pull<string>("first"));
+            Console.WriteLine(res.Pull<DateTime>("time"));
+            Console.WriteLine(res.Pull<IPAddress>("addr"));
+            Console.WriteLine(res.Pull<IPEndPoint>("endpoint"));
+            Console.WriteLine(res.PullList("bytes").GetView()); // uint -> byte[] RAW Mode
+            Console.WriteLine(res.PullList<int>("array").GetView());
+            Console.WriteLine(res.PullList<string>("value").GetView());
+            Console.WriteLine(res.Pull("inner").Pull<string>("one"));
             Console.WriteLine();
 
-            // dynamic
-            var src = new PacketWriter() as dynamic;
-            src.one.value = new byte[] { 0xFF, 0xFF, 0x00, 0x00 };
-            src.tmp = "temp";
-            var dyn = new PacketReader(src.GetBytes()) as dynamic;
-            var res = dyn.one;
-            Console.WriteLine((int)dyn.one.value); // byte[] -> int
-            Console.WriteLine((string)dyn.tmp);
+            Console.WriteLine((string)dre.temp);
+            Console.WriteLine((int)dre.list.one);
+            Console.WriteLine((string)dre.inner.one);
         }
     }
 

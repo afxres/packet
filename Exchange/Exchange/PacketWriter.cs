@@ -26,19 +26,7 @@ namespace Mikodev.Network
             _funs = funcs ?? PacketExtensions.PushFuncs();
         }
 
-        internal PacketWriter _GetValue(string key)
-        {
-            _dat = null;
-            if (_dic == null)
-                _dic = new Dictionary<string, PacketWriter>();
-            if (_dic.TryGetValue(key, out var val))
-                return val;
-            val = new PacketWriter();
-            _dic.Add(key, val);
-            return val;
-        }
-
-        internal PushFunc _GetFunc(Type type, bool nothrow = false)
+        internal PushFunc _Func(Type type, bool nothrow = false)
         {
             if (_funs.TryGetValue(type, out var fun))
                 return fun;
@@ -49,9 +37,21 @@ namespace Mikodev.Network
             throw new InvalidCastException();
         }
 
+        internal PacketWriter _Push(string key, PacketWriter another = null)
+        {
+            _dat = null;
+            if (_dic == null)
+                _dic = new Dictionary<string, PacketWriter>();
+            if (_dic.TryGetValue(key, out var val))
+                return val;
+            val = another ?? new PacketWriter();
+            _dic.Add(key, val);
+            return val;
+        }
+
         internal PacketWriter _Push(string key, byte[] buffer)
         {
-            var val = _GetValue(key);
+            var val = _Push(key);
             val._dic = null;
             val._dat = buffer;
             return this;
@@ -62,7 +62,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketWriter Push(string key, PacketWriter other)
         {
-            _dic[key] = other;
+            _Push(key, other);
             return this;
         }
 
@@ -74,7 +74,7 @@ namespace Mikodev.Network
         /// <param name="value">待写入数据</param>
         public PacketWriter Push<T>(string key, T value)
         {
-            var buf = _GetFunc(typeof(T)).Invoke(value);
+            var buf = _Func(typeof(T)).Invoke(value);
             return _Push(key, buf);
         }
 
@@ -95,7 +95,7 @@ namespace Mikodev.Network
             var typ = typeof(T);
             var inf = withLengthInfo || typ.IsValueType() == false;
             var str = new MemoryStream();
-            var fun = _GetFunc(typeof(T));
+            var fun = _Func(typeof(T));
             foreach (var v in value)
                 str.Write(fun.Invoke(v), inf);
             return _Push(key, str.ToArray());
