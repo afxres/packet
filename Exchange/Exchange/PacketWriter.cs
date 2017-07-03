@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using PushFunc = System.Func<object, byte[]>;
 
@@ -30,14 +32,14 @@ namespace Mikodev.Network
         {
             if (_funs.TryGetValue(type, out var fun))
                 return fun;
-            if (type.IsValueType())
+            if (type.GetTypeInfo().IsValueType)
                 return (val) => PacketExtensions.GetBytes(val, type);
             if (nothrow)
                 return null;
             throw new PacketException(PacketErrorCode.InvalidType);
         }
 
-        internal PacketWriter _Push(string key, PacketWriter another = null)
+        internal PacketWriter _Item(string key, PacketWriter another = null)
         {
             _dat = null;
             if (_dic == null)
@@ -51,7 +53,7 @@ namespace Mikodev.Network
 
         internal PacketWriter _Push(string key, byte[] buffer)
         {
-            var val = _Push(key);
+            var val = _Item(key);
             val._dic = null;
             val._dat = buffer;
             return this;
@@ -62,7 +64,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketWriter Push(string key, PacketWriter other)
         {
-            _Push(key, other);
+            _Item(key, other);
             return this;
         }
 
@@ -72,9 +74,18 @@ namespace Mikodev.Network
         /// <typeparam name="T">目标类型</typeparam>
         /// <param name="key">字符串标签</param>
         /// <param name="value">待写入数据</param>
-        public PacketWriter Push<T>(string key, T value)
+        public PacketWriter Push<T>(string key, T value) => Push(key, typeof(T), value);
+
+        /// <summary>
+        /// 写入标签和数据
+        /// </summary>
+        /// <param name="key">字符串标签</param>
+        /// <param name="type">目标类型</param>
+        /// <param name="value">待写入数据</param>
+        public PacketWriter Push(string key, Type type, object value)
         {
-            var buf = _Func(typeof(T)).Invoke(value);
+            var fun = _Func(type);
+            var buf = fun.Invoke(value);
             return _Push(key, buf);
         }
 
@@ -90,12 +101,20 @@ namespace Mikodev.Network
         /// <param name="key">标签</param>
         /// <param name="value">数据集合</param>
         /// <param name="withLengthInfo">是否写入长度信息 (仅针对值类型)</param>
-        public PacketWriter PushList<T>(string key, IEnumerable<T> value, bool withLengthInfo = false)
+        public PacketWriter PushList<T>(string key, IEnumerable<T> value, bool withLengthInfo = false) => PushList(key, typeof(T), value, withLengthInfo);
+
+        /// <summary>
+        /// 写入标签和对象集合
+        /// </summary>
+        /// <param name="key">标签</param>
+        /// <param name="type">对象类型</param>
+        /// <param name="value">数据集合</param>
+        /// <param name="withLengthInfo">是否写入长度信息 (仅针对值类型)</param>
+        public PacketWriter PushList(string key, Type type, IEnumerable value, bool withLengthInfo = false)
         {
-            var typ = typeof(T);
-            var inf = withLengthInfo || typ.IsValueType() == false;
+            var inf = withLengthInfo || type.GetTypeInfo().IsValueType == false;
             var str = new MemoryStream();
-            var fun = _Func(typeof(T));
+            var fun = _Func(type);
             foreach (var v in value)
                 str.Write(fun.Invoke(v), inf);
             return _Push(key, str.ToArray());

@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using PullFunc = System.Func<byte[], int, int, object>;
@@ -61,7 +63,7 @@ namespace Mikodev.Network
                 rcd._key = Encoding.UTF8.GetString(key);
                 rcd._off = (int)str.Position;
                 str.Seek(rcd._len, SeekOrigin.Current);
-                dic[rcd._key] = rcd;
+                dic.Add(rcd._key, rcd);
             }
 
             _dic = dic;
@@ -72,14 +74,14 @@ namespace Mikodev.Network
         {
             if (_funs.TryGetValue(type, out var fun))
                 return fun;
-            if (type.IsValueType())
+            if (type.GetTypeInfo().IsValueType)
                 return (buf, idx, len) => PacketExtensions.GetValue(buf, idx, len, type);
             if (nothrow)
                 return null;
             throw new PacketException(PacketErrorCode.InvalidType);
         }
 
-        internal PacketReader _Pull(string key, bool nothrow = false)
+        internal PacketReader _Item(string key, bool nothrow = false)
         {
             if (_TryRead() == false)
                 throw new PacketException(PacketErrorCode.LengthOverflow);
@@ -90,75 +92,86 @@ namespace Mikodev.Network
             throw new PacketException(PacketErrorCode.KeyNotFound);
         }
 
+        internal PacketReader _ItemPath(string path, bool nothrow = false, string[] separator = null)
+        {
+            var sts = path.Split(separator ?? PacketExtensions.GetSeparator(), StringSplitOptions.RemoveEmptyEntries);
+            var rdr = this;
+            foreach (var i in sts)
+                if ((rdr = rdr._Item(i, nothrow)) == null)
+                    return null;
+            return rdr;
+        }
+
+        internal IEnumerable _List(Type type, bool withLengthInfo = false)
+        {
+            var inf = type.GetTypeInfo().IsValueType == false || withLengthInfo == true;
+            var fun = new Func<byte[], object>((val) => _Func(type).Invoke(val, 0, val.Length));
+            var str = new MemoryStream(_buf, _off, _len);
+            while (str.Position < str.Length)
+            {
+                var buf = inf ? str.TryReadExt() : str.TryRead(Marshal.SizeOf(type));
+                var tmp = fun.Invoke(buf);
+                yield return tmp;
+            }
+            yield break;
+        }
+
+        internal IEnumerable<T> _ListGeneric<T>(bool withLengthInfo = false)
+        {
+            foreach (var i in PullList(typeof(T)))
+                yield return (T)i;
+            yield break;
+        }
+
         /// <summary>
         /// 使用路径访问元素
         /// </summary>
         /// <param name="path">元素路径</param>
         /// <param name="nothrow">失败时返回 null (而不是抛出异常)</param>
         /// <param name="separator">路径分隔符 (为 null 时使用默认)</param>
-        public PacketReader this[string path, bool nothrow = false, string[] separator = null]
-        {
-            get
-            {
-                var sts = path.Split(separator ?? PacketExtensions.GetSeparator(), StringSplitOptions.RemoveEmptyEntries);
-                var rdr = this;
-                foreach (var i in sts)
-                    if ((rdr = rdr._Pull(i, nothrow)) == null)
-                        return null;
-                return rdr;
-            }
-        }
+        public PacketReader this[string path, bool nothrow = false, string[] separator = null] => _ItemPath(path, nothrow, separator);
 
         /// <summary>
-        /// 根据键读取子节点
+        /// 根据键获取子节点
         /// Get child node by key
         /// </summary>
-        /// <param name="key">字符串标签</param>
-        public PacketReader Pull(string key) => _Pull(key);
+        /// <param name="path">字符串标签</param>
+        /// <param name="nothrow">失败时返回 null (而不是抛出异常)</param>
+        /// <param name="separator">路径分隔符 (为 null 时使用默认)</param>
+        public PacketReader Pull(string path, bool nothrow = false, string[] separator = null) => _ItemPath(path, nothrow, separator);
 
         /// <summary>
         /// 将当前节点转换成目标类型
-        /// Convert current node to target type.
+        /// Convert current node to target type
         /// </summary>
-        /// <typeparam name="T">目标类型</typeparam>
-        public T Pull<T>()
+        /// <param name="type">目标类型</param>
+        public object Pull(Type type)
         {
-            var fun = _Func(typeof(T));
+            var fun = _Func(type);
             var res = fun.Invoke(_buf, _off, _len);
-            return (T)res;
+            return res;
         }
 
         /// <summary>
-        /// 根据键读取目标类型数据
-        /// Get value of target type by key
+        /// 将当前节点转换成目标类型
+        /// Convert current node to target type
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
-        /// <param name="key">字符串标签</param>
-        public T Pull<T>(string key)
-        {
-            var rcd = _Pull(key);
-            var fun = _Func(typeof(T));
-            var res = fun.Invoke(_buf, rcd._off, rcd._len);
-            return (T)res;
-        }
+        public T Pull<T>() => (T)Pull(typeof(T));
 
         /// <summary>
         /// 将当前节点转换成字节数组
         /// Convert current node to byte array
-        public byte[] PullList()
-        {
-            return _buf.Split(_off, _len);
-        }
+        /// </summary>
+        public byte[] PullList() => _buf.Split(_off, _len);
 
         /// <summary>
-        /// 根据键读取字节数据
-        /// Get byte array by key
+        /// 将当前节点转换成目标类型数据集合
+        /// Convert current node to collection of target type
         /// </summary>
-        public byte[] PullList(string key)
-        {
-            var rcd = _Pull(key);
-            return _buf.Split(rcd._off, rcd._len);
-        }
+        /// <param name="type">目标类型</param>
+        /// <param name="withLengthInfo">数据是否包含长度信息</param>
+        public IEnumerable PullList(Type type, bool withLengthInfo = false) => _List(type, withLengthInfo);
 
         /// <summary>
         /// 将当前节点转换成目标类型数据集合
@@ -166,53 +179,7 @@ namespace Mikodev.Network
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
         /// <param name="withLengthInfo">数据是否包含长度信息 (仅针对值类型)</param>
-        public IList<T> PullList<T>(bool withLengthInfo = false)
-        {
-            var typ = typeof(T);
-            var inf = typ.IsValueType() == false || withLengthInfo == true;
-            var fun = new Func<byte[], T>((val) => (T)_Func(typ).Invoke(val, 0, val.Length));
-            // 读取数据并生成集合
-            var lst = new List<T>();
-            var str = new MemoryStream(_buf, _off, _len);
-            while (str.Position < str.Length)
-            {
-                var buf = inf ? str.TryReadExt() : str.TryRead(Marshal.SizeOf<T>());
-                var tmp = fun.Invoke(buf);
-                lst.Add(tmp);
-            }
-            return lst;
-        }
-
-        /// <summary>
-        /// 根据键读取目标类型数据集合
-        /// Get collection of target type by key
-        /// </summary>
-        /// <typeparam name="T">目标类型</typeparam>
-        /// <param name="key">字符串标签</param>
-        /// <param name="withLengthInfo">数据是否包含长度信息 (仅针对值类型)</param>
-        public IList<T> PullList<T>(string key, bool withLengthInfo = false)
-        {
-            var typ = typeof(T);
-            var rcd = _Pull(key);
-            var inf = typ.IsValueType() == false || withLengthInfo == true;
-            var fun = new Func<byte[], T>((val) => (T)_Func(typ).Invoke(val, 0, val.Length));
-            // 读取数据并生成集合
-            var lst = new List<T>();
-            var str = new MemoryStream(_buf, rcd._off, rcd._len);
-            while (str.Position < str.Length)
-            {
-                var buf = inf ? str.TryReadExt() : str.TryRead(Marshal.SizeOf<T>());
-                var tmp = fun.Invoke(buf);
-                lst.Add(tmp);
-            }
-            return lst;
-        }
-
-        /// <summary>
-        /// 尝试解析子节点 出错时返回假
-        /// Try to parse child node, return false if error
-        /// </summary>
-        public bool Read() => _TryRead();
+        public IEnumerable<T> PullList<T>(bool withLengthInfo = false) => _ListGeneric<T>(withLengthInfo);
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
         {

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using PullFunc = System.Func<byte[], int, int, object>;
@@ -15,11 +14,6 @@ namespace Mikodev.Network
     /// </summary>
     public static partial class PacketExtensions
     {
-        /// <summary>
-        /// 判断类型是否为值类型
-        /// </summary>
-        internal static bool IsValueType(this Type type) => type.GetTypeInfo().IsValueType;
-
         /// <summary>
         /// 合并多个字节数组
         /// </summary>
