@@ -63,25 +63,26 @@ namespace Mikodev.Network
         /// </summary>
         internal static void Write<T>(this Stream stream, T value, bool withLengthInfo = false) where T : struct => stream.Write(value.GetBytes(typeof(T)), withLengthInfo);
 
-        /// <summary>
-        /// 从流中读取数据
-        /// </summary>
-        /// <param name="stream">待读取的流</param>
-        /// <param name="lengthOrLimit">待读取的数据长度或数据长度限制</param>
-        /// <param name="withLengthInfo">是否从流中读取长度信息</param>
-        internal static byte[] Read(this Stream stream, int lengthOrLimit, bool withLengthInfo = false)
+        internal static byte[] TryRead(this Stream stream, int length)
         {
-            var len = lengthOrLimit;
-            if (withLengthInfo)
-            {
-                var buf = new byte[sizeof(int)];
-                stream.Read(buf, 0, buf.Length);
-                len = BitConverter.ToInt32(buf, 0);
-                if (len > lengthOrLimit)
-                    throw new PacketException(PacketErrorCode.LengthOverflow);
-            }
-            var res = new byte[len];
-            stream.Read(res, 0, res.Length);
+            if (length < 0)
+                return null;
+            var len = stream.Length;
+            var cur = stream.Position;
+            if (length > len - cur)
+                return null;
+            var buf = new byte[length];
+            stream.Read(buf, 0, length);
+            return buf;
+        }
+
+        internal static byte[] TryReadExt(this Stream stream)
+        {
+            var hdr = stream.TryRead(sizeof(int));
+            if (hdr == null)
+                return null;
+            var len = BitConverter.ToInt32(hdr, 0);
+            var res = stream.TryRead(len);
             return res;
         }
 
@@ -154,6 +155,12 @@ namespace Mikodev.Network
             dic.Add(typeof(IPEndPoint), GetIPEndPoint);
             return dic;
         }
+
+        /// <summary>
+        /// 默认的路径分隔符
+        /// </summary>
+        /// <returns></returns>
+        public static string[] GetSeparator() => new string[] { @"\", "/" };
 
         internal static byte[] GetBytes(this string str) => Encoding.UTF8.GetBytes(str);
 

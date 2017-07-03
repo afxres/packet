@@ -35,22 +35,37 @@ namespace Mikodev.Network
             _funs = funcs ?? PacketExtensions.PullFuncs();
         }
 
-        internal void _Read()
+        internal bool _TryRead()
         {
+            if (_dic != null)
+                return true;
+            var dic = new Dictionary<string, PacketReader>();
             var str = new MemoryStream(_buf);
             str.Position = _off;
             var len = _off + _len;
+
             while (str.Position < len)
             {
                 var rcd = new PacketReader(_funs);
+                var key = str.TryReadExt();
+                if (key == null)
+                    return false;
+                var buf = str.TryRead(sizeof(int));
+                if (buf == null)
+                    return false;
+                var tmp = BitConverter.ToInt32(buf, 0);
+                if (str.Position + tmp > len)
+                    return false;
                 rcd._buf = _buf;
-                rcd._key = Encoding.UTF8.GetString(str.Read(_buf.Length, true));
-                var buf = str.Read(sizeof(int));
-                rcd._len = BitConverter.ToInt32(buf, 0);
+                rcd._len = tmp;
+                rcd._key = Encoding.UTF8.GetString(key);
                 rcd._off = (int)str.Position;
                 str.Seek(rcd._len, SeekOrigin.Current);
-                _dic[rcd._key] = rcd;
+                dic[rcd._key] = rcd;
             }
+
+            _dic = dic;
+            return true;
         }
 
         internal PullFunc _Func(Type type, bool nothrow = false)
@@ -66,16 +81,32 @@ namespace Mikodev.Network
 
         internal PacketReader _Pull(string key, bool nothrow = false)
         {
-            if (_dic == null)
-            {
-                _dic = new Dictionary<string, PacketReader>();
-                _Read();
-            }
+            if (_TryRead() == false)
+                throw new PacketException(PacketErrorCode.LengthOverflow);
             if (_dic.TryGetValue(key, out var val))
                 return val;
             if (nothrow)
                 return null;
             throw new PacketException(PacketErrorCode.KeyNotFound);
+        }
+
+        /// <summary>
+        /// 使用路径访问元素
+        /// </summary>
+        /// <param name="path">元素路径</param>
+        /// <param name="nothrow">失败时返回 null (而不是抛出异常)</param>
+        /// <param name="separator">路径分隔符 (为 null 时使用默认)</param>
+        public PacketReader this[string path, bool nothrow = false, string[] separator = null]
+        {
+            get
+            {
+                var sts = path.Split(separator ?? PacketExtensions.GetSeparator(), StringSplitOptions.RemoveEmptyEntries);
+                var rdr = this;
+                foreach (var i in sts)
+                    if ((rdr = rdr._Pull(i, nothrow)) == null)
+                        return null;
+                return rdr;
+            }
         }
 
         /// <summary>
@@ -144,7 +175,11 @@ namespace Mikodev.Network
             var lst = new List<T>();
             var str = new MemoryStream(_buf, _off, _len);
             while (str.Position < str.Length)
-                lst.Add(fun.Invoke(str.Read(inf ? _buf.Length : Marshal.SizeOf<T>(), inf)));
+            {
+                var buf = inf ? str.TryReadExt() : str.TryRead(Marshal.SizeOf<T>());
+                var tmp = fun.Invoke(buf);
+                lst.Add(tmp);
+            }
             return lst;
         }
 
@@ -165,9 +200,19 @@ namespace Mikodev.Network
             var lst = new List<T>();
             var str = new MemoryStream(_buf, rcd._off, rcd._len);
             while (str.Position < str.Length)
-                lst.Add(fun.Invoke(str.Read(inf ? _buf.Length : Marshal.SizeOf<T>(), inf)));
+            {
+                var buf = inf ? str.TryReadExt() : str.TryRead(Marshal.SizeOf<T>());
+                var tmp = fun.Invoke(buf);
+                lst.Add(tmp);
+            }
             return lst;
         }
+
+        /// <summary>
+        /// 尝试解析子节点 出错时返回假
+        /// Try to parse child node, return false if error
+        /// </summary>
+        public bool Read() => _TryRead();
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
         {

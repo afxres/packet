@@ -28,7 +28,7 @@ namespace Mikodev.Test
 
             var dwt = wtr as dynamic;
             dwt.temp = "hello";
-            dwt.list.one = (object)1;
+            dwt.list.one = 1;
 
             var buf = wtr.GetBytes();
             var res = new PacketReader(buf);
@@ -46,11 +46,16 @@ namespace Mikodev.Test
             Console.WriteLine(res.PullList<int>("array").GetView());
             Console.WriteLine(res.PullList<string>("value").GetView());
             Console.WriteLine(res.Pull("inner").Pull<string>("one"));
+            Console.WriteLine(res[@"inner/one"].Pull<string>());
+            Console.WriteLine(res[@"inner\one"].Pull<string>());
             Console.WriteLine();
 
             Console.WriteLine((string)dre.temp);
             Console.WriteLine((int)dre.list.one);
             Console.WriteLine((string)dre.inner.one);
+
+            var pre = new PacketReader(Encoding.UTF8.GetBytes("Hello, world!"));
+            Console.WriteLine(pre.Read());  // false
         }
     }
 
