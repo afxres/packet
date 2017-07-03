@@ -74,7 +74,7 @@ namespace Mikodev.Network
         {
             if (_funs.TryGetValue(type, out var fun))
                 return fun;
-            if (type.GetTypeInfo().IsValueType)
+            if (type.IsValueType())
                 return (buf, idx, len) => PacketExtensions.GetValue(buf, idx, len, type);
             if (nothrow)
                 return null;
@@ -104,7 +104,7 @@ namespace Mikodev.Network
 
         internal IEnumerable _List(Type type, bool withLengthInfo = false)
         {
-            var inf = type.GetTypeInfo().IsValueType == false || withLengthInfo == true;
+            var inf = type.IsValueType() == false || withLengthInfo == true;
             var fun = new Func<byte[], object>((val) => _Func(type).Invoke(val, 0, val.Length));
             var str = new MemoryStream(_buf, _off, _len);
             while (str.Position < str.Length)

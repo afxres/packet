@@ -32,7 +32,7 @@ namespace Mikodev.Network
         {
             if (_funs.TryGetValue(type, out var fun))
                 return fun;
-            if (type.GetTypeInfo().IsValueType)
+            if (type.IsValueType())
                 return (val) => PacketExtensions.GetBytes(val, type);
             if (nothrow)
                 return null;
@@ -112,7 +112,7 @@ namespace Mikodev.Network
         /// <param name="withLengthInfo">是否写入长度信息 (仅针对值类型)</param>
         public PacketWriter PushList(string key, Type type, IEnumerable value, bool withLengthInfo = false)
         {
-            var inf = withLengthInfo || type.GetTypeInfo().IsValueType == false;
+            var inf = withLengthInfo || type.IsValueType() == false;
             var str = new MemoryStream();
             var fun = _Func(type);
             foreach (var v in value)

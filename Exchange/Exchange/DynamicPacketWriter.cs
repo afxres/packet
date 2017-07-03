@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -34,21 +35,20 @@ namespace Mikodev.Network
             var typ = val.GetType();
             var fun = default(PushFunc);
 
-            void addrange()
-            {
-                var arg = (from t in typ.GetInterfaces()
-                           where t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>)
-                           select t)
-                           .SingleOrDefault()
-                           .GetGenericArguments()[0];
-                wtr.PushList(key, arg, (IEnumerable)val);
-            }
-
-            bool enumerable()
+            bool enumerable(out Type inn)
             {
                 foreach (var i in typ.GetTypeInfo().GetInterfaces())
-                    if (i.GetTypeInfo().IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                {
+                    if (i.IsGenericEnumerable())
+                    {
+                        var som = i.GetGenericArguments();
+                        if (som.Length != 1)
+                            continue;
+                        inn = som[0];
                         return true;
+                    }
+                }
+                inn = null;
                 return false;
             }
 
@@ -58,8 +58,8 @@ namespace Mikodev.Network
                 wtr._Item(key, pkt);
             else if ((fun = wtr._Func(typ, true)) != null)
                 wtr._Push(key, fun.Invoke(val));
-            else if (enumerable())
-                addrange();
+            else if (enumerable(out var inn))
+                wtr.PushList(key, inn, (IEnumerable)val);
             else
                 throw new PacketException(PacketErrorCode.InvalidType);
 

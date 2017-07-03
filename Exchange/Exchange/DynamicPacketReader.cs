@@ -46,18 +46,11 @@ namespace Mikodev.Network
                 throw new PacketException(PacketErrorCode.None);
             }
 
-            bool enumerable()
-            {
-                if (typ.GetTypeInfo().IsGenericType && typ.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    return true;
-                return false;
-            }
-
             if (typ == typeof(byte[]))
                 val = rdr._buf.Split(rdr._off, rdr._len);
             else if ((fun = rdr._Func(typ, true)) != null)
                 val = fun.Invoke(rdr._buf, rdr._off, rdr._len);
-            else if (enumerable())
+            else if (typ.IsGenericEnumerable())
                 val = enumerator();
             else
                 throw new PacketException(PacketErrorCode.InvalidType);
