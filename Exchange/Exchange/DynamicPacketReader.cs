@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Dynamic;
+﻿using System.Dynamic;
 using System.Linq.Expressions;
 using System.Reflection;
 using PullFunc = System.Func<byte[], int, int, object>;
@@ -36,14 +35,8 @@ namespace Mikodev.Network
                 var arg = typ.GetGenericArguments();
                 if (arg.Length != 1)
                     throw new PacketException(PacketErrorCode.InvalidType);
-                var ret = typeof(PacketReader).GetTypeInfo().GetMethods(BindingFlags.NonPublic | BindingFlags.Instance);
-                foreach (var i in ret)
-                {
-                    if (i.Name.Equals(nameof(PacketReader._ListGeneric)) == false)
-                        continue;
-                    return i.MakeGenericMethod(arg[0]).Invoke(rdr, new object[] { false });
-                }
-                throw new PacketException(PacketErrorCode.None);
+                var met = typeof(PacketReader).GetTypeInfo().GetMethod(nameof(PacketReader._ListGeneric), BindingFlags.NonPublic | BindingFlags.Instance);
+                return met.MakeGenericMethod(arg[0]).Invoke(rdr, new object[] { false });
             }
 
             if (typ == typeof(byte[]))
