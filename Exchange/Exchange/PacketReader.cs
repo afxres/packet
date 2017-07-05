@@ -124,6 +124,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 使用路径访问元素
+        /// Get node by path
         /// </summary>
         /// <param name="path">元素路径</param>
         /// <param name="nothrow">失败时返回 null (而不是抛出异常)</param>
@@ -132,12 +133,11 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 根据键获取子节点
-        /// Get child node by key
+        /// Get node by key
         /// </summary>
-        /// <param name="path">字符串标签</param>
+        /// <param name="key">字符串标签</param>
         /// <param name="nothrow">失败时返回 null (而不是抛出异常)</param>
-        /// <param name="separator">路径分隔符 (为 null 时使用默认)</param>
-        public PacketReader Pull(string path, bool nothrow = false, string[] separator = null) => _ItemPath(path, nothrow, separator);
+        public PacketReader Pull(string key, bool nothrow = false) => _Item(key, nothrow);
 
         /// <summary>
         /// 将当前节点转换成目标类型

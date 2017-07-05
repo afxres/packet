@@ -137,6 +137,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 默认的对象写入转换工具词典
+        /// Default type converters (object -> byte[])
         /// </summary>
         public static Dictionary<Type, PushFunc> PushFuncs()
         {
@@ -150,6 +151,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 默认的对象读取转换工具词典
+        /// Default type converters (byte[] -> object)
         /// </summary>
         public static Dictionary<Type, PullFunc> PullFuncs()
         {
@@ -163,8 +165,8 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 默认的路径分隔符
+        /// Default path separators
         /// </summary>
-        /// <returns></returns>
         public static string[] GetSeparator() => new string[] { @"\", "/" };
 
         internal static byte[] GetBytes(this string str) => Encoding.UTF8.GetBytes(str);

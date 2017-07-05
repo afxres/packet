@@ -3,7 +3,7 @@
 namespace Mikodev.Network
 {
     /// <summary>
-    /// 数据处理时由于数据长度不匹配, 数据无效等情况引发的异常.
+    /// 数据处理过程中, 因数据长度不匹配, 数据无效等情况引发的异常.
     /// </summary>
     public class PacketException : Exception
     {

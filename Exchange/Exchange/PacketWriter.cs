@@ -60,6 +60,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 写入标签和另一个实例的数据
+        /// Write key and another instance
         /// </summary>
         public PacketWriter Push(string key, PacketWriter other)
         {
@@ -69,6 +70,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 写入标签和数据
+        /// Write key and data
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
         /// <param name="key">字符串标签</param>
@@ -77,6 +79,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 写入标签和数据
+        /// Write key and data
         /// </summary>
         /// <param name="key">字符串标签</param>
         /// <param name="type">目标类型</param>
@@ -90,11 +93,13 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 写入标签和字节数据
+        /// Write key and byte array
         /// </summary>
         public PacketWriter PushList(string key, byte[] buffer) => _Push(key, buffer);
 
         /// <summary>
         /// 写入标签和对象集合
+        /// Write key and collections
         /// </summary>
         /// <typeparam name="T">对象类型</typeparam>
         /// <param name="key">标签</param>
@@ -104,6 +109,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 写入标签和对象集合
+        /// Write key and collections
         /// </summary>
         /// <param name="key">标签</param>
         /// <param name="type">对象类型</param>
@@ -148,6 +154,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 生成数据包
+        /// Generate a new packet of byte array form
         /// </summary>
         public byte[] GetBytes()
         {
@@ -160,7 +167,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 将所有数据写入到目标流中
-        /// Write all data to target stream
+        /// Write all data to the target stream
         /// </summary>
         public void WriteTo(Stream stream)
         {
