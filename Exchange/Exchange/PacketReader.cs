@@ -41,8 +41,7 @@ namespace Mikodev.Network
             if (_dic != null)
                 return true;
             var dic = new Dictionary<string, PacketReader>();
-            var str = new MemoryStream(_buf);
-            str.Position = _off;
+            var str = new MemoryStream(_buf) { Position = _off };
             var len = _off + _len;
 
             while (str.Position < len)
@@ -55,7 +54,7 @@ namespace Mikodev.Network
                 if (buf == null)
                     return false;
                 var tmp = BitConverter.ToInt32(buf, 0);
-                if (str.Position + tmp > len)
+                if (tmp < 0 || str.Position + tmp > len)
                     return false;
                 rcd._buf = _buf;
                 rcd._len = tmp;

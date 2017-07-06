@@ -121,7 +121,11 @@ namespace Mikodev.Network
             var str = new MemoryStream();
             var fun = _Func(type);
             foreach (var v in value)
-                str.Write(fun.Invoke(v), inf);
+            {
+                var val = fun.Invoke(v);
+                if (inf) str.WriteExt(val);
+                else str.Write(val);
+            }
             return _Push(key, str.ToArray());
         }
 
@@ -129,11 +133,11 @@ namespace Mikodev.Network
         {
             foreach (var i in dic)
             {
-                str.Write(i.Key.GetBytes(), true);
+                str.WriteExt(Encoding.UTF8.GetBytes(i.Key));
                 var val = i.Value;
                 if (val._dat != null)
                 {
-                    str.Write(val._dat, true);
+                    str.WriteExt(val._dat);
                     continue;
                 }
                 if (val._dic == null)

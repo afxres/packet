@@ -43,7 +43,7 @@ namespace Mikodev.Network
         internal static byte[] Split(this byte[] buffer, int offset, int length)
         {
             // 防止内存溢出
-            if (length > buffer.Length || offset + length > buffer.Length)
+            if (length > buffer.Length)
                 throw new PacketException(PacketErrorCode.LengthOverflow);
             var buf = new byte[length];
             Array.Copy(buffer, offset, buf, 0, length);
@@ -53,28 +53,26 @@ namespace Mikodev.Network
         /// <summary>
         /// 将字节数组写入流中
         /// </summary>
-        internal static void Write(this Stream stream, byte[] buffer, bool withLengthInfo = false)
-        {
-            if (withLengthInfo)
-            {
-                var len = BitConverter.GetBytes(buffer.Length);
-                stream.Write(len, 0, len.Length);
-            }
-            stream.Write(buffer, 0, buffer.Length);
-        }
+        internal static void Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
 
         /// <summary>
         /// 先将结构体转换成字节数组 然后写入流中
         /// </summary>
-        internal static void Write<T>(this Stream stream, T value, bool withLengthInfo = false) where T : struct => stream.Write(value.GetBytes(typeof(T)), withLengthInfo);
+        internal static void Write<T>(this Stream stream, T value) where T : struct => stream.Write(value.GetBytes());
+
+        /// <summary>
+        /// 将字节数组写入流中 并写入长度信息
+        /// </summary>
+        internal static void WriteExt(this Stream stream, byte[] buffer)
+        {
+            var len = BitConverter.GetBytes(buffer.Length);
+            stream.Write(len, 0, len.Length);
+            stream.Write(buffer, 0, buffer.Length);
+        }
 
         internal static byte[] TryRead(this Stream stream, int length)
         {
-            if (length < 0)
-                return null;
-            var len = stream.Length;
-            var cur = stream.Position;
-            if (length > len - cur)
+            if (length < 0 || stream.Position + length > stream.Length)
                 return null;
             var buf = new byte[length];
             stream.Read(buf, 0, length);
@@ -90,6 +88,11 @@ namespace Mikodev.Network
             var res = stream.TryRead(len);
             return res;
         }
+
+        /// <summary>
+        /// 使用非托管内存将对象转化为字节数组
+        /// </summary>
+        internal static byte[] GetBytes<T>(this T str) where T : struct => GetBytes(str, typeof(T));
 
         /// <summary>
         /// 使用非托管内存将对象转化为字节数组 (仅针对结构体)
@@ -112,6 +115,11 @@ namespace Mikodev.Network
                     Marshal.FreeHGlobal(ptr);
             }
         }
+
+        /// <summary>
+        /// 使用非托管内存将字节数组转换成结构体
+        /// </summary>
+        internal static T GetValue<T>(this byte[] buffer, int offset, int length) => (T)GetValue(buffer, offset, length, typeof(T));
 
         /// <summary>
         /// 使用非托管内存将字节数组转换成结构体
@@ -141,11 +149,13 @@ namespace Mikodev.Network
         /// </summary>
         public static Dictionary<Type, PushFunc> PushFuncs()
         {
-            var dic = new Dictionary<Type, PushFunc>();
-            dic.Add(typeof(string), (obj) => GetBytes((string)obj));
-            dic.Add(typeof(DateTime), (obj) => GetBytes((DateTime)obj));
-            dic.Add(typeof(IPAddress), (obj) => GetBytes((IPAddress)obj));
-            dic.Add(typeof(IPEndPoint), (obj) => GetBytes((IPEndPoint)obj));
+            var dic = new Dictionary<Type, PushFunc>
+            {
+                { typeof(string), (obj) => Encoding.UTF8.GetBytes((string)obj) },
+                { typeof(DateTime), (obj) => GetBytes((DateTime)obj) },
+                { typeof(IPAddress), (obj) => GetBytes((IPAddress)obj) },
+                { typeof(IPEndPoint), (obj) => GetBytes((IPEndPoint)obj) }
+            };
             return dic;
         }
 
@@ -155,11 +165,13 @@ namespace Mikodev.Network
         /// </summary>
         public static Dictionary<Type, PullFunc> PullFuncs()
         {
-            var dic = new Dictionary<Type, PullFunc>();
-            dic.Add(typeof(string), GetString);
-            dic.Add(typeof(DateTime), (a, b, c) => GetDateTime(a, b, c));
-            dic.Add(typeof(IPAddress), GetIPAddress);
-            dic.Add(typeof(IPEndPoint), GetIPEndPoint);
+            var dic = new Dictionary<Type, PullFunc>
+            {
+                { typeof(string), Encoding.UTF8.GetString },
+                { typeof(DateTime), (a, b, c) => GetDateTime(a, b, c) },
+                { typeof(IPAddress), GetIPAddress },
+                { typeof(IPEndPoint), GetIPEndPoint }
+            };
             return dic;
         }
 
@@ -169,25 +181,21 @@ namespace Mikodev.Network
         /// </summary>
         public static string[] GetSeparator() => new string[] { @"\", "/" };
 
-        internal static byte[] GetBytes(this string str) => Encoding.UTF8.GetBytes(str);
+        internal static byte[] GetBytes(this DateTime value) => value.ToBinary().GetBytes();
 
-        internal static string GetString(this byte[] buffer, int offset, int length) => Encoding.UTF8.GetString(buffer, offset, length);
-
-        internal static byte[] GetBytes(this DateTime value) => value.ToBinary().GetBytes(typeof(long));
-
-        internal static DateTime GetDateTime(this byte[] buffer, int offset, int length) => DateTime.FromBinary((long)buffer.GetValue(offset, length, typeof(long)));
+        internal static DateTime GetDateTime(this byte[] buffer, int offset, int length) => DateTime.FromBinary(buffer.GetValue<long>(offset, length));
 
         internal static byte[] GetBytes(this IPAddress value) => value.GetAddressBytes();
 
         internal static IPAddress GetIPAddress(this byte[] buffer, int offset, int length) => new IPAddress(buffer.Split(offset, length));
 
-        internal static byte[] GetBytes(this IPEndPoint value) => value.Address.GetAddressBytes().Merge(((ushort)value.Port).GetBytes(typeof(ushort)));
+        internal static byte[] GetBytes(this IPEndPoint value) => value.Address.GetAddressBytes().Merge(((ushort)value.Port).GetBytes());
 
         internal static IPEndPoint GetIPEndPoint(this byte[] buffer, int offset, int length)
         {
             var len = sizeof(ushort);
             var add = new IPAddress(buffer.Split(offset, length - len));
-            var pot = (ushort)buffer.GetValue(offset + length - len, len, typeof(ushort));
+            var pot = buffer.GetValue<short>(offset + length - len, len);
             return new IPEndPoint(add, pot);
         }
     }
