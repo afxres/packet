@@ -87,6 +87,8 @@ namespace Mikodev.Network
         /// <param name="value">待写入数据</param>
         public PacketWriter Push(string key, Type type, object value)
         {
+            if (value == null)
+                return _Push(key, null);
             var fun = _Func(type);
             var buf = fun.Invoke(value);
             return _Push(key, buf);
@@ -118,6 +120,8 @@ namespace Mikodev.Network
         /// <param name="withLengthInfo">是否写入长度信息 (仅针对值类型)</param>
         public PacketWriter PushList(string key, Type type, IEnumerable value, bool withLengthInfo = false)
         {
+            if (value == null)
+                return _Push(key, null);
             var inf = withLengthInfo || type.IsValueType() == false;
             var str = new MemoryStream();
             var fun = _Func(type);
@@ -188,6 +192,11 @@ namespace Mikodev.Network
                 {
                     var key = p.Name;
                     var val = p.GetValue(value);
+                    if (val == null)
+                    {
+                        wtr._Push(key, null);
+                        continue;
+                    }
                     var pty = p.PropertyType;
                     var fun = wtr._Func(p.PropertyType, true);
                     if (fun != null)

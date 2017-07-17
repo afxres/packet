@@ -66,12 +66,13 @@ namespace Mikodev.Test
                     word = "an",
                     count = 10,
                     endpoint = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort),
+                    none = default(string),
                 },
                 empty = new { },    // empty node, same as null value or empty array
             });
         }
     }
-    
+
     static class Modules
     {
         public static string GetView(this IEnumerable lst)
