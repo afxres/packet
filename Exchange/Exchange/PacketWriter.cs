@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using PushFunc = System.Func<object, byte[]>;
 
@@ -169,22 +170,37 @@ namespace Mikodev.Network
             return mst.ToArray();
         }
 
-        /// <summary>
-        /// 将所有数据写入到目标流中
-        /// Write all data to the target stream
-        /// </summary>
-        public void WriteTo(Stream stream)
-        {
-            if (stream.CanSeek == false || stream.CanWrite == false)
-                throw new ArgumentException();
-            if (_dic == null)
-                return;
-            _GetBytes(stream, _dic);
-        }
-
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
         {
             return new DynamicPacketWriter(parameter, this);
+        }
+
+        /// <summary>
+        /// 使用现有值象创建新对象 忽略所有无法序列化的对象
+        /// </summary>
+        public static PacketWriter Serialize(object obj, Dictionary<Type, PushFunc> funcs = null)
+        {
+            PacketWriter _push(object value)
+            {
+                var wtr = new PacketWriter(funcs);
+                var typ = value.GetType();
+                foreach (var p in typ.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                {
+                    var key = p.Name;
+                    var val = p.GetValue(value);
+                    var pty = p.PropertyType;
+                    var fun = wtr._Func(p.PropertyType, true);
+                    if (fun != null)
+                    {
+                        wtr._Push(key, fun.Invoke(val));
+                        continue;
+                    }
+                    var wri = _push(val);
+                    wtr._Item(key, wri);
+                }
+                return wtr;
+            }
+            return _push(obj);
         }
 
         /// <summary>

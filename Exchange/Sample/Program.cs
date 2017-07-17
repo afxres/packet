@@ -56,9 +56,22 @@ namespace Mikodev.Test
             Console.WriteLine(res["array"].PullList(typeof(int)).GetView());
             Console.WriteLine(((IEnumerable<string>)dre.list.two).GetView());
             Console.WriteLine(((IEnumerable<float>)dre.list.three).GetView());
+
+            var obj = PacketWriter.Serialize(new
+            {
+                id = 1,
+                error = "ok",
+                data = new
+                {
+                    word = "an",
+                    count = 10,
+                    endpoint = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort),
+                },
+                empty = new { },    // empty node, same as null value or empty array
+            });
         }
     }
-
+    
     static class Modules
     {
         public static string GetView(this IEnumerable lst)
