@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Dynamic;
+﻿using System.Dynamic;
 using System.Linq.Expressions;
-using System.Reflection;
-using PushFunc = System.Func<object, byte[]>;
 
 namespace Mikodev.Network
 {
@@ -30,37 +26,8 @@ namespace Mikodev.Network
             var wtr = (PacketWriter)Value;
             var key = binder.Name;
             var val = value.Value;
-            var typ = val.GetType();
-            var fun = default(PushFunc);
-
-            bool enumerable(out Type inn)
-            {
-                foreach (var i in typ.GetTypeInfo().GetInterfaces())
-                {
-                    if (i.IsGenericEnumerable())
-                    {
-                        var som = i.GetGenericArguments();
-                        if (som.Length != 1)
-                            continue;
-                        inn = som[0];
-                        return true;
-                    }
-                }
-                inn = null;
-                return false;
-            }
-
-            if (val is byte[] buf)
-                wtr._Push(key, buf);
-            else if (val is PacketWriter pkt)
-                wtr._Item(key, pkt);
-            else if ((fun = wtr._Func(typ, true)) != null)
-                wtr._Push(key, fun.Invoke(val));
-            else if (enumerable(out var inn))
-                wtr.PushList(key, inn, (IEnumerable)val);
-            else
-                throw new PacketException(PacketErrorCode.InvalidType);
-
+            if (wtr._PushValue(key, val) == false)
+                throw new PacketException(PacketError.InvalidType);
             var nod = wtr._Item(key);
             var exp = Expression.Constant(val, typeof(object));
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));

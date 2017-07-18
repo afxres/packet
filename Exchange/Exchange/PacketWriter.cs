@@ -36,7 +36,7 @@ namespace Mikodev.Network
                 return (val) => PacketExtensions.GetBytes(val, type);
             if (nothrow)
                 return null;
-            throw new PacketException(PacketErrorCode.InvalidType);
+            throw new PacketException(PacketError.InvalidType);
         }
 
         internal PacketWriter _Item(string key, PacketWriter another = null)
@@ -179,37 +179,52 @@ namespace Mikodev.Network
             return new DynamicPacketWriter(parameter, this);
         }
 
+        internal bool _PushValue(string key, object val, Type typ = null)
+        {
+            var fun = default(PushFunc);
+            typ = typ ?? val?.GetType();
+
+            if (val is null)
+                _Push(key, null);
+            else if (val is byte[] buf)
+                _Push(key, buf);
+            else if (val is PacketWriter pkt)
+                _Item(key, pkt);
+            else if ((fun = _Func(typ, true)) != null)
+                _Push(key, fun.Invoke(val));
+            else if (typ.IsEnumerable(out var inn))
+                PushList(key, inn, (IEnumerable)val);
+            else
+                return false;
+            return true;
+        }
+
         /// <summary>
-        /// 使用现有值象创建新对象 忽略所有无法序列化的对象
+        /// 使用现有值象创建新对象 忽略所有无法序列化的对象 (This function is unstable!!!)
         /// </summary>
         public static PacketWriter Serialize(object obj, Dictionary<Type, PushFunc> funcs = null)
         {
-            PacketWriter _push(object value)
+            const int _Level = 32;
+            PacketWriter _push(object value, int level)
             {
+                if (level > _Level)
+                    throw new PacketException(PacketError.RecursiveError);
                 var wtr = new PacketWriter(funcs);
-                var typ = value.GetType();
-                foreach (var p in typ.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                var vtp = value.GetType();
+                foreach (var p in vtp.GetProperties(BindingFlags.Instance | BindingFlags.Public))
                 {
                     var key = p.Name;
                     var val = p.GetValue(value);
-                    if (val == null)
-                    {
-                        wtr._Push(key, null);
+
+                    if (wtr._PushValue(key, val, p.PropertyType) == true)
                         continue;
-                    }
-                    var pty = p.PropertyType;
-                    var fun = wtr._Func(p.PropertyType, true);
-                    if (fun != null)
-                    {
-                        wtr._Push(key, fun.Invoke(val));
-                        continue;
-                    }
-                    var wri = _push(val);
+
+                    var wri = _push(val, level + 1);
                     wtr._Item(key, wri);
                 }
                 return wtr;
             }
-            return _push(obj);
+            return _push(obj, 0);
         }
 
         /// <summary>

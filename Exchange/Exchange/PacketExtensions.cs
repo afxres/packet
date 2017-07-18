@@ -26,6 +26,26 @@ namespace Mikodev.Network
         internal static bool IsGenericEnumerable(this Type type) => type.GetTypeInfo().IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>);
 
         /// <summary>
+        /// 是否为 IEnumerable 类型
+        /// </summary>
+        internal static bool IsEnumerable(this Type typ, out Type inn)
+        {
+            foreach (var i in typ.GetTypeInfo().GetInterfaces())
+            {
+                if (i.IsGenericEnumerable())
+                {
+                    var som = i.GetGenericArguments();
+                    if (som.Length != 1)
+                        continue;
+                    inn = som[0];
+                    return true;
+                }
+            }
+            inn = null;
+            return false;
+        }
+
+        /// <summary>
         /// 合并多个字节数组
         /// </summary>
         internal static byte[] Merge(this byte[] buffer, params byte[][] values)
@@ -44,7 +64,7 @@ namespace Mikodev.Network
         {
             // 防止内存溢出
             if (length > buffer.Length)
-                throw new PacketException(PacketErrorCode.LengthOverflow);
+                throw new PacketException(PacketError.LengthOverflow);
             var buf = new byte[length];
             Array.Copy(buffer, offset, buf, 0, length);
             return buf;
@@ -128,7 +148,7 @@ namespace Mikodev.Network
         {
             var len = Marshal.SizeOf(type);
             if (len > length)
-                throw new PacketException(PacketErrorCode.LengthOverflow);
+                throw new PacketException(PacketError.LengthOverflow);
             var ptr = IntPtr.Zero;
             try
             {

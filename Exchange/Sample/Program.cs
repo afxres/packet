@@ -67,6 +67,7 @@ namespace Mikodev.Test
                     count = 10,
                     endpoint = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort),
                     none = default(string),
+                    array = new int[2],
                 },
                 empty = new { },    // empty node, same as null value or empty array
             });

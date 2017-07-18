@@ -34,7 +34,7 @@ namespace Mikodev.Network
             {
                 var arg = typ.GetGenericArguments();
                 if (arg.Length != 1)
-                    throw new PacketException(PacketErrorCode.InvalidType);
+                    throw new PacketException(PacketError.InvalidType);
                 var met = typeof(PacketReader).GetTypeInfo().GetMethod(nameof(PacketReader._ListGeneric), BindingFlags.NonPublic | BindingFlags.Instance);
                 return met.MakeGenericMethod(arg[0]).Invoke(rdr, new object[] { false });
             }
@@ -46,7 +46,7 @@ namespace Mikodev.Network
             else if (typ.IsGenericEnumerable())
                 val = enumerator();
             else
-                throw new PacketException(PacketErrorCode.InvalidType);
+                throw new PacketException(PacketError.InvalidType);
 
             var exp = Expression.Constant(val);
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));

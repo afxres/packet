@@ -3,7 +3,7 @@
     /// <summary>
     /// 错误代码
     /// </summary>
-    public enum PacketErrorCode
+    public enum PacketError
     {
         /// <summary>
         /// 默认值
@@ -24,5 +24,10 @@
         /// 长度超出范围
         /// </summary>
         LengthOverflow,
+
+        /// <summary>
+        /// 递归深度超过限制
+        /// </summary>
+        RecursiveError,
     }
 }

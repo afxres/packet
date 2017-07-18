@@ -76,18 +76,18 @@ namespace Mikodev.Network
                 return (buf, idx, len) => PacketExtensions.GetValue(buf, idx, len, type);
             if (nothrow)
                 return null;
-            throw new PacketException(PacketErrorCode.InvalidType);
+            throw new PacketException(PacketError.InvalidType);
         }
 
         internal PacketReader _Item(string key, bool nothrow = false)
         {
             if (_TryRead() == false)
-                throw new PacketException(PacketErrorCode.LengthOverflow);
+                throw new PacketException(PacketError.LengthOverflow);
             if (_dic.TryGetValue(key, out var val))
                 return val;
             if (nothrow)
                 return null;
-            throw new PacketException(PacketErrorCode.KeyNotFound);
+            throw new PacketException(PacketError.KeyNotFound);
         }
 
         internal PacketReader _ItemPath(string path, bool nothrow = false, string[] separator = null)
@@ -189,7 +189,16 @@ namespace Mikodev.Network
         /// </summary>
         public override string ToString()
         {
-            return $"{nameof(PacketReader)} with key \"{_key ?? "null"}\" and {_dic?.Count ?? 0} node(s)";
+            var stb = new StringBuilder(nameof(PacketReader));
+            stb.Append(" with ");
+            if (_dic == null || _dic.Count < 1)
+                if (_len != 0)
+                    stb.AppendFormat("{0} byte(s)", _len);
+                else
+                    stb.Append("none");
+            else
+                stb.AppendFormat("{0} node(s)", _dic.Count);
+            return stb.ToString();
         }
     }
 }

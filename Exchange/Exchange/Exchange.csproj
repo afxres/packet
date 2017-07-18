@@ -45,7 +45,7 @@
     <Compile Include="DynamicPacketReader.cs" />
     <Compile Include="DynamicPacketWriter.cs" />
     <Compile Include="PacketExtensions.cs" />
-    <Compile Include="PacketErrorCode.cs" />
+    <Compile Include="PacketError.cs" />
     <Compile Include="PacketException.cs" />
     <Compile Include="PacketReader.cs" />
     <Compile Include="PacketWriter.cs" />
