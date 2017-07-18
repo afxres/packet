@@ -56,21 +56,27 @@ namespace Mikodev.Test
             Console.WriteLine(res["array"].PullList(typeof(int)).GetView());
             Console.WriteLine(((IEnumerable<string>)dre.list.two).GetView());
             Console.WriteLine(((IEnumerable<float>)dre.list.three).GetView());
+            Console.WriteLine();
 
             var obj = PacketWriter.Serialize(new
             {
                 id = 1,
-                error = "ok",
                 data = new
                 {
-                    word = "an",
-                    count = 10,
+                    word = "word",
                     endpoint = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort),
                     none = default(string),
-                    array = new int[2],
+                    array = new int[] { 1, 2, 3, },
                 },
                 empty = new { },    // empty node, same as null value or empty array
             });
+
+            var ser = obj.GetBytes();
+            var dse = new PacketReader(ser);
+
+            Console.WriteLine(dse["id"].Pull<int>());
+            Console.WriteLine(dse["data/word"].Pull<string>());
+            Console.WriteLine(dse["data/endpoint"].Pull<IPEndPoint>());
         }
     }
 

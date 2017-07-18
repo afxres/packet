@@ -134,6 +134,54 @@ namespace Mikodev.Network
             return _Push(key, str.ToArray());
         }
 
+        internal bool _PushValue(string key, object val, Type typ = null)
+        {
+            var fun = default(PushFunc);
+            typ = typ ?? val?.GetType();
+
+            if (val is null)
+                _Push(key, null);
+            else if (val is byte[] buf)
+                _Push(key, buf);
+            else if (val is PacketWriter pkt)
+                _Item(key, pkt);
+            else if ((fun = _Func(typ, true)) != null)
+                _Push(key, fun.Invoke(val));
+            else if (typ.IsEnumerable(out var inn))
+                PushList(key, inn, (IEnumerable)val);
+            else
+                return false;
+            return true;
+        }
+
+        /// <summary>
+        /// 使用现有值象创建新对象 忽略所有无法序列化的对象
+        /// </summary>
+        public static PacketWriter Serialize(object obj, Dictionary<Type, PushFunc> funcs = null)
+        {
+            const int _Level = 32;
+            PacketWriter _push(object value, int level)
+            {
+                if (level > _Level)
+                    throw new PacketException(PacketError.RecursiveError);
+                var wtr = new PacketWriter(funcs);
+                var vtp = value.GetType();
+                foreach (var p in vtp.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                {
+                    var key = p.Name;
+                    var val = p.GetValue(value);
+
+                    if (wtr._PushValue(key, val, p.PropertyType) == true)
+                        continue;
+
+                    var wri = _push(val, level + 1);
+                    wtr._Item(key, wri);
+                }
+                return wtr;
+            }
+            return _push(obj, 0);
+        }
+
         internal void _GetBytes(Stream str, Dictionary<string, PacketWriter> dic)
         {
             foreach (var i in dic)
@@ -177,54 +225,6 @@ namespace Mikodev.Network
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
         {
             return new DynamicPacketWriter(parameter, this);
-        }
-
-        internal bool _PushValue(string key, object val, Type typ = null)
-        {
-            var fun = default(PushFunc);
-            typ = typ ?? val?.GetType();
-
-            if (val is null)
-                _Push(key, null);
-            else if (val is byte[] buf)
-                _Push(key, buf);
-            else if (val is PacketWriter pkt)
-                _Item(key, pkt);
-            else if ((fun = _Func(typ, true)) != null)
-                _Push(key, fun.Invoke(val));
-            else if (typ.IsEnumerable(out var inn))
-                PushList(key, inn, (IEnumerable)val);
-            else
-                return false;
-            return true;
-        }
-
-        /// <summary>
-        /// 使用现有值象创建新对象 忽略所有无法序列化的对象 (This function is unstable!!!)
-        /// </summary>
-        public static PacketWriter Serialize(object obj, Dictionary<Type, PushFunc> funcs = null)
-        {
-            const int _Level = 32;
-            PacketWriter _push(object value, int level)
-            {
-                if (level > _Level)
-                    throw new PacketException(PacketError.RecursiveError);
-                var wtr = new PacketWriter(funcs);
-                var vtp = value.GetType();
-                foreach (var p in vtp.GetProperties(BindingFlags.Instance | BindingFlags.Public))
-                {
-                    var key = p.Name;
-                    var val = p.GetValue(value);
-
-                    if (wtr._PushValue(key, val, p.PropertyType) == true)
-                        continue;
-
-                    var wri = _push(val, level + 1);
-                    wtr._Item(key, wri);
-                }
-                return wtr;
-            }
-            return _push(obj, 0);
         }
 
         /// <summary>

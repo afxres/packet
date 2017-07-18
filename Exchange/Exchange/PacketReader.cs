@@ -68,7 +68,7 @@ namespace Mikodev.Network
             return true;
         }
 
-        internal PullFunc _Func(Type type, bool nothrow = false)
+        internal PullFunc _Func(Type type, bool nothrow)
         {
             if (_funs.TryGetValue(type, out var fun))
                 return fun;
@@ -79,7 +79,7 @@ namespace Mikodev.Network
             throw new PacketException(PacketError.InvalidType);
         }
 
-        internal PacketReader _Item(string key, bool nothrow = false)
+        internal PacketReader _Item(string key, bool nothrow)
         {
             if (_TryRead() == false)
                 throw new PacketException(PacketError.LengthOverflow);
@@ -90,7 +90,7 @@ namespace Mikodev.Network
             throw new PacketException(PacketError.KeyNotFound);
         }
 
-        internal PacketReader _ItemPath(string path, bool nothrow = false, string[] separator = null)
+        internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
         {
             var sts = path.Split(separator ?? PacketExtensions.GetSeparator(), StringSplitOptions.RemoveEmptyEntries);
             var rdr = this;
@@ -100,10 +100,10 @@ namespace Mikodev.Network
             return rdr;
         }
 
-        internal IEnumerable _List(Type type, bool withLengthInfo = false)
+        internal IEnumerable _List(Type type, bool withLengthInfo)
         {
             var inf = type.IsValueType() == false || withLengthInfo == true;
-            var fun = new Func<byte[], object>((val) => _Func(type).Invoke(val, 0, val.Length));
+            var fun = new Func<byte[], object>((val) => _Func(type, false).Invoke(val, 0, val.Length));
             var str = new MemoryStream(_buf, _off, _len);
             while (str.Position < str.Length)
             {
@@ -114,7 +114,7 @@ namespace Mikodev.Network
             yield break;
         }
 
-        internal IEnumerable<T> _ListGeneric<T>(bool withLengthInfo = false)
+        internal IEnumerable<T> _ListGeneric<T>(bool withLengthInfo)
         {
             foreach (var i in PullList(typeof(T)))
                 yield return (T)i;
@@ -145,7 +145,7 @@ namespace Mikodev.Network
         /// <param name="type">目标类型</param>
         public object Pull(Type type)
         {
-            var fun = _Func(type);
+            var fun = _Func(type, false);
             var res = fun.Invoke(_buf, _off, _len);
             return res;
         }
