@@ -123,25 +123,24 @@ namespace Mikodev.Network
             yield break;
         }
 
+        internal IEnumerable<string> _GetKeys()
+        {
+            if (_TryRead() == false)
+                yield break;
+            foreach (var i in _dic)
+                yield return i.Key;
+            yield break;
+        }
+
         /// <summary>
         /// Child node count
         /// </summary>
         public int Count => _TryRead() ? _dic.Count : 0;
 
         /// <summary>
-        /// Get all keys of current node
+        /// Child node keys
         /// </summary>
-        public IEnumerable<string> Keys
-        {
-            get
-            {
-                if (_TryRead() == false)
-                    yield break;
-                foreach (var i in _dic)
-                    yield return i.Key;
-                yield break;
-            }
-        }
+        public IEnumerable<string> Keys => _GetKeys();
 
         /// <summary>
         /// 使用路径访问元素
@@ -180,6 +179,11 @@ namespace Mikodev.Network
         public T Pull<T>() => (T)Pull(typeof(T));
 
         /// <summary>
+        /// Get byte array of current node
+        /// </summary>
+        public byte[] PullList() => _buf.Split(_off, _len);
+
+        /// <summary>
         /// 将当前节点转换成目标类型数据集合
         /// Convert current node to collection of target type
         /// </summary>
@@ -194,11 +198,6 @@ namespace Mikodev.Network
         /// <typeparam name="T">目标类型</typeparam>
         /// <param name="withLengthInfo">数据是否包含长度信息 (仅针对值类型)</param>
         public IEnumerable<T> PullList<T>(bool withLengthInfo = false) => _ListGeneric<T>(withLengthInfo);
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
-        {
-            return new DynamicPacketReader(parameter, this);
-        }
 
         /// <summary>
         /// 在字符串中输出键值和元素个数
@@ -215,6 +214,11 @@ namespace Mikodev.Network
             else
                 stb.AppendFormat("{0} node(s)", _dic.Count);
             return stb.ToString();
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
+        {
+            return new DynamicPacketReader(parameter, this);
         }
     }
 }

@@ -94,6 +94,11 @@ namespace Mikodev.Network
         }
 
         /// <summary>
+        /// Set key and byte array
+        /// </summary>
+        public PacketWriter PushList(string key, byte[] buffer) => _Push(key, buffer);
+
+        /// <summary>
         /// 写入标签和对象集合
         /// Write key and collections
         /// </summary>
@@ -214,11 +219,6 @@ namespace Mikodev.Network
             return mst.ToArray();
         }
 
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
-        {
-            return new DynamicPacketWriter(parameter, this);
-        }
-
         /// <summary>
         /// 在字符串中输出键值和元素
         /// </summary>
@@ -233,6 +233,11 @@ namespace Mikodev.Network
             else
                 stb.AppendFormat("{0} node(s)", ((WriterDictionary)_obj).Count);
             return stb.ToString();
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
+        {
+            return new DynamicPacketWriter(parameter, this);
         }
     }
 }

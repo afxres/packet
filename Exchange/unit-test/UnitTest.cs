@@ -57,7 +57,7 @@ namespace Mikodev.UnitTest
                 new byte[] { 1, 2, 3, 4 }
             };
 
-            wtr.Push("byte", a).
+            wtr.PushList("byte", a).
                 PushList("ints", b).
                 PushList("buffer", c);
             var buf = wtr.GetBytes();
