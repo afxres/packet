@@ -17,14 +17,14 @@ namespace Mikodev.Network
         /// <summary>
         /// 创建异常对象 并设置异常信息
         /// </summary>
-        public PacketException(PacketError code) : base(_GetMessage(code)) => _code = code;
+        public PacketException(PacketError code) : base(_Message(code)) => _code = code;
 
         /// <summary>
         /// 创建异常对象 并设置异常信息和内部异常
         /// </summary>
-        public PacketException(PacketError code, Exception inner) : base(_GetMessage(code), inner) => _code = code;
+        public PacketException(PacketError code, Exception inner) : base(_Message(code), inner) => _code = code;
 
-        internal static string _GetMessage(PacketError code)
+        internal static string _Message(PacketError code)
         {
             switch (code)
             {
@@ -33,7 +33,7 @@ namespace Mikodev.Network
                 case PacketError.InvalidType:
                     return "类型无效";
                 case PacketError.Overflow:
-                    return "长度超出范围";
+                    return "数据长度溢出";
                 case PacketError.RecursiveError:
                     return "递归深度超过限制";
                 default:

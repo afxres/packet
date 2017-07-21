@@ -26,7 +26,7 @@ namespace Mikodev.Network
             var wtr = (PacketWriter)Value;
             var key = binder.Name;
             var val = value.Value;
-            if (wtr._PushValue(key, val) == false)
+            if (wtr._ItemValue(key, val) == false)
                 throw new PacketException(PacketError.InvalidType);
             var nod = wtr._Item(key);
             var exp = Expression.Constant(val, typeof(object));

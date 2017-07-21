@@ -123,7 +123,7 @@ namespace Mikodev.Network
             yield break;
         }
 
-        internal IEnumerable<string> _GetKeys()
+        internal IEnumerable<string> _Keys()
         {
             if (_TryRead() == false)
                 yield break;
@@ -140,7 +140,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Child node keys
         /// </summary>
-        public IEnumerable<string> Keys => _GetKeys();
+        public IEnumerable<string> Keys => _Keys();
 
         /// <summary>
         /// 使用路径访问元素

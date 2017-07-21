@@ -21,7 +21,7 @@
         InvalidType,
 
         /// <summary>
-        /// 长度超出范围
+        /// 数据长度溢出
         /// </summary>
         Overflow,
 
