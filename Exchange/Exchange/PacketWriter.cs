@@ -133,10 +133,10 @@ namespace Mikodev.Network
             return _ItemBuffer(key, str.ToArray());
         }
 
-        internal bool _ItemValue(string key, object val, Type typ = null)
+        internal bool _ItemValue(string key, object val)
         {
             var fun = default(PushFunc);
-            typ = typ ?? val?.GetType();
+            var typ = val?.GetType();
 
             if (val is null)
                 _ItemBuffer(key, null);
@@ -226,7 +226,7 @@ namespace Mikodev.Network
                     var key = p.Name;
                     var val = p.GetValue(value);
 
-                    if (wtr._ItemValue(key, val, p.PropertyType) == true)
+                    if (wtr._ItemValue(key, val) == true)
                         continue;
 
                     var wri = _push(val, level + 1);
