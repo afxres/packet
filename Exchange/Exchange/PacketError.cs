@@ -23,7 +23,7 @@
         /// <summary>
         /// 长度超出范围
         /// </summary>
-        LengthOverflow,
+        Overflow,
 
         /// <summary>
         /// 递归深度超过限制

@@ -32,7 +32,7 @@ namespace Mikodev.Network
                     return "键不存在";
                 case PacketError.InvalidType:
                     return "类型无效";
-                case PacketError.LengthOverflow:
+                case PacketError.Overflow:
                     return "长度超出范围";
                 case PacketError.RecursiveError:
                     return "递归深度超过限制";

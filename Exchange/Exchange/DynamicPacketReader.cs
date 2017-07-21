@@ -39,9 +39,7 @@ namespace Mikodev.Network
                 return met.MakeGenericMethod(arg[0]).Invoke(rdr, new object[] { false });
             }
 
-            if (typ == typeof(byte[]))
-                val = rdr._buf.Split(rdr._off, rdr._len);
-            else if ((fun = rdr._Func(typ, true)) != null)
+            if ((fun = rdr._Func(typ, true)) != null)
                 val = fun.Invoke(rdr._buf, rdr._off, rdr._len);
             else if (typ.IsGenericEnumerable())
                 val = enumerator();

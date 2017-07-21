@@ -64,7 +64,7 @@ namespace Mikodev.Network
         {
             // 防止内存溢出
             if (length > buffer.Length)
-                throw new PacketException(PacketError.LengthOverflow);
+                throw new PacketException(PacketError.Overflow);
             var buf = new byte[length];
             Array.Copy(buffer, offset, buf, 0, length);
             return buf;
@@ -148,7 +148,7 @@ namespace Mikodev.Network
         {
             var len = Marshal.SizeOf(type);
             if (len > length)
-                throw new PacketException(PacketError.LengthOverflow);
+                throw new PacketException(PacketError.Overflow);
             var ptr = IntPtr.Zero;
             try
             {
@@ -171,10 +171,11 @@ namespace Mikodev.Network
         {
             var dic = new Dictionary<Type, PushFunc>
             {
-                { typeof(string), (obj) => Encoding.UTF8.GetBytes((string)obj) },
-                { typeof(DateTime), (obj) => GetBytes((DateTime)obj) },
-                { typeof(IPAddress), (obj) => GetBytes((IPAddress)obj) },
-                { typeof(IPEndPoint), (obj) => GetBytes((IPEndPoint)obj) }
+                { typeof(byte[]), obj => (byte[])obj },
+                { typeof(string), obj => Encoding.UTF8.GetBytes((string)obj) },
+                { typeof(DateTime), obj => GetBytes((DateTime)obj) },
+                { typeof(IPAddress), obj => GetBytes((IPAddress)obj) },
+                { typeof(IPEndPoint), obj => GetBytes((IPEndPoint)obj) }
             };
             return dic;
         }
@@ -187,6 +188,7 @@ namespace Mikodev.Network
         {
             var dic = new Dictionary<Type, PullFunc>
             {
+                { typeof(byte[]), Split },
                 { typeof(string), Encoding.UTF8.GetString },
                 { typeof(DateTime), (a, b, c) => GetDateTime(a, b, c) },
                 { typeof(IPAddress), GetIPAddress },

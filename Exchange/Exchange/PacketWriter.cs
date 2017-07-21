@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using PushFunc = System.Func<object, byte[]>;
+using WriterDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
 
 namespace Mikodev.Network
 {
@@ -15,8 +16,7 @@ namespace Mikodev.Network
     /// </summary>
     public partial class PacketWriter : IDynamicMetaObjectProvider
     {
-        internal byte[] _dat = null;
-        internal Dictionary<string, PacketWriter> _dic = null;
+        internal object _obj = null;
         internal Dictionary<Type, PushFunc> _funs = null;
 
         /// <summary>
@@ -41,21 +41,20 @@ namespace Mikodev.Network
 
         internal PacketWriter _Item(string key, PacketWriter another = null)
         {
-            _dat = null;
-            if (_dic == null)
-                _dic = new Dictionary<string, PacketWriter>();
-            if (_dic.TryGetValue(key, out var val))
+            if (_obj is WriterDictionary == false)
+                _obj = new WriterDictionary();
+            var dic = (WriterDictionary)_obj;
+            if (dic.TryGetValue(key, out var val))
                 return val;
             val = another ?? new PacketWriter();
-            _dic.Add(key, val);
+            dic.Add(key, val);
             return val;
         }
 
         internal PacketWriter _Push(string key, byte[] buffer)
         {
             var val = _Item(key);
-            val._dic = null;
-            val._dat = buffer;
+            val._obj = buffer;
             return this;
         }
 
@@ -93,12 +92,6 @@ namespace Mikodev.Network
             var buf = fun.Invoke(value);
             return _Push(key, buf);
         }
-
-        /// <summary>
-        /// 写入标签和字节数据
-        /// Write key and byte array
-        /// </summary>
-        public PacketWriter PushList(string key, byte[] buffer) => _Push(key, buffer);
 
         /// <summary>
         /// 写入标签和对象集合
@@ -141,8 +134,6 @@ namespace Mikodev.Network
 
             if (val is null)
                 _Push(key, null);
-            else if (val is byte[] buf)
-                _Push(key, buf);
             else if (val is PacketWriter pkt)
                 _Item(key, pkt);
             else if ((fun = _Func(typ, true)) != null)
@@ -182,26 +173,26 @@ namespace Mikodev.Network
             return _push(obj, 0);
         }
 
-        internal void _GetBytes(Stream str, Dictionary<string, PacketWriter> dic)
+        internal void _GetBytes(MemoryStream str, WriterDictionary dic)
         {
             foreach (var i in dic)
             {
                 str.WriteExt(Encoding.UTF8.GetBytes(i.Key));
                 var val = i.Value;
-                if (val._dat != null)
-                {
-                    str.WriteExt(val._dat);
-                    continue;
-                }
-                if (val._dic == null)
+                if (val._obj is null)
                 {
                     str.Write(0);
+                    continue;
+                }
+                if (val._obj is byte[] buf)
+                {
+                    str.WriteExt(buf);
                     continue;
                 }
 
                 var pos = str.Position;
                 str.Write(0);
-                _GetBytes(str, val._dic);
+                _GetBytes(str, (WriterDictionary)val._obj);
                 var end = str.Position;
                 str.Seek(pos, SeekOrigin.Begin);
                 str.Write((int)(end - pos - sizeof(int)));
@@ -215,10 +206,11 @@ namespace Mikodev.Network
         /// </summary>
         public byte[] GetBytes()
         {
-            if (_dic == null)
+            var dic = _obj as WriterDictionary;
+            if (dic == null)
                 return new byte[0];
             var mst = new MemoryStream();
-            _GetBytes(mst, _dic);
+            _GetBytes(mst, dic);
             return mst.ToArray();
         }
 
@@ -234,12 +226,12 @@ namespace Mikodev.Network
         {
             var stb = new StringBuilder(nameof(PacketWriter));
             stb.Append(" with ");
-            if (_dat != null)
-                stb.AppendFormat("{0} byte(s)", _dat.Length);
-            else if (_dic != null)
-                stb.AppendFormat("{0} node(s)", _dic.Count);
-            else
+            if (_obj is null)
                 stb.Append("none");
+            else if (_obj is byte[] buf)
+                stb.AppendFormat("{0} byte(s)", buf.Length);
+            else
+                stb.AppendFormat("{0} node(s)", ((WriterDictionary)_obj).Count);
             return stb.ToString();
         }
     }

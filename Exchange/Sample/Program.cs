@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 
@@ -17,6 +18,7 @@ namespace Mikodev.Test
                 .Push("addr", IPAddress.Parse("192.168.1.1"))
                 .Push("endpoint", new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7500))
                 .Push("bytes", 0xFF7F4000)
+                .Push("buffer", new byte[] { 0x11, 0x22 })
                 .PushList("array", new int[] { 1, 2, 3, 4 })
                 .PushList("value", new string[] { "hello", "sharp", "net" })
                 .Push("inner", new PacketWriter()
@@ -33,6 +35,7 @@ namespace Mikodev.Test
             dwt.list.one = 1;
             dwt.list.two = new string[] { "A", "Bo", "Can" };
             dwt.list.three = new List<float>() { 1.1F, 2.2F, 3.3F };
+            dwt.buffer = new byte[4];
 
             var buf = wtr.GetBytes();
             var res = new PacketReader(buf);
@@ -42,7 +45,8 @@ namespace Mikodev.Test
             Console.WriteLine(res["long"].Pull<short>()); // long -> short
             Console.WriteLine(res["addr"].Pull<IPAddress>());
             Console.WriteLine(res["endpoint"].Pull<IPEndPoint>());
-            Console.WriteLine(res["bytes"].PullList().GetView());   // uint -> byte[] RAW Mode
+            Console.WriteLine(res["bytes"].Pull<byte[]>().GetView());   // uint -> byte[] RAW Mode
+            Console.WriteLine(res["buffer"].Pull<ushort>().ToString("x"));   // byte[] -> ushort
             Console.WriteLine(res["array"].PullList<int>().GetView());
             Console.WriteLine(res["value"].PullList<string>().GetView());
             Console.WriteLine(res.Pull("inner").Pull("one").Pull<string>());
@@ -67,6 +71,7 @@ namespace Mikodev.Test
                     endpoint = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort),
                     none = default(string),
                     array = new int[] { 1, 2, 3, },
+                    list = new List<byte[]>() { new byte[2], new byte[3] },
                 },
                 empty = new { },    // empty node, same as null value or empty array
             });
@@ -77,6 +82,13 @@ namespace Mikodev.Test
             Console.WriteLine(dse["id"].Pull<int>());
             Console.WriteLine(dse["data/word"].Pull<string>());
             Console.WriteLine(dse["data/endpoint"].Pull<IPEndPoint>());
+            var bts = dse["data/list"].PullList<byte[]>();
+            Console.WriteLine(bts.Count());
+            Console.WriteLine();
+
+            foreach (var k in dse["data"].Keys)
+                Console.WriteLine(k);
+            return;
         }
     }
 

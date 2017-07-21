@@ -18,11 +18,16 @@ namespace Mikodev.Network
         internal int _off = 0;
         internal int _len = 0;
         internal byte[] _buf = null;
-        internal string _key = null;
         internal Dictionary<string, PacketReader> _dic = null;
         internal Dictionary<Type, PullFunc> _funs = null;
 
-        internal PacketReader(Dictionary<Type, PullFunc> funcs) => _funs = funcs;
+        internal PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, PullFunc> funcs)
+        {
+            _buf = buffer;
+            _off = offset;
+            _len = length;
+            _funs = funcs;
+        }
 
         /// <summary>
         /// 创建新的数据包解析器
@@ -31,7 +36,7 @@ namespace Mikodev.Network
         /// <param name="funcs">类型转换工具词典 为空时使用默认词典</param>
         public PacketReader(byte[] buffer, Dictionary<Type, PullFunc> funcs = null)
         {
-            _buf = buffer;
+            _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             _len = buffer.Length;
             _funs = funcs ?? PacketExtensions.PullFuncs();
         }
@@ -42,26 +47,23 @@ namespace Mikodev.Network
                 return true;
             var dic = new Dictionary<string, PacketReader>();
             var str = new MemoryStream(_buf) { Position = _off };
-            var len = _off + _len;
+            var max = _off + _len;
 
-            while (str.Position < len)
+            while (str.Position < max)
             {
-                var rcd = new PacketReader(_funs);
-                var key = str.TryReadExt();
-                if (key == null)
+                var kbf = str.TryReadExt();
+                if (kbf == null)
                     return false;
                 var buf = str.TryRead(sizeof(int));
                 if (buf == null)
                     return false;
-                var tmp = BitConverter.ToInt32(buf, 0);
-                if (tmp < 0 || str.Position + tmp > len)
+                var len = BitConverter.ToInt32(buf, 0);
+                if (len < 0 || str.Position + len > max)
                     return false;
-                rcd._buf = _buf;
-                rcd._len = tmp;
-                rcd._key = Encoding.UTF8.GetString(key);
-                rcd._off = (int)str.Position;
-                str.Seek(rcd._len, SeekOrigin.Current);
-                dic.Add(rcd._key, rcd);
+                var key = Encoding.UTF8.GetString(kbf);
+                var off = (int)str.Position;
+                str.Seek(len, SeekOrigin.Current);
+                dic.Add(key, new PacketReader(_buf, off, len, _funs));
             }
 
             _dic = dic;
@@ -82,7 +84,7 @@ namespace Mikodev.Network
         internal PacketReader _Item(string key, bool nothrow)
         {
             if (_TryRead() == false)
-                throw new PacketException(PacketError.LengthOverflow);
+                throw new PacketException(PacketError.Overflow);
             if (_dic.TryGetValue(key, out var val))
                 return val;
             if (nothrow)
@@ -122,6 +124,26 @@ namespace Mikodev.Network
         }
 
         /// <summary>
+        /// Child node count
+        /// </summary>
+        public int Count => _TryRead() ? _dic.Count : 0;
+
+        /// <summary>
+        /// Get all keys of current node
+        /// </summary>
+        public IEnumerable<string> Keys
+        {
+            get
+            {
+                if (_TryRead() == false)
+                    yield break;
+                foreach (var i in _dic)
+                    yield return i.Key;
+                yield break;
+            }
+        }
+
+        /// <summary>
         /// 使用路径访问元素
         /// Get node by path
         /// </summary>
@@ -156,12 +178,6 @@ namespace Mikodev.Network
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
         public T Pull<T>() => (T)Pull(typeof(T));
-
-        /// <summary>
-        /// 将当前节点转换成字节数组
-        /// Convert current node to byte array
-        /// </summary>
-        public byte[] PullList() => _buf.Split(_off, _len);
 
         /// <summary>
         /// 将当前节点转换成目标类型数据集合
