@@ -18,7 +18,7 @@ namespace Mikodev.Test
                 .Push("addr", IPAddress.Parse("192.168.1.1"))
                 .Push("endpoint", new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7500))
                 .Push("bytes", 0xFF7F4000)
-                .Push("buffer", new byte[] { 0x11, 0x22 })
+                .PushList("short", new byte[] { 0x11, 0x22 })
                 .PushList("array", new int[] { 1, 2, 3, 4 })
                 .PushList("value", new string[] { "hello", "sharp", "net" })
                 .Push("inner", new PacketWriter()
@@ -46,7 +46,7 @@ namespace Mikodev.Test
             Console.WriteLine(res["addr"].Pull<IPAddress>());
             Console.WriteLine(res["endpoint"].Pull<IPEndPoint>());
             Console.WriteLine(res["bytes"].Pull<byte[]>().GetView());   // uint -> byte[] RAW Mode
-            Console.WriteLine(res["buffer"].Pull<ushort>().ToString("x"));   // byte[] -> ushort
+            Console.WriteLine(res["short"].Pull<ushort>().ToString("x"));   // byte[] -> ushort
             Console.WriteLine(res["array"].PullList<int>().GetView());
             Console.WriteLine(res["value"].PullList<string>().GetView());
             Console.WriteLine(res.Pull("inner").Pull("one").Pull<string>());

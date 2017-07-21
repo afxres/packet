@@ -111,5 +111,71 @@ namespace Mikodev.UnitTest
             ThrowIfNotAllEquals(d, rd.ToArray());
             ThrowIfNotAllEquals(e.First(), re.First());
         }
+
+        [TestMethod]
+        public void Serialize()
+        {
+            var a = 1;
+            var b = "value";
+            var c = new byte[] { 1, 2, 3, 4 };
+            var d = new int[] { 1, 2, 3, 4 };
+            var wtr = PacketWriter.Serialize(new
+            {
+                a = a,
+                c = c,
+                obj = new
+                {
+                    b = b,
+                    d = d,
+                }
+            });
+
+            var buf = wtr.GetBytes();
+            var rea = new PacketReader(buf);
+            var ra = rea["a"].Pull<int>();
+            var rb = rea["obj/b"].Pull<string>();
+            var rc = rea["c"].PullList<byte>();
+            var rd = rea["obj/d"].PullList<int>();
+
+            Assert.AreEqual(a, ra);
+            Assert.AreEqual(b, rb);
+            ThrowIfNotAllEquals(c, rc.ToArray());
+            ThrowIfNotAllEquals(d, rd.ToArray());
+        }
+
+        [TestMethod]
+        public void Path()
+        {
+            var a = 1;
+            var wtr = new PacketWriter();
+            wtr.Push("a", new PacketWriter().Push("a", a));
+
+            var buf = wtr.GetBytes();
+            var rea = new PacketReader(buf);
+
+            Assert.AreEqual(a, rea[@"a/a"].Pull<int>());
+            Assert.AreEqual(a, rea[@"a\a"].Pull<int>());
+            Assert.AreEqual(a, rea["a.a", separator: new string[] { "." }].Pull<int>());
+            Assert.AreEqual(a, rea.Pull("a").Pull("a").Pull<int>());
+
+            Assert.AreEqual(null, rea["b/a", true]);
+            Assert.AreEqual(null, rea["a/b", true]);
+            Assert.AreEqual(null, rea.Pull("b", true));
+            Assert.AreEqual(null, rea.Pull("a").Pull("b", true));
+
+            try
+            {
+                var ta = rea["a/b"];
+                throw new ApplicationException();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.KeyNotFound) { }
+
+            try
+            {
+                var ta = rea.Pull("b").Pull("a");
+                throw new ApplicationException();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.KeyNotFound) { }
+        }
     }
 }
