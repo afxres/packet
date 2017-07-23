@@ -38,7 +38,7 @@ namespace Mikodev.Network
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             _len = buffer.Length;
-            _funs = funcs ?? PacketExtensions.PullFuncs();
+            _funs = funcs ?? PacketExtensions._PullDictionary;
         }
 
         internal bool _TryRead()
@@ -94,7 +94,7 @@ namespace Mikodev.Network
 
         internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
         {
-            var sts = path.Split(separator ?? PacketExtensions.GetSeparator(), StringSplitOptions.RemoveEmptyEntries);
+            var sts = path.Split(separator ?? PacketExtensions._Separators, StringSplitOptions.RemoveEmptyEntries);
             var rdr = this;
             foreach (var i in sts)
                 if ((rdr = rdr._Item(i, nothrow)) == null)
@@ -109,7 +109,7 @@ namespace Mikodev.Network
             var str = new MemoryStream(_buf, _off, _len);
             while (str.Position < str.Length)
             {
-                var buf = inf ? str.TryReadExt() : str.TryRead(Marshal.SizeOf(type));
+                var buf = inf ? str.TryReadExt() : str.TryRead(type.GetLength());
                 var tmp = fun.Invoke(buf);
                 yield return tmp;
             }

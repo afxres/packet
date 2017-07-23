@@ -99,6 +99,15 @@ namespace Mikodev.Test
                 ["b"] = "two",
             };
             var ans = PacketWriter.Serialize(exp);
+
+            Test();
+        }
+
+        static void Test()
+        {
+            var wtr = new PacketWriter().PushList("time", new List<DateTime>() { DateTime.Now });
+            var rea = new PacketReader(wtr.GetBytes());
+            var tim = rea["time"].PullList<DateTime>().ToList();
         }
     }
 

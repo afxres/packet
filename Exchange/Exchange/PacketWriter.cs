@@ -26,7 +26,7 @@ namespace Mikodev.Network
         /// <param name="funcs">类型转换工具词典 为空时使用默认词典</param>
         public PacketWriter(Dictionary<Type, PushFunc> funcs = null)
         {
-            _funs = funcs ?? PacketExtensions.PushFuncs();
+            _funs = funcs ?? PacketExtensions._PushDictionary;
         }
 
         internal PushFunc _Func(Type type, bool nothrow = false)
@@ -245,7 +245,7 @@ namespace Mikodev.Network
         /// </summary>
         public static PacketWriter Serialize(object obj, Dictionary<Type, PushFunc> funcs = null)
         {
-            return _Serialize(obj, funcs ?? PacketExtensions.PushFuncs(), 0);
+            return _Serialize(obj, funcs ?? PacketExtensions._PushDictionary, 0);
         }
     }
 }
