@@ -18,7 +18,7 @@
         /// <summary>
         /// 类型无效
         /// </summary>
-        InvalidType,
+        TypeInvalid,
 
         /// <summary>
         /// 长度溢出

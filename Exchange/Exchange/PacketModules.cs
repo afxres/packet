@@ -32,18 +32,18 @@ namespace Mikodev.Network
         /// Get value collection from current node
         /// </summary>
         [Obsolete]
-        public static IEnumerable<T> PullList<T>(this PacketReader reader, string key, bool withLengthInfo = false)
+        public static IEnumerable<T> PullList<T>(this PacketReader reader, string key)
         {
-            return reader._Item(key, false)._ListGeneric<T>(withLengthInfo);
+            return reader._Item(key, false)._ListGeneric<T>();
         }
 
         /// <summary>
         /// Get value collection from current node
         /// </summary>
         [Obsolete]
-        public static IEnumerable PullList(this PacketReader reader, string key, Type type, bool withLengthInfo = false)
+        public static IEnumerable PullList(this PacketReader reader, string key, Type type)
         {
-            return reader._Item(key, false)._List(type, withLengthInfo);
+            return reader._Item(key, false)._List(type);
         }
     }
 }

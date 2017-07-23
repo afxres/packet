@@ -30,7 +30,7 @@ namespace Mikodev.Network
             {
                 case PacketError.PathError:
                     return "Path not exists";
-                case PacketError.InvalidType:
+                case PacketError.TypeInvalid:
                     return "Invalid type";
                 case PacketError.Overflow:
                     return "Data length overflow";

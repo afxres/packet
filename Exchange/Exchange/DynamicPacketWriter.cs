@@ -27,7 +27,7 @@ namespace Mikodev.Network
             var key = binder.Name;
             var val = value.Value;
             if (wtr._ItemValue(key, val) == false)
-                throw new PacketException(PacketError.InvalidType);
+                throw new PacketException(PacketError.TypeInvalid);
             var nod = wtr._Item(key);
             var exp = Expression.Constant(val, typeof(object));
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));

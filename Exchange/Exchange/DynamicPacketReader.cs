@@ -1,7 +1,6 @@
 ﻿using System.Dynamic;
 using System.Linq.Expressions;
 using System.Reflection;
-using PullFunc = System.Func<byte[], int, int, object>;
 
 namespace Mikodev.Network
 {
@@ -28,23 +27,23 @@ namespace Mikodev.Network
             var rdr = (PacketReader)Value;
             var typ = binder.Type;
             var val = default(object);
-            var fun = default(PullFunc);
+            var fun = default(PacketConverter);
 
             object enumerator()
             {
                 var arg = typ.GetGenericArguments();
                 if (arg.Length != 1)
-                    throw new PacketException(PacketError.InvalidType);
+                    throw new PacketException(PacketError.TypeInvalid);
                 var met = typeof(PacketReader).GetTypeInfo().GetMethod(nameof(PacketReader._ListGeneric), BindingFlags.NonPublic | BindingFlags.Instance);
-                return met.MakeGenericMethod(arg[0]).Invoke(rdr, new object[] { false });
+                return met.MakeGenericMethod(arg[0]).Invoke(rdr, null);
             }
 
-            if ((fun = rdr._Func(typ, true)) != null)
-                val = fun.Invoke(rdr._buf, rdr._off, rdr._len);
-            else if (typ.IsGenericEnumerable())
+            if ((fun = rdr._Convert(typ, true)) != null)
+                val = fun.ObjectFunction.Invoke(rdr._buf, rdr._off, rdr._len);
+            else if (typ._IsGenericEnumerable())
                 val = enumerator();
             else
-                throw new PacketException(PacketError.InvalidType);
+                throw new PacketException(PacketError.TypeInvalid);
 
             var exp = Expression.Constant(val);
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));

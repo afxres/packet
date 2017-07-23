@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using PushFunc = System.Func<object, byte[]>;
+using static Mikodev.Network.PacketExtensions;
 using WriterDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
 
 namespace Mikodev.Network
@@ -18,26 +18,26 @@ namespace Mikodev.Network
     {
         internal const int _Level = 32;
         internal object _obj = null;
-        internal Dictionary<Type, PushFunc> _funs = null;
+        internal Dictionary<Type, PacketConverter> _con = null;
 
         /// <summary>
         /// 创建新的数据包生成器
         /// </summary>
-        /// <param name="funcs">类型转换工具词典 为空时使用默认词典</param>
-        public PacketWriter(Dictionary<Type, PushFunc> funcs = null)
+        /// <param name="converters">转换器词典 为空时使用默认词典</param>
+        public PacketWriter(Dictionary<Type, PacketConverter> converters = null)
         {
-            _funs = funcs ?? PacketExtensions._PushDictionary;
+            _con = converters ?? s_Converters;
         }
 
-        internal PushFunc _Func(Type type, bool nothrow = false)
+        internal PacketConverter _Convert(Type type, bool nothrow = false)
         {
-            if (_funs.TryGetValue(type, out var fun))
-                return fun;
-            if (type.IsValueType())
-                return (val) => PacketExtensions.GetBytes(val, type);
+            if (_con.TryGetValue(type, out var con))
+                return con;
+            if (_GetConverter(type, out var val))
+                return val;
             if (nothrow)
                 return null;
-            throw new PacketException(PacketError.InvalidType);
+            throw new PacketException(PacketError.TypeInvalid);
         }
 
         internal PacketWriter _Item(string key, PacketWriter another = null)
@@ -89,8 +89,8 @@ namespace Mikodev.Network
         {
             if (value == null)
                 return _ItemBuffer(key, null);
-            var fun = _Func(type);
-            var buf = fun.Invoke(value);
+            var fun = _Convert(type);
+            var buf = fun.BinaryFunction.Invoke(value);
             return _ItemBuffer(key, buf);
         }
 
@@ -106,8 +106,7 @@ namespace Mikodev.Network
         /// <typeparam name="T">对象类型</typeparam>
         /// <param name="key">标签</param>
         /// <param name="value">数据集合</param>
-        /// <param name="withLengthInfo">是否写入长度信息 (仅针对值类型)</param>
-        public PacketWriter PushList<T>(string key, IEnumerable<T> value, bool withLengthInfo = false) => PushList(key, typeof(T), value, withLengthInfo);
+        public PacketWriter PushList<T>(string key, IEnumerable<T> value) => PushList(key, typeof(T), value);
 
         /// <summary>
         /// 写入标签和对象集合
@@ -116,35 +115,38 @@ namespace Mikodev.Network
         /// <param name="key">标签</param>
         /// <param name="type">对象类型</param>
         /// <param name="value">数据集合</param>
-        /// <param name="withLengthInfo">是否写入长度信息 (仅针对值类型)</param>
-        public PacketWriter PushList(string key, Type type, IEnumerable value, bool withLengthInfo = false)
+        public PacketWriter PushList(string key, Type type, IEnumerable value)
         {
             if (value == null)
-                return _ItemBuffer(key, null);
-            var inf = withLengthInfo || type.IsValueType() == false;
-            var str = new MemoryStream();
-            var fun = _Func(type);
+                return _Item(key, null);
+            var con = _Convert(type);
+            var mst = new MemoryStream();
             foreach (var v in value)
             {
-                var val = fun.Invoke(v);
-                if (inf) str.WriteExt(val);
-                else str.Write(val);
+                var buf = con.BinaryFunction.Invoke(v);
+                if (con.Length is int len)
+                    if (buf.Length == len)
+                        mst._Write(buf);
+                    else
+                        throw new PacketException(PacketError.Overflow);
+                else mst._WriteExt(buf);
             }
-            return _ItemBuffer(key, str.ToArray());
+            mst.Dispose();
+            return _ItemBuffer(key, mst.ToArray());
         }
 
         internal bool _ItemValue(string key, object val)
         {
-            var fun = default(PushFunc);
+            var fun = default(PacketConverter);
             var typ = val?.GetType();
 
             if (val is null)
                 _ItemBuffer(key, null);
             else if (val is PacketWriter pkt)
                 _Item(key, pkt);
-            else if ((fun = _Func(typ, true)) != null)
-                _ItemBuffer(key, fun.Invoke(val));
-            else if (typ.IsEnumerable(out var inn))
+            else if ((fun = _Convert(typ, true)) != null)
+                _ItemBuffer(key, fun.BinaryFunction.Invoke(val));
+            else if (typ._IsEnumerable(out var inn))
                 PushList(key, inn, (IEnumerable)val);
             else
                 return false;
@@ -157,25 +159,25 @@ namespace Mikodev.Network
                 throw new PacketException(PacketError.RecursiveError);
             foreach (var i in dic)
             {
-                str.WriteExt(Encoding.UTF8.GetBytes(i.Key));
+                str._WriteExt(Encoding.UTF8.GetBytes(i.Key));
                 var val = i.Value;
                 if (val._obj is null)
                 {
-                    str.Write(0);
+                    str._Write(0);
                     continue;
                 }
                 if (val._obj is byte[] buf)
                 {
-                    str.WriteExt(buf);
+                    str._WriteExt(buf);
                     continue;
                 }
 
                 var pos = str.Position;
-                str.Write(0);
+                str._Write(0);
                 _Bytes(str, (WriterDictionary)val._obj, level + 1);
                 var end = str.Position;
                 str.Seek(pos, SeekOrigin.Begin);
-                str.Write((int)(end - pos - sizeof(int)));
+                str._Write((int)(end - pos - sizeof(int)));
                 str.Seek(end, SeekOrigin.Begin);
             }
         }
@@ -216,17 +218,17 @@ namespace Mikodev.Network
             return new DynamicPacketWriter(parameter, this);
         }
 
-        internal static PacketWriter _Serialize(object value, Dictionary<Type, PushFunc> funcs, int level)
+        internal static PacketWriter _Serialize(object value, Dictionary<Type, PacketConverter> converters, int level)
         {
             if (level > _Level)
                 throw new PacketException(PacketError.RecursiveError);
-            var wtr = new PacketWriter(funcs);
+            var wtr = new PacketWriter(converters);
 
             void _pushItem(string key, object val)
             {
                 if (val is IDictionary<string, object> == false && wtr._ItemValue(key, val) == true)
                     return;
-                var wri = _Serialize(val, funcs, level + 1);
+                var wri = _Serialize(val, converters, level + 1);
                 wtr._Item(key, wri);
             }
 
@@ -243,9 +245,9 @@ namespace Mikodev.Network
         /// 序列化对象或词典
         /// <para>Serialize <see cref="object"/> or <see cref="IDictionary"/></para>
         /// </summary>
-        public static PacketWriter Serialize(object obj, Dictionary<Type, PushFunc> funcs = null)
+        public static PacketWriter Serialize(object obj, Dictionary<Type, PacketConverter> converters = null)
         {
-            return _Serialize(obj, funcs ?? PacketExtensions._PushDictionary, 0);
+            return _Serialize(obj, converters ?? s_Converters, 0);
         }
     }
 }

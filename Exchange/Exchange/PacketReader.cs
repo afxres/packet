@@ -4,9 +4,8 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq.Expressions;
-using System.Runtime.InteropServices;
 using System.Text;
-using PullFunc = System.Func<byte[], int, int, object>;
+using static Mikodev.Network.PacketExtensions;
 
 namespace Mikodev.Network
 {
@@ -19,29 +18,29 @@ namespace Mikodev.Network
         internal int _len = 0;
         internal byte[] _buf = null;
         internal Dictionary<string, PacketReader> _dic = null;
-        internal Dictionary<Type, PullFunc> _funs = null;
+        internal Dictionary<Type, PacketConverter> _funs = null;
 
-        internal PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, PullFunc> funcs)
+        internal PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, PacketConverter> converters)
         {
             _buf = buffer;
             _off = offset;
             _len = length;
-            _funs = funcs;
+            _funs = converters;
         }
 
         /// <summary>
         /// 创建新的数据包解析器
         /// </summary>
         /// <param name="buffer">待读取的数据包</param>
-        /// <param name="funcs">类型转换工具词典 为空时使用默认词典</param>
-        public PacketReader(byte[] buffer, Dictionary<Type, PullFunc> funcs = null)
+        /// <param name="converters">类型转换工具词典 为空时使用默认词典</param>
+        public PacketReader(byte[] buffer, Dictionary<Type, PacketConverter> converters = null)
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             _len = buffer.Length;
-            _funs = funcs ?? PacketExtensions._PullDictionary;
+            _funs = converters ?? s_Converters;
         }
 
-        internal bool _TryRead()
+        internal bool _ReadBuffer()
         {
             if (_dic != null)
                 return true;
@@ -51,10 +50,10 @@ namespace Mikodev.Network
 
             while (str.Position < max)
             {
-                var kbf = str.TryReadExt();
+                var kbf = str._ReadExt();
                 if (kbf == null)
                     return false;
-                var buf = str.TryRead(sizeof(int));
+                var buf = str._Read(sizeof(int));
                 if (buf == null)
                     return false;
                 var len = BitConverter.ToInt32(buf, 0);
@@ -70,20 +69,20 @@ namespace Mikodev.Network
             return true;
         }
 
-        internal PullFunc _Func(Type type, bool nothrow)
+        internal PacketConverter _Convert(Type type, bool nothrow)
         {
             if (_funs.TryGetValue(type, out var fun))
                 return fun;
-            if (type.IsValueType())
-                return (buf, idx, len) => PacketExtensions.GetValue(buf, idx, len, type);
+            if (_GetConverter(type, out var val))
+                return val;
             if (nothrow)
                 return null;
-            throw new PacketException(PacketError.InvalidType);
+            throw new PacketException(PacketError.TypeInvalid);
         }
 
         internal PacketReader _Item(string key, bool nothrow)
         {
-            if (_TryRead() == false)
+            if (_ReadBuffer() == false)
                 throw new PacketException(PacketError.Overflow);
             if (_dic.TryGetValue(key, out var val))
                 return val;
@@ -94,7 +93,7 @@ namespace Mikodev.Network
 
         internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
         {
-            var sts = path.Split(separator ?? PacketExtensions._Separators, StringSplitOptions.RemoveEmptyEntries);
+            var sts = path.Split(separator ?? s_Separators, StringSplitOptions.RemoveEmptyEntries);
             var rdr = this;
             foreach (var i in sts)
                 if ((rdr = rdr._Item(i, nothrow)) == null)
@@ -102,30 +101,30 @@ namespace Mikodev.Network
             return rdr;
         }
 
-        internal IEnumerable _List(Type type, bool withLengthInfo)
+        internal IEnumerable _List(Type type)
         {
-            var inf = type.IsValueType() == false || withLengthInfo == true;
-            var fun = new Func<byte[], object>((val) => _Func(type, false).Invoke(val, 0, val.Length));
+            var con = _Convert(type, false);
             var str = new MemoryStream(_buf, _off, _len);
             while (str.Position < str.Length)
             {
-                var buf = inf ? str.TryReadExt() : str.TryRead(type.GetLength());
-                var tmp = fun.Invoke(buf);
+                var buf = con.Length == null ? str._ReadExt() : str._Read((int)con.Length);
+                var tmp = con.ObjectFunction.Invoke(buf, 0, buf.Length);
                 yield return tmp;
             }
+            str.Dispose();
             yield break;
         }
 
-        internal IEnumerable<T> _ListGeneric<T>(bool withLengthInfo)
+        internal IEnumerable<T> _ListGeneric<T>()
         {
-            foreach (var i in PullList(typeof(T)))
+            foreach (var i in _List(typeof(T)))
                 yield return (T)i;
             yield break;
         }
 
         internal IEnumerable<string> _Keys()
         {
-            if (_TryRead() == false)
+            if (_ReadBuffer() == false)
                 yield break;
             foreach (var i in _dic)
                 yield return i.Key;
@@ -135,7 +134,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Child node count
         /// </summary>
-        public int Count => _TryRead() ? _dic.Count : 0;
+        public int Count => _ReadBuffer() ? _dic.Count : 0;
 
         /// <summary>
         /// Child node keys
@@ -166,8 +165,8 @@ namespace Mikodev.Network
         /// <param name="type">目标类型</param>
         public object Pull(Type type)
         {
-            var fun = _Func(type, false);
-            var res = fun.Invoke(_buf, _off, _len);
+            var con = _Convert(type, false);
+            var res = con.ObjectFunction.Invoke(_buf, _off, _len);
             return res;
         }
 
@@ -181,23 +180,21 @@ namespace Mikodev.Network
         /// <summary>
         /// Get byte array of current node
         /// </summary>
-        public byte[] PullList() => _buf.Split(_off, _len);
+        public byte[] PullList() => _buf._Split(_off, _len);
 
         /// <summary>
         /// 将当前节点转换成目标类型数据集合
         /// <para>Convert current node to target type collection</para>
         /// </summary>
         /// <param name="type">目标类型</param>
-        /// <param name="withLengthInfo">数据是否包含长度信息</param>
-        public IEnumerable PullList(Type type, bool withLengthInfo = false) => _List(type, withLengthInfo);
+        public IEnumerable PullList(Type type) => _List(type);
 
         /// <summary>
         /// 将当前节点转换成目标类型数据集合
         /// <para>Convert current node to target type collection</para>
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
-        /// <param name="withLengthInfo">数据是否包含长度信息 (仅针对值类型)</param>
-        public IEnumerable<T> PullList<T>(bool withLengthInfo = false) => _ListGeneric<T>(withLengthInfo);
+        public IEnumerable<T> PullList<T>() => _ListGeneric<T>();
 
         /// <summary>
         /// 显示字节长度或节点个数

@@ -1,18 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
-using System.Text;
-using PullFunc = System.Func<byte[], int, int, object>;
-using PushFunc = System.Func<object, byte[]>;
 
 namespace Mikodev.Network
 {
     public static partial class PacketExtensions
     {
-        internal static byte[] GetBytes<T>(this T str) where T : struct => GetBytes(str, typeof(T));
+        internal static byte[] _GetBytes<T>(this T str) where T : struct => _GetBytes(str, typeof(T));
 
-        internal static byte[] GetBytes(this object str, Type type)
+        internal static byte[] _GetBytes(this object str, Type type)
         {
             var len = Marshal.SizeOf(type);
             var buf = new byte[len];
@@ -31,9 +27,9 @@ namespace Mikodev.Network
             }
         }
 
-        internal static T GetValue<T>(this byte[] buffer, int offset, int length) => (T)GetValue(buffer, offset, length, typeof(T));
+        internal static T _GetValue<T>(this byte[] buffer, int offset, int length) => (T)_GetValue(buffer, offset, length, typeof(T));
 
-        internal static object GetValue(this byte[] buffer, int offset, int length, Type type)
+        internal static object _GetValue(this byte[] buffer, int offset, int length, Type type)
         {
             var len = Marshal.SizeOf(type);
             if (len > length)
@@ -52,37 +48,19 @@ namespace Mikodev.Network
             }
         }
 
-        internal static byte[] EndPointToBytes(IPEndPoint value)
+        internal static byte[] _EndPointToBinary(IPEndPoint value)
         {
             var add = value.Address.GetAddressBytes();
-            var pot = ((ushort)value.Port).GetBytes();
-            return add.Merge(pot);
+            var pot = ((ushort)value.Port)._GetBytes();
+            return add._Merge(pot);
         }
 
-        internal static IPEndPoint BytesToEndPoint(byte[] buffer, int offset, int length)
+        internal static IPEndPoint _BinaryToEndPoint(byte[] buffer, int offset, int length)
         {
             var len = sizeof(ushort);
-            var add = new IPAddress(buffer.Split(offset, length - len));
-            var pot = buffer.GetValue<short>(offset + length - len, len);
+            var add = new IPAddress(buffer._Split(offset, length - len));
+            var pot = buffer._GetValue<short>(offset + length - len, len);
             return new IPEndPoint(add, pot);
         }
-
-        internal static readonly Dictionary<Type, PushFunc> _PushDictionary = new Dictionary<Type, PushFunc>
-        {
-            [typeof(byte[])] = obj => (byte[])obj,
-            [typeof(string)] = obj => Encoding.UTF8.GetBytes((string)obj),
-            [typeof(DateTime)] = obj => ((DateTime)obj).ToBinary().GetBytes(),
-            [typeof(IPAddress)] = obj => ((IPAddress)obj).GetAddressBytes(),
-            [typeof(IPEndPoint)] = obj => EndPointToBytes((IPEndPoint)obj),
-        };
-
-        internal static readonly Dictionary<Type, PullFunc> _PullDictionary = new Dictionary<Type, PullFunc>
-        {
-            [typeof(byte[])] = Split,
-            [typeof(string)] = Encoding.UTF8.GetString,
-            [typeof(DateTime)] = (buf, off, len) => DateTime.FromBinary(buf.GetValue<long>(off, len)),
-            [typeof(IPAddress)] = (buf, off, len) => new IPAddress(buf.Split(off, len)),
-            [typeof(IPEndPoint)] = BytesToEndPoint,
-        };
     }
 }
