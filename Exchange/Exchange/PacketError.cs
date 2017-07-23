@@ -11,9 +11,9 @@
         None,
 
         /// <summary>
-        /// 键不存在
+        /// 路径错误
         /// </summary>
-        KeyNotFound,
+        PathError,
 
         /// <summary>
         /// 类型无效
@@ -21,7 +21,7 @@
         InvalidType,
 
         /// <summary>
-        /// 数据长度溢出
+        /// 长度溢出
         /// </summary>
         Overflow,
 

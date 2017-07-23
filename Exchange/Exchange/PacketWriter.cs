@@ -60,8 +60,8 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 写入标签和另一个实例的数据
-        /// Write key and another instance
+        /// 写入标签和另一个实例
+        /// <para>Write key and another instance</para>
         /// </summary>
         public PacketWriter Push(string key, PacketWriter other)
         {
@@ -71,7 +71,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 写入标签和数据
-        /// Write key and data
+        /// <para>Write key and data</para>
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
         /// <param name="key">字符串标签</param>
@@ -80,7 +80,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 写入标签和数据
-        /// Write key and data
+        /// <para>Write key and data</para>
         /// </summary>
         /// <param name="key">字符串标签</param>
         /// <param name="type">目标类型</param>
@@ -101,7 +101,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 写入标签和对象集合
-        /// Write key and collections
+        /// <para>Write key and collections</para>
         /// </summary>
         /// <typeparam name="T">对象类型</typeparam>
         /// <param name="key">标签</param>
@@ -111,7 +111,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 写入标签和对象集合
-        /// Write key and collections
+        /// <para>Write key and collections</para>
         /// </summary>
         /// <param name="key">标签</param>
         /// <param name="type">对象类型</param>
@@ -182,7 +182,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 生成数据包
-        /// Generate a new packet of byte array form
+        /// <para>Get binary packet</para>
         /// </summary>
         public byte[] GetBytes()
         {
@@ -195,7 +195,8 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 在字符串中输出键值和元素
+        /// 显示字节长度或节点个数
+        /// <para>Show byte count or node count</para>
         /// </summary>
         public override string ToString()
         {
@@ -210,36 +211,41 @@ namespace Mikodev.Network
             return stb.ToString();
         }
 
-        /// <summary>
-        /// 使用现有值象创建新对象 忽略所有无法序列化的对象
-        /// </summary>
-        public static PacketWriter Serialize(object obj, Dictionary<Type, PushFunc> funcs = null)
-        {
-            PacketWriter _push(object value, int level)
-            {
-                if (level > _Level)
-                    throw new PacketException(PacketError.RecursiveError);
-                var wtr = new PacketWriter(funcs);
-                var vtp = value.GetType();
-                foreach (var p in vtp.GetProperties(BindingFlags.Instance | BindingFlags.Public))
-                {
-                    var key = p.Name;
-                    var val = p.GetValue(value);
-
-                    if (wtr._ItemValue(key, val) == true)
-                        continue;
-
-                    var wri = _push(val, level + 1);
-                    wtr._Item(key, wri);
-                }
-                return wtr;
-            }
-            return _push(obj, 0);
-        }
-
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
         {
             return new DynamicPacketWriter(parameter, this);
+        }
+
+        internal static PacketWriter _Serialize(object value, Dictionary<Type, PushFunc> funcs, int level)
+        {
+            if (level > _Level)
+                throw new PacketException(PacketError.RecursiveError);
+            var wtr = new PacketWriter(funcs);
+
+            void _pushItem(string key, object val)
+            {
+                if (val is IDictionary<string, object> == false && wtr._ItemValue(key, val) == true)
+                    return;
+                var wri = _Serialize(val, funcs, level + 1);
+                wtr._Item(key, wri);
+            }
+
+            if (value is IDictionary<string, object> dic)
+                foreach (var p in dic)
+                    _pushItem(p.Key, p.Value);
+            else
+                foreach (var p in value.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                    _pushItem(p.Name, p.GetValue(value));
+            return wtr;
+        }
+
+        /// <summary>
+        /// 序列化对象或词典
+        /// <para>Serialize <see cref="object"/> or <see cref="IDictionary"/></para>
+        /// </summary>
+        public static PacketWriter Serialize(object obj, Dictionary<Type, PushFunc> funcs = null)
+        {
+            return _Serialize(obj, funcs ?? PacketExtensions.PushFuncs(), 0);
         }
     }
 }

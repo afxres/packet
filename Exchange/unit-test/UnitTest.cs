@@ -168,14 +168,39 @@ namespace Mikodev.UnitTest
                 var ta = rea["a/b"];
                 throw new ApplicationException();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.KeyNotFound) { }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError) { }
 
             try
             {
                 var ta = rea.Pull("b").Pull("a");
                 throw new ApplicationException();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.KeyNotFound) { }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError) { }
+        }
+
+        [TestMethod]
+        public void Dictionary()
+        {
+            var a = 1;
+            var b = "some";
+            var dic = new Dictionary<string, object>
+            {
+                ["a"] = a,
+                ["b"] = b,
+                ["c"] = new Dictionary<string, object>()
+                {
+                    ["a"] = a,
+                    ["b"] = b,
+                }
+            };
+            var wtr = PacketWriter.Serialize(dic);
+            var buf = wtr.GetBytes();
+            var rea = new PacketReader(buf);
+
+            Assert.AreEqual(a, rea["a"].Pull<int>());
+            Assert.AreEqual(b, rea["b"].Pull<string>());
+            Assert.AreEqual(a, rea["c/a"].Pull<int>());
+            Assert.AreEqual(b, rea["c/b"].Pull<string>());
         }
     }
 }

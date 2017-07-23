@@ -89,7 +89,7 @@ namespace Mikodev.Network
                 return val;
             if (nothrow)
                 return null;
-            throw new PacketException(PacketError.KeyNotFound);
+            throw new PacketException(PacketError.PathError);
         }
 
         internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
@@ -144,7 +144,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 使用路径访问元素
-        /// Get node by path
+        /// <para>Get node by path</para>
         /// </summary>
         /// <param name="path">元素路径</param>
         /// <param name="nothrow">失败时返回 null (而不是抛出异常)</param>
@@ -153,7 +153,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 根据键获取子节点
-        /// Get node by key
+        /// <para>Get node by key</para>
         /// </summary>
         /// <param name="key">字符串标签</param>
         /// <param name="nothrow">失败时返回 null (而不是抛出异常)</param>
@@ -161,7 +161,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 将当前节点转换成目标类型
-        /// Convert current node to target type
+        /// <para>Convert current node to target type</para>
         /// </summary>
         /// <param name="type">目标类型</param>
         public object Pull(Type type)
@@ -173,7 +173,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 将当前节点转换成目标类型
-        /// Convert current node to target type
+        /// <para>Convert current node to target type</para>
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
         public T Pull<T>() => (T)Pull(typeof(T));
@@ -185,7 +185,7 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 将当前节点转换成目标类型数据集合
-        /// Convert current node to collection of target type
+        /// <para>Convert current node to target type collection</para>
         /// </summary>
         /// <param name="type">目标类型</param>
         /// <param name="withLengthInfo">数据是否包含长度信息</param>
@@ -193,14 +193,15 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 将当前节点转换成目标类型数据集合
-        /// Convert current node to collection of target type
+        /// <para>Convert current node to target type collection</para>
         /// </summary>
         /// <typeparam name="T">目标类型</typeparam>
         /// <param name="withLengthInfo">数据是否包含长度信息 (仅针对值类型)</param>
         public IEnumerable<T> PullList<T>(bool withLengthInfo = false) => _ListGeneric<T>(withLengthInfo);
 
         /// <summary>
-        /// 在字符串中输出键值和元素个数
+        /// 显示字节长度或节点个数
+        /// <para>Show byte count or node count</para>
         /// </summary>
         public override string ToString()
         {

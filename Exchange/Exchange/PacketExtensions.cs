@@ -15,19 +15,10 @@ namespace Mikodev.Network
     /// </summary>
     public static partial class PacketExtensions
     {
-        /// <summary>
-        /// 是否为值类型
-        /// </summary>
         internal static bool IsValueType(this Type type) => type.GetTypeInfo().IsValueType;
 
-        /// <summary>
-        /// 是否为 IEnumerable&lt;T&gt; 类型
-        /// </summary>
         internal static bool IsGenericEnumerable(this Type type) => type.GetTypeInfo().IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>);
 
-        /// <summary>
-        /// 是否为 IEnumerable 类型
-        /// </summary>
         internal static bool IsEnumerable(this Type typ, out Type inn)
         {
             foreach (var i in typ.GetTypeInfo().GetInterfaces())
@@ -45,9 +36,6 @@ namespace Mikodev.Network
             return false;
         }
 
-        /// <summary>
-        /// 合并多个字节数组
-        /// </summary>
         internal static byte[] Merge(this byte[] buffer, params byte[][] values)
         {
             var str = new MemoryStream();
@@ -57,12 +45,8 @@ namespace Mikodev.Network
             return str.ToArray();
         }
 
-        /// <summary>
-        /// 分割出字节数组中的特定部分
-        /// </summary>
         internal static byte[] Split(this byte[] buffer, int offset, int length)
         {
-            // 防止内存溢出
             if (length > buffer.Length)
                 throw new PacketException(PacketError.Overflow);
             var buf = new byte[length];
@@ -70,19 +54,10 @@ namespace Mikodev.Network
             return buf;
         }
 
-        /// <summary>
-        /// 将字节数组写入流中
-        /// </summary>
         internal static void Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
 
-        /// <summary>
-        /// 先将结构体转换成字节数组 然后写入流中
-        /// </summary>
         internal static void Write<T>(this Stream stream, T value) where T : struct => stream.Write(value.GetBytes());
 
-        /// <summary>
-        /// 将字节数组写入流中 并写入长度信息
-        /// </summary>
         internal static void WriteExt(this Stream stream, byte[] buffer)
         {
             var len = BitConverter.GetBytes(buffer.Length);
@@ -109,14 +84,8 @@ namespace Mikodev.Network
             return res;
         }
 
-        /// <summary>
-        /// 使用非托管内存将对象转化为字节数组
-        /// </summary>
         internal static byte[] GetBytes<T>(this T str) where T : struct => GetBytes(str, typeof(T));
 
-        /// <summary>
-        /// 使用非托管内存将对象转化为字节数组 (仅针对结构体)
-        /// </summary>
         internal static byte[] GetBytes(this object str, Type type)
         {
             var len = Marshal.SizeOf(type);
@@ -136,14 +105,8 @@ namespace Mikodev.Network
             }
         }
 
-        /// <summary>
-        /// 使用非托管内存将字节数组转换成结构体
-        /// </summary>
         internal static T GetValue<T>(this byte[] buffer, int offset, int length) => (T)GetValue(buffer, offset, length, typeof(T));
 
-        /// <summary>
-        /// 使用非托管内存将字节数组转换成结构体
-        /// </summary>
         internal static object GetValue(this byte[] buffer, int offset, int length, Type type)
         {
             var len = Marshal.SizeOf(type);
@@ -165,41 +128,41 @@ namespace Mikodev.Network
 
         /// <summary>
         /// 默认的对象写入转换工具词典
-        /// Default type converters (object -> byte[])
+        /// <para>Default type converters (object -> byte array)</para>
         /// </summary>
         public static Dictionary<Type, PushFunc> PushFuncs()
         {
             var dic = new Dictionary<Type, PushFunc>
             {
-                { typeof(byte[]), obj => (byte[])obj },
-                { typeof(string), obj => Encoding.UTF8.GetBytes((string)obj) },
-                { typeof(DateTime), obj => GetBytes((DateTime)obj) },
-                { typeof(IPAddress), obj => GetBytes((IPAddress)obj) },
-                { typeof(IPEndPoint), obj => GetBytes((IPEndPoint)obj) }
+                [typeof(byte[])] = obj => (byte[])obj,
+                [typeof(string)] = obj => Encoding.UTF8.GetBytes((string)obj),
+                [typeof(DateTime)] = obj => GetBytes((DateTime)obj),
+                [typeof(IPAddress)] = obj => GetBytes((IPAddress)obj),
+                [typeof(IPEndPoint)] = obj => GetBytes((IPEndPoint)obj),
             };
             return dic;
         }
 
         /// <summary>
         /// 默认的对象读取转换工具词典
-        /// Default type converters (byte[] -> object)
+        /// <para>Default type converters (byte array -> object)</para>
         /// </summary>
         public static Dictionary<Type, PullFunc> PullFuncs()
         {
             var dic = new Dictionary<Type, PullFunc>
             {
-                { typeof(byte[]), Split },
-                { typeof(string), Encoding.UTF8.GetString },
-                { typeof(DateTime), (a, b, c) => GetDateTime(a, b, c) },
-                { typeof(IPAddress), GetIPAddress },
-                { typeof(IPEndPoint), GetIPEndPoint }
+                [typeof(byte[])] = Split,
+                [typeof(string)] = Encoding.UTF8.GetString,
+                [typeof(DateTime)] = (a, b, c) => GetDateTime(a, b, c),
+                [typeof(IPAddress)] = GetIPAddress,
+                [typeof(IPEndPoint)] = GetIPEndPoint,
             };
             return dic;
         }
 
         /// <summary>
         /// 默认的路径分隔符
-        /// Default path separators
+        /// <para>Default path separators</para>
         /// </summary>
         public static string[] GetSeparator() => new string[] { @"\", "/" };
 

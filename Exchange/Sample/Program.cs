@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -88,7 +89,16 @@ namespace Mikodev.Test
 
             foreach (var k in dse["data"].Keys)
                 Console.WriteLine(k);
-            return;
+
+            var exp = new ExpandoObject() as dynamic;
+            exp.a = 1;
+            exp.b = "two";
+            exp.c = new Dictionary<string, object>()
+            {
+                ["a"] = 1,
+                ["b"] = "two",
+            };
+            var ans = PacketWriter.Serialize(exp);
         }
     }
 

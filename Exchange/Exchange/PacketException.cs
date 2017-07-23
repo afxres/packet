@@ -28,16 +28,16 @@ namespace Mikodev.Network
         {
             switch (code)
             {
-                case PacketError.KeyNotFound:
-                    return "键不存在";
+                case PacketError.PathError:
+                    return "Path not exists";
                 case PacketError.InvalidType:
-                    return "类型无效";
+                    return "Invalid type";
                 case PacketError.Overflow:
-                    return "数据长度溢出";
+                    return "Data length overflow";
                 case PacketError.RecursiveError:
-                    return "递归深度超过限制";
+                    return "Recursion limit has been reached";
                 default:
-                    return "未提供错误信息";
+                    return "Unknown error";
             }
         }
     }
