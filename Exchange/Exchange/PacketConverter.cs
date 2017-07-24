@@ -8,36 +8,36 @@ namespace Mikodev.Network
     /// </summary>
     public class PacketConverter
     {
-        private BinaryFunction _push = null;
-        private ObjectFunction _pull = null;
-        private int? _size = null;
+        private BinaryFunction _bin = null;
+        private ObjectFunction _obj = null;
+        private int? _len = null;
 
         /// <summary>
         /// object -> byte[]
         /// </summary>
-        public BinaryFunction BinaryFunction => _push;
+        public BinaryFunction ToBinary => _bin;
 
         /// <summary>
         /// byte[] -> object
         /// </summary>
-        public ObjectFunction ObjectFunction => _pull;
+        public ObjectFunction ToObject => _obj;
 
         /// <summary>
         /// Length of current type, null if not constant
         /// </summary>
-        public int? Length => _size;
+        public int? Length => _len;
 
         /// <summary>
         /// Initialize new converter
         /// </summary>
-        /// <param name="binaryFunction">object -> byte[]</param>
-        /// <param name="objectFunction">byte[] -> object</param>
+        /// <param name="bin">object -> byte[]</param>
+        /// <param name="obj">byte[] -> object</param>
         /// <param name="length"></param>
-        public PacketConverter(BinaryFunction binaryFunction, ObjectFunction objectFunction, int? length)
+        public PacketConverter(BinaryFunction bin, ObjectFunction obj, int? length)
         {
-            _push = binaryFunction;
-            _pull = objectFunction;
-            _size = length;
+            _bin = bin;
+            _obj = obj;
+            _len = length;
         }
     }
 }

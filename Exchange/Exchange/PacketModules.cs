@@ -5,8 +5,7 @@ using System.Collections.Generic;
 namespace Mikodev.Network
 {
     /// <summary>
-    /// 扩展方法
-    /// Extend functions
+    /// Obsolete functions
     /// </summary>
     public static class PacketModules
     {
@@ -34,7 +33,7 @@ namespace Mikodev.Network
         [Obsolete]
         public static IEnumerable<T> PullList<T>(this PacketReader reader, string key)
         {
-            return reader._Item(key, false)._ListGeneric<T>();
+            return reader._Item(key, false)._ListGen<T>();
         }
 
         /// <summary>

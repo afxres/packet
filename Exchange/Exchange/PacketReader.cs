@@ -10,7 +10,7 @@ using static Mikodev.Network.PacketExtensions;
 namespace Mikodev.Network
 {
     /// <summary>
-    /// 数据包解析器
+    /// Binary packet reader
     /// </summary>
     public partial class PacketReader : IDynamicMetaObjectProvider
     {
@@ -18,29 +18,29 @@ namespace Mikodev.Network
         internal int _len = 0;
         internal byte[] _buf = null;
         internal Dictionary<string, PacketReader> _dic = null;
-        internal Dictionary<Type, PacketConverter> _funs = null;
+        internal Dictionary<Type, PacketConverter> _con = null;
 
         internal PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, PacketConverter> converters)
         {
             _buf = buffer;
             _off = offset;
             _len = length;
-            _funs = converters;
+            _con = converters;
         }
 
         /// <summary>
-        /// 创建新的数据包解析器
+        /// Create new reader
         /// </summary>
-        /// <param name="buffer">待读取的数据包</param>
-        /// <param name="converters">类型转换工具词典 为空时使用默认词典</param>
+        /// <param name="buffer">Binary data packet</param>
+        /// <param name="converters">Binary converters, use default converters if null</param>
         public PacketReader(byte[] buffer, Dictionary<Type, PacketConverter> converters = null)
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             _len = buffer.Length;
-            _funs = converters ?? s_Converters;
+            _con = converters ?? s_Converters;
         }
 
-        internal bool _ReadBuffer()
+        internal bool _Buffer()
         {
             if (_dic != null)
                 return true;
@@ -62,16 +62,16 @@ namespace Mikodev.Network
                 var key = Encoding.UTF8.GetString(kbf);
                 var off = (int)str.Position;
                 str.Seek(len, SeekOrigin.Current);
-                dic.Add(key, new PacketReader(_buf, off, len, _funs));
+                dic.Add(key, new PacketReader(_buf, off, len, _con));
             }
 
             _dic = dic;
             return true;
         }
 
-        internal PacketConverter _Convert(Type type, bool nothrow)
+        internal PacketConverter _Find(Type type, bool nothrow)
         {
-            if (_funs.TryGetValue(type, out var fun))
+            if (_con.TryGetValue(type, out var fun))
                 return fun;
             if (_GetConverter(type, out var val))
                 return val;
@@ -82,7 +82,7 @@ namespace Mikodev.Network
 
         internal PacketReader _Item(string key, bool nothrow)
         {
-            if (_ReadBuffer() == false)
+            if (_Buffer() == false)
                 throw new PacketException(PacketError.Overflow);
             if (_dic.TryGetValue(key, out var val))
                 return val;
@@ -103,19 +103,19 @@ namespace Mikodev.Network
 
         internal IEnumerable _List(Type type)
         {
-            var con = _Convert(type, false);
+            var con = _Find(type, false);
             var str = new MemoryStream(_buf, _off, _len);
             while (str.Position < str.Length)
             {
                 var buf = con.Length == null ? str._ReadExt() : str._Read((int)con.Length);
-                var tmp = con.ObjectFunction.Invoke(buf, 0, buf.Length);
+                var tmp = con.ToObject.Invoke(buf, 0, buf.Length);
                 yield return tmp;
             }
             str.Dispose();
             yield break;
         }
 
-        internal IEnumerable<T> _ListGeneric<T>()
+        internal IEnumerable<T> _ListGen<T>()
         {
             foreach (var i in _List(typeof(T)))
                 yield return (T)i;
@@ -124,7 +124,7 @@ namespace Mikodev.Network
 
         internal IEnumerable<string> _Keys()
         {
-            if (_ReadBuffer() == false)
+            if (_Buffer() == false)
                 yield break;
             foreach (var i in _dic)
                 yield return i.Key;
@@ -134,7 +134,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Child node count
         /// </summary>
-        public int Count => _ReadBuffer() ? _dic.Count : 0;
+        public int Count => _Buffer() ? _dic.Count : 0;
 
         /// <summary>
         /// Child node keys
@@ -145,28 +145,28 @@ namespace Mikodev.Network
         /// 使用路径访问元素
         /// <para>Get node by path</para>
         /// </summary>
-        /// <param name="path">元素路径</param>
-        /// <param name="nothrow">失败时返回 null (而不是抛出异常)</param>
-        /// <param name="separator">路径分隔符 (为 null 时使用默认)</param>
+        /// <param name="path">Node path</param>
+        /// <param name="nothrow">return null if error</param>
+        /// <param name="separator">Path separators, use default separators if null</param>
         public PacketReader this[string path, bool nothrow = false, string[] separator = null] => _ItemPath(path, nothrow, separator);
 
         /// <summary>
         /// 根据键获取子节点
         /// <para>Get node by key</para>
         /// </summary>
-        /// <param name="key">字符串标签</param>
-        /// <param name="nothrow">失败时返回 null (而不是抛出异常)</param>
+        /// <param name="key">Node tag</param>
+        /// <param name="nothrow">return null if error</param>
         public PacketReader Pull(string key, bool nothrow = false) => _Item(key, nothrow);
 
         /// <summary>
         /// 将当前节点转换成目标类型
         /// <para>Convert current node to target type</para>
         /// </summary>
-        /// <param name="type">目标类型</param>
+        /// <param name="type">Target type</param>
         public object Pull(Type type)
         {
-            var con = _Convert(type, false);
-            var res = con.ObjectFunction.Invoke(_buf, _off, _len);
+            var con = _Find(type, false);
+            var res = con.ToObject.Invoke(_buf, _off, _len);
             return res;
         }
 
@@ -186,15 +186,15 @@ namespace Mikodev.Network
         /// 将当前节点转换成目标类型数据集合
         /// <para>Convert current node to target type collection</para>
         /// </summary>
-        /// <param name="type">目标类型</param>
+        /// <param name="type">Target type<</param>
         public IEnumerable PullList(Type type) => _List(type);
 
         /// <summary>
         /// 将当前节点转换成目标类型数据集合
         /// <para>Convert current node to target type collection</para>
         /// </summary>
-        /// <typeparam name="T">目标类型</typeparam>
-        public IEnumerable<T> PullList<T>() => _ListGeneric<T>();
+        /// <typeparam name="T">Target type<</typeparam>
+        public IEnumerable<T> PullList<T>() => _ListGen<T>();
 
         /// <summary>
         /// 显示字节长度或节点个数

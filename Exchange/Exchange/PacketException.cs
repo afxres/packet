@@ -3,24 +3,24 @@
 namespace Mikodev.Network
 {
     /// <summary>
-    /// 数据处理过程中, 因数据长度不匹配, 数据无效等情况引发的异常.
+    /// Exception cause by overflow, converter not found, etc
     /// </summary>
     public class PacketException : Exception
     {
         internal PacketError _code = PacketError.None;
 
         /// <summary>
-        /// 错误代码
+        /// Error code
         /// </summary>
         public PacketError ErrorCode => _code;
 
         /// <summary>
-        /// 创建异常对象 并设置异常信息
+        /// Create new instance with error code
         /// </summary>
         public PacketException(PacketError code) : base(_Message(code)) => _code = code;
 
         /// <summary>
-        /// 创建异常对象 并设置异常信息和内部异常
+        /// Create new instance with error code and inner exception
         /// </summary>
         public PacketException(PacketError code, Exception inner) : base(_Message(code), inner) => _code = code;
 

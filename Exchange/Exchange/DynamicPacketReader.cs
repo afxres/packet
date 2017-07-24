@@ -6,10 +6,13 @@ namespace Mikodev.Network
 {
     internal class DynamicPacketReader : DynamicMetaObject
     {
+        internal static readonly MethodInfo s_Method = typeof(PacketReader).GetTypeInfo()
+            .GetMethod(nameof(PacketReader._ListGen), BindingFlags.NonPublic | BindingFlags.Instance);
+
         internal DynamicPacketReader(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 
         /// <summary>
-        /// 动态获取元素 若元素不存在则抛出异常
+        /// Get node by key, throw if not found
         /// </summary>
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
@@ -20,28 +23,19 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 动态转换元素 若无合适的转换方法则抛出异常
+        /// Cast node to target type, throw if type invalid
         /// </summary>
         public override DynamicMetaObject BindConvert(ConvertBinder binder)
         {
             var rdr = (PacketReader)Value;
             var typ = binder.Type;
             var val = default(object);
-            var fun = default(PacketConverter);
+            var con = default(PacketConverter);
 
-            object enumerator()
-            {
-                var arg = typ.GetGenericArguments();
-                if (arg.Length != 1)
-                    throw new PacketException(PacketError.TypeInvalid);
-                var met = typeof(PacketReader).GetTypeInfo().GetMethod(nameof(PacketReader._ListGeneric), BindingFlags.NonPublic | BindingFlags.Instance);
-                return met.MakeGenericMethod(arg[0]).Invoke(rdr, null);
-            }
-
-            if ((fun = rdr._Convert(typ, true)) != null)
-                val = fun.ObjectFunction.Invoke(rdr._buf, rdr._off, rdr._len);
-            else if (typ._IsGenericEnumerable())
-                val = enumerator();
+            if ((con = rdr._Find(typ, true)) != null)
+                val = con.ToObject.Invoke(rdr._buf, rdr._off, rdr._len);
+            else if (typ._IsGenericEnumerable(out var inn))
+                val = s_Method.MakeGenericMethod(inn).Invoke(rdr, null);
             else
                 throw new PacketException(PacketError.TypeInvalid);
 

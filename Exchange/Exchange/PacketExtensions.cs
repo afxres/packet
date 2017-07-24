@@ -9,27 +9,29 @@ using System.Text;
 namespace Mikodev.Network
 {
     /// <summary>
-    /// 扩展方法模块
+    /// Extend functions
     /// </summary>
     public static partial class PacketExtensions
     {
-        internal static bool _IsValueType(this Type type) => type.GetTypeInfo().IsValueType;
-
-        internal static bool _IsGenericEnumerable(this Type type) => type.GetTypeInfo().IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>);
+        internal static bool _IsGenericEnumerable(this Type type, out Type inner)
+        {
+            if (type.GetTypeInfo().IsGenericType == false || type.GetGenericTypeDefinition() != typeof(IEnumerable<>))
+                goto fail;
+            var som = type.GetGenericArguments();
+            if (som.Length != 1)
+                goto fail;
+            inner = som[0];
+            return true;
+            fail:
+            inner = null;
+            return false;
+        }
 
         internal static bool _IsEnumerable(this Type typ, out Type inn)
         {
             foreach (var i in typ.GetTypeInfo().GetInterfaces())
-            {
-                if (i._IsGenericEnumerable())
-                {
-                    var som = i.GetGenericArguments();
-                    if (som.Length != 1)
-                        continue;
-                    inn = som[0];
+                if (i._IsGenericEnumerable(out inn))
                     return true;
-                }
-            }
             inn = null;
             return false;
         }
@@ -52,17 +54,6 @@ namespace Mikodev.Network
             return buf;
         }
 
-        internal static void _Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
-
-        internal static void _Write<T>(this Stream stream, T value) where T : struct => stream._Write(value._GetBytes());
-
-        internal static void _WriteExt(this Stream stream, byte[] buffer)
-        {
-            var len = BitConverter.GetBytes(buffer.Length);
-            stream.Write(len, 0, len.Length);
-            stream.Write(buffer, 0, buffer.Length);
-        }
-
         internal static byte[] _Read(this Stream stream, int length)
         {
             if (length < 0 || stream.Position + length > stream.Length)
@@ -82,9 +73,20 @@ namespace Mikodev.Network
             return res;
         }
 
+        internal static void _Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
+
+        internal static void _Write<T>(this Stream stream, T value) where T : struct => stream._Write(value._GetBytes());
+
+        internal static void _WriteExt(this Stream stream, byte[] buffer)
+        {
+            var len = BitConverter.GetBytes(buffer.Length);
+            stream._Write(len);
+            stream._Write(buffer);
+        }
+
         internal static bool _GetConverter(Type type, out PacketConverter value)
         {
-            if (type._IsValueType() == false || type.GetTypeInfo().IsGenericType == true)
+            if (type.GetTypeInfo().IsValueType == false || type.GetTypeInfo().IsGenericType == true)
             {
                 value = null;
                 return false;

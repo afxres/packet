@@ -1,32 +1,32 @@
 ﻿namespace Mikodev.Network
 {
     /// <summary>
-    /// 错误代码
+    /// Error code
     /// </summary>
     public enum PacketError
     {
         /// <summary>
-        /// 默认值
+        /// Default
         /// </summary>
         None,
 
         /// <summary>
-        /// 路径错误
+        /// Path error
         /// </summary>
         PathError,
 
         /// <summary>
-        /// 类型无效
+        /// Type invalid
         /// </summary>
         TypeInvalid,
 
         /// <summary>
-        /// 长度溢出
+        /// Data length overflow"
         /// </summary>
         Overflow,
 
         /// <summary>
-        /// 递归深度超过限制
+        /// Recursion limit has been reached
         /// </summary>
         RecursiveError,
     }

@@ -8,7 +8,7 @@ namespace Mikodev.Network
         internal DynamicPacketWriter(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 
         /// <summary>
-        /// 动态创建节点
+        /// Create node
         /// </summary>
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
@@ -19,14 +19,14 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 动态设置元素
+        /// Set node, throw if type invalid
         /// </summary>
         public override DynamicMetaObject BindSetMember(SetMemberBinder binder, DynamicMetaObject value)
         {
             var wtr = (PacketWriter)Value;
             var key = binder.Name;
             var val = value.Value;
-            if (wtr._ItemValue(key, val) == false)
+            if (wtr._ItemVal(key, val) == false)
                 throw new PacketException(PacketError.TypeInvalid);
             var nod = wtr._Item(key);
             var exp = Expression.Constant(val, typeof(object));

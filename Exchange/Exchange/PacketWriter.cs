@@ -12,7 +12,7 @@ using WriterDictionary = System.Collections.Generic.Dictionary<string, Mikodev.N
 namespace Mikodev.Network
 {
     /// <summary>
-    /// 数据包生成器
+    /// Binary packet writer
     /// </summary>
     public partial class PacketWriter : IDynamicMetaObjectProvider
     {
@@ -21,15 +21,15 @@ namespace Mikodev.Network
         internal Dictionary<Type, PacketConverter> _con = null;
 
         /// <summary>
-        /// 创建新的数据包生成器
+        /// Create new writer
         /// </summary>
-        /// <param name="converters">转换器词典 为空时使用默认词典</param>
+        /// <param name="converters">Binary converters, use default converters if null</param>
         public PacketWriter(Dictionary<Type, PacketConverter> converters = null)
         {
             _con = converters ?? s_Converters;
         }
 
-        internal PacketConverter _Convert(Type type, bool nothrow = false)
+        internal PacketConverter _Find(Type type, bool nothrow = false)
         {
             if (_con.TryGetValue(type, out var con))
                 return con;
@@ -52,7 +52,7 @@ namespace Mikodev.Network
             return val;
         }
 
-        internal PacketWriter _ItemBuffer(string key, byte[] buffer)
+        internal PacketWriter _ItemBuf(string key, byte[] buffer)
         {
             var val = _Item(key);
             val._obj = buffer;
@@ -73,57 +73,48 @@ namespace Mikodev.Network
         /// 写入标签和数据
         /// <para>Write key and data</para>
         /// </summary>
-        /// <typeparam name="T">目标类型</typeparam>
-        /// <param name="key">字符串标签</param>
-        /// <param name="value">待写入数据</param>
-        public PacketWriter Push<T>(string key, T value) => Push(key, typeof(T), value);
+        /// <param name="key">Node tag</param>
+        /// <param name="type">Source type</param>
+        /// <param name="value">Value to be written</param>
+        public PacketWriter Push(string key, Type type, object value)
+        {
+            if (value == null)
+                return _ItemBuf(key, null);
+            var fun = _Find(type);
+            var buf = fun.ToBinary.Invoke(value);
+            return _ItemBuf(key, buf);
+        }
 
         /// <summary>
         /// 写入标签和数据
         /// <para>Write key and data</para>
         /// </summary>
-        /// <param name="key">字符串标签</param>
-        /// <param name="type">目标类型</param>
-        /// <param name="value">待写入数据</param>
-        public PacketWriter Push(string key, Type type, object value)
-        {
-            if (value == null)
-                return _ItemBuffer(key, null);
-            var fun = _Convert(type);
-            var buf = fun.BinaryFunction.Invoke(value);
-            return _ItemBuffer(key, buf);
-        }
+        /// <typeparam name="T">Source type</typeparam>
+        /// <param name="key">Node tag</param>
+        /// <param name="value">Value to be written</param>
+        public PacketWriter Push<T>(string key, T value) => Push(key, typeof(T), value);
 
         /// <summary>
         /// Set key and byte array
         /// </summary>
-        public PacketWriter PushList(string key, byte[] buffer) => _ItemBuffer(key, buffer);
+        public PacketWriter PushList(string key, byte[] buffer) => _ItemBuf(key, buffer);
 
         /// <summary>
         /// 写入标签和对象集合
         /// <para>Write key and collections</para>
         /// </summary>
-        /// <typeparam name="T">对象类型</typeparam>
-        /// <param name="key">标签</param>
-        /// <param name="value">数据集合</param>
-        public PacketWriter PushList<T>(string key, IEnumerable<T> value) => PushList(key, typeof(T), value);
-
-        /// <summary>
-        /// 写入标签和对象集合
-        /// <para>Write key and collections</para>
-        /// </summary>
-        /// <param name="key">标签</param>
-        /// <param name="type">对象类型</param>
-        /// <param name="value">数据集合</param>
+        /// <param name="key">Node tag</param>
+        /// <param name="type">Source type</param>
+        /// <param name="value">Value collection</param>
         public PacketWriter PushList(string key, Type type, IEnumerable value)
         {
             if (value == null)
                 return _Item(key, null);
-            var con = _Convert(type);
+            var con = _Find(type);
             var mst = new MemoryStream();
             foreach (var v in value)
             {
-                var buf = con.BinaryFunction.Invoke(v);
+                var buf = con.ToBinary.Invoke(v);
                 if (con.Length is int len)
                     if (buf.Length == len)
                         mst._Write(buf);
@@ -132,20 +123,29 @@ namespace Mikodev.Network
                 else mst._WriteExt(buf);
             }
             mst.Dispose();
-            return _ItemBuffer(key, mst.ToArray());
+            return _ItemBuf(key, mst.ToArray());
         }
 
-        internal bool _ItemValue(string key, object val)
+        /// <summary>
+        /// 写入标签和对象集合
+        /// <para>Write key and collections</para>
+        /// </summary>
+        /// <typeparam name="T">Source type</typeparam>
+        /// <param name="key">Node tag</param>
+        /// <param name="value">Value collection</param>
+        public PacketWriter PushList<T>(string key, IEnumerable<T> value) => PushList(key, typeof(T), value);
+
+        internal bool _ItemVal(string key, object val)
         {
             var fun = default(PacketConverter);
             var typ = val?.GetType();
 
             if (val is null)
-                _ItemBuffer(key, null);
+                _ItemBuf(key, null);
             else if (val is PacketWriter pkt)
                 _Item(key, pkt);
-            else if ((fun = _Convert(typ, true)) != null)
-                _ItemBuffer(key, fun.BinaryFunction.Invoke(val));
+            else if ((fun = _Find(typ, true)) != null)
+                _ItemBuf(key, fun.ToBinary.Invoke(val));
             else if (typ._IsEnumerable(out var inn))
                 PushList(key, inn, (IEnumerable)val);
             else
@@ -226,7 +226,7 @@ namespace Mikodev.Network
 
             void _pushItem(string key, object val)
             {
-                if (val is IDictionary<string, object> == false && wtr._ItemValue(key, val) == true)
+                if (val is IDictionary<string, object> == false && wtr._ItemVal(key, val) == true)
                     return;
                 var wri = _Serialize(val, converters, level + 1);
                 wtr._Item(key, wri);

@@ -166,16 +166,22 @@ namespace Mikodev.UnitTest
             try
             {
                 var ta = rea["a/b"];
-                throw new ApplicationException();
+                Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError) { }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError)
+            {
+                // ignore
+            }
 
             try
             {
                 var ta = rea.Pull("b").Pull("a");
-                throw new ApplicationException();
+                Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError) { }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError)
+            {
+                // ignore
+            }
         }
 
         [TestMethod]
@@ -201,6 +207,21 @@ namespace Mikodev.UnitTest
             Assert.AreEqual(b, rea["b"].Pull<string>());
             Assert.AreEqual(a, rea["c/a"].Pull<int>());
             Assert.AreEqual(b, rea["c/b"].Pull<string>());
+        }
+
+        [TestMethod]
+        public void SingleList()
+        {
+            var a = 1;
+            var b = DateTime.Now;
+            var wtr = new PacketWriter();
+            wtr.Push("a", a);
+            wtr.Push("b", b);
+            var buf = wtr.GetBytes();
+            var rea = new PacketReader(buf);
+
+            Assert.AreEqual(a, rea["a"].PullList<int>().First());
+            Assert.AreEqual(b, rea["b"].PullList<DateTime>().First());
         }
     }
 }
