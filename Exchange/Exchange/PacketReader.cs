@@ -186,14 +186,14 @@ namespace Mikodev.Network
         /// 将当前节点转换成目标类型数据集合
         /// <para>Convert current node to target type collection</para>
         /// </summary>
-        /// <param name="type">Target type<</param>
+        /// <param name="type">Target type</param>
         public IEnumerable PullList(Type type) => _List(type);
 
         /// <summary>
         /// 将当前节点转换成目标类型数据集合
         /// <para>Convert current node to target type collection</para>
         /// </summary>
-        /// <typeparam name="T">Target type<</typeparam>
+        /// <typeparam name="T">Target type</typeparam>
         public IEnumerable<T> PullList<T>() => _ListGen<T>();
 
         /// <summary>

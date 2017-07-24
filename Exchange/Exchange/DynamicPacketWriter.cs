@@ -13,7 +13,7 @@ namespace Mikodev.Network
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
             var wtr = (PacketWriter)Value;
-            var val = wtr._Item(binder.Name);
+            var val = wtr._Item(binder.Name, null);
             var exp = Expression.Constant(val);
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
@@ -28,7 +28,7 @@ namespace Mikodev.Network
             var val = value.Value;
             if (wtr._ItemVal(key, val) == false)
                 throw new PacketException(PacketError.TypeInvalid);
-            var nod = wtr._Item(key);
+            var nod = wtr._Item(key, null);
             var exp = Expression.Constant(val, typeof(object));
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }

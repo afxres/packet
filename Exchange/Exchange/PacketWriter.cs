@@ -29,7 +29,7 @@ namespace Mikodev.Network
             _con = converters ?? s_Converters;
         }
 
-        internal PacketConverter _Find(Type type, bool nothrow = false)
+        internal PacketConverter _Find(Type type, bool nothrow)
         {
             if (_con.TryGetValue(type, out var con))
                 return con;
@@ -40,7 +40,7 @@ namespace Mikodev.Network
             throw new PacketException(PacketError.TypeInvalid);
         }
 
-        internal PacketWriter _Item(string key, PacketWriter another = null)
+        internal PacketWriter _Item(string key, PacketWriter another)
         {
             if (_obj is WriterDictionary == false)
                 _obj = new WriterDictionary();
@@ -54,7 +54,7 @@ namespace Mikodev.Network
 
         internal PacketWriter _ItemBuf(string key, byte[] buffer)
         {
-            var val = _Item(key);
+            var val = _Item(key, null);
             val._obj = buffer;
             return this;
         }
@@ -80,7 +80,7 @@ namespace Mikodev.Network
         {
             if (value == null)
                 return _ItemBuf(key, null);
-            var fun = _Find(type);
+            var fun = _Find(type, false);
             var buf = fun.ToBinary.Invoke(value);
             return _ItemBuf(key, buf);
         }
@@ -110,7 +110,7 @@ namespace Mikodev.Network
         {
             if (value == null)
                 return _Item(key, null);
-            var con = _Find(type);
+            var con = _Find(type, false);
             var mst = new MemoryStream();
             foreach (var v in value)
             {
