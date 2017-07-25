@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq.Expressions;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -86,17 +87,25 @@ namespace Mikodev.Network
 
         internal static bool _GetConverter(Type type, out PacketConverter value)
         {
-            if (type.GetTypeInfo().IsValueType == false || type.GetTypeInfo().IsGenericType == true)
+            if (type.GetTypeInfo().IsEnum == true)
             {
-                value = null;
-                return false;
+                var src = Enum.GetUnderlyingType(type);
+                value = new PacketConverter(
+                    obj => _GetBytes(Expression.Lambda(Expression.Convert(Expression.Constant(obj), src)).Compile().DynamicInvoke(), src),
+                    (buf, off, len) => buf._GetValue(off, len, src),
+                    Marshal.SizeOf(src));
+                return true;
             }
-
-            value = new PacketConverter(
-                obj => obj._GetBytes(type),
-                (buf, off, len) => buf._GetValue(off, len, type),
-                Marshal.SizeOf(type));
-            return true;
+            else if (type.GetTypeInfo().IsValueType == true && type.GetTypeInfo().IsGenericType == false)
+            {
+                value = new PacketConverter(
+                    obj => obj._GetBytes(type),
+                    (buf, off, len) => buf._GetValue(off, len, type),
+                    Marshal.SizeOf(type));
+                return true;
+            }
+            value = null;
+            return false;
         }
 
         internal static readonly string[] s_Separators = new string[] { "/", @"\" };

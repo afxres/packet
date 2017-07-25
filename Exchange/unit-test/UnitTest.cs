@@ -3,6 +3,7 @@ using Mikodev.Network;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using static Mikodev.UnitTest.Extensions;
 
 namespace Mikodev.UnitTest
@@ -27,21 +28,25 @@ namespace Mikodev.UnitTest
             var a = 0;
             var b = "sample text";
             var c = DateTime.Now;
+            var d = new IPEndPoint(IPAddress.Any, IPEndPoint.MaxPort);
             var wtr = new PacketWriter();
             wtr.Push("int", a).
                 Push("string", b).
-                Push("timestamp", c);
+                Push("timestamp", c).
+                Push("endpoint", d);
             var buf = wtr.GetBytes();
 
             var rdr = new PacketReader(buf);
             var ra = rdr["int"].Pull<int>();
             var rb = rdr["string"].Pull<string>();
             var rc = rdr["timestamp"].Pull<DateTime>();
+            var rd = rdr["endpoint"].Pull<IPEndPoint>();
 
-            Assert.AreEqual(3, rdr.Count);
+            Assert.AreEqual(4, rdr.Count);
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
             Assert.AreEqual(c, rc);
+            Assert.AreEqual(d, rd);
         }
 
         [TestMethod]
@@ -222,6 +227,17 @@ namespace Mikodev.UnitTest
 
             Assert.AreEqual(a, rea["a"].PullList<int>().First());
             Assert.AreEqual(b, rea["b"].PullList<DateTime>().First());
+        }
+
+        [TestMethod]
+        public void Enum()
+        {
+            var a = DayOfWeek.Wednesday;
+            var wtr = new PacketWriter();
+            wtr.Push("a", a);
+            var buf = wtr.GetBytes();
+            var rea = new PacketReader(buf);
+            Assert.AreEqual(a, rea["a"].Pull<DayOfWeek>());
         }
     }
 }

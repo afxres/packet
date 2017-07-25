@@ -124,4 +124,11 @@ namespace Mikodev.Test
             return stb.ToString();
         }
     }
+
+    enum Day : long
+    {
+        Morning,
+        Noon,
+        Afternoon = -1,
+    }
 }

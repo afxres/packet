@@ -59,7 +59,7 @@ namespace Mikodev.Network
         {
             var len = sizeof(ushort);
             var add = new IPAddress(buffer._Split(offset, length - len));
-            var pot = buffer._GetValue<short>(offset + length - len, len);
+            var pot = buffer._GetValue<ushort>(offset + length - len, len);
             return new IPEndPoint(add, pot);
         }
     }
