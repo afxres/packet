@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using static Mikodev.UnitTest.Extensions;
 
 namespace Mikodev.UnitTest
@@ -238,6 +239,28 @@ namespace Mikodev.UnitTest
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
             Assert.AreEqual(a, rea["a"].Pull<DayOfWeek>());
+        }
+
+        [TestMethod]
+        public void SerializeObject()
+        {
+            var a = 1;
+            var b = "Sample text.";
+            var c = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+
+            var ta = PacketWriter.Serialize(a).GetBytes();
+            var tb = PacketWriter.Serialize(b).GetBytes();
+            var tc = PacketWriter.Serialize(c).GetBytes();
+
+            var sa = new PacketReader(ta);
+            var sb = new PacketReader(tb);
+            var sc = new PacketReader(tc);
+
+            Assert.AreEqual(a, sa.Pull<int>());
+            Assert.AreEqual(a, BitConverter.ToInt32(ta, 0));
+            Assert.AreEqual(b, sb.Pull<string>());
+            Assert.AreEqual(b, Encoding.UTF8.GetString(tb));
+            ThrowIfNotAllEquals(c, sc.PullList<int>().ToArray());
         }
     }
 }

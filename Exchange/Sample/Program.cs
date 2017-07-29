@@ -99,16 +99,8 @@ namespace Mikodev.Test
                 ["b"] = "two",
             };
             var ans = PacketWriter.Serialize(exp);
-
-            Test();
         }
 
-        static void Test()
-        {
-            var wtr = new PacketWriter().PushList("time", new List<DateTime>() { DateTime.Now });
-            var rea = new PacketReader(wtr.GetBytes());
-            var tim = rea["time"].PullList<DateTime>().ToList();
-        }
     }
 
     static class Modules
@@ -123,12 +115,5 @@ namespace Mikodev.Test
             stb.Append("]");
             return stb.ToString();
         }
-    }
-
-    enum Day : long
-    {
-        Morning,
-        Noon,
-        Afternoon = -1,
     }
 }

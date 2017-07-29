@@ -12,7 +12,7 @@ namespace Mikodev.Network
     /// <summary>
     /// Binary packet reader
     /// </summary>
-    public partial class PacketReader : IDynamicMetaObjectProvider
+    public class PacketReader : IDynamicMetaObjectProvider
     {
         internal int _off = 0;
         internal int _len = 0;

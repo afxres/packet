@@ -7,14 +7,14 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using static Mikodev.Network.PacketExtensions;
-using WriterDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
+using ItemDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
 
 namespace Mikodev.Network
 {
     /// <summary>
     /// Binary packet writer
     /// </summary>
-    public partial class PacketWriter : IDynamicMetaObjectProvider
+    public class PacketWriter : IDynamicMetaObjectProvider
     {
         internal const int _Level = 32;
         internal object _obj = null;
@@ -40,32 +40,34 @@ namespace Mikodev.Network
             throw new PacketException(PacketError.TypeInvalid);
         }
 
-        internal PacketWriter _Item(string key, PacketWriter another)
+        internal ItemDictionary _ItemList()
         {
-            if (_obj is WriterDictionary == false)
-                _obj = new WriterDictionary();
-            var dic = (WriterDictionary)_obj;
-            if (dic.TryGetValue(key, out var val))
-                return val;
-            val = another ?? new PacketWriter();
-            dic.Add(key, val);
+            if (_obj is ItemDictionary dic)
+                return dic;
+            var val = new ItemDictionary();
+            _obj = val;
             return val;
         }
 
-        internal PacketWriter _ItemBuf(string key, byte[] buffer)
+        internal void _ItemPush(string key, PacketWriter val)
         {
-            var val = _Item(key, null);
-            val._obj = buffer;
-            return this;
+            if (val is null)
+                throw new ApplicationException();
+            var dic = _ItemList();
+            dic[key] = val;
         }
 
         /// <summary>
         /// 写入标签和另一个实例
         /// <para>Write key and another instance</para>
         /// </summary>
-        public PacketWriter Push(string key, PacketWriter other)
+        public PacketWriter Push(string key, PacketWriter val)
         {
-            _Item(key, other);
+            if (val is null)
+                val = new PacketWriter(_con);
+            else
+                val._con = _con;
+            _ItemPush(key, val);
             return this;
         }
 
@@ -75,14 +77,14 @@ namespace Mikodev.Network
         /// </summary>
         /// <param name="key">Node tag</param>
         /// <param name="type">Source type</param>
-        /// <param name="value">Value to be written</param>
-        public PacketWriter Push(string key, Type type, object value)
+        /// <param name="val">Value to be written</param>
+        public PacketWriter Push(string key, Type type, object val)
         {
-            if (value == null)
-                return _ItemBuf(key, null);
-            var fun = _Find(type, false);
-            var buf = fun.ToBinary.Invoke(value);
-            return _ItemBuf(key, buf);
+            var nod = new PacketWriter(_con);
+            if (val != null)
+                nod._obj = _Find(type, false).ToBinary.Invoke(val);
+            _ItemPush(key, nod);
+            return this;
         }
 
         /// <summary>
@@ -91,28 +93,26 @@ namespace Mikodev.Network
         /// </summary>
         /// <typeparam name="T">Source type</typeparam>
         /// <param name="key">Node tag</param>
-        /// <param name="value">Value to be written</param>
-        public PacketWriter Push<T>(string key, T value) => Push(key, typeof(T), value);
+        /// <param name="val">Value to be written</param>
+        public PacketWriter Push<T>(string key, T val) => Push(key, typeof(T), val);
 
         /// <summary>
         /// Set key and byte array
         /// </summary>
-        public PacketWriter PushList(string key, byte[] buffer) => _ItemBuf(key, buffer);
-
-        /// <summary>
-        /// 写入标签和对象集合
-        /// <para>Write key and collections</para>
-        /// </summary>
-        /// <param name="key">Node tag</param>
-        /// <param name="type">Source type</param>
-        /// <param name="value">Value collection</param>
-        public PacketWriter PushList(string key, Type type, IEnumerable value)
+        public PacketWriter PushList(string key, byte[] buf)
         {
-            if (value == null)
-                return _Item(key, null);
+            var nod = new PacketWriter(_con) { _obj = buf };
+            _ItemPush(key, nod);
+            return this;
+        }
+
+        internal void _ByteList(Type type, IEnumerable val)
+        {
+            if (val is null)
+                throw new ApplicationException();
             var con = _Find(type, false);
             var mst = new MemoryStream();
-            foreach (var v in value)
+            foreach (var v in val)
             {
                 var buf = con.ToBinary.Invoke(v);
                 if (con.Length is int len)
@@ -123,7 +123,23 @@ namespace Mikodev.Network
                 else mst._WriteExt(buf);
             }
             mst.Dispose();
-            return _ItemBuf(key, mst.ToArray());
+            _obj = mst.ToArray();
+        }
+
+        /// <summary>
+        /// 写入标签和对象集合
+        /// <para>Write key and collections</para>
+        /// </summary>
+        /// <param name="key">Node tag</param>
+        /// <param name="type">Source type</param>
+        /// <param name="val">Value collection</param>
+        public PacketWriter PushList(string key, Type type, IEnumerable val)
+        {
+            var nod = new PacketWriter(_con);
+            if (val != null)
+                nod._ByteList(type, val);
+            _ItemPush(key, nod);
+            return this;
         }
 
         /// <summary>
@@ -132,30 +148,30 @@ namespace Mikodev.Network
         /// </summary>
         /// <typeparam name="T">Source type</typeparam>
         /// <param name="key">Node tag</param>
-        /// <param name="value">Value collection</param>
-        public PacketWriter PushList<T>(string key, IEnumerable<T> value) => PushList(key, typeof(T), value);
+        /// <param name="val">Value collection</param>
+        public PacketWriter PushList<T>(string key, IEnumerable<T> val) => PushList(key, typeof(T), val);
 
-        internal bool _ItemVal(string key, object val)
+        internal static PacketWriter _ItemNode(object val, Dictionary<Type, PacketConverter> con)
         {
             var fun = default(PacketConverter);
-            var typ = val?.GetType();
+            var wtr = new PacketWriter(con);
 
             if (val is null)
-                _ItemBuf(key, null);
+                wtr._obj = null;
             else if (val is PacketWriter pkt)
-                _Item(key, pkt);
-            else if ((fun = _Find(typ, true)) != null)
-                _ItemBuf(key, fun.ToBinary.Invoke(val));
-            else if (typ._IsEnumerable(out var inn))
-                PushList(key, inn, (IEnumerable)val);
+                wtr._obj = pkt._obj;
+            else if ((fun = wtr._Find(val.GetType(), true)) != null)
+                wtr._obj = fun.ToBinary.Invoke(val);
+            else if (val.GetType()._IsEnumerable(out var inn))
+                wtr._ByteList(inn, (IEnumerable)val);
             else
-                return false;
-            return true;
+                return null;
+            return wtr;
         }
 
-        internal void _Bytes(MemoryStream str, WriterDictionary dic, int level)
+        internal void _Byte(MemoryStream str, ItemDictionary dic, int lvl)
         {
-            if (level > _Level)
+            if (lvl > _Level)
                 throw new PacketException(PacketError.RecursiveError);
             foreach (var i in dic)
             {
@@ -174,7 +190,7 @@ namespace Mikodev.Network
 
                 var pos = str.Position;
                 str._Write(0);
-                _Bytes(str, (WriterDictionary)val._obj, level + 1);
+                _Byte(str, (ItemDictionary)val._obj, lvl + 1);
                 var end = str.Position;
                 str.Seek(pos, SeekOrigin.Begin);
                 str._Write((int)(end - pos - sizeof(int)));
@@ -188,11 +204,13 @@ namespace Mikodev.Network
         /// </summary>
         public byte[] GetBytes()
         {
-            var dic = _obj as WriterDictionary;
+            if (_obj is byte[] buf)
+                return buf._Split(0, buf.Length);
+            var dic = _obj as ItemDictionary;
             if (dic == null)
                 return new byte[0];
             var mst = new MemoryStream();
-            _Bytes(mst, dic, 0);
+            _Byte(mst, dic, 0);
             return mst.ToArray();
         }
 
@@ -209,7 +227,7 @@ namespace Mikodev.Network
             else if (_obj is byte[] buf)
                 stb.AppendFormat("{0} byte(s)", buf.Length);
             else
-                stb.AppendFormat("{0} node(s)", ((WriterDictionary)_obj).Count);
+                stb.AppendFormat("{0} node(s)", ((ItemDictionary)_obj).Count);
             return stb.ToString();
         }
 
@@ -218,26 +236,27 @@ namespace Mikodev.Network
             return new DynamicPacketWriter(parameter, this);
         }
 
-        internal static PacketWriter _Serialize(object value, Dictionary<Type, PacketConverter> converters, int level)
+        internal static PacketWriter _Serialize(object val, Dictionary<Type, PacketConverter> con, int lvl)
         {
-            if (level > _Level)
+            if (lvl > _Level)
                 throw new PacketException(PacketError.RecursiveError);
-            var wtr = new PacketWriter(converters);
+            var wtr = new PacketWriter(con);
+            var nod = default(PacketWriter);
 
-            void _pushItem(string key, object val)
+            void _push(string key, object obj)
             {
-                if (val is IDictionary<string, object> == false && wtr._ItemVal(key, val) == true)
-                    return;
-                var wri = _Serialize(val, converters, level + 1);
-                wtr._Item(key, wri);
+                var sub = _Serialize(obj, con, lvl + 1);
+                wtr._ItemPush(key, sub);
             }
 
-            if (value is IDictionary<string, object> dic)
+            if (val is IDictionary<string, object> dic)
                 foreach (var p in dic)
-                    _pushItem(p.Key, p.Value);
+                    _push(p.Key, p.Value);
+            else if ((nod = _ItemNode(val, con)) != null)
+                return nod;
             else
-                foreach (var p in value.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
-                    _pushItem(p.Name, p.GetValue(value));
+                foreach (var p in val.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                    _push(p.Name, p.GetValue(val));
             return wtr;
         }
 
