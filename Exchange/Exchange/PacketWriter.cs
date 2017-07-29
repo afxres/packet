@@ -52,7 +52,7 @@ namespace Mikodev.Network
         internal void _ItemPush(string key, PacketWriter val)
         {
             if (val is null)
-                throw new ApplicationException();
+                throw new PacketException(PacketError.AssertFailed);
             var dic = _ItemList();
             dic[key] = val;
         }
@@ -109,7 +109,7 @@ namespace Mikodev.Network
         internal void _ByteList(Type type, IEnumerable val)
         {
             if (val is null)
-                throw new ApplicationException();
+                throw new PacketException(PacketError.AssertFailed);
             var con = _Find(type, false);
             var mst = new MemoryStream();
             foreach (var v in val)

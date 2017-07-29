@@ -21,7 +21,7 @@
         TypeInvalid,
 
         /// <summary>
-        /// Data length overflow"
+        /// Data length overflow
         /// </summary>
         Overflow,
 
@@ -29,5 +29,10 @@
         /// Recursion limit has been reached
         /// </summary>
         RecursiveError,
+
+        /// <summary>
+        /// This error should not be thrown
+        /// </summary>
+        AssertFailed
     }
 }

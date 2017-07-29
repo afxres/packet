@@ -36,8 +36,10 @@ namespace Mikodev.Network
                     return "Data length overflow";
                 case PacketError.RecursiveError:
                     return "Recursion limit has been reached";
+                case PacketError.AssertFailed:
+                    return "Assert failed";
                 default:
-                    return "Unknown error";
+                    return "Undefined error";
             }
         }
     }
