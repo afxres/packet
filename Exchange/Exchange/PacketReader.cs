@@ -5,7 +5,6 @@ using System.Dynamic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Text;
-using static Mikodev.Network.PacketExtensions;
 
 namespace Mikodev.Network
 {
@@ -37,10 +36,10 @@ namespace Mikodev.Network
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             _len = buffer.Length;
-            _con = converters ?? s_Converters;
+            _con = converters ?? PacketExtensions.s_Converters;
         }
 
-        internal bool _Buffer()
+        internal bool _Initial()
         {
             if (_dic != null)
                 return true;
@@ -73,7 +72,7 @@ namespace Mikodev.Network
         {
             if (_con.TryGetValue(type, out var fun))
                 return fun;
-            if (_GetConverter(type, out var val))
+            if (PacketCaches._GetInstance()._GetConverter(type, out var val))
                 return val;
             if (nothrow)
                 return null;
@@ -82,7 +81,7 @@ namespace Mikodev.Network
 
         internal PacketReader _Item(string key, bool nothrow)
         {
-            if (_Buffer() == false)
+            if (_Initial() == false)
                 throw new PacketException(PacketError.Overflow);
             if (_dic.TryGetValue(key, out var val))
                 return val;
@@ -93,7 +92,7 @@ namespace Mikodev.Network
 
         internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
         {
-            var sts = path.Split(separator ?? s_Separators, StringSplitOptions.RemoveEmptyEntries);
+            var sts = path.Split(separator ?? PacketExtensions.s_Separators, StringSplitOptions.RemoveEmptyEntries);
             var rdr = this;
             foreach (var i in sts)
                 if ((rdr = rdr._Item(i, nothrow)) == null)
@@ -124,17 +123,16 @@ namespace Mikodev.Network
 
         internal IEnumerable<string> _Keys()
         {
-            if (_Buffer() == false)
-                yield break;
-            foreach (var i in _dic)
-                yield return i.Key;
+            if (_Initial() == true)
+                foreach (var i in _dic)
+                    yield return i.Key;
             yield break;
         }
 
         /// <summary>
         /// Child node count
         /// </summary>
-        public int Count => _Buffer() ? _dic.Count : 0;
+        public int Count => _Initial() ? _dic.Count : 0;
 
         /// <summary>
         /// Child node keys

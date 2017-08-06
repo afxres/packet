@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="DynamicPacketReader.cs" />
     <Compile Include="DynamicPacketWriter.cs" />
+    <Compile Include="PacketCaches.cs" />
     <Compile Include="PacketConverter.cs" />
     <Compile Include="PacketExtensions.cs" />
     <Compile Include="PacketError.cs" />

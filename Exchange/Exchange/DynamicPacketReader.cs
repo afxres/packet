@@ -6,8 +6,8 @@ namespace Mikodev.Network
 {
     internal class DynamicPacketReader : DynamicMetaObject
     {
-        internal static readonly MethodInfo s_Method = typeof(PacketReader).GetTypeInfo()
-            .GetMethod(nameof(PacketReader._ListGen), BindingFlags.NonPublic | BindingFlags.Instance);
+        internal static readonly MethodInfo s_Method = typeof(PacketReader).GetTypeInfo().
+            GetMethod(nameof(PacketReader._ListGen), BindingFlags.NonPublic | BindingFlags.Instance);
 
         internal DynamicPacketReader(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 

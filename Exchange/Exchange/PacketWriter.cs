@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using static Mikodev.Network.PacketExtensions;
 using ItemDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
 
 namespace Mikodev.Network
@@ -26,14 +25,14 @@ namespace Mikodev.Network
         /// <param name="converters">Binary converters, use default converters if null</param>
         public PacketWriter(Dictionary<Type, PacketConverter> converters = null)
         {
-            _con = converters ?? s_Converters;
+            _con = converters ?? PacketExtensions.s_Converters;
         }
 
         internal PacketConverter _Find(Type type, bool nothrow)
         {
             if (_con.TryGetValue(type, out var con))
                 return con;
-            if (_GetConverter(type, out var val))
+            if (PacketCaches._GetInstance()._GetConverter(type, out var val))
                 return val;
             if (nothrow)
                 return null;
@@ -266,7 +265,7 @@ namespace Mikodev.Network
         /// </summary>
         public static PacketWriter Serialize(object obj, Dictionary<Type, PacketConverter> converters = null)
         {
-            return _Serialize(obj, converters ?? s_Converters, 0);
+            return _Serialize(obj, converters ?? PacketExtensions.s_Converters, 0);
         }
     }
 }

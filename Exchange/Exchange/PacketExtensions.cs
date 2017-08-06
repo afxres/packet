@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq.Expressions;
 using System.Net;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Mikodev.Network
@@ -85,55 +83,32 @@ namespace Mikodev.Network
             stream._Write(buffer);
         }
 
-        internal static bool _GetConverter(Type type, out PacketConverter value)
-        {
-            if (type.GetTypeInfo().IsEnum == true)
-            {
-                var src = Enum.GetUnderlyingType(type);
-                value = new PacketConverter(
-                    obj => _GetBytes(Expression.Lambda(Expression.Convert(Expression.Constant(obj), src)).Compile().DynamicInvoke(), src),
-                    (buf, off, len) => buf._GetValue(off, len, src),
-                    Marshal.SizeOf(src));
-                return true;
-            }
-            else if (type.GetTypeInfo().IsValueType == true && type.GetTypeInfo().IsGenericType == false)
-            {
-                value = new PacketConverter(
-                    obj => obj._GetBytes(type),
-                    (buf, off, len) => buf._GetValue(off, len, type),
-                    Marshal.SizeOf(type));
-                return true;
-            }
-            value = null;
-            return false;
-        }
-
         internal static readonly string[] s_Separators = new string[] { "/", @"\" };
 
         internal static readonly Dictionary<Type, PacketConverter> s_Converters = new Dictionary<Type, PacketConverter>()
         {
             [typeof(byte[])] = new PacketConverter(
-                obj => (byte[])obj,
+                (obj) => (byte[])obj,
                 _Split,
                 null),
 
             [typeof(string)] = new PacketConverter(
-                obj => Encoding.UTF8.GetBytes((string)obj),
+                (obj) => Encoding.UTF8.GetBytes((string)obj),
                 Encoding.UTF8.GetString,
                 null),
 
             [typeof(DateTime)] = new PacketConverter(
-                obj => ((DateTime)obj).ToBinary()._GetBytes(),
+                (obj) => ((DateTime)obj).ToBinary()._GetBytes(),
                 (buf, off, len) => DateTime.FromBinary(buf._GetValue<long>(off, len)),
                 sizeof(long)),
 
             [typeof(IPAddress)] = new PacketConverter(
-                obj => ((IPAddress)obj).GetAddressBytes(),
+                (obj) => ((IPAddress)obj).GetAddressBytes(),
                 (buf, off, len) => new IPAddress(buf._Split(off, len)),
                 null),
 
             [typeof(IPEndPoint)] = new PacketConverter(
-                obj => _EndPointToBinary((IPEndPoint)obj),
+                (obj) => _EndPointToBinary((IPEndPoint)obj),
                 _BinaryToEndPoint,
                 null),
         };
