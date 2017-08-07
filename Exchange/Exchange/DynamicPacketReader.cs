@@ -33,7 +33,7 @@ namespace Mikodev.Network
             var con = default(PacketConverter);
 
             if ((con = rdr._Find(typ, true)) != null)
-                val = con.ToObject.Invoke(rdr._buf, rdr._off, rdr._len);
+                val = con.ToObject(rdr._buf, rdr._off, rdr._len);
             else if (typ._IsGenericEnumerable(out var inn))
                 val = s_Method.MakeGenericMethod(inn).Invoke(rdr, null);
             else

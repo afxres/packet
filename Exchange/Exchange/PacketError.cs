@@ -33,6 +33,11 @@
         /// <summary>
         /// This error should not be thrown
         /// </summary>
-        AssertFailed
+        AssertFailed,
+
+        /// <summary>
+        /// Convert operation error
+        /// </summary>
+        ConvertError,
     }
 }

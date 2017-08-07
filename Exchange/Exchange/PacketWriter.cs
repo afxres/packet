@@ -81,7 +81,7 @@ namespace Mikodev.Network
         {
             var nod = new PacketWriter(_con);
             if (val != null)
-                nod._obj = _Find(type, false).ToBinary.Invoke(val);
+                nod._obj = _Find(type, false).ToBinary(val);
             _ItemPush(key, nod);
             return this;
         }
@@ -113,7 +113,7 @@ namespace Mikodev.Network
             var mst = new MemoryStream();
             foreach (var v in val)
             {
-                var buf = con.ToBinary.Invoke(v);
+                var buf = con.ToBinary(v);
                 if (con.Length is int len)
                     if (buf.Length == len)
                         mst._Write(buf);
@@ -160,7 +160,7 @@ namespace Mikodev.Network
             else if (val is PacketWriter pkt)
                 wtr._obj = pkt._obj;
             else if ((fun = wtr._Find(val.GetType(), true)) != null)
-                wtr._obj = fun.ToBinary.Invoke(val);
+                wtr._obj = fun.ToBinary(val);
             else if (val.GetType()._IsEnumerable(out var inn))
                 wtr._ByteList(inn, (IEnumerable)val);
             else

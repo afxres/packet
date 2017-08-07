@@ -112,7 +112,7 @@ namespace Mikodev.Network
                 var buf = (con.Length is int len)
                     ? str._Read(len)
                     : str._ReadExt();
-                var tmp = con.ToObject.Invoke(buf, 0, buf.Length);
+                var tmp = con.ToObject(buf, 0, buf.Length);
                 yield return tmp;
             }
             str.Dispose();
@@ -169,7 +169,7 @@ namespace Mikodev.Network
         public object Pull(Type type)
         {
             var con = _Find(type, false);
-            var res = con.ToObject.Invoke(_buf, _off, _len);
+            var res = con.ToObject(_buf, _off, _len);
             return res;
         }
 

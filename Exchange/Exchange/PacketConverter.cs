@@ -1,4 +1,5 @@
-﻿using BinaryFunction = System.Func<object, byte[]>;
+﻿using System;
+using BinaryFunction = System.Func<object, byte[]>;
 using ObjectFunction = System.Func<byte[], int, int, object>;
 
 namespace Mikodev.Network
@@ -15,12 +16,34 @@ namespace Mikodev.Network
         /// <summary>
         /// object -> byte[]
         /// </summary>
-        public BinaryFunction ToBinary => _bin;
+        /// <exception cref="PacketException"></exception>
+        public byte[] ToBinary(object value)
+        {
+            try
+            {
+                return _bin.Invoke(value);
+            }
+            catch (Exception ex)
+            {
+                throw new PacketException(PacketError.ConvertError, ex);
+            }
+        }
 
         /// <summary>
         /// byte[] -> object
         /// </summary>
-        public ObjectFunction ToObject => _obj;
+        /// <exception cref="PacketException"></exception>
+        public object ToObject(byte[] buffer, int offset, int length)
+        {
+            try
+            {
+                return _obj.Invoke(buffer, offset, length);
+            }
+            catch (Exception ex)
+            {
+                throw new PacketException(PacketError.ConvertError, ex);
+            }
+        }
 
         /// <summary>
         /// Length of current type, null if not constant
