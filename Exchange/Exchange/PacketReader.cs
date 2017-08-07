@@ -39,6 +39,9 @@ namespace Mikodev.Network
             _con = converters ?? PacketExtensions.s_Converters;
         }
 
+        /// <summary>
+        /// Parse this packet (return false if error)
+        /// </summary>
         internal bool _Initial()
         {
             if (_dic != null)
@@ -106,7 +109,9 @@ namespace Mikodev.Network
             var str = new MemoryStream(_buf, _off, _len);
             while (str.Position < str.Length)
             {
-                var buf = con.Length == null ? str._ReadExt() : str._Read((int)con.Length);
+                var buf = (con.Length is int len)
+                    ? str._Read(len)
+                    : str._ReadExt();
                 var tmp = con.ToObject.Invoke(buf, 0, buf.Length);
                 yield return tmp;
             }
@@ -202,7 +207,7 @@ namespace Mikodev.Network
         {
             var stb = new StringBuilder(nameof(PacketReader));
             stb.Append(" with ");
-            if (_dic == null || _dic.Count < 1)
+            if (_Initial() == false || _dic.Count < 1)
                 if (_len != 0)
                     stb.AppendFormat("{0} byte(s)", _len);
                 else

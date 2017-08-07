@@ -24,7 +24,7 @@ namespace Mikodev.UnitTest
         }
 
         [TestMethod]
-        public void BasicTypes()
+        public void Basic()
         {
             var a = 0;
             var b = "sample text";
@@ -73,6 +73,7 @@ namespace Mikodev.UnitTest
             var rb = rdr["ints"].PullList<int>();
             var rc = rdr["buffer"].PullList<byte[]>();
 
+            Assert.AreEqual(3, rdr.Count);
             Assert.AreEqual(c.Count, rc.Count());
 
             ThrowIfNotAllEquals(a, ra);
@@ -209,6 +210,7 @@ namespace Mikodev.UnitTest
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
 
+            Assert.AreEqual(dic.Count, rea.Count);
             Assert.AreEqual(a, rea["a"].Pull<int>());
             Assert.AreEqual(b, rea["b"].Pull<string>());
             Assert.AreEqual(a, rea["c/a"].Pull<int>());
@@ -216,7 +218,7 @@ namespace Mikodev.UnitTest
         }
 
         [TestMethod]
-        public void SingleList()
+        public void List()
         {
             var a = 1;
             var b = DateTime.Now;
@@ -261,6 +263,19 @@ namespace Mikodev.UnitTest
             Assert.AreEqual(b, sb.Pull<string>());
             Assert.AreEqual(b, Encoding.UTF8.GetString(tb));
             ThrowIfNotAllEquals(c, sc.PullList<int>().ToArray());
+        }
+
+        [TestMethod]
+        public void Invalid()
+        {
+            var buf = new byte[1024];
+            for (int i = 0; i < buf.Length; i++)
+                buf[i] = 0xFF;
+
+            var rea = new PacketReader(buf);
+
+            Assert.AreEqual(0, rea.Count);
+            Assert.AreEqual(0, rea.Keys.Count());
         }
     }
 }
