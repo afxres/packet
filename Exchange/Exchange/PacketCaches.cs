@@ -8,59 +8,51 @@ namespace Mikodev.Network
 {
     internal class PacketCaches
     {
-        internal object _loc = new object();
-        internal Dictionary<Type, WeakReference<PacketConverter>> _dic = null;
+        private object _loc = new object();
+        private Dictionary<Type, WeakReference<PacketConverter>> _dic = null;
 
-        internal static PacketCaches s_ins = null;
+        private static PacketCaches s_ins = null;
 
-        internal bool _GetConverter(Type type, out PacketConverter value)
+        private PacketConverter _Value(Type type)
         {
-            lock (_loc)
+            if (_dic.TryGetValue(type, out var ele))
             {
-                if (_dic.TryGetValue(type, out var element))
-                {
-                    if (element.TryGetTarget(out value))
-                        return true;
-                    if (_Create(type, out value))
-                    {
-                        element.SetTarget(value);
-                        return true;
-                    }
-                }
-                else if (_Create(type, out value))
-                {
-                    _dic.Add(type, new WeakReference<PacketConverter>(value));
-                    return true;
-                }
-                value = null;
-                return false;
+                if (ele.TryGetTarget(out var val))
+                    return val;
+                var con = _Create(type);
+                if (con == null)
+                    throw new PacketException(PacketError.AssertFailed);
+                ele.SetTarget(con);
+                return con;
             }
+            var res = _Create(type);
+            if (res == null)
+                return null;
+            _dic.Add(type, new WeakReference<PacketConverter>(res));
+            return res;
         }
 
-        internal bool _Create(Type type, out PacketConverter value)
+        private PacketConverter _Create(Type type)
         {
             if (type.GetTypeInfo().IsEnum == true)
             {
                 var src = Enum.GetUnderlyingType(type);
-                value = new PacketConverter(
+                return new PacketConverter(
                     (obj) => Convert.ChangeType(obj, src)._GetBytes(src),
                     (buf, off, len) => buf._GetValue(off, len, src),
                     Marshal.SizeOf(src));
-                return true;
             }
             else if (type.GetTypeInfo().IsValueType == true && type.GetTypeInfo().IsGenericType == false)
             {
-                value = new PacketConverter(
+                return new PacketConverter(
                     (obj) => obj._GetBytes(type),
                     (buf, off, len) => buf._GetValue(off, len, type),
                     Marshal.SizeOf(type));
-                return true;
             }
-            value = null;
-            return false;
+            return null;
         }
 
-        internal static PacketCaches _GetInstance()
+        private static PacketCaches _Instance()
         {
             if (s_ins != null)
                 return s_ins;
@@ -73,6 +65,18 @@ namespace Mikodev.Network
                 }
             }
             return s_ins;
+        }
+
+        public static bool TryGetValue(Type type, out PacketConverter value)
+        {
+            var ins = _Instance();
+            var res = default(PacketConverter);
+            lock (ins._loc)
+            {
+                res = ins._Value(type);
+            }
+            value = res;
+            return res != null;
         }
     }
 }

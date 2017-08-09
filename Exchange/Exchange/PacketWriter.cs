@@ -32,7 +32,7 @@ namespace Mikodev.Network
         {
             if (_con.TryGetValue(type, out var con))
                 return con;
-            if (PacketCaches._GetInstance()._GetConverter(type, out var val))
+            if (PacketCaches.TryGetValue(type, out var val))
                 return val;
             if (nothrow)
                 return null;
