@@ -2,16 +2,19 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading;
+using static Mikodev.Network.PacketExtensions;
 
 namespace Mikodev.Network
 {
     internal class PacketCaches
     {
         private object _loc = new object();
-        private Dictionary<Type, WeakReference<PacketConverter>> _dic = null;
 
-        private static PacketCaches s_ins = null;
+        private Dictionary<Type, WeakReference<PacketConverter>> _dic = new Dictionary<Type, WeakReference<PacketConverter>>();
+
+        private static PacketCaches s_ins = new PacketCaches();
+
+        private PacketCaches() { }
 
         private PacketConverter _Value(Type type)
         {
@@ -19,61 +22,40 @@ namespace Mikodev.Network
             {
                 if (ele.TryGetTarget(out var val))
                     return val;
-                var con = _Create(type);
+                var con = _Define(type);
                 if (con == null)
                     throw new PacketException(PacketError.AssertFailed);
                 ele.SetTarget(con);
                 return con;
             }
-            var res = _Create(type);
+            var res = _Define(type);
             if (res == null)
                 return null;
             _dic.Add(type, new WeakReference<PacketConverter>(res));
             return res;
         }
 
-        private PacketConverter _Create(Type type)
+        private PacketConverter _Define(Type type)
         {
-            if (type.GetTypeInfo().IsEnum == true)
-            {
-                var src = Enum.GetUnderlyingType(type);
-                return new PacketConverter(
-                    (obj) => Convert.ChangeType(obj, src)._GetBytes(),
-                    (buf, off, len) => buf._GetValue(off, len, src),
-                    Marshal.SizeOf(src));
-            }
-            else if (type.GetTypeInfo().IsValueType == true && type.GetTypeInfo().IsGenericType == false)
-            {
-                return new PacketConverter(
-                    (obj) => obj._GetBytes(),
-                    (buf, off, len) => buf._GetValue(off, len, type),
-                    Marshal.SizeOf(type));
-            }
-            return null;
-        }
+            if (type.GetTypeInfo().IsEnum)
+                return s_Converters[Enum.GetUnderlyingType(type)];
 
-        private static PacketCaches _Instance()
-        {
-            if (s_ins != null)
-                return s_ins;
-            Interlocked.CompareExchange(ref s_ins, new PacketCaches(), null);
-            lock (s_ins._loc)
-            {
-                if (s_ins._dic == null)
-                {
-                    s_ins._dic = new Dictionary<Type, WeakReference<PacketConverter>>();
-                }
-            }
-            return s_ins;
+            if (type.GetTypeInfo().IsValueType == false || type.GetTypeInfo().IsGenericType)
+                return null;
+
+            var use = Marshal.SizeOf(type);
+            return new PacketConverter(
+                _GetBytes,
+                (buf, off, len) => _GetValue(buf, off, len, type),
+                use);
         }
 
         public static bool TryGetValue(Type type, out PacketConverter value)
         {
-            var ins = _Instance();
             var res = default(PacketConverter);
-            lock (ins._loc)
+            lock (s_ins._loc)
             {
-                res = ins._Value(type);
+                res = s_ins._Value(type);
             }
             value = res;
             return res != null;

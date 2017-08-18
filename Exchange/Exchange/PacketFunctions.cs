@@ -7,7 +7,7 @@ namespace Mikodev.Network
 {
     public static partial class PacketExtensions
     {
-        internal static unsafe byte[] _GetBytes(this object str)
+        internal static unsafe byte[] _GetBytes(object str)
         {
             var len = Marshal.SizeOf(str);
             var buf = new byte[len];
@@ -18,7 +18,7 @@ namespace Mikodev.Network
             return buf;
         }
 
-        internal static unsafe object _GetValue(this byte[] buffer, int offset, int length, Type type)
+        internal static unsafe object _GetValue(byte[] buffer, int offset, int length, Type type)
         {
             var len = Marshal.SizeOf(type);
             if (len > length)
@@ -35,7 +35,10 @@ namespace Mikodev.Network
         {
             var add = value.Address.GetAddressBytes();
             var pot = GetBytes((ushort)value.Port);
-            return add._Merge(pot);
+            var res = new byte[add.Length + pot.Length];
+            Buffer.BlockCopy(add, 0, res, 0, add.Length);
+            Buffer.BlockCopy(pot, 0, res, add.Length, pot.Length);
+            return res;
         }
 
         internal static IPEndPoint _BinaryToEndPoint(byte[] buffer, int offset, int length)

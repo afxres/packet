@@ -36,21 +36,12 @@ namespace Mikodev.Network
             return false;
         }
 
-        internal static byte[] _Merge(this byte[] buffer, params byte[][] values)
-        {
-            var str = new MemoryStream();
-            str.Write(buffer, 0, buffer.Length);
-            foreach (var v in values)
-                str.Write(v, 0, v.Length);
-            return str.ToArray();
-        }
-
         internal static byte[] _Split(this byte[] buffer, int offset, int length)
         {
             if (length > buffer.Length)
                 throw new PacketException(PacketError.Overflow);
             var buf = new byte[length];
-            Array.Copy(buffer, offset, buf, 0, length);
+            Buffer.BlockCopy(buffer, offset, buf, 0, length);
             return buf;
         }
 
@@ -112,6 +103,66 @@ namespace Mikodev.Network
                 (obj) => _EndPointToBinary((IPEndPoint)obj),
                 _BinaryToEndPoint,
                 null),
+
+            [typeof(bool)] = new PacketConverter(
+                (obj) => GetBytes((bool)obj),
+                (buf, off, len) => ToBoolean(buf, off),
+                sizeof(bool)),
+
+            [typeof(char)] = new PacketConverter(
+                (obj) => GetBytes((char)obj),
+                (buf, off, len) => ToChar(buf, off),
+                sizeof(char)),
+
+            [typeof(sbyte)] = new PacketConverter(
+                (obj) => new byte[sizeof(sbyte)] { (byte)(sbyte)obj },
+                (buf, off, len) => (sbyte)buf[off],
+                sizeof(sbyte)),
+
+            [typeof(byte)] = new PacketConverter(
+                (obj) => new byte[sizeof(byte)] { (byte)obj },
+                (buf, off, len) => buf[off],
+                sizeof(byte)),
+
+            [typeof(short)] = new PacketConverter(
+                (obj) => GetBytes((short)obj),
+                (buf, off, len) => ToInt16(buf, off),
+                sizeof(short)),
+
+            [typeof(ushort)] = new PacketConverter(
+                (obj) => GetBytes((ushort)obj),
+                (buf, off, len) => ToUInt16(buf, off),
+                sizeof(ushort)),
+
+            [typeof(int)] = new PacketConverter(
+                (obj) => GetBytes((int)obj),
+                (buf, off, len) => ToInt32(buf, off),
+                sizeof(int)),
+
+            [typeof(uint)] = new PacketConverter(
+                (obj) => GetBytes((uint)obj),
+                (buf, off, len) => ToUInt32(buf, off),
+                sizeof(uint)),
+
+            [typeof(long)] = new PacketConverter(
+                (obj) => GetBytes((long)obj),
+                (buf, off, len) => ToInt64(buf, off),
+                sizeof(long)),
+
+            [typeof(ulong)] = new PacketConverter(
+                (obj) => GetBytes((ulong)obj),
+                (buf, off, len) => ToUInt64(buf, off),
+                sizeof(ulong)),
+
+            [typeof(float)] = new PacketConverter(
+                (obj) => GetBytes((float)obj),
+                (buf, off, len) => ToSingle(buf, off),
+                sizeof(float)),
+
+            [typeof(double)] = new PacketConverter(
+                (obj) => GetBytes((double)obj),
+                (buf, off, len) => ToDouble(buf, off),
+                sizeof(double)),
         };
 
         /// <summary>

@@ -26,28 +26,92 @@ namespace Mikodev.UnitTest
         [TestMethod]
         public void Basic()
         {
-            var a = 0;
-            var b = "sample text";
+            var a = IPAddress.Loopback;
+            var b = new IPEndPoint(IPAddress.Any, IPEndPoint.MaxPort);
             var c = DateTime.Now;
-            var d = new IPEndPoint(IPAddress.Any, IPEndPoint.MaxPort);
+            var d = "sample text";
+            var e = 'A';
+            var f = 1.1F;
+            var g = 1.1D;
+            var h = true;
+            var i = 1.1M;
             var wtr = new PacketWriter();
-            wtr.Push("int", a).
-                Push("string", b).
-                Push("timestamp", c).
-                Push("endpoint", d);
+            wtr.Push("a", a).
+                Push("b", b).
+                Push("c", c).
+                Push("d", d).
+                Push("e", e).
+                Push("f", f).
+                Push("g", g).
+                Push("h", h).
+                Push("i", i);
             var buf = wtr.GetBytes();
 
             var rdr = new PacketReader(buf);
-            var ra = rdr["int"].Pull<int>();
-            var rb = rdr["string"].Pull<string>();
-            var rc = rdr["timestamp"].Pull<DateTime>();
-            var rd = rdr["endpoint"].Pull<IPEndPoint>();
+            var ra = rdr["a"].Pull<IPAddress>();
+            var rb = rdr["b"].Pull<IPEndPoint>();
+            var rc = rdr["c"].Pull<DateTime>();
+            var rd = rdr["d"].Pull<string>();
+            var re = rdr["e"].Pull<char>();
+            var rf = rdr["f"].Pull<float>();
+            var rg = rdr["g"].Pull<double>();
+            var rh = rdr["h"].Pull<bool>();
+            var ri = rdr["i"].Pull<decimal>();
 
-            Assert.AreEqual(4, rdr.Count);
+            Assert.AreEqual(9, rdr.Count);
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
             Assert.AreEqual(c, rc);
             Assert.AreEqual(d, rd);
+            Assert.AreEqual(e, re);
+            Assert.AreEqual(f, rf);
+            Assert.AreEqual(g, rg);
+            Assert.AreEqual(h, rh);
+            Assert.AreEqual(i, ri);
+        }
+
+        [TestMethod]
+        public void Integer()
+        {
+            var i8 = (sbyte)-1;
+            var u8 = (byte)1;
+            var i16 = (short)-1;
+            var u16 = (ushort)1;
+            var i32 = -1;
+            var u32 = 1U;
+            var i64 = -1L;
+            var u64 = 1UL;
+
+            var wtr = new PacketWriter();
+            wtr.Push("a", i8).
+                Push("b", u8).
+                Push("c", i16).
+                Push("d", u16).
+                Push("e", i32).
+                Push("f", u32).
+                Push("g", i64).
+                Push("h", u64);
+            var buf = wtr.GetBytes();
+
+            var rdr = new PacketReader(buf);
+            var ri8 = rdr["a"].Pull<sbyte>();
+            var ru8 = rdr["b"].Pull<byte>();
+            var ri16 = rdr["c"].Pull<short>();
+            var ru16 = rdr["d"].Pull<ushort>();
+            var ri32 = rdr["e"].Pull<int>();
+            var ru32 = rdr["f"].Pull<uint>();
+            var ri64 = rdr["g"].Pull<long>();
+            var ru64 = rdr["h"].Pull<ulong>();
+
+            Assert.AreEqual(8, rdr.Count);
+            Assert.AreEqual(i8, ri8);
+            Assert.AreEqual(u8, ru8);
+            Assert.AreEqual(i16, ri16);
+            Assert.AreEqual(u16, ru16);
+            Assert.AreEqual(i32, ri32);
+            Assert.AreEqual(u32, ru32);
+            Assert.AreEqual(i64, ri64);
+            Assert.AreEqual(u64, ru64);
         }
 
         [TestMethod]
