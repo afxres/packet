@@ -13,9 +13,9 @@ namespace Mikodev.Network
     /// </summary>
     public class PacketReader : IDynamicMetaObjectProvider
     {
-        internal int _off = 0;
-        internal int _len = 0;
-        internal byte[] _buf = null;
+        internal readonly int _off = 0;
+        internal readonly int _len = 0;
+        internal readonly byte[] _buf = null;
         internal Dictionary<string, PacketReader> _dic = null;
         internal Dictionary<Type, PacketConverter> _con = null;
 

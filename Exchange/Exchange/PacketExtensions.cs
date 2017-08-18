@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using static System.BitConverter;
 
 namespace Mikodev.Network
 {
@@ -67,18 +68,18 @@ namespace Mikodev.Network
             var hdr = stream._Read(sizeof(int));
             if (hdr == null)
                 return null;
-            var len = BitConverter.ToInt32(hdr, 0);
+            var len = ToInt32(hdr, 0);
             var res = stream._Read(len);
             return res;
         }
 
         internal static void _Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
 
-        internal static void _Write<T>(this Stream stream, T value) where T : struct => stream._Write(value._GetBytes());
+        internal static void _WriteLen(this Stream stream, int value) => stream._Write(GetBytes(value));
 
         internal static void _WriteExt(this Stream stream, byte[] buffer)
         {
-            var len = BitConverter.GetBytes(buffer.Length);
+            var len = GetBytes(buffer.Length);
             stream._Write(len);
             stream._Write(buffer);
         }
@@ -98,8 +99,8 @@ namespace Mikodev.Network
                 null),
 
             [typeof(DateTime)] = new PacketConverter(
-                (obj) => ((DateTime)obj).ToBinary()._GetBytes(),
-                (buf, off, len) => DateTime.FromBinary(buf._GetValue<long>(off, len)),
+                (obj) => GetBytes(((DateTime)obj).ToBinary()),
+                (buf, off, len) => DateTime.FromBinary(ToInt64(buf, off)),
                 sizeof(long)),
 
             [typeof(IPAddress)] = new PacketConverter(

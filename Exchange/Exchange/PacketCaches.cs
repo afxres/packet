@@ -38,14 +38,14 @@ namespace Mikodev.Network
             {
                 var src = Enum.GetUnderlyingType(type);
                 return new PacketConverter(
-                    (obj) => Convert.ChangeType(obj, src)._GetBytes(src),
+                    (obj) => Convert.ChangeType(obj, src)._GetBytes(),
                     (buf, off, len) => buf._GetValue(off, len, src),
                     Marshal.SizeOf(src));
             }
             else if (type.GetTypeInfo().IsValueType == true && type.GetTypeInfo().IsGenericType == false)
             {
                 return new PacketConverter(
-                    (obj) => obj._GetBytes(type),
+                    (obj) => obj._GetBytes(),
                     (buf, off, len) => buf._GetValue(off, len, type),
                     Marshal.SizeOf(type));
             }

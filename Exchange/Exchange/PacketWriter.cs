@@ -178,7 +178,7 @@ namespace Mikodev.Network
                 var val = i.Value;
                 if (val._obj is null)
                 {
-                    str._Write(0);
+                    str._WriteLen(0);
                     continue;
                 }
                 if (val._obj is byte[] buf)
@@ -188,11 +188,11 @@ namespace Mikodev.Network
                 }
 
                 var pos = str.Position;
-                str._Write(0);
+                str._WriteLen(0);
                 _Byte(str, (ItemDictionary)val._obj, lvl + 1);
                 var end = str.Position;
                 str.Seek(pos, SeekOrigin.Begin);
-                str._Write((int)(end - pos - sizeof(int)));
+                str._WriteLen((int)(end - pos - sizeof(int)));
                 str.Seek(end, SeekOrigin.Begin);
             }
         }

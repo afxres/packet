@@ -9,9 +9,9 @@ namespace Mikodev.Network
     /// </summary>
     public class PacketConverter
     {
-        private BinaryFunction _bin = null;
-        private ObjectFunction _obj = null;
-        private int? _len = null;
+        internal readonly BinaryFunction _bin;
+        internal readonly ObjectFunction _obj;
+        internal readonly int? _len;
 
         /// <summary>
         /// object -> byte[]
