@@ -1,41 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static Mikodev.Network.PacketExtensions;
 
 namespace Mikodev.Network
 {
-    internal class PacketCaches
+    internal static class PacketCaches
     {
-        private object _loc = new object();
+        private static ConditionalWeakTable<Type, PacketConverter> s_dic = new ConditionalWeakTable<Type, PacketConverter>();
 
-        private Dictionary<Type, WeakReference<PacketConverter>> _dic = new Dictionary<Type, WeakReference<PacketConverter>>();
-
-        private static PacketCaches s_ins = new PacketCaches();
-
-        private PacketCaches() { }
-
-        private PacketConverter _Value(Type type)
-        {
-            if (_dic.TryGetValue(type, out var ele))
-            {
-                if (ele.TryGetTarget(out var val))
-                    return val;
-                var con = _Define(type);
-                if (con == null)
-                    throw new PacketException(PacketError.AssertFailed);
-                ele.SetTarget(con);
-                return con;
-            }
-            var res = _Define(type);
-            if (res == null)
-                return null;
-            _dic.Add(type, new WeakReference<PacketConverter>(res));
-            return res;
-        }
-
-        private PacketConverter _Define(Type type)
+        private static PacketConverter _Define(Type type)
         {
             if (type.GetTypeInfo().IsEnum)
                 return s_Converters[Enum.GetUnderlyingType(type)];
@@ -52,13 +27,16 @@ namespace Mikodev.Network
 
         public static bool TryGetValue(Type type, out PacketConverter value)
         {
-            var res = default(PacketConverter);
-            lock (s_ins._loc)
+            lock (s_dic)
             {
-                res = s_ins._Value(type);
+                if (s_dic.TryGetValue(type, out value))
+                    return true;
+                value = _Define(type);
+                if (value == null)
+                    return false;
+                s_dic.Add(type, value);
+                return true;
             }
-            value = res;
-            return res != null;
         }
     }
 }

@@ -204,7 +204,7 @@ namespace Mikodev.Network
         public byte[] GetBytes()
         {
             if (_obj is byte[] buf)
-                return buf._Split(0, buf.Length);
+                return buf;
             var dic = _obj as ItemDictionary;
             if (dic == null)
                 return new byte[0];

@@ -36,7 +36,7 @@ namespace Mikodev.Network
             return false;
         }
 
-        internal static byte[] _Split(this byte[] buffer, int offset, int length)
+        internal static byte[] _Part(this byte[] buffer, int offset, int length)
         {
             if (length > buffer.Length)
                 throw new PacketException(PacketError.Overflow);
@@ -81,7 +81,7 @@ namespace Mikodev.Network
         {
             [typeof(byte[])] = new PacketConverter(
                 (obj) => (byte[])obj,
-                _Split,
+                _Part,
                 null),
 
             [typeof(string)] = new PacketConverter(
@@ -96,7 +96,7 @@ namespace Mikodev.Network
 
             [typeof(IPAddress)] = new PacketConverter(
                 (obj) => ((IPAddress)obj).GetAddressBytes(),
-                (buf, off, len) => new IPAddress(buf._Split(off, len)),
+                (buf, off, len) => new IPAddress(buf._Part(off, len)),
                 null),
 
             [typeof(IPEndPoint)] = new PacketConverter(

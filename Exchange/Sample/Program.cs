@@ -1,5 +1,6 @@
 ﻿using Mikodev.Network;
 using System;
+using System.Diagnostics;
 
 namespace Mikodev.Test
 {
@@ -27,6 +28,38 @@ namespace Mikodev.Test
             Console.WriteLine($"my last online time : {reader["data/last_time"].Pull<DateTime>():yyyy-MM-dd HH:mm:ss}");
 
             // more samples, see unit test.
+
+            var times = 1 << 20;
+
+            for (int i = 0; i < 1 << 26; i++)
+            {
+                var t = i * i;
+            }
+
+            using (var t = new TraceWatch())
+            {
+                for (int i = 0; i < times; i++)
+                {
+                    var buf = PacketWriter.Serialize(i).GetBytes();
+                    var res = new PacketReader(buf).Pull<int>();
+                }
+            }
+        }
+    }
+
+    class TraceWatch : IDisposable
+    {
+        private Stopwatch _watch = new Stopwatch();
+
+        public TraceWatch()
+        {
+            _watch.Start();
+        }
+
+        public void Dispose()
+        {
+            _watch.Stop();
+            Console.WriteLine($"[{_watch.ElapsedMilliseconds} ms]");
         }
     }
 }

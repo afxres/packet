@@ -183,7 +183,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Get byte array of current node
         /// </summary>
-        public byte[] PullList() => _buf._Split(_off, _len);
+        public byte[] PullList() => _buf._Part(_off, _len);
 
         /// <summary>
         /// 将当前节点转换成目标类型数据集合

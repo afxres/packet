@@ -43,7 +43,7 @@ namespace Mikodev.Network
 
         internal static IPEndPoint _BinaryToEndPoint(byte[] buffer, int offset, int length)
         {
-            var add = new IPAddress(buffer._Split(offset, length - sizeof(ushort)));
+            var add = new IPAddress(buffer._Part(offset, length - sizeof(ushort)));
             var pot = ToUInt16(buffer, offset + length - sizeof(ushort));
             return new IPEndPoint(add, pot);
         }
