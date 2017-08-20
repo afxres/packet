@@ -18,25 +18,23 @@ namespace Mikodev.Network
             if (type.GetTypeInfo().IsValueType == false || type.GetTypeInfo().IsGenericType)
                 return null;
 
-            var use = Marshal.SizeOf(type);
             return new PacketConverter(
                 _GetBytes,
                 (buf, off, len) => _GetValue(buf, off, len, type),
-                use);
+                Marshal.SizeOf(type));
         }
 
         public static bool TryGetValue(Type type, out PacketConverter value)
         {
-            lock (s_dic)
-            {
-                if (s_dic.TryGetValue(type, out value))
-                    return true;
-                value = _Define(type);
-                if (value == null)
-                    return false;
-                s_dic.Add(type, value);
+            if (s_dic.TryGetValue(type, out value))
                 return true;
-            }
+
+            var val = _Define(type);
+            if (val == null)
+                value = null;
+            else
+                value = s_dic.GetValue(type, _ => val);
+            return val != null;
         }
     }
 }

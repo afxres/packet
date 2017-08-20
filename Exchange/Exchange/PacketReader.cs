@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Mikodev.Network
@@ -17,7 +18,7 @@ namespace Mikodev.Network
         internal readonly int _len = 0;
         internal readonly byte[] _buf = null;
         internal Dictionary<string, PacketReader> _dic = null;
-        internal Dictionary<Type, PacketConverter> _con = null;
+        internal readonly Dictionary<Type, PacketConverter> _con = null;
 
         internal PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, PacketConverter> converters)
         {
@@ -151,6 +152,7 @@ namespace Mikodev.Network
         /// <param name="path">Node path</param>
         /// <param name="nothrow">return null if error</param>
         /// <param name="separator">Path separators, use default separators if null</param>
+        [IndexerName("Node")]
         public PacketReader this[string path, bool nothrow = false, string[] separator = null] => _ItemPath(path, nothrow, separator);
 
         /// <summary>
