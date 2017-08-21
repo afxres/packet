@@ -17,7 +17,7 @@ namespace Mikodev.Network
     {
         internal const int _Level = 32;
         internal object _obj = null;
-        internal Dictionary<Type, PacketConverter> _con = null;
+        internal readonly Dictionary<Type, PacketConverter> _con = null;
 
         /// <summary>
         /// Create new writer
@@ -26,17 +26,6 @@ namespace Mikodev.Network
         public PacketWriter(Dictionary<Type, PacketConverter> converters = null)
         {
             _con = converters ?? PacketExtensions.s_Converters;
-        }
-
-        internal PacketConverter _Find(Type type, bool nothrow)
-        {
-            if (_con.TryGetValue(type, out var con))
-                return con;
-            if (PacketCaches.TryGetValue(type, out var val))
-                return val;
-            if (nothrow)
-                return null;
-            throw new PacketException(PacketError.TypeInvalid);
         }
 
         internal ItemDictionary _ItemList()
@@ -48,25 +37,13 @@ namespace Mikodev.Network
             return val;
         }
 
-        internal void _ItemPush(string key, PacketWriter val)
-        {
-            if (val is null)
-                throw new PacketException(PacketError.AssertFailed);
-            var dic = _ItemList();
-            dic[key] = val;
-        }
-
         /// <summary>
         /// 写入标签和另一个实例
         /// <para>Write key and another instance</para>
         /// </summary>
         public PacketWriter Push(string key, PacketWriter val)
         {
-            if (val is null)
-                val = new PacketWriter(_con);
-            else
-                val._con = _con;
-            _ItemPush(key, val);
+            _ItemList()[key] = new PacketWriter(_con) { _obj = val?._obj };
             return this;
         }
 
@@ -81,8 +58,12 @@ namespace Mikodev.Network
         {
             var nod = new PacketWriter(_con);
             if (val != null)
-                nod._obj = _Find(type, false).ToBinary(val);
-            _ItemPush(key, nod);
+            {
+                if (_con.TryGetValue(type, out var con) == false && PacketCaches.TryGetValue(type, out con) == false)
+                    throw new PacketException(PacketError.TypeInvalid);
+                nod._obj = con.ToBinary(val);
+            }
+            _ItemList()[key] = nod;
             return this;
         }
 
@@ -101,15 +82,16 @@ namespace Mikodev.Network
         public PacketWriter PushList(string key, byte[] buf)
         {
             var nod = new PacketWriter(_con) { _obj = buf };
-            _ItemPush(key, nod);
+            _ItemList()[key] = nod;
             return this;
         }
 
         internal void _ByteList(Type type, IEnumerable val)
         {
-            if (val is null)
+            if (val == null)
                 throw new PacketException(PacketError.AssertFailed);
-            var con = _Find(type, false);
+            if (_con.TryGetValue(type, out var con) == false && PacketCaches.TryGetValue(type, out con) == false)
+                throw new PacketException(PacketError.TypeInvalid);
             var mst = new MemoryStream();
             foreach (var v in val)
             {
@@ -137,7 +119,7 @@ namespace Mikodev.Network
             var nod = new PacketWriter(_con);
             if (val != null)
                 nod._ByteList(type, val);
-            _ItemPush(key, nod);
+            _ItemList()[key] = nod;
             return this;
         }
 
@@ -150,22 +132,22 @@ namespace Mikodev.Network
         /// <param name="val">Value collection</param>
         public PacketWriter PushList<T>(string key, IEnumerable<T> val) => PushList(key, typeof(T), val);
 
-        internal static PacketWriter _ItemNode(object val, Dictionary<Type, PacketConverter> con)
+        internal static bool _ItemNode(object val, Dictionary<Type, PacketConverter> cons, out PacketWriter value)
         {
-            var fun = default(PacketConverter);
-            var wtr = new PacketWriter(con);
+            var wtr = new PacketWriter(cons);
 
-            if (val is null)
+            if (val == null)
                 wtr._obj = null;
-            else if (val is PacketWriter pkt)
-                wtr._obj = pkt._obj;
-            else if ((fun = wtr._Find(val.GetType(), true)) != null)
-                wtr._obj = fun.ToBinary(val);
+            else if (val is PacketWriter wri)
+                wtr._obj = wri._obj;
+            else if (wtr._con.TryGetValue(val.GetType(), out var con) || PacketCaches.TryGetValue(val.GetType(), out con))
+                wtr._obj = con.ToBinary(val);
             else if (val.GetType()._IsEnumerable(out var inn))
                 wtr._ByteList(inn, (IEnumerable)val);
             else
-                return null;
-            return wtr;
+                wtr = null;
+            value = wtr;
+            return wtr != null;
         }
 
         internal void _Byte(MemoryStream str, ItemDictionary dic, int lvl)
@@ -240,18 +222,17 @@ namespace Mikodev.Network
             if (lvl > _Level)
                 throw new PacketException(PacketError.RecursiveError);
             var wtr = new PacketWriter(con);
-            var nod = default(PacketWriter);
 
             void _push(string key, object obj)
             {
                 var sub = _Serialize(obj, con, lvl + 1);
-                wtr._ItemPush(key, sub);
+                wtr._ItemList()[key] = sub;
             }
 
             if (val is IDictionary<string, object> dic)
                 foreach (var p in dic)
                     _push(p.Key, p.Value);
-            else if ((nod = _ItemNode(val, con)) != null)
+            else if (_ItemNode(val, con, out var nod))
                 return nod;
             else
                 foreach (var p in val.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))

@@ -38,10 +38,9 @@ namespace Mikodev.Network
             var wtr = (PacketWriter)Value;
             var key = binder.Name;
             var val = value.Value;
-            var nod = PacketWriter._ItemNode(val, wtr._con);
-            if (nod == null)
+            if (PacketWriter._ItemNode(val, wtr._con, out var nod) == false)
                 throw new PacketException(PacketError.TypeInvalid);
-            wtr._ItemPush(key, nod);
+            wtr._ItemList()[key] = nod;
             var exp = Expression.Constant(val, typeof(object));
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }

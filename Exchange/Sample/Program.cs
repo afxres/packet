@@ -36,9 +36,20 @@ namespace Mikodev.Test
                 var t = i * i;
             }
 
+            // 12 ~ 13 ms
             using (var t = new TraceWatch())
             {
-                for (int i = 0; i < times; i++)
+                for (var i = 0; i < times; i++)
+                {
+                    var buf = BitConverter.GetBytes(i);
+                    var res = BitConverter.ToInt32(buf, 0);
+                }
+            }
+
+            // 230 ~ 240 ms
+            using (var t = new TraceWatch())
+            {
+                for (var i = 0; i < times; i++)
                 {
                     var buf = PacketWriter.Serialize(i).GetBytes();
                     var res = new PacketReader(buf).Pull<int>();

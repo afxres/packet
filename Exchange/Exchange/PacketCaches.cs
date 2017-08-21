@@ -24,6 +24,9 @@ namespace Mikodev.Network
                 Marshal.SizeOf(type));
         }
 
+        /// <summary>
+        /// Thread safe method.
+        /// </summary>
         public static bool TryGetValue(Type type, out PacketConverter value)
         {
             if (s_dic.TryGetValue(type, out value))

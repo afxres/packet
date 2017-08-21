@@ -7,7 +7,7 @@ namespace Mikodev.Network
     /// </summary>
     public class PacketException : Exception
     {
-        internal PacketError _code = PacketError.None;
+        internal readonly PacketError _code = PacketError.None;
 
         /// <summary>
         /// Error code

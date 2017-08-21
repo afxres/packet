@@ -20,18 +20,10 @@ namespace Mikodev.Network
         internal Dictionary<string, PacketReader> _dic = null;
         internal readonly Dictionary<Type, PacketConverter> _con = null;
 
-        internal PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, PacketConverter> converters)
-        {
-            _buf = buffer;
-            _off = offset;
-            _len = length;
-            _con = converters;
-        }
-
         /// <summary>
         /// Create new reader
         /// </summary>
-        /// <param name="buffer">Binary data packet</param>
+        /// <param name="buffer">Binary data packet (Should be readonly)</param>
         /// <param name="converters">Binary converters, use default converters if null</param>
         public PacketReader(byte[] buffer, Dictionary<Type, PacketConverter> converters = null)
         {
@@ -41,9 +33,26 @@ namespace Mikodev.Network
         }
 
         /// <summary>
+        /// Create new reader
+        /// </summary>
+        /// <param name="buffer">Binary data packet (Should be readonly)</param>
+        /// <param name="offset">Start index</param>
+        /// <param name="length">Packet length</param>
+        /// <param name="converters">Binary converters, use default converters if null</param>
+        public PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, PacketConverter> converters = null)
+        {
+            _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || length < 0 || buffer.Length < offset + length)
+                throw new ArgumentOutOfRangeException();
+            _off = offset;
+            _len = length;
+            _con = converters ?? PacketExtensions.s_Converters;
+        }
+
+        /// <summary>
         /// Parse this packet (return false if error)
         /// </summary>
-        internal bool _Initial()
+        internal bool _Init()
         {
             if (_dic != null)
                 return true;
@@ -72,20 +81,9 @@ namespace Mikodev.Network
             return true;
         }
 
-        internal PacketConverter _Find(Type type, bool nothrow)
-        {
-            if (_con.TryGetValue(type, out var fun))
-                return fun;
-            if (PacketCaches.TryGetValue(type, out var val))
-                return val;
-            if (nothrow)
-                return null;
-            throw new PacketException(PacketError.TypeInvalid);
-        }
-
         internal PacketReader _Item(string key, bool nothrow)
         {
-            if (_Initial() == false)
+            if (_Init() == false)
                 throw new PacketException(PacketError.Overflow);
             if (_dic.TryGetValue(key, out var val))
                 return val;
@@ -106,7 +104,9 @@ namespace Mikodev.Network
 
         internal IEnumerable _List(Type type)
         {
-            var con = _Find(type, false);
+            if (_con.TryGetValue(type, out var con) == false && PacketCaches.TryGetValue(type, out con) == false)
+                throw new PacketException(PacketError.TypeInvalid);
+
             var str = new MemoryStream(_buf, _off, _len);
             while (str.Position < str.Length)
             {
@@ -129,7 +129,7 @@ namespace Mikodev.Network
 
         internal IEnumerable<string> _Keys()
         {
-            if (_Initial() == true)
+            if (_Init() == true)
                 foreach (var i in _dic)
                     yield return i.Key;
             yield break;
@@ -138,7 +138,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Child node count
         /// </summary>
-        public int Count => _Initial() ? _dic.Count : 0;
+        public int Count => _Init() ? _dic.Count : 0;
 
         /// <summary>
         /// Child node keys
@@ -170,7 +170,9 @@ namespace Mikodev.Network
         /// <param name="type">Target type</param>
         public object Pull(Type type)
         {
-            var con = _Find(type, false);
+            if (_con.TryGetValue(type, out var con) == false && PacketCaches.TryGetValue(type, out con) == false)
+                throw new PacketException(PacketError.TypeInvalid);
+
             var res = con.ToObject(_buf, _off, _len);
             return res;
         }
@@ -209,7 +211,7 @@ namespace Mikodev.Network
         {
             var stb = new StringBuilder(nameof(PacketReader));
             stb.Append(" with ");
-            if (_Initial() == false || _dic.Count < 1)
+            if (_Init() == false || _dic.Count < 1)
                 if (_len != 0)
                     stb.AppendFormat("{0} byte(s)", _len);
                 else
