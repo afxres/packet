@@ -13,15 +13,25 @@ namespace Mikodev.Network
         private static PacketConverter _Define(Type type)
         {
             if (type.GetTypeInfo().IsEnum)
-                return s_Converters[Enum.GetUnderlyingType(type)];
-
-            if (type.GetTypeInfo().IsValueType == false || type.GetTypeInfo().IsGenericType)
+            {
+                var und = Enum.GetUnderlyingType(type);
+                if (s_Converters.TryGetValue(und, out var res))
+                    return res;
                 return null;
+            }
 
-            return new PacketConverter(
-                _GetBytes,
-                (buf, off, len) => _GetValue(buf, off, len, type),
-                Marshal.SizeOf(type));
+            try
+            {
+                var len = Marshal.SizeOf(type);
+                return new PacketConverter(
+                    _GetBytes,
+                    (a, i, l) => _GetValue(a, i, l, type),
+                    len);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -33,10 +43,9 @@ namespace Mikodev.Network
                 return true;
 
             var val = _Define(type);
-            if (val == null)
-                value = null;
-            else
-                value = s_dic.GetValue(type, _ => val);
+            value = (val != null)
+                ? s_dic.GetValue(type, _ => val)
+                : null;
             return val != null;
         }
     }

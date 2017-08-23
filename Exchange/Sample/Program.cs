@@ -36,7 +36,7 @@ namespace Mikodev.Test
                 var t = i * i;
             }
 
-            // 12 ~ 13 ms
+            // 12 ~ 13 ms Debug
             using (var t = new TraceWatch())
             {
                 for (var i = 0; i < times; i++)
@@ -46,7 +46,7 @@ namespace Mikodev.Test
                 }
             }
 
-            // 230 ~ 240 ms
+            // 230 ~ 240 ms Debug
             using (var t = new TraceWatch())
             {
                 for (var i = 0; i < times; i++)

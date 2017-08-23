@@ -56,6 +56,8 @@ namespace Mikodev.Network
         /// <param name="bin">object -> byte[]</param>
         /// <param name="obj">byte[] -> object</param>
         /// <param name="length">Byte length, null if not constant</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         public PacketConverter(BinaryFunction bin, ObjectFunction obj, int? length)
         {
             if (bin == null || obj == null)
