@@ -337,9 +337,33 @@ namespace Mikodev.UnitTest
                 buf[i] = 0xFF;
 
             var rea = new PacketReader(buf);
+            var ra = rea["invalid", true];
+            var rb = rea.Pull("invalid", true);
 
             Assert.AreEqual(0, rea.Count);
             Assert.AreEqual(0, rea.Keys.Count());
+            Assert.AreEqual(null, ra);
+            Assert.AreEqual(null, rb);
+
+            try
+            {
+                var ta = rea["invalid"];
+                Assert.Fail();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.Overflow)
+            {
+                // ignore
+            }
+
+            try
+            {
+                var ta = rea.Pull("invalid");
+                Assert.Fail();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.Overflow)
+            {
+                // ignore
+            }
         }
     }
 }

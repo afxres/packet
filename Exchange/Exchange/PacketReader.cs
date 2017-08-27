@@ -83,13 +83,12 @@ namespace Mikodev.Network
 
         internal PacketReader _Item(string key, bool nothrow)
         {
-            if (_Init() == false)
-                throw new PacketException(PacketError.Overflow);
-            if (_dic.TryGetValue(key, out var val))
+            var res = _Init();
+            if (res == true && _dic.TryGetValue(key, out var val))
                 return val;
             if (nothrow)
                 return null;
-            throw new PacketException(PacketError.PathError);
+            throw new PacketException(res ? PacketError.PathError : PacketError.Overflow);
         }
 
         internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
@@ -150,7 +149,7 @@ namespace Mikodev.Network
         /// <para>Get node by path</para>
         /// </summary>
         /// <param name="path">Node path</param>
-        /// <param name="nothrow">return null if error</param>
+        /// <param name="nothrow">return null if path not found</param>
         /// <param name="separator">Path separators, use default separators if null</param>
         [IndexerName("Node")]
         public PacketReader this[string path, bool nothrow = false, string[] separator = null] => _ItemPath(path, nothrow, separator);
@@ -160,7 +159,7 @@ namespace Mikodev.Network
         /// <para>Get node by key</para>
         /// </summary>
         /// <param name="key">Node tag</param>
-        /// <param name="nothrow">return null if error</param>
+        /// <param name="nothrow">return null if key not found</param>
         public PacketReader Pull(string key, bool nothrow = false) => _Item(key, nothrow);
 
         /// <summary>
