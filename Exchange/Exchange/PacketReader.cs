@@ -42,7 +42,7 @@ namespace Mikodev.Network
         public PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, PacketConverter> converters = null)
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
-            if (offset < 0 || length < 0 || buffer.Length < offset + length)
+            if (offset < 0 || length < 0 || buffer.Length - offset < length)
                 throw new ArgumentOutOfRangeException();
             _off = offset;
             _len = length;
@@ -57,24 +57,20 @@ namespace Mikodev.Network
             if (_dic != null)
                 return true;
             var dic = new Dictionary<string, PacketReader>();
-            var str = new MemoryStream(_buf) { Position = _off };
             var max = _off + _len;
+            var idx = _off;
+            var len = 0;
 
-            while (str.Position < max)
+            while (idx < max)
             {
-                var kbf = str._ReadExt();
-                if (kbf == null)
+                if (_buf._Read(ref idx, out len) == false)
                     return false;
-                var buf = str._Read(sizeof(int));
-                if (buf == null)
+                var key = Encoding.UTF8.GetString(_buf, idx, len);
+                idx += len;
+                if (_buf._Read(ref idx, out len) == false)
                     return false;
-                var len = BitConverter.ToInt32(buf, 0);
-                if (len < 0 || str.Position + len > max)
-                    return false;
-                var key = Encoding.UTF8.GetString(kbf);
-                var off = (int)str.Position;
-                str.Seek(len, SeekOrigin.Current);
-                dic.Add(key, new PacketReader(_buf, off, len, _con));
+                dic.Add(key, new PacketReader(_buf, idx, len, _con));
+                idx += len;
             }
 
             _dic = dic;
@@ -106,17 +102,20 @@ namespace Mikodev.Network
             if (_con.TryGetValue(type, out var con) == false && PacketCaches.TryGetValue(type, out con) == false)
                 throw new PacketException(PacketError.TypeInvalid);
 
-            var str = new MemoryStream(_buf, _off, _len);
-            while (str.Position < str.Length)
+            var max = _off + _len;
+            var idx = _off;
+
+            while (idx < max)
             {
-                var buf = (con.Length is int len)
-                    ? str._Read(len)
-                    : str._ReadExt();
-                var tmp = con.ToObject(buf, 0, buf.Length);
+                var len = con.Length is int val
+                    ? val
+                    : _buf._Read(ref idx);
+                if (_buf._Read(idx, len) == false)
+                    throw new IndexOutOfRangeException();
+                var tmp = con.ToObject(_buf, idx, len);
                 yield return tmp;
+                idx += len;
             }
-            str.Dispose();
-            yield break;
         }
 
         internal IEnumerable<T> _ListGen<T>()

@@ -1,6 +1,9 @@
 ﻿using Mikodev.Network;
 using System;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
 
 namespace Mikodev.Test
 {
@@ -8,7 +11,23 @@ namespace Mikodev.Test
     {
         static void Main(string[] args)
         {
-            // serialize an anonymous object to byte array.
+            const int port = 47530;
+            var server = new UdpClient(port);
+            server.BeginReceive(r =>
+            {
+                var endpoint = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort);
+                var bytes = server.EndReceive(r, ref endpoint);
+                var reader = new PacketReader(bytes);
+
+                Console.WriteLine($"message from : {endpoint}");
+                Console.WriteLine($"id : {reader["id"].Pull<int>()}");
+                Console.WriteLine($"name : {reader["name"].Pull<string>()}");
+                Console.WriteLine($"token : {reader["data/token"].Pull<Guid>()}");
+                Console.WriteLine($"timestamp : {reader["data/timestamp"].Pull<DateTime>():yyyy-MM-dd HH:mm:ss}");
+                Console.WriteLine();
+            }, null);
+
+            // serialize an anonymous object.
             var buffer = PacketWriter.Serialize(new
             {
                 id = 1,
@@ -16,16 +35,13 @@ namespace Mikodev.Test
                 data = new
                 {
                     token = Guid.NewGuid(),
-                    last_time = DateTime.Now,
+                    timestamp = DateTime.Now,
                 }
             }).GetBytes();
 
-            var reader = new PacketReader(buffer);
-
-            Console.WriteLine($"my id : {reader["id"].Pull<int>()}");
-            Console.WriteLine($"my name : {reader["name"].Pull<string>()}");
-            Console.WriteLine($"my token : {reader["data/token"].Pull<Guid>()}");
-            Console.WriteLine($"my last online time : {reader["data/last_time"].Pull<DateTime>():yyyy-MM-dd HH:mm:ss}");
+            var client = new UdpClient();
+            client.Send(buffer, buffer.Length, new IPEndPoint(IPAddress.Loopback, port));
+            Thread.Sleep(1000);
 
             // more samples, see unit test.
 

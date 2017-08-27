@@ -45,23 +45,44 @@ namespace Mikodev.Network
             return buf;
         }
 
-        internal static byte[] _Read(this Stream stream, int length)
+        /// <summary>
+        /// Return false if any argument out if range
+        /// </summary>
+        internal static bool _Read(this byte[] buffer, int offset, int length)
         {
-            if (length < 0 || stream.Position + length > stream.Length)
-                return null;
-            var buf = new byte[length];
-            stream.Read(buf, 0, length);
-            return buf;
+            if (offset < 0 || length < 0 || buffer.Length - offset < length)
+                return false;
+            return true;
         }
 
-        internal static byte[] _ReadExt(this Stream stream)
+        /// <summary>
+        /// Read length from buffer, check all arguments
+        /// </summary>
+        internal static bool _Read(this byte[] buffer, ref int offset, out int length)
         {
-            var hdr = stream._Read(sizeof(int));
-            if (hdr == null)
-                return null;
-            var len = ToInt32(hdr, 0);
-            var res = stream._Read(len);
-            return res;
+            if (buffer._Read(offset, sizeof(int)) == false)
+                goto fail;
+            length = ToInt32(buffer, offset);
+            offset += sizeof(int);
+            if (buffer._Read(offset, length) == false)
+                goto fail;
+            return true;
+
+            fail:
+            length = 0;
+            return false;
+        }
+
+        /// <summary>
+        /// Read length from buffer, throw if offset out of range
+        /// </summary>
+        internal static int _Read(this byte[] buffer, ref int offset)
+        {
+            if (buffer._Read(offset, sizeof(int)) == false)
+                throw new IndexOutOfRangeException();
+            var length = ToInt32(buffer, offset);
+            offset += sizeof(int);
+            return length;
         }
 
         internal static void _Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
