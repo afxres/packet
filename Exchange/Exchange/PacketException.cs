@@ -50,6 +50,22 @@ namespace Mikodev.Network
         /// <summary>
         /// Default exception method
         /// </summary>
-        protected PacketException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+        protected PacketException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+            if (info == null)
+                throw new ArgumentNullException(nameof(info));
+            _code = (PacketError)info.GetValue(nameof(PacketError), typeof(PacketError));
+        }
+
+        /// <summary>
+        /// Provide object for serialization
+        /// </summary>
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            if (info == null)
+                throw new ArgumentNullException(nameof(info));
+            info.AddValue(nameof(PacketError), _code);
+            base.GetObjectData(info, context);
+        }
     }
 }

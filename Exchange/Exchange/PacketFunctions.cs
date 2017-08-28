@@ -21,9 +21,9 @@ namespace Mikodev.Network
         internal static unsafe object _GetValue(byte[] buffer, int offset, int length, Type type)
         {
             var len = Marshal.SizeOf(type);
-            if (len > length)
+            if (length < len)
                 throw new PacketException(PacketError.Overflow);
-            if (offset < 0 || offset + len > buffer.Length)
+            if (offset < 0 || buffer.Length - offset < len)
                 throw new PacketException(PacketError.AssertFailed);
             fixed (byte* ptr = buffer)
             {

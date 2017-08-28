@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
-using System.IO;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -103,19 +102,13 @@ namespace Mikodev.Network
                 throw new PacketException(PacketError.TypeInvalid);
 
             var max = _off + _len;
-            var idx = _off;
-
-            while (idx < max)
-            {
-                var len = con.Length is int val
-                    ? val
-                    : _buf._Read(ref idx);
-                if (_buf._Read(idx, len) == false)
-                    throw new IndexOutOfRangeException();
-                var tmp = con.ToObject(_buf, idx, len);
-                yield return tmp;
-                idx += len;
-            }
+            if (con.Length is int len)
+                for (int idx = _off; idx < max && idx + len <= max; idx += len)
+                    yield return con.ToObject(_buf, idx, len);
+            else
+                for (int idx = _off; idx < max && _buf._Read(ref idx, out var val, max); idx += val)
+                    yield return con.ToObject(_buf, idx, val);
+            yield break;
         }
 
         internal IEnumerable<T> _ListGen<T>()

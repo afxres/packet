@@ -46,43 +46,26 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Return false if any argument out if range
+        /// Read length from buffer, return false if out if range
         /// </summary>
-        internal static bool _Read(this byte[] buffer, int offset, int length)
+        internal static bool _Read(this byte[] buffer, ref int offset, out int length, int higher = -1)
         {
-            if (offset < 0 || length < 0 || buffer.Length - offset < length)
-                return false;
-            return true;
-        }
+            if (higher < 0)
+                higher = buffer.Length;
+            else if (buffer.Length < higher)
+                throw new PacketException(PacketError.AssertFailed);
 
-        /// <summary>
-        /// Read length from buffer, check all arguments
-        /// </summary>
-        internal static bool _Read(this byte[] buffer, ref int offset, out int length)
-        {
-            if (buffer._Read(offset, sizeof(int)) == false)
+            if (offset < 0 || higher - offset < sizeof(int))
                 goto fail;
             length = ToInt32(buffer, offset);
             offset += sizeof(int);
-            if (buffer._Read(offset, length) == false)
+            if (length < 0 || higher - offset < length)
                 goto fail;
             return true;
 
             fail:
             length = 0;
             return false;
-        }
-
-        /// <summary>
-        /// Read length from buffer, throw if offset out of range
-        /// </summary>
-        internal static int _Read(this byte[] buffer, ref int offset)
-        {
-            if (buffer._Read(offset, sizeof(int)) == false)
-                throw new IndexOutOfRangeException();
-            var length = ToInt32(buffer, offset);
-            offset += sizeof(int);
-            return length;
         }
 
         internal static void _Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
