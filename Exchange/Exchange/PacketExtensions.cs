@@ -98,15 +98,30 @@ namespace Mikodev.Network
                 (buf, off, len) => DateTime.FromBinary(ToInt64(buf, off)),
                 sizeof(long)),
 
+            [typeof(TimeSpan)] = new PacketConverter(
+                (obj) => GetBytes(((TimeSpan)obj).Ticks),
+                (buf, off, len) => new TimeSpan(ToInt64(buf, off)),
+                sizeof(long)),
+
             [typeof(IPAddress)] = new PacketConverter(
                 (obj) => ((IPAddress)obj).GetAddressBytes(),
                 (buf, off, len) => new IPAddress(buf._Part(off, len)),
                 null),
 
             [typeof(IPEndPoint)] = new PacketConverter(
-                (obj) => _EndPointToBinary((IPEndPoint)obj),
-                _BinaryToEndPoint,
+                (obj) => _OfEndPoint((IPEndPoint)obj),
+                _ToEndPoint,
                 null),
+
+            [typeof(Guid)] = new PacketConverter(
+                (obj) => ((Guid)obj).ToByteArray(),
+                (buf, off, len) => new Guid(_Part(buf, off, len)),
+                16),
+
+            [typeof(decimal)] = new PacketConverter(
+                (obj) => _OfDecimal((decimal)obj),
+                (buf, off, len) => _ToDecimal(buf, off, len),
+                sizeof(decimal)),
 
             [typeof(bool)] = new PacketConverter(
                 (obj) => GetBytes((bool)obj),

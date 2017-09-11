@@ -34,7 +34,9 @@ namespace Mikodev.UnitTest
             var f = 1.1F;
             var g = 1.1D;
             var h = true;
-            var i = 1.1M;
+            var i = 1.2345678901234567890123456789M;
+            var j = TimeSpan.MaxValue;
+            var k = Guid.NewGuid();
             var wtr = new PacketWriter();
             wtr.Push("a", a).
                 Push("b", b).
@@ -44,7 +46,9 @@ namespace Mikodev.UnitTest
                 Push("f", f).
                 Push("g", g).
                 Push("h", h).
-                Push("i", i);
+                Push("i", i).
+                Push("j", j).
+                Push("k", k);
             var buf = wtr.GetBytes();
 
             var rdr = new PacketReader(buf);
@@ -57,8 +61,10 @@ namespace Mikodev.UnitTest
             var rg = rdr["g"].Pull<double>();
             var rh = rdr["h"].Pull<bool>();
             var ri = rdr["i"].Pull<decimal>();
+            var rj = rdr["j"].Pull<TimeSpan>();
+            var rk = rdr["k"].Pull<Guid>();
 
-            Assert.AreEqual(9, rdr.Count);
+            Assert.AreEqual(11, rdr.Count);
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
             Assert.AreEqual(c, rc);
@@ -68,6 +74,8 @@ namespace Mikodev.UnitTest
             Assert.AreEqual(g, rg);
             Assert.AreEqual(h, rh);
             Assert.AreEqual(i, ri);
+            Assert.AreEqual(j, rj);
+            Assert.AreEqual(k, rk);
         }
 
         [TestMethod]

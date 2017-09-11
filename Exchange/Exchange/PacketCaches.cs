@@ -24,8 +24,8 @@ namespace Mikodev.Network
             {
                 var len = Marshal.SizeOf(type);
                 return new PacketConverter(
-                    _GetBytes,
-                    (a, i, l) => _GetValue(a, i, l, type),
+                    _OfValue,
+                    (a, i, l) => _ToValue(a, i, l, type),
                     len);
             }
             catch (ArgumentException)

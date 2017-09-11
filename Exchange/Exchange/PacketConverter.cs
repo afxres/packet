@@ -1,6 +1,4 @@
 ﻿using System;
-using BinaryFunction = System.Func<object, byte[]>;
-using ObjectFunction = System.Func<byte[], int, int, object>;
 
 namespace Mikodev.Network
 {
@@ -9,8 +7,8 @@ namespace Mikodev.Network
     /// </summary>
     public class PacketConverter
     {
-        internal readonly BinaryFunction _bin;
-        internal readonly ObjectFunction _obj;
+        internal readonly Func<object, byte[]> _bin;
+        internal readonly Func<byte[], int, int, object> _obj;
         internal readonly int? _len;
 
         /// <summary>
@@ -58,14 +56,12 @@ namespace Mikodev.Network
         /// <param name="length">Byte length, null if not constant</param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public PacketConverter(BinaryFunction bin, ObjectFunction obj, int? length)
+        public PacketConverter(Func<object, byte[]> bin, Func<byte[], int, int, object> obj, int? length)
         {
-            if (bin == null || obj == null)
-                throw new ArgumentNullException();
             if (length is int len && len < 0)
-                throw new ArgumentOutOfRangeException();
-            _bin = bin;
-            _obj = obj;
+                throw new ArgumentOutOfRangeException(nameof(length));
+            _bin = bin ?? throw new ArgumentNullException(nameof(bin));
+            _obj = obj ?? throw new ArgumentNullException(nameof(obj));
             _len = length;
         }
     }
