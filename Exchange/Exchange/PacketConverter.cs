@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Mikodev.Network
 {
@@ -21,7 +22,7 @@ namespace Mikodev.Network
             {
                 return _bin.Invoke(value);
             }
-            catch (Exception ex)
+            catch (Exception ex) when ((ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException) == false)
             {
                 throw new PacketException(PacketError.ConvertError, ex);
             }
@@ -37,7 +38,7 @@ namespace Mikodev.Network
             {
                 return _obj.Invoke(buffer, offset, length);
             }
-            catch (Exception ex)
+            catch (Exception ex) when ((ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException) == false)
             {
                 throw new PacketException(PacketError.ConvertError, ex);
             }
