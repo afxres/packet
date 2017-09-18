@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 
 namespace Mikodev.Network
 {
-    internal class DynamicPacketWriter : DynamicMetaObject
+    internal sealed class DynamicPacketWriter : DynamicMetaObject
     {
         internal DynamicPacketWriter(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 

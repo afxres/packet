@@ -35,7 +35,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Thread safe method.
+        /// Thread safe method
         /// </summary>
         public static bool TryGetValue(Type type, out PacketConverter value)
         {

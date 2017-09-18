@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Mikodev.Network
 {
-    internal class DynamicPacketReader : DynamicMetaObject
+    internal sealed class DynamicPacketReader : DynamicMetaObject
     {
         internal static readonly MethodInfo s_Method = typeof(PacketReader).GetTypeInfo().GetMethod(nameof(PacketReader._ListGen), BindingFlags.NonPublic | BindingFlags.Instance);
 

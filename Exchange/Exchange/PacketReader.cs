@@ -11,7 +11,7 @@ namespace Mikodev.Network
     /// <summary>
     /// Binary packet reader
     /// </summary>
-    public class PacketReader : IDynamicMetaObjectProvider
+    public sealed class PacketReader : IDynamicMetaObjectProvider
     {
         internal readonly int _off = 0;
         internal readonly int _len = 0;
@@ -23,7 +23,7 @@ namespace Mikodev.Network
         /// Create new reader
         /// </summary>
         /// <param name="buffer">Binary data packet (Should be readonly)</param>
-        /// <param name="converters">Binary converters, use default converters if null</param>
+        /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketReader(byte[] buffer, Dictionary<Type, PacketConverter> converters = null)
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
@@ -37,7 +37,7 @@ namespace Mikodev.Network
         /// <param name="buffer">Binary data packet (Should be readonly)</param>
         /// <param name="offset">Start index</param>
         /// <param name="length">Packet length</param>
-        /// <param name="converters">Binary converters, use default converters if null</param>
+        /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, PacketConverter> converters = null)
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
@@ -137,8 +137,7 @@ namespace Mikodev.Network
         public IEnumerable<string> Keys => _Keys();
 
         /// <summary>
-        /// 使用路径访问元素
-        /// <para>Get node by path</para>
+        /// Get node by path
         /// </summary>
         /// <param name="path">Node path</param>
         /// <param name="nothrow">return null if path not found</param>
@@ -147,16 +146,14 @@ namespace Mikodev.Network
         public PacketReader this[string path, bool nothrow = false, string[] separator = null] => _ItemPath(path, nothrow, separator);
 
         /// <summary>
-        /// 根据键获取子节点
-        /// <para>Get node by key</para>
+        /// Get node by key
         /// </summary>
         /// <param name="key">Node tag</param>
         /// <param name="nothrow">return null if key not found</param>
         public PacketReader Pull(string key, bool nothrow = false) => _Item(key, nothrow);
 
         /// <summary>
-        /// 将当前节点转换成目标类型
-        /// <para>Convert current node to target type</para>
+        /// Convert current node to target type
         /// </summary>
         /// <param name="type">Target type</param>
         public object Pull(Type type)
@@ -169,10 +166,9 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 将当前节点转换成目标类型
-        /// <para>Convert current node to target type</para>
+        /// Convert current node to target type.
         /// </summary>
-        /// <typeparam name="T">目标类型</typeparam>
+        /// <typeparam name="T">Target type</typeparam>
         public T Pull<T>() => (T)Pull(typeof(T));
 
         /// <summary>
@@ -181,22 +177,19 @@ namespace Mikodev.Network
         public byte[] PullList() => _buf._Part(_off, _len);
 
         /// <summary>
-        /// 将当前节点转换成目标类型数据集合
-        /// <para>Convert current node to target type collection</para>
+        /// Convert current node to target type collection
         /// </summary>
         /// <param name="type">Target type</param>
         public IEnumerable PullList(Type type) => _List(type);
 
         /// <summary>
-        /// 将当前节点转换成目标类型数据集合
-        /// <para>Convert current node to target type collection</para>
+        /// Convert current node to target type collection
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
         public IEnumerable<T> PullList<T>() => _ListGen<T>();
 
         /// <summary>
-        /// 显示字节长度或节点个数
-        /// <para>Show byte count or node count</para>
+        /// Show byte count or node count
         /// </summary>
         public override string ToString()
         {
@@ -212,9 +205,6 @@ namespace Mikodev.Network
             return stb.ToString();
         }
 
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
-        {
-            return new DynamicPacketReader(parameter, this);
-        }
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicPacketReader(parameter, this);
     }
 }

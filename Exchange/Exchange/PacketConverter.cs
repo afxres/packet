@@ -6,7 +6,7 @@ namespace Mikodev.Network
     /// <summary>
     /// Binary converter
     /// </summary>
-    public class PacketConverter
+    public sealed class PacketConverter
     {
         internal readonly Func<object, byte[]> _bin;
         internal readonly Func<byte[], int, int, object> _obj;

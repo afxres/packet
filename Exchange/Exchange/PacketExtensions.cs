@@ -185,13 +185,12 @@ namespace Mikodev.Network
         };
 
         /// <summary>
-        /// 默认的路径分隔符
-        /// <para>Default path separators</para>
+        /// Default path separators
         /// </summary>
         public static IReadOnlyList<string> Separators => s_Separators;
 
         /// <summary>
-        /// Default binary converters
+        /// Default packet converters
         /// </summary>
         public static IReadOnlyDictionary<Type, PacketConverter> Converters => s_Converters;
     }

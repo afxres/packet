@@ -30,7 +30,7 @@ namespace Mikodev.Test
             var buffer = PacketWriter.Serialize(new
             {
                 id = 1,
-                name = "mikodev",
+                name = "sharp",
                 data = new
                 {
                     token = Guid.NewGuid(),

@@ -7,7 +7,7 @@ namespace Mikodev.Network
     /// Exception cause by overflow, converter not found, etc
     /// </summary>
     [Serializable]
-    public class PacketException : Exception
+    public sealed class PacketException : Exception
     {
         internal readonly PacketError _code = PacketError.None;
 

@@ -13,16 +13,16 @@ namespace Mikodev.Network
     /// <summary>
     /// Binary packet writer
     /// </summary>
-    public class PacketWriter : IDynamicMetaObjectProvider
+    public sealed class PacketWriter : IDynamicMetaObjectProvider
     {
-        internal const int _Level = 32;
+        internal const int _Level = 128;
         internal object _obj = null;
         internal readonly Dictionary<Type, PacketConverter> _con = null;
 
         /// <summary>
         /// Create new writer
         /// </summary>
-        /// <param name="converters">Binary converters, use default converters if null</param>
+        /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketWriter(Dictionary<Type, PacketConverter> converters = null)
         {
             _con = converters ?? PacketExtensions.s_Converters;
@@ -38,8 +38,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 写入标签和另一个实例
-        /// <para>Write key and another instance</para>
+        /// Write key and another instance
         /// </summary>
         public PacketWriter Push(string key, PacketWriter val)
         {
@@ -48,8 +47,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 写入标签和数据
-        /// <para>Write key and data</para>
+        /// Write key and data
         /// </summary>
         /// <param name="key">Node tag</param>
         /// <param name="type">Source type</param>
@@ -68,8 +66,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 写入标签和数据
-        /// <para>Write key and data</para>
+        /// Write key and data
         /// </summary>
         /// <typeparam name="T">Source type</typeparam>
         /// <param name="key">Node tag</param>
@@ -108,8 +105,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 写入标签和对象集合
-        /// <para>Write key and collections</para>
+        /// Write key and collections
         /// </summary>
         /// <param name="key">Node tag</param>
         /// <param name="type">Source type</param>
@@ -124,31 +120,12 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 写入标签和对象集合
-        /// <para>Write key and collections</para>
+        /// Write key and collections
         /// </summary>
         /// <typeparam name="T">Source type</typeparam>
         /// <param name="key">Node tag</param>
         /// <param name="val">Value collection</param>
         public PacketWriter PushList<T>(string key, IEnumerable<T> val) => PushList(key, typeof(T), val);
-
-        internal static bool _ItemNode(object val, Dictionary<Type, PacketConverter> cons, out PacketWriter value)
-        {
-            var wtr = new PacketWriter(cons);
-
-            if (val == null)
-                wtr._obj = null;
-            else if (val is PacketWriter wri)
-                wtr._obj = wri._obj;
-            else if (wtr._con.TryGetValue(val.GetType(), out var con) || PacketCaches.TryGetValue(val.GetType(), out con))
-                wtr._obj = con.ToBinary(val);
-            else if (val.GetType()._IsEnumerable(out var inn))
-                wtr._ByteList(inn, (IEnumerable)val);
-            else
-                wtr = null;
-            value = wtr;
-            return wtr != null;
-        }
 
         internal void _Byte(MemoryStream str, ItemDictionary dic, int lvl)
         {
@@ -180,8 +157,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 生成数据包
-        /// <para>Get binary packet</para>
+        /// Get binary packet
         /// </summary>
         public byte[] GetBytes()
         {
@@ -196,8 +172,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 显示字节长度或节点个数
-        /// <para>Show byte count or node count</para>
+        /// Show byte count or node count
         /// </summary>
         public override string ToString()
         {
@@ -212,9 +187,22 @@ namespace Mikodev.Network
             return stb.ToString();
         }
 
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter)
+        internal static bool _ItemNode(object val, Dictionary<Type, PacketConverter> cons, out PacketWriter value)
         {
-            return new DynamicPacketWriter(parameter, this);
+            var wtr = new PacketWriter(cons);
+
+            if (val == null)
+                wtr._obj = null;
+            else if (val is PacketWriter wri)
+                wtr._obj = wri._obj;
+            else if (wtr._con.TryGetValue(val.GetType(), out var con) || PacketCaches.TryGetValue(val.GetType(), out con))
+                wtr._obj = con.ToBinary(val);
+            else if (val.GetType()._IsEnumerable(out var inn))
+                wtr._ByteList(inn, (IEnumerable)val);
+            else
+                wtr = null;
+            value = wtr;
+            return wtr != null;
         }
 
         internal static PacketWriter _Serialize(object val, Dictionary<Type, PacketConverter> con, int lvl)
@@ -241,12 +229,13 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// 序列化对象或词典
-        /// <para>Serialize <see cref="object"/> or <see cref="IDictionary"/></para>
+        /// Create new writer from object or dictionary (generic dictionary with string as key)
         /// </summary>
         public static PacketWriter Serialize(object obj, Dictionary<Type, PacketConverter> converters = null)
         {
             return _Serialize(obj, converters ?? PacketExtensions.s_Converters, 0);
         }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicPacketWriter(parameter, this);
     }
 }
