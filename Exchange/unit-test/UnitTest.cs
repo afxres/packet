@@ -235,11 +235,13 @@ namespace Mikodev.UnitTest
             Assert.AreEqual(a, rea[@"a/a"].Pull<int>());
             Assert.AreEqual(a, rea[@"a\a"].Pull<int>());
             Assert.AreEqual(a, rea["a.a", separator: new string[] { "." }].Pull<int>());
+            Assert.AreEqual(a, rea.Pull(new string[] { "a", "a" }).Pull<int>());
             Assert.AreEqual(a, rea.Pull("a").Pull("a").Pull<int>());
 
             Assert.AreEqual(null, rea["b/a", true]);
             Assert.AreEqual(null, rea["a/b", true]);
             Assert.AreEqual(null, rea.Pull("b", true));
+            Assert.AreEqual(null, rea.Pull(new string[] { "a", "b" }, true));
             Assert.AreEqual(null, rea.Pull("a").Pull("b", true));
 
             try

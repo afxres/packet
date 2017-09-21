@@ -11,7 +11,7 @@ namespace Mikodev.Network
     /// <summary>
     /// Binary packet reader
     /// </summary>
-    public sealed class PacketReader : IDynamicMetaObjectProvider
+    public class PacketReader : IDynamicMetaObjectProvider
     {
         internal readonly int _off = 0;
         internal readonly int _len = 0;
@@ -86,14 +86,20 @@ namespace Mikodev.Network
             throw new PacketException(res ? PacketError.PathError : PacketError.Overflow);
         }
 
-        internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
+        internal PacketReader _ItemPath(string[] keys, bool nothrow)
         {
-            var sts = path.Split(separator ?? PacketExtensions.s_Separators, StringSplitOptions.RemoveEmptyEntries);
             var rdr = this;
-            foreach (var i in sts)
+            foreach (var i in keys)
                 if ((rdr = rdr._Item(i, nothrow)) == null)
                     return null;
             return rdr;
+        }
+
+        internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
+        {
+            var sts = path.Split(separator ?? PacketExtensions.s_Separators, StringSplitOptions.RemoveEmptyEntries);
+            var res = _ItemPath(sts, nothrow);
+            return res;
         }
 
         internal IEnumerable _List(Type type)
@@ -143,14 +149,21 @@ namespace Mikodev.Network
         /// <param name="nothrow">return null if path not found</param>
         /// <param name="separator">Path separators, use default separators if null</param>
         [IndexerName("Node")]
-        public PacketReader this[string path, bool nothrow = false, string[] separator = null] => _ItemPath(path, nothrow, separator);
+        public PacketReader this[string path, bool nothrow = false, string[] separator = null] => _ItemPath(path ?? throw new ArgumentNullException(nameof(path)), nothrow, separator);
 
         /// <summary>
         /// Get node by key
         /// </summary>
-        /// <param name="key">Node tag</param>
+        /// <param name="key">Node key</param>
         /// <param name="nothrow">return null if key not found</param>
-        public PacketReader Pull(string key, bool nothrow = false) => _Item(key, nothrow);
+        public PacketReader Pull(string key, bool nothrow = false) => _Item(key ?? throw new ArgumentNullException(nameof(key)), nothrow);
+
+        /// <summary>
+        /// Get node by keys
+        /// </summary>
+        /// <param name="keys">Node key list</param>
+        /// <param name="nothrow">return null if key not found</param>
+        public PacketReader Pull(string[] keys, bool nothrow = false) => _ItemPath(keys ?? throw new ArgumentNullException(nameof(keys)), nothrow);
 
         /// <summary>
         /// Convert current node to target type
@@ -189,6 +202,11 @@ namespace Mikodev.Network
         public IEnumerable<T> PullList<T>() => _ListGen<T>();
 
         /// <summary>
+        /// Create dynamic reader
+        /// </summary>
+        public DynamicMetaObject GetMetaObject(Expression parameter) => new DynamicPacketReader(parameter, this);
+
+        /// <summary>
         /// Show byte count or node count
         /// </summary>
         public override string ToString()
@@ -204,7 +222,5 @@ namespace Mikodev.Network
                 stb.AppendFormat("{0} node(s)", _dic.Count);
             return stb.ToString();
         }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicPacketReader(parameter, this);
     }
 }

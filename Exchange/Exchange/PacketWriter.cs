@@ -13,7 +13,7 @@ namespace Mikodev.Network
     /// <summary>
     /// Binary packet writer
     /// </summary>
-    public sealed class PacketWriter : IDynamicMetaObjectProvider
+    public class PacketWriter : IDynamicMetaObjectProvider
     {
         internal const int _Level = 128;
         internal object _obj = null;
@@ -172,6 +172,11 @@ namespace Mikodev.Network
         }
 
         /// <summary>
+        /// Create dynamic writer
+        /// </summary>
+        public DynamicMetaObject GetMetaObject(Expression parameter) => new DynamicPacketWriter(parameter, this);
+
+        /// <summary>
         /// Show byte count or node count
         /// </summary>
         public override string ToString()
@@ -235,7 +240,5 @@ namespace Mikodev.Network
         {
             return _Serialize(obj, converters ?? PacketExtensions.s_Converters, 0);
         }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicPacketWriter(parameter, this);
     }
 }
