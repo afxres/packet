@@ -25,7 +25,7 @@ namespace Mikodev.Network
         /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketWriter(Dictionary<Type, PacketConverter> converters = null)
         {
-            _con = converters ?? PacketExtensions.s_Converters;
+            _con = converters ?? PacketExtensions.s_cons;
         }
 
         internal ItemDictionary _ItemList()
@@ -238,7 +238,7 @@ namespace Mikodev.Network
         /// </summary>
         public static PacketWriter Serialize(object obj, Dictionary<Type, PacketConverter> converters = null)
         {
-            return _Serialize(obj, converters ?? PacketExtensions.s_Converters, 0);
+            return _Serialize(obj, converters ?? PacketExtensions.s_cons, 0);
         }
     }
 }

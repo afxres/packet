@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -28,7 +29,7 @@ namespace Mikodev.Network
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             _len = buffer.Length;
-            _con = converters ?? PacketExtensions.s_Converters;
+            _con = converters ?? PacketExtensions.s_cons;
         }
 
         /// <summary>
@@ -45,7 +46,7 @@ namespace Mikodev.Network
                 throw new ArgumentOutOfRangeException();
             _off = offset;
             _len = length;
-            _con = converters ?? PacketExtensions.s_Converters;
+            _con = converters ?? PacketExtensions.s_cons;
         }
 
         /// <summary>
@@ -97,39 +98,9 @@ namespace Mikodev.Network
 
         internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
         {
-            var sts = path.Split(separator ?? PacketExtensions.s_Separators, StringSplitOptions.RemoveEmptyEntries);
+            var sts = path.Split(separator ?? PacketExtensions.s_seps, StringSplitOptions.RemoveEmptyEntries);
             var res = _ItemPath(sts, nothrow);
             return res;
-        }
-
-        internal IEnumerable _List(Type type)
-        {
-            if (_con.TryGetValue(type, out var con) == false && PacketCaches.TryGetValue(type, out con) == false)
-                throw new PacketException(PacketError.TypeInvalid);
-
-            var max = _off + _len;
-            if (con.Length is int len)
-                for (int idx = _off; idx < max && idx + len <= max; idx += len)
-                    yield return con.ToObject(_buf, idx, len);
-            else
-                for (int idx = _off; idx < max && _buf._Read(ref idx, out var val, max); idx += val)
-                    yield return con.ToObject(_buf, idx, val);
-            yield break;
-        }
-
-        internal IEnumerable<T> _ListGen<T>()
-        {
-            foreach (var i in _List(typeof(T)))
-                yield return (T)i;
-            yield break;
-        }
-
-        internal IEnumerable<string> _Keys()
-        {
-            if (_Init() == true)
-                foreach (var i in _dic)
-                    yield return i.Key;
-            yield break;
         }
 
         /// <summary>
@@ -140,7 +111,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Child node keys
         /// </summary>
-        public IEnumerable<string> Keys => _Keys();
+        public IEnumerable<string> Keys => _Init() ? _dic.Keys : Enumerable.Empty<string>();
 
         /// <summary>
         /// Get node by path
@@ -173,7 +144,6 @@ namespace Mikodev.Network
         {
             if (_con.TryGetValue(type, out var con) == false && PacketCaches.TryGetValue(type, out con) == false)
                 throw new PacketException(PacketError.TypeInvalid);
-
             var res = con.ToObject(_buf, _off, _len);
             return res;
         }
@@ -193,13 +163,13 @@ namespace Mikodev.Network
         /// Convert current node to target type collection
         /// </summary>
         /// <param name="type">Target type</param>
-        public IEnumerable PullList(Type type) => _List(type);
+        public IEnumerable PullList(Type type) => new PacketEnumerable(this, type);
 
         /// <summary>
         /// Convert current node to target type collection
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
-        public IEnumerable<T> PullList<T>() => _ListGen<T>();
+        public IEnumerable<T> PullList<T>() => new PacketEnumerable<T>(this);
 
         /// <summary>
         /// Create dynamic reader

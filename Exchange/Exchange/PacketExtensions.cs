@@ -15,7 +15,7 @@ namespace Mikodev.Network
     {
         internal static bool _IsGenericEnumerable(this Type type, out Type inner)
         {
-            if (type.GetTypeInfo().IsGenericType == false || type.GetGenericTypeDefinition() != typeof(IEnumerable<>))
+            if (type.IsGenericType == false || type.GetGenericTypeDefinition() != typeof(IEnumerable<>))
                 goto fail;
             var som = type.GetGenericArguments();
             if (som.Length != 1)
@@ -29,7 +29,7 @@ namespace Mikodev.Network
 
         internal static bool _IsEnumerable(this Type typ, out Type inn)
         {
-            foreach (var i in typ.GetTypeInfo().GetInterfaces())
+            foreach (var i in typ.GetInterfaces())
                 if (i._IsGenericEnumerable(out inn))
                     return true;
             inn = null;
@@ -79,9 +79,9 @@ namespace Mikodev.Network
             stream._Write(buffer);
         }
 
-        internal static readonly string[] s_Separators = new string[] { "/", @"\" };
+        internal static readonly string[] s_seps = new string[] { "/", @"\" };
 
-        internal static readonly Dictionary<Type, PacketConverter> s_Converters = new Dictionary<Type, PacketConverter>()
+        internal static readonly Dictionary<Type, PacketConverter> s_cons = new Dictionary<Type, PacketConverter>()
         {
             [typeof(byte[])] = new PacketConverter(
                 (obj) => (byte[])obj,
@@ -187,11 +187,11 @@ namespace Mikodev.Network
         /// <summary>
         /// Default path separators
         /// </summary>
-        public static IReadOnlyList<string> Separators => s_Separators;
+        public static IReadOnlyList<string> Separators => s_seps;
 
         /// <summary>
         /// Default packet converters
         /// </summary>
-        public static IReadOnlyDictionary<Type, PacketConverter> Converters => s_Converters;
+        public static IReadOnlyDictionary<Type, PacketConverter> Converters => s_cons;
     }
 }

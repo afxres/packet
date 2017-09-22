@@ -59,7 +59,7 @@ namespace Mikodev.Network
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         public PacketConverter(Func<object, byte[]> bin, Func<byte[], int, int, object> obj, int? length)
         {
-            if (length is int len && len < 0)
+            if (length is int len && len < 1)
                 throw new ArgumentOutOfRangeException(nameof(length));
             _bin = bin ?? throw new ArgumentNullException(nameof(bin));
             _obj = obj ?? throw new ArgumentNullException(nameof(obj));

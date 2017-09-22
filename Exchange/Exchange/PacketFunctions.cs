@@ -23,8 +23,10 @@ namespace Mikodev.Network
                 throw new PacketException(PacketError.Overflow);
             if (offset < 0 || buffer.Length - offset < len)
                 throw new PacketException(PacketError.AssertFailed);
+            var obj = default(object);
             fixed (byte* ptr = buffer)
-                return Marshal.PtrToStructure((IntPtr)(ptr + offset), type);
+                obj = Marshal.PtrToStructure((IntPtr)(ptr + offset), type);
+            return obj;
         }
 
         internal static byte[] _OfEndPoint(IPEndPoint value)

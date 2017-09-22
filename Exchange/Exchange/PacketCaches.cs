@@ -12,10 +12,10 @@ namespace Mikodev.Network
 
         private static PacketConverter _Define(Type type)
         {
-            if (type.GetTypeInfo().IsEnum)
+            if (type.IsEnum)
             {
                 var und = Enum.GetUnderlyingType(type);
-                if (s_Converters.TryGetValue(und, out var res))
+                if (s_cons.TryGetValue(und, out var res))
                     return res;
                 return null;
             }

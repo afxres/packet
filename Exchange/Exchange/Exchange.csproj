@@ -48,6 +48,8 @@
     <Compile Include="DynamicPacketWriter.cs" />
     <Compile Include="PacketCaches.cs" />
     <Compile Include="PacketConverter.cs" />
+    <Compile Include="PacketEnumerable.cs" />
+    <Compile Include="PacketEnumerator.cs" />
     <Compile Include="PacketExtensions.cs" />
     <Compile Include="PacketError.cs" />
     <Compile Include="PacketException.cs" />

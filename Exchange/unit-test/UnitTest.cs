@@ -21,6 +21,7 @@ namespace Mikodev.UnitTest
 
             var res = new PacketReader(buf);
             Assert.AreEqual(0, res.Count);
+            Assert.AreEqual(0, res.Keys.Count());
         }
 
         [TestMethod]
@@ -65,6 +66,7 @@ namespace Mikodev.UnitTest
             var rk = rdr["k"].Pull<Guid>();
 
             Assert.AreEqual(11, rdr.Count);
+            Assert.AreEqual(11, rdr.Keys.Count());
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
             Assert.AreEqual(c, rc);
@@ -112,6 +114,7 @@ namespace Mikodev.UnitTest
             var ru64 = rdr["h"].Pull<ulong>();
 
             Assert.AreEqual(8, rdr.Count);
+            Assert.AreEqual(8, rdr.Keys.Count());
             Assert.AreEqual(i8, ri8);
             Assert.AreEqual(u8, ru8);
             Assert.AreEqual(i16, ri16);
@@ -146,6 +149,7 @@ namespace Mikodev.UnitTest
             var rc = rdr["buffer"].PullList<byte[]>();
 
             Assert.AreEqual(3, rdr.Count);
+            Assert.AreEqual(3, rdr.Keys.Count());
             Assert.AreEqual(c.Count, rc.Count());
 
             ThrowIfNotAllEquals(a, ra);
@@ -285,6 +289,7 @@ namespace Mikodev.UnitTest
             var rea = new PacketReader(buf);
 
             Assert.AreEqual(dic.Count, rea.Count);
+            Assert.AreEqual(dic.Count, rea.Keys.Count());
             Assert.AreEqual(a, rea["a"].Pull<int>());
             Assert.AreEqual(b, rea["b"].Pull<string>());
             Assert.AreEqual(a, rea["c/a"].Pull<int>());

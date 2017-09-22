@@ -15,7 +15,7 @@ namespace Mikodev.Network
             var wtr = (PacketWriter)Value;
             var key = binder.Name;
 
-            PacketWriter node()
+            PacketWriter _Node()
             {
                 var dic = wtr._ItemList();
                 if (dic.TryGetValue(key, out var res))
@@ -25,7 +25,7 @@ namespace Mikodev.Network
                 return nod;
             }
 
-            var val = node();
+            var val = _Node();
             var exp = Expression.Constant(val);
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }

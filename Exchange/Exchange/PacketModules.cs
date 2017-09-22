@@ -13,27 +13,18 @@ namespace Mikodev.Network
         /// Get value from current node
         /// </summary>
         [Obsolete]
-        public static T Pull<T>(this PacketReader reader, string key)
-        {
-            return reader._Item(key, false).Pull<T>();
-        }
-
-        /// <summary>
-        /// Get value from current node
-        /// </summary>
-        [Obsolete]
         public static object Pull(this PacketReader reader, string key, Type type)
         {
             return reader._Item(key, false).Pull(type);
         }
 
         /// <summary>
-        /// Get value collection from current node
+        /// Get value from current node
         /// </summary>
         [Obsolete]
-        public static IEnumerable<T> PullList<T>(this PacketReader reader, string key)
+        public static T Pull<T>(this PacketReader reader, string key)
         {
-            return reader._Item(key, false)._ListGen<T>();
+            return reader._Item(key, false).Pull<T>();
         }
 
         /// <summary>
@@ -42,7 +33,16 @@ namespace Mikodev.Network
         [Obsolete]
         public static IEnumerable PullList(this PacketReader reader, string key, Type type)
         {
-            return reader._Item(key, false)._List(type);
+            return reader._Item(key, false).PullList(type);
+        }
+
+        /// <summary>
+        /// Get value collection from current node
+        /// </summary>
+        [Obsolete]
+        public static IEnumerable<T> PullList<T>(this PacketReader reader, string key)
+        {
+            return reader._Item(key, false).PullList<T>();
         }
     }
 }
