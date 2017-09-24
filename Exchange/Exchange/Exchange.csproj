@@ -44,12 +44,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DynamicPacketReader.cs" />
-    <Compile Include="DynamicPacketWriter.cs" />
-    <Compile Include="PacketCaches.cs" />
+    <Compile Include="_DynamicReader.cs" />
+    <Compile Include="_DynamicWriter.cs" />
+    <Compile Include="_Caches.cs" />
     <Compile Include="PacketConverter.cs" />
-    <Compile Include="PacketEnumerable.cs" />
-    <Compile Include="PacketEnumerator.cs" />
+    <Compile Include="_Enumerable.cs" />
+    <Compile Include="_Enumerator.cs" />
     <Compile Include="PacketExtensions.cs" />
     <Compile Include="PacketError.cs" />
     <Compile Include="PacketException.cs" />

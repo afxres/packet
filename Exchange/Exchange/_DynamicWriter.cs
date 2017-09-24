@@ -3,9 +3,9 @@ using System.Linq.Expressions;
 
 namespace Mikodev.Network
 {
-    internal sealed class DynamicPacketWriter : DynamicMetaObject
+    internal sealed class _DynamicWriter : DynamicMetaObject
     {
-        internal DynamicPacketWriter(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
+        public _DynamicWriter(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 
         /// <summary>
         /// Create node

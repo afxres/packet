@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal class PacketEnumerator : IEnumerable, IEnumerator, IDisposable
+    internal class _Enumerator : IEnumerator, IDisposable
     {
         internal readonly int _bit = 0;
         internal readonly int _off = 0;
@@ -15,21 +15,19 @@ namespace Mikodev.Network
         internal int _idx = 0;
         internal object _cur = null;
 
-        internal PacketEnumerator(PacketReader reader, PacketConverter converter)
+        internal _Enumerator(PacketReader source, PacketConverter converter)
         {
-            _buf = reader._buf;
-            _off = reader._off;
-            _idx = reader._off;
-            _max = reader._off + reader._len;
+            _buf = source._buf;
+            _off = source._off;
+            _idx = source._off;
+            _max = source._off + source._len;
             _bit = converter.Length ?? -1;
             _con = converter;
         }
 
         object IEnumerator.Current => _cur;
 
-        IEnumerator IEnumerable.GetEnumerator() => this;
-
-        public void Dispose() { }
+        void IDisposable.Dispose() { }
 
         public bool MoveNext()
         {
@@ -59,12 +57,10 @@ namespace Mikodev.Network
         }
     }
 
-    internal class PacketEnumerator<T> : PacketEnumerator, IEnumerable<T>, IEnumerator<T>
+    internal class _Enumerator<T> : _Enumerator, IEnumerator<T>
     {
-        internal PacketEnumerator(PacketReader reader, PacketConverter converter) : base(reader, converter) { }
+        internal _Enumerator(PacketReader reader, PacketConverter converter) : base(reader, converter) { }
 
         T IEnumerator<T>.Current => (_cur != null) ? (T)_cur : default(T);
-
-        IEnumerator<T> IEnumerable<T>.GetEnumerator() => this;
     }
 }

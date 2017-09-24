@@ -25,7 +25,7 @@ namespace Mikodev.Network
         /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketWriter(Dictionary<Type, PacketConverter> converters = null)
         {
-            _con = converters ?? PacketExtensions.s_cons;
+            _con = converters;
         }
 
         internal ItemDictionary _ItemList()
@@ -57,8 +57,7 @@ namespace Mikodev.Network
             var nod = new PacketWriter(_con);
             if (val != null)
             {
-                if (_con.TryGetValue(type, out var con) == false && PacketCaches.TryGetValue(type, out con) == false)
-                    throw new PacketException(PacketError.TypeInvalid);
+                var con = _Caches.Converter(type, _con, false);
                 nod._obj = con.ToBinary(val);
             }
             _ItemList()[key] = nod;
@@ -87,8 +86,7 @@ namespace Mikodev.Network
         {
             if (val == null)
                 throw new PacketException(PacketError.AssertFailed);
-            if (_con.TryGetValue(type, out var con) == false && PacketCaches.TryGetValue(type, out con) == false)
-                throw new PacketException(PacketError.TypeInvalid);
+            var con = _Caches.Converter(type, _con, false);
             var mst = new MemoryStream();
             foreach (var v in val)
             {
@@ -174,7 +172,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Create dynamic writer
         /// </summary>
-        public DynamicMetaObject GetMetaObject(Expression parameter) => new DynamicPacketWriter(parameter, this);
+        public DynamicMetaObject GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
 
         /// <summary>
         /// Show byte count or node count
@@ -195,12 +193,13 @@ namespace Mikodev.Network
         internal static bool _ItemNode(object val, Dictionary<Type, PacketConverter> cons, out PacketWriter value)
         {
             var wtr = new PacketWriter(cons);
+            var con = default(PacketConverter);
 
             if (val == null)
                 wtr._obj = null;
             else if (val is PacketWriter wri)
                 wtr._obj = wri._obj;
-            else if (wtr._con.TryGetValue(val.GetType(), out var con) || PacketCaches.TryGetValue(val.GetType(), out con))
+            else if ((con = _Caches.Converter(val.GetType(), wtr._con, true)) != null)
                 wtr._obj = con.ToBinary(val);
             else if (val.GetType()._IsEnumerable(out var inn))
                 wtr._ByteList(inn, (IEnumerable)val);
@@ -238,7 +237,7 @@ namespace Mikodev.Network
         /// </summary>
         public static PacketWriter Serialize(object obj, Dictionary<Type, PacketConverter> converters = null)
         {
-            return _Serialize(obj, converters ?? PacketExtensions.s_cons, 0);
+            return _Serialize(obj, converters, 0);
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Mikodev.Network
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             _len = buffer.Length;
-            _con = converters ?? PacketExtensions.s_cons;
+            _con = converters;
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Mikodev.Network
                 throw new ArgumentOutOfRangeException();
             _off = offset;
             _len = length;
-            _con = converters ?? PacketExtensions.s_cons;
+            _con = converters;
         }
 
         /// <summary>
@@ -120,21 +120,21 @@ namespace Mikodev.Network
         /// <param name="nothrow">return null if path not found</param>
         /// <param name="separator">Path separators, use default separators if null</param>
         [IndexerName("Node")]
-        public PacketReader this[string path, bool nothrow = false, string[] separator = null] => _ItemPath(path ?? throw new ArgumentNullException(nameof(path)), nothrow, separator);
+        public PacketReader this[string path, bool nothrow = false, string[] separator = null] => _ItemPath(path, nothrow, separator);
 
         /// <summary>
         /// Get node by key
         /// </summary>
         /// <param name="key">Node key</param>
         /// <param name="nothrow">return null if key not found</param>
-        public PacketReader Pull(string key, bool nothrow = false) => _Item(key ?? throw new ArgumentNullException(nameof(key)), nothrow);
+        public PacketReader Pull(string key, bool nothrow = false) => _Item(key, nothrow);
 
         /// <summary>
         /// Get node by keys
         /// </summary>
         /// <param name="keys">Node key list</param>
         /// <param name="nothrow">return null if key not found</param>
-        public PacketReader Pull(string[] keys, bool nothrow = false) => _ItemPath(keys ?? throw new ArgumentNullException(nameof(keys)), nothrow);
+        public PacketReader Pull(string[] keys, bool nothrow = false) => _ItemPath(keys, nothrow);
 
         /// <summary>
         /// Convert current node to target type
@@ -142,8 +142,7 @@ namespace Mikodev.Network
         /// <param name="type">Target type</param>
         public object Pull(Type type)
         {
-            if (_con.TryGetValue(type, out var con) == false && PacketCaches.TryGetValue(type, out con) == false)
-                throw new PacketException(PacketError.TypeInvalid);
+            var con = _Caches.Converter(type, _con, false);
             var res = con.ToObject(_buf, _off, _len);
             return res;
         }
@@ -163,18 +162,18 @@ namespace Mikodev.Network
         /// Convert current node to target type collection
         /// </summary>
         /// <param name="type">Target type</param>
-        public IEnumerable PullList(Type type) => new PacketEnumerable(this, type);
+        public IEnumerable PullList(Type type) => new _Enumerable(this, type);
 
         /// <summary>
         /// Convert current node to target type collection
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
-        public IEnumerable<T> PullList<T>() => new PacketEnumerable<T>(this);
+        public IEnumerable<T> PullList<T>() => new _Enumerable<T>(this);
 
         /// <summary>
         /// Create dynamic reader
         /// </summary>
-        public DynamicMetaObject GetMetaObject(Expression parameter) => new DynamicPacketReader(parameter, this);
+        public DynamicMetaObject GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
 
         /// <summary>
         /// Show byte count or node count
