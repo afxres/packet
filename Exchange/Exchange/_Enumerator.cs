@@ -10,12 +10,12 @@ namespace Mikodev.Network
         internal readonly int _off = 0;
         internal readonly int _max = 0;
         internal readonly byte[] _buf = null;
-        internal readonly PacketConverter _con = null;
+        internal readonly IPacketConverter _con = null;
 
         internal int _idx = 0;
         internal object _cur = null;
 
-        internal _Enumerator(PacketReader source, PacketConverter converter)
+        internal _Enumerator(PacketReader source, IPacketConverter converter)
         {
             _buf = source._buf;
             _off = source._off;
@@ -38,14 +38,14 @@ namespace Mikodev.Network
             {
                 if (_buf._Read(ref _idx, out var val, _max) == false)
                     return false;
-                _cur = _con.ToObject(_buf, _idx, val);
+                _cur = _con.GetValue(_buf, _idx, val);
                 _idx += val;
                 return true;
             }
 
             if (_idx + _bit > _max)
                 return false;
-            _cur = _con.ToObject(_buf, _idx, _bit);
+            _cur = _con.GetValue(_buf, _idx, _bit);
             _idx += _bit;
             return true;
         }
@@ -59,7 +59,7 @@ namespace Mikodev.Network
 
     internal class _Enumerator<T> : _Enumerator, IEnumerator<T>
     {
-        internal _Enumerator(PacketReader reader, PacketConverter converter) : base(reader, converter) { }
+        internal _Enumerator(PacketReader reader, IPacketConverter converter) : base(reader, converter) { }
 
         T IEnumerator<T>.Current => (_cur != null) ? (T)_cur : default(T);
     }

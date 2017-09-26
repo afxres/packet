@@ -18,14 +18,14 @@ namespace Mikodev.Network
         internal readonly int _len = 0;
         internal readonly byte[] _buf = null;
         internal Dictionary<string, PacketReader> _dic = null;
-        internal readonly Dictionary<Type, PacketConverter> _con = null;
+        internal readonly Dictionary<Type, IPacketConverter> _con = null;
 
         /// <summary>
         /// Create new reader
         /// </summary>
         /// <param name="buffer">Binary data packet (Should be readonly)</param>
         /// <param name="converters">Packet converters, use default converters if null</param>
-        public PacketReader(byte[] buffer, Dictionary<Type, PacketConverter> converters = null)
+        public PacketReader(byte[] buffer, Dictionary<Type, IPacketConverter> converters = null)
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             _len = buffer.Length;
@@ -39,7 +39,7 @@ namespace Mikodev.Network
         /// <param name="offset">Start index</param>
         /// <param name="length">Packet length</param>
         /// <param name="converters">Packet converters, use default converters if null</param>
-        public PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, PacketConverter> converters = null)
+        public PacketReader(byte[] buffer, int offset, int length, Dictionary<Type, IPacketConverter> converters = null)
         {
             _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             if (offset < 0 || length < 0 || buffer.Length - offset < length)
@@ -98,7 +98,7 @@ namespace Mikodev.Network
 
         internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
         {
-            var sts = path.Split(separator ?? PacketExtensions.s_seps, StringSplitOptions.RemoveEmptyEntries);
+            var sts = path.Split(separator ?? _Extension.s_seps, StringSplitOptions.RemoveEmptyEntries);
             var res = _ItemPath(sts, nothrow);
             return res;
         }
@@ -143,7 +143,7 @@ namespace Mikodev.Network
         public object Pull(Type type)
         {
             var con = _Caches.Converter(type, _con, false);
-            var res = con.ToObject(_buf, _off, _len);
+            var res = con.GetValue(_buf, _off, _len);
             return res;
         }
 
@@ -156,7 +156,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Get byte array of current node
         /// </summary>
-        public byte[] PullList() => _buf._Part(_off, _len);
+        public byte[] PullList() => _buf._OfBytes(_off, _len);
 
         /// <summary>
         /// Convert current node to target type collection

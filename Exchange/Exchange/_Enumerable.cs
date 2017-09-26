@@ -7,7 +7,7 @@ namespace Mikodev.Network
     internal class _Enumerable : IEnumerable
     {
         internal readonly PacketReader _src = null;
-        internal readonly PacketConverter _con = null;
+        internal readonly IPacketConverter _con = null;
 
         internal _Enumerable(PacketReader source, Type type)
         {

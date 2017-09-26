@@ -26,10 +26,10 @@ namespace Mikodev.Network
             var rea = (PacketReader)Value;
             var typ = binder.Type;
             var val = default(object);
-            var con = default(PacketConverter);
+            var con = default(IPacketConverter);
 
             if ((con = _Caches.Converter(typ, rea._con, true)) != null)
-                val = con.ToObject(rea._buf, rea._off, rea._len);
+                val = con.GetValue(rea._buf, rea._off, rea._len);
             else if (typ._IsGenericEnumerable(out var inn))
                 val = _Caches.PullList(inn).Invoke(rea);
             else throw new PacketException(PacketError.TypeInvalid);

@@ -1,39 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using static Mikodev.Network.PacketExtensions;
+using static Mikodev.Network._Extension;
 
 namespace Mikodev.Network
 {
     internal static class _Caches
     {
-        internal static readonly ConditionalWeakTable<Type, PacketConverter> s_type = new ConditionalWeakTable<Type, PacketConverter>();
+        internal static readonly ConditionalWeakTable<Type, IPacketConverter> s_type = new ConditionalWeakTable<Type, IPacketConverter>();
         internal static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_func = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
-        internal static readonly MethodInfo s_method = typeof(PacketReader).GetMethods().First(r => r.Name == nameof(PacketReader.PullList) && r.IsGenericMethod);
+        internal static readonly MethodInfo s_method = typeof(_Caches).GetMethod(nameof(_Pull), BindingFlags.Static | BindingFlags.NonPublic);
 
-        internal static PacketConverter _Create(Type type)
+        internal static IEnumerable<T> _Pull<T>(PacketReader source) => new _Enumerable<T>(source);
+
+        internal static IPacketConverter _Create(Type type)
         {
-            if (type.IsEnum)
-            {
-                var und = Enum.GetUnderlyingType(type);
-                if (s_cons.TryGetValue(und, out var res))
-                    return res;
+            if (type.IsEnum == false)
                 return null;
-            }
-
-            try
-            {
-                var len = Marshal.SizeOf(type);
-                var con = new PacketConverter(_OfValue, (a, i, l) => _ToValue(a, i, l, type), len);
-                return con;
-            }
-            catch (ArgumentException)
-            {
-                return null;
-            }
+            var und = Enum.GetUnderlyingType(type);
+            if (s_cons.TryGetValue(und, out var res))
+                return res;
+            return null;
         }
 
         internal static Func<PacketReader, object> PullList(Type type)
@@ -48,7 +36,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Thread safe method
         /// </summary>
-        internal static PacketConverter Converter(Type type, Dictionary<Type, PacketConverter> dic, bool nothrow)
+        internal static IPacketConverter Converter(Type type, Dictionary<Type, IPacketConverter> dic, bool nothrow)
         {
             if (dic != null && dic.TryGetValue(type, out var value))
                 return value;
