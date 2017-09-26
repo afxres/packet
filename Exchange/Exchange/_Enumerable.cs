@@ -22,6 +22,11 @@ namespace Mikodev.Network
     {
         internal _Enumerable(PacketReader reader) : base(reader, typeof(T)) { }
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator() => new _Enumerator<T>(_src, _con);
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            if (_con is IPacketConverter<T> con)
+                return new _GenericEnumerator<T>(_src, con);
+            return new _Enumerator<T>(_src, _con);
+        }
     }
 }

@@ -15,7 +15,7 @@ namespace Mikodev.Network
     /// </summary>
     public class PacketWriter : IDynamicMetaObjectProvider
     {
-        internal const int _Level = 128;
+        internal const int _Level = 64;
         internal object _obj = null;
         internal readonly Dictionary<Type, IPacketConverter> _con = null;
 
@@ -55,11 +55,8 @@ namespace Mikodev.Network
         public PacketWriter Push(string key, Type type, object val)
         {
             var nod = new PacketWriter(_con);
-            if (val != null)
-            {
-                var con = _Caches.Converter(type, _con, false);
-                nod._obj = con.GetBytes(val);
-            }
+            var con = _Caches.Converter(type, _con, false);
+            nod._obj = con.GetBytes(val);
             _ItemList()[key] = nod;
             return this;
         }
@@ -70,7 +67,17 @@ namespace Mikodev.Network
         /// <typeparam name="T">Source type</typeparam>
         /// <param name="key">Node tag</param>
         /// <param name="val">Value to be written</param>
-        public PacketWriter Push<T>(string key, T val) => Push(key, typeof(T), val);
+        public PacketWriter Push<T>(string key, T val)
+        {
+            var nod = new PacketWriter(_con);
+            var con = _Caches.Converter(typeof(T), _con, false);
+            if (con is IPacketConverter<T> res)
+                nod._obj = res.GetBytes(val);
+            else
+                nod._obj = con.GetBytes(val);
+            _ItemList()[key] = nod;
+            return this;
+        }
 
         /// <summary>
         /// Set key and byte array
@@ -84,20 +91,26 @@ namespace Mikodev.Network
 
         internal void _ByteList(Type type, IEnumerable val)
         {
-            if (val == null)
-                throw new PacketException(PacketError.AssertFailed);
             var con = _Caches.Converter(type, _con, false);
+            var hea = con.Length.HasValue == false;
             var mst = new MemoryStream();
-            foreach (var v in val)
-            {
-                var buf = con.GetBytes(v);
-                if (con.Length is int len)
-                    if (buf.Length == len)
-                        mst._Write(buf);
-                    else
-                        throw new PacketException(PacketError.Overflow);
-                else mst._WriteExt(buf);
-            }
+            foreach (var i in val)
+                mst._WriteExt(con.GetBytes(i), hea);
+            mst.Dispose();
+            _obj = mst.ToArray();
+        }
+
+        internal void _ByteList<T>(IEnumerable<T> val)
+        {
+            var con = _Caches.Converter(typeof(T), _con, false);
+            var hea = con.Length.HasValue == false;
+            var mst = new MemoryStream();
+            if (con is IPacketConverter<T> res)
+                foreach (var i in val)
+                    mst._WriteExt(res.GetBytes(i), hea);
+            else
+                foreach (var i in val)
+                    mst._WriteExt(con.GetBytes(i), hea);
             mst.Dispose();
             _obj = mst.ToArray();
         }
@@ -123,7 +136,14 @@ namespace Mikodev.Network
         /// <typeparam name="T">Source type</typeparam>
         /// <param name="key">Node tag</param>
         /// <param name="val">Value collection</param>
-        public PacketWriter PushList<T>(string key, IEnumerable<T> val) => PushList(key, typeof(T), val);
+        public PacketWriter PushList<T>(string key, IEnumerable<T> val)
+        {
+            var nod = new PacketWriter(_con);
+            if (val != null)
+                nod._ByteList(val);
+            _ItemList()[key] = nod;
+            return this;
+        }
 
         internal void _Byte(MemoryStream str, ItemDictionary dic, int lvl)
         {

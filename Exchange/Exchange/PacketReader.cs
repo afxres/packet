@@ -140,23 +140,24 @@ namespace Mikodev.Network
         /// Convert current node to target type
         /// </summary>
         /// <param name="type">Target type</param>
-        public object Pull(Type type)
-        {
-            var con = _Caches.Converter(type, _con, false);
-            var res = con.GetValue(_buf, _off, _len);
-            return res;
-        }
+        public object Pull(Type type) => _Caches.Converter(type, _con, false).GetValue(_buf, _off, _len);
 
         /// <summary>
         /// Convert current node to target type.
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
-        public T Pull<T>() => (T)Pull(typeof(T));
+        public T Pull<T>()
+        {
+            var con = _Caches.Converter(typeof(T), _con, false);
+            if (con is IPacketConverter<T> val)
+                return val.GetValue(_buf, _off, _len);
+            return (T)con.GetValue(_buf, _off, _len);
+        }
 
         /// <summary>
         /// Get byte array of current node
         /// </summary>
-        public byte[] PullList() => _buf._OfBytes(_off, _len);
+        public byte[] PullList() => _buf._ToBytes(_off, _len);
 
         /// <summary>
         /// Convert current node to target type collection

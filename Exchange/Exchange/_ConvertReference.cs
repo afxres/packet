@@ -2,24 +2,19 @@
 
 namespace Mikodev.Network
 {
-    internal sealed class _ConvVal<T> : _ConvBase<T>, IPacketConverter, IPacketConverter<T>
+    internal sealed class _ConvertReference<T> : _ConvertBase<T>, IPacketConverter<T>
     {
-        internal readonly int _len = 0;
-        internal readonly Func<byte[], int, T> _val = null;
+        internal readonly Func<byte[], int, int, T> _val = null;
 
-        internal _ConvVal(Func<T, byte[]> bin, Func<byte[], int, T> val, int len) : base(bin)
-        {
-            _val = val;
-            _len = len;
-        }
+        internal _ConvertReference(Func<T, byte[]> bin, Func<byte[], int, int, T> val) : base(bin) => _val = val;
 
-        public int? Length => _len;
+        public int? Length => null;
 
         public object GetValue(byte[] buffer, int offset, int length)
         {
             try
             {
-                var val = _val.Invoke(buffer, offset);
+                var val = _val.Invoke(buffer, offset, length);
                 var res = (object)val;
                 return res;
             }
@@ -33,7 +28,7 @@ namespace Mikodev.Network
         {
             try
             {
-                return _val.Invoke(buffer, offset);
+                return _val.Invoke(buffer, offset, length);
             }
             catch (Exception ex) when (_Extension._Catch(ex))
             {

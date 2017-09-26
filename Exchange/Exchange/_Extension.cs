@@ -36,15 +36,15 @@ namespace Mikodev.Network
             _Emit(_OfTimeSpan, _ToTimeSpan, sizeof(long));
             _Emit(_OfGuid, _ToGuid, _GuidLength);
 
-            _Emit(_ToBytes, _OfBytes);
+            _Emit(_OfBytes, _ToBytes);
             _Emit(Encoding.UTF8.GetBytes, Encoding.UTF8.GetString);
             _Emit(_OfIPAddress, _ToIPAddress);
             _Emit(_OfEndPoint, _ToEndPoint);
         }
 
-        internal static void _Emit<T>(Func<T, byte[]> bin, Func<byte[], int, int, T> val) => s_cons.Add(typeof(T), new _ConvRef<T>(bin, val));
+        internal static void _Emit<T>(Func<T, byte[]> bin, Func<byte[], int, int, T> val) => s_cons.Add(typeof(T), new _ConvertReference<T>(bin, val));
 
-        internal static void _Emit<T>(Func<T, byte[]> bin, Func<byte[], int, T> val, int len) => s_cons.Add(typeof(T), new _ConvVal<T>(bin, val, len));
+        internal static void _Emit<T>(Func<T, byte[]> bin, Func<byte[], int, T> val, int len) => s_cons.Add(typeof(T), new _ConvertValue<T>(bin, val, len));
 
         internal static bool _IsGenericEnumerable(this Type type, out Type inner)
         {
@@ -101,6 +101,24 @@ namespace Mikodev.Network
             var len = GetBytes(buffer.Length);
             stream._Write(len);
             stream._Write(buffer);
+        }
+
+        internal static void _WriteExt(this Stream stream, byte[] buffer, bool header)
+        {
+            if (header)
+                stream._Write(GetBytes(buffer.Length));
+            stream._Write(buffer);
+        }
+
+        internal static byte[] _Borrow(byte[] buffer, int offset, int length)
+        {
+            if (offset == 0 && length == buffer.Length)
+                return buffer;
+            if (offset < 0 || length < 0 || buffer.Length - offset < length)
+                throw new PacketException(PacketError.Overflow);
+            var buf = new byte[length];
+            Buffer.BlockCopy(buffer, offset, buf, 0, length);
+            return buf;
         }
 
         internal static bool _Catch(Exception ex) => (ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException) == false;

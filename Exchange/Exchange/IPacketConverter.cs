@@ -16,17 +16,24 @@
         object GetValue(byte[] buffer, int offset, int length);
 
         /// <summary>
-        /// byte length of target type, return null if length not fixed
+        /// byte length, return null if length not fixed
         /// </summary>
         int? Length { get; }
     }
 
-    internal interface IPacketConverter<T>
+    /// <summary>
+    /// Generic interface for converter
+    /// </summary>
+    public interface IPacketConverter<T> : IPacketConverter
     {
+        /// <summary>
+        /// T -> byte array
+        /// </summary>
         byte[] GetBytes(T value);
 
-        T GetValue(byte[] buffer, int offset, int length);
-
-        int? Length { get; }
+        /// <summary>
+        /// byte array -> T
+        /// </summary>
+        new T GetValue(byte[] buffer, int offset, int length);
     }
 }

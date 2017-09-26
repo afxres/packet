@@ -52,21 +52,21 @@ namespace Mikodev.UnitTest
                 Push("k", k);
             var buf = wtr.GetBytes();
 
-            var rdr = new PacketReader(buf);
-            var ra = rdr["a"].Pull<IPAddress>();
-            var rb = rdr["b"].Pull<IPEndPoint>();
-            var rc = rdr["c"].Pull<DateTime>();
-            var rd = rdr["d"].Pull<string>();
-            var re = rdr["e"].Pull<char>();
-            var rf = rdr["f"].Pull<float>();
-            var rg = rdr["g"].Pull<double>();
-            var rh = rdr["h"].Pull<bool>();
-            var ri = rdr["i"].Pull<decimal>();
-            var rj = rdr["j"].Pull<TimeSpan>();
-            var rk = rdr["k"].Pull<Guid>();
+            var rea = new PacketReader(buf);
+            var ra = rea["a"].Pull<IPAddress>();
+            var rb = rea["b"].Pull<IPEndPoint>();
+            var rc = rea["c"].Pull<DateTime>();
+            var rd = rea["d"].Pull<string>();
+            var re = rea["e"].Pull<char>();
+            var rf = rea["f"].Pull<float>();
+            var rg = rea["g"].Pull<double>();
+            var rh = rea["h"].Pull<bool>();
+            var ri = rea["i"].Pull<decimal>();
+            var rj = rea["j"].Pull<TimeSpan>();
+            var rk = rea["k"].Pull<Guid>();
 
-            Assert.AreEqual(11, rdr.Count);
-            Assert.AreEqual(11, rdr.Keys.Count());
+            Assert.AreEqual(11, rea.Count);
+            Assert.AreEqual(11, rea.Keys.Count());
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
             Assert.AreEqual(c, rc);
@@ -78,6 +78,12 @@ namespace Mikodev.UnitTest
             Assert.AreEqual(i, ri);
             Assert.AreEqual(j, rj);
             Assert.AreEqual(k, rk);
+
+            Assert.AreEqual(a, rea["a"].Pull(typeof(IPAddress)));
+            Assert.AreEqual(b, rea["b"].Pull(typeof(IPEndPoint)));
+            Assert.AreEqual(c, rea["c"].Pull(typeof(DateTime)));
+            Assert.AreEqual(j, rea["j"].Pull(typeof(TimeSpan)));
+            Assert.AreEqual(k, rea["k"].Pull(typeof(Guid)));
         }
 
         [TestMethod]
@@ -129,8 +135,8 @@ namespace Mikodev.UnitTest
         public void Collection()
         {
             var wtr = new PacketWriter();
-            var a = new byte[] { 0xDD, 0xCC, 0xBB, 0xAA };
-            var b = new int[] { 1, 2 };
+            var a = new byte[] { 11, 22, 33, 44 };
+            var b = new[] { "a", "bb", "ccc", "dddd" };
             var c = new List<byte[]>()
             {
                 a,
@@ -145,8 +151,11 @@ namespace Mikodev.UnitTest
 
             var rdr = new PacketReader(buf);
             var ra = rdr["byte"].Pull<byte[]>();
-            var rb = rdr["ints"].PullList<int>();
+            var rb = rdr["ints"].PullList<string>();
             var rc = rdr["buffer"].PullList<byte[]>();
+
+            var rax = rdr["byte"].PullList(typeof(byte));
+            var rbx = rdr["ints"].PullList(typeof(string));
 
             Assert.AreEqual(3, rdr.Count);
             Assert.AreEqual(3, rdr.Keys.Count());
@@ -155,6 +164,9 @@ namespace Mikodev.UnitTest
             ThrowIfNotAllEquals(a, ra);
             ThrowIfNotAllEquals(b, rb.ToArray());
             ThrowIfNotAllEquals(c.First(), rc.First());
+
+            ThrowIfNotAllEquals(a, rax.Cast<byte>().ToArray());
+            ThrowIfNotAllEquals(b, rbx.Cast<string>().ToArray());
         }
 
         [TestMethod]
@@ -163,7 +175,7 @@ namespace Mikodev.UnitTest
             var a = 1234;
             var b = "value";
             var c = new byte[] { 1, 2, 3, 4 };
-            var d = new int[] { 1, 2, 3, 4 };
+            var d = new string[] { "a", "bb", "ccc", "dddd" };
             var e = new List<byte[]>()
             {
                 c,
@@ -183,7 +195,7 @@ namespace Mikodev.UnitTest
             var ra = (int)dre.a;
             var rb = (string)dre.b;
             var rc = (byte[])dre.c;
-            var rd = (IEnumerable<int>)dre.d;
+            var rd = (IEnumerable<string>)dre.d;
             var re = (IEnumerable<byte[]>)dre.e;
 
             Assert.AreEqual(a, ra);

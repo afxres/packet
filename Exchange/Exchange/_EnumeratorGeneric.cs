@@ -1,18 +1,19 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal class _Enumerator : _EnumeratorBase, IEnumerator, IDisposable
+    internal class _GenericEnumerator<T> : _EnumeratorBase, IEnumerator, IEnumerator<T>
     {
-        internal readonly IPacketConverter _con = null;
+        internal readonly IPacketConverter<T> _con = null;
 
-        internal object _cur = null;
+        internal T _cur = default(T);
 
-        internal _Enumerator(PacketReader source, IPacketConverter converter) : base(source, converter) => _con = converter;
+        internal _GenericEnumerator(PacketReader source, IPacketConverter<T> converter) : base(source, converter) => _con = converter;
 
         object IEnumerator.Current => _cur;
+
+        T IEnumerator<T>.Current => _cur;
 
         public bool MoveNext()
         {
@@ -30,14 +31,7 @@ namespace Mikodev.Network
         public void Reset()
         {
             _idx = _off;
-            _cur = null;
+            _cur = default(T);
         }
-    }
-
-    internal class _Enumerator<T> : _Enumerator, IEnumerator<T>
-    {
-        internal _Enumerator(PacketReader reader, IPacketConverter converter) : base(reader, converter) { }
-
-        T IEnumerator<T>.Current => (_cur != null) ? (T)_cur : default(T);
     }
 }

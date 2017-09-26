@@ -6,34 +6,11 @@ namespace Mikodev.Network
 {
     public static partial class _Extension
     {
-        internal const int _GuidLength = 16;
-
-        //internal static unsafe byte[] _OfValue(object str)
-        //{
-        //    var len = Marshal.SizeOf(str);
-        //    var buf = new byte[len];
-        //    fixed (byte* ptr = buf)
-        //        Marshal.StructureToPtr(str, (IntPtr)ptr, true);
-        //    return buf;
-        //}
-
-
-        //internal static unsafe object _ToValue(byte[] buffer, int offset, int length, Type type)
-        //{
-        //    var len = Marshal.SizeOf(type);
-        //    if (length < len)
-        //        throw new PacketException(PacketError.Overflow);
-        //    if (offset < 0 || buffer.Length - offset < len)
-        //        throw new PacketException(PacketError.AssertFailed);
-        //    var obj = default(object);
-        //    fixed (byte* ptr = buffer)
-        //        obj = Marshal.PtrToStructure((IntPtr)(ptr + offset), type);
-        //    return obj;
-        //}
+        internal const int _GuidLength = 4 * sizeof(int);
 
         internal static byte[] _OfIPAddress(IPAddress value) => value.GetAddressBytes();
 
-        internal static IPAddress _ToIPAddress(byte[] buffer, int offset, int length) => new IPAddress(_OfBytes(buffer, offset, length));
+        internal static IPAddress _ToIPAddress(byte[] buffer, int offset, int length) => new IPAddress(_Borrow(buffer, offset, length));
 
         internal static byte[] _OfEndPoint(IPEndPoint value)
         {
@@ -47,7 +24,7 @@ namespace Mikodev.Network
 
         internal static IPEndPoint _ToEndPoint(byte[] buffer, int offset, int length)
         {
-            var add = new IPAddress(buffer._OfBytes(offset, length - sizeof(ushort)));
+            var add = new IPAddress(_Borrow(buffer, offset, length - sizeof(ushort)));
             var pot = ToUInt16(buffer, offset + length - sizeof(ushort));
             return new IPEndPoint(add, pot);
         }
@@ -70,17 +47,17 @@ namespace Mikodev.Network
             return val;
         }
 
-        internal static sbyte _ToSByte(byte[] buffer, int offset) => (sbyte)buffer[offset];
-
         internal static byte[] _OfSByte(sbyte value) => new byte[] { (byte)value };
 
-        internal static byte _ToByte(byte[] buffer, int offset) => buffer[offset];
+        internal static sbyte _ToSByte(byte[] buffer, int offset) => (sbyte)buffer[offset];
 
         internal static byte[] _OfByte(byte value) => new byte[] { value };
 
-        internal static byte[] _ToBytes(byte[] buffer) => buffer;
+        internal static byte _ToByte(byte[] buffer, int offset) => buffer[offset];
 
-        internal static byte[] _OfBytes(this byte[] buffer, int offset, int length)
+        internal static byte[] _OfBytes(byte[] buffer) => buffer;
+
+        internal static byte[] _ToBytes(this byte[] buffer, int offset, int length)
         {
             if (length > buffer.Length)
                 throw new PacketException(PacketError.Overflow);
@@ -89,23 +66,16 @@ namespace Mikodev.Network
             return buf;
         }
 
-        internal static DateTime _ToDateTime(byte[] buffer, int offset) => DateTime.FromBinary(ToInt64(buffer, offset));
-
         internal static byte[] _OfDateTime(DateTime value) => GetBytes(value.ToBinary());
 
-        internal static TimeSpan _ToTimeSpan(byte[] buffer, int offset) => new TimeSpan(ToInt64(buffer, offset));
+        internal static DateTime _ToDateTime(byte[] buffer, int offset) => DateTime.FromBinary(ToInt64(buffer, offset));
 
         internal static byte[] _OfTimeSpan(TimeSpan value) => GetBytes(value.Ticks);
 
-        internal static Guid _ToGuid(byte[] buffer, int offset)
-        {
-            if (offset == 0)
-                return new Guid(buffer);
-            var buf = new byte[_GuidLength];
-            Buffer.BlockCopy(buffer, offset, buf, 0, _GuidLength);
-            return new Guid(buf);
-        }
+        internal static TimeSpan _ToTimeSpan(byte[] buffer, int offset) => new TimeSpan(ToInt64(buffer, offset));
 
         internal static byte[] _OfGuid(Guid value) => value.ToByteArray();
+
+        internal static Guid _ToGuid(byte[] buffer, int offset) => new Guid(_Borrow(buffer, offset, _GuidLength));
     }
 }
