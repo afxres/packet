@@ -175,7 +175,7 @@ namespace Mikodev.UnitTest
             var a = 1234;
             var b = "value";
             var c = new byte[] { 1, 2, 3, 4 };
-            var d = new string[] { "a", "bb", "ccc", "dddd" };
+            var d = new[] { "a", "bb", "ccc", "dddd" };
             var e = new List<byte[]>()
             {
                 c,
@@ -213,7 +213,7 @@ namespace Mikodev.UnitTest
             var a = 1;
             var b = "value";
             var c = new byte[] { 1, 2, 3, 4 };
-            var d = new int[] { 1, 2, 3, 4 };
+            var d = new[] { 1, 2, 3, 4 };
             var wtr = PacketWriter.Serialize(new
             {
                 a = a,
@@ -250,14 +250,14 @@ namespace Mikodev.UnitTest
 
             Assert.AreEqual(a, rea[@"a/a"].Pull<int>());
             Assert.AreEqual(a, rea[@"a\a"].Pull<int>());
-            Assert.AreEqual(a, rea["a.a", separator: new string[] { "." }].Pull<int>());
-            Assert.AreEqual(a, rea.Pull(new string[] { "a", "a" }).Pull<int>());
+            Assert.AreEqual(a, rea["a.a", separator: new[] { '.' }].Pull<int>());
+            Assert.AreEqual(a, rea.Pull(new[] { "a", "a" }).Pull<int>());
             Assert.AreEqual(a, rea.Pull("a").Pull("a").Pull<int>());
 
             Assert.AreEqual(null, rea["b/a", true]);
             Assert.AreEqual(null, rea["a/b", true]);
             Assert.AreEqual(null, rea.Pull("b", true));
-            Assert.AreEqual(null, rea.Pull(new string[] { "a", "b" }, true));
+            Assert.AreEqual(null, rea.Pull(new[] { "a", "b" }, true));
             Assert.AreEqual(null, rea.Pull("a").Pull("b", true));
 
             try
@@ -339,7 +339,7 @@ namespace Mikodev.UnitTest
         {
             var a = 1;
             var b = "Sample text.";
-            var c = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            var c = new[] { 1, 2, 3, 4, 5, 6, 7, 8 };
 
             var ta = PacketWriter.Serialize(a).GetBytes();
             var tb = PacketWriter.Serialize(b).GetBytes();

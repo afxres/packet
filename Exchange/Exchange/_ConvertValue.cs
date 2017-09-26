@@ -23,9 +23,10 @@ namespace Mikodev.Network
                 var res = (object)val;
                 return res;
             }
-            catch (Exception ex) when (_Extension._Catch(ex))
+            catch (Exception ex)
             {
-                throw new PacketException(PacketError.ConvertError, ex);
+                _Raise(ex);
+                throw;
             }
         }
 
@@ -35,9 +36,10 @@ namespace Mikodev.Network
             {
                 return _val.Invoke(buffer, offset);
             }
-            catch (Exception ex) when (_Extension._Catch(ex))
+            catch (Exception ex)
             {
-                throw new PacketException(PacketError.ConvertError, ex);
+                _Raise(ex);
+                throw;
             }
         }
     }

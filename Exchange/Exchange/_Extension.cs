@@ -12,7 +12,7 @@ namespace Mikodev.Network
     /// </summary>
     public static partial class _Extension
     {
-        internal static readonly string[] s_seps = new string[] { "/", @"\" };
+        internal static readonly char[] s_seps = new[] { '/', '\\' };
 
         internal static readonly Dictionary<Type, IPacketConverter> s_cons = new Dictionary<Type, IPacketConverter>();
 
@@ -121,6 +121,6 @@ namespace Mikodev.Network
             return buf;
         }
 
-        internal static bool _Catch(Exception ex) => (ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException) == false;
+        internal static bool _IsCritical(this Exception ex) => (ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException);
     }
 }

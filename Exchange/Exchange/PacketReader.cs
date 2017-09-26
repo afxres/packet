@@ -96,9 +96,9 @@ namespace Mikodev.Network
             return rdr;
         }
 
-        internal PacketReader _ItemPath(string path, bool nothrow, string[] separator)
+        internal PacketReader _ItemPath(string path, bool nothrow, char[] separator)
         {
-            var sts = path.Split(separator ?? _Extension.s_seps, StringSplitOptions.RemoveEmptyEntries);
+            var sts = path.Split(separator ?? _Extension.s_seps);
             var res = _ItemPath(sts, nothrow);
             return res;
         }
@@ -120,7 +120,7 @@ namespace Mikodev.Network
         /// <param name="nothrow">return null if path not found</param>
         /// <param name="separator">Path separators, use default separators if null</param>
         [IndexerName("Node")]
-        public PacketReader this[string path, bool nothrow = false, string[] separator = null] => _ItemPath(path, nothrow, separator);
+        public PacketReader this[string path, bool nothrow = false, char[] separator = null] => _ItemPath(path, nothrow, separator);
 
         /// <summary>
         /// Get node by key
