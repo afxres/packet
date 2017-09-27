@@ -13,7 +13,7 @@ namespace Mikodev.Network
     /// <summary>
     /// Binary packet writer
     /// </summary>
-    public class PacketWriter : IDynamicMetaObjectProvider
+    public sealed class PacketWriter : IDynamicMetaObjectProvider
     {
         internal const int _Level = 64;
         internal object _obj = null;
@@ -198,11 +198,6 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Create dynamic writer
-        /// </summary>
-        public DynamicMetaObject GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
-
-        /// <summary>
         /// Show byte count or node count
         /// </summary>
         public override string ToString()
@@ -217,6 +212,8 @@ namespace Mikodev.Network
                 stb.AppendFormat("{0} node(s)", ((ItemDictionary)_obj).Count);
             return stb.ToString();
         }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
 
         internal static bool _ItemNode(object val, IReadOnlyDictionary<Type, IPacketConverter> cons, out object value)
         {

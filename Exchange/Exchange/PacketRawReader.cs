@@ -6,7 +6,7 @@ namespace Mikodev.Network
     /// <summary>
     /// Raw reader without any format
     /// </summary>
-    public class PacketRawReader
+    public sealed class PacketRawReader
     {
         internal _Span _spa;
         internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con;
@@ -39,9 +39,9 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Current position can be read
+        /// Current position end of block
         /// </summary>
-        public bool Next => _spa._idx < _spa._max;
+        public bool Ended => _spa._Over();
 
         /// <summary>
         /// Get value with target type

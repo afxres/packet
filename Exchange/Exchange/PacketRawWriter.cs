@@ -7,7 +7,7 @@ namespace Mikodev.Network
     /// <summary>
     /// Raw writer without any format
     /// </summary>
-    public class PacketRawWriter
+    public sealed class PacketRawWriter
     {
         internal readonly List<byte[]> _lst = new List<byte[]>();
         internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con;

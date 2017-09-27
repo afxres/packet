@@ -7,7 +7,7 @@ namespace Mikodev.Network
     /// Exception cause by overflow, converter not found, etc
     /// </summary>
     [Serializable]
-    public class PacketException : Exception
+    public sealed class PacketException : Exception
     {
         internal readonly PacketError _code = PacketError.None;
 
@@ -47,10 +47,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketException(PacketError code, Exception except) : base(_Message(code), except) => _code = code;
 
-        /// <summary>
-        /// Default exception method
-        /// </summary>
-        protected PacketException(SerializationInfo info, StreamingContext context) : base(info, context)
+        internal PacketException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));

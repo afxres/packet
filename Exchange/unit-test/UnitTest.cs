@@ -400,7 +400,7 @@ namespace Mikodev.UnitTest
             var arr = PacketWriter.Serialize(src).GetBytes();
             var rea = new PacketRawReader(new PacketReader(arr));
             var res = new List<int>();
-            while (rea.Next)
+            while (rea.Ended == false)
                 res.Add(rea.Pull<int>());
 
             ThrowIfNotAllEquals(src, res.ToArray());
@@ -433,7 +433,7 @@ namespace Mikodev.UnitTest
             var res = wtr.GetBytes();
 
             var src = new PacketReader(res) as dynamic;
-            var rea = new PacketRawReader(src.raw);
+            var rea = new PacketRawReader(src.raw); // PacketReader or byte[]? Both of them can work
             var ra = rea.Pull<string>();
             var rb = rea.Pull<int>();
             Assert.AreEqual(a, ra);

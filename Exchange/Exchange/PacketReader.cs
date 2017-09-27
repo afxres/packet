@@ -12,7 +12,7 @@ namespace Mikodev.Network
     /// <summary>
     /// Binary packet reader
     /// </summary>
-    public class PacketReader : IDynamicMetaObjectProvider
+    public sealed class PacketReader : IDynamicMetaObjectProvider
     {
         internal _Span _spa;
         internal Dictionary<string, PacketReader> _dic = null;
@@ -159,11 +159,6 @@ namespace Mikodev.Network
         public IEnumerable<T> PullList<T>() => new _Enumerable<T>(this);
 
         /// <summary>
-        /// Create dynamic reader
-        /// </summary>
-        public DynamicMetaObject GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
-
-        /// <summary>
         /// Show byte count or node count
         /// </summary>
         public override string ToString()
@@ -179,5 +174,7 @@ namespace Mikodev.Network
                 stb.AppendFormat("{0} node(s)", _dic.Count);
             return stb.ToString();
         }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
     }
 }

@@ -58,7 +58,6 @@
     <Compile Include="PacketError.cs" />
     <Compile Include="PacketException.cs" />
     <Compile Include="_Extension.Functions.cs" />
-    <Compile Include="PacketModules.cs" />
     <Compile Include="PacketReader.cs" />
     <Compile Include="PacketWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
