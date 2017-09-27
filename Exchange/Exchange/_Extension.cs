@@ -72,13 +72,8 @@ namespace Mikodev.Network
         /// <summary>
         /// Read length from buffer, return false if out if range
         /// </summary>
-        internal static bool _Read(this byte[] buffer, ref int offset, out int length, int higher = -1)
+        internal static bool _Read(this byte[] buffer, int higher, ref int offset, out int length)
         {
-            if (higher < 0)
-                higher = buffer.Length;
-            else if (buffer.Length < higher)
-                throw new PacketException(PacketError.AssertFailed);
-
             if (offset < 0 || higher - offset < sizeof(int))
                 goto fail;
             length = ToInt32(buffer, offset);
@@ -95,13 +90,6 @@ namespace Mikodev.Network
         internal static void _Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
 
         internal static void _WriteLen(this Stream stream, int value) => stream._Write(GetBytes(value));
-
-        internal static void _WriteExt(this Stream stream, byte[] buffer)
-        {
-            var len = GetBytes(buffer.Length);
-            stream._Write(len);
-            stream._Write(buffer);
-        }
 
         internal static void _WriteExt(this Stream stream, byte[] buffer, bool header)
         {
@@ -122,5 +110,19 @@ namespace Mikodev.Network
         }
 
         internal static bool _IsCritical(this Exception ex) => (ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException);
+
+        internal static T _GetValue<T>(this IPacketConverter con, byte[] buffer, int offset, int length)
+        {
+            if (con is IPacketConverter<T> res)
+                return res.GetValue(buffer, offset, length);
+            return (T)con.GetValue(buffer, offset, length);
+        }
+
+        internal static byte[] _GetBytes<T>(this IPacketConverter con, T value)
+        {
+            if (con is IPacketConverter<T> res)
+                return res.GetBytes(value);
+            return con.GetBytes(value);
+        }
     }
 }

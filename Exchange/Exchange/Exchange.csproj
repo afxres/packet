@@ -45,7 +45,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IPacketConverter.cs" />
-    <Compile Include="RawReader.cs" />
+    <Compile Include="PacketRawReader.cs" />
+    <Compile Include="PacketRawWriter.cs" />
     <Compile Include="_ConvertBase.cs" />
     <Compile Include="_ConvertReference.cs" />
     <Compile Include="_DynamicReader.cs" />

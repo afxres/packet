@@ -33,7 +33,7 @@ namespace Mikodev.Network
                 val = con.GetValue(spa._buf, spa._off, spa._len);
             else if (typ._IsGenericEnumerable(out var inn))
                 val = _Caches.PullList(inn).Invoke(rea);
-            else throw new PacketException(PacketError.TypeInvalid);
+            else return base.BindConvert(binder);
 
             var exp = Expression.Constant(val);
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));

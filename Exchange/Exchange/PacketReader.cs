@@ -56,11 +56,11 @@ namespace Mikodev.Network
 
             while (_spa._idx < _spa._max)
             {
-                if (_spa._buf._Read(ref _spa._idx, out len) == false)
+                if (_spa._buf._Read(_spa._max, ref _spa._idx, out len) == false)
                     return false;
                 var key = Encoding.UTF8.GetString(_spa._buf, _spa._idx, len);
                 _spa._idx += len;
-                if (_spa._buf._Read(ref _spa._idx, out len) == false)
+                if (_spa._buf._Read(_spa._max, ref _spa._idx, out len) == false)
                     return false;
                 dic.Add(key, new PacketReader(_spa._buf, _spa._idx, len, _con));
                 _spa._idx += len;
@@ -139,13 +139,7 @@ namespace Mikodev.Network
         /// Convert current node to target type.
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
-        public T Pull<T>()
-        {
-            var con = _Caches.Converter(typeof(T), _con, false);
-            if (con is IPacketConverter<T> val)
-                return val.GetValue(_spa._buf, _spa._off, _spa._len);
-            return (T)con.GetValue(_spa._buf, _spa._off, _spa._len);
-        }
+        public T Pull<T>() => _Caches.Converter(typeof(T), _con, false)._GetValue<T>(_spa._buf, _spa._off, _spa._len);
 
         /// <summary>
         /// Get byte array of current node

@@ -18,8 +18,8 @@ namespace Mikodev.Network
             PacketWriter _Node()
             {
                 var dic = wtr._ItemList();
-                if (dic.TryGetValue(key, out var res))
-                    return res;
+                if (dic.TryGetValue(key, out var res) && res is PacketWriter pkt)
+                    return pkt;
                 var nod = new PacketWriter(wtr._con);
                 dic.Add(key, nod);
                 return nod;

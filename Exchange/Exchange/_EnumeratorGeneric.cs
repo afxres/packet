@@ -11,7 +11,7 @@ namespace Mikodev.Network
 
         internal _GenericEnumerator(PacketReader source, IPacketConverter<T> converter)
         {
-            _spa = source._spa;
+            _spa = new _Span(source._spa);
             _con = converter;
         }
 
@@ -21,10 +21,9 @@ namespace Mikodev.Network
 
         public bool MoveNext()
         {
-            if (_spa._Next(_con.Length, false, out var idx, out var len) == false)
+            if (_spa._Over())
                 return false;
-            _cur = _con.GetValue(_spa._buf, idx, len);
-            _spa._idx = idx + len;
+            _spa._Next(_con.Length, (idx, len) => _cur = _con.GetValue(_spa._buf, idx, len));
             return true;
         }
 

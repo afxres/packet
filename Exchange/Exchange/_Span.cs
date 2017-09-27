@@ -10,6 +10,12 @@ namespace Mikodev.Network
         internal readonly int _max;
         internal int _idx;
 
+        internal _Span(_Span span)
+        {
+            this = span;
+            _idx = span._off;
+        }
+
         internal _Span(byte[] buffer)
         {
             _buf = buffer ?? throw new ArgumentNullException();
@@ -30,19 +36,16 @@ namespace Mikodev.Network
             _max = offset + length;
         }
 
-        internal bool _Next(int? bit, bool nothrow, out int idx, out int len)
+        internal bool _Over() => _idx >= _max;
+
+        internal void _Next(int? bit, Action<int, int> act)
         {
-            idx = _idx;
-            len = bit ?? -1;
-            if (idx >= _max)
-                return false;
-            if ((bit.HasValue && idx + len <= _max))
-                return true;
-            if (bit.HasValue == false && _buf._Read(ref idx, out len, _max))
-                return true;
-            if (nothrow)
-                return false;
-            throw new PacketException(PacketError.Overflow);
+            var idx = _idx;
+            var len = bit ?? -1;
+            if ((bit.HasValue && idx + len > _max) || (bit.HasValue == false && _buf._Read(_max, ref idx, out len) == false))
+                throw new PacketException(PacketError.Overflow);
+            act.Invoke(idx, len);
+            _idx = idx + len;
         }
     }
 }

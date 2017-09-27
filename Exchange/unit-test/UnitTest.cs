@@ -392,5 +392,52 @@ namespace Mikodev.UnitTest
                 // ignore
             }
         }
+
+        [TestMethod]
+        public void RawArray()
+        {
+            var src = new[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            var arr = PacketWriter.Serialize(src).GetBytes();
+            var rea = new PacketRawReader(new PacketReader(arr));
+            var res = new List<int>();
+            while (rea.Next)
+                res.Add(rea.Pull<int>());
+
+            ThrowIfNotAllEquals(src, res.ToArray());
+        }
+
+        [TestMethod]
+        public void RawObject()
+        {
+            var a = "Hello, world!";
+            var b = 0xFF;
+            var res = new PacketRawWriter().Push(a).Push(b).GetBytes();
+
+            var rea = new PacketRawReader(res);
+            var ra = rea.Pull<string>();
+            var rb = rea.Pull<int>();
+            Assert.AreEqual(a, ra);
+            Assert.AreEqual(b, rb);
+        }
+
+        [TestMethod]
+        public void RawDynamic()
+        {
+            var a = "Hello, world!";
+            var b = 0xFF;
+            var raw = new PacketRawWriter().Push(a).Push(b);
+            var wtr = new PacketWriter() as dynamic;
+            wtr.a = a;
+            wtr.b = b;
+            wtr.raw = raw;
+            var res = wtr.GetBytes();
+
+            var src = new PacketReader(res) as dynamic;
+            var rea = new PacketRawReader(src.raw);
+            var ra = rea.Pull<string>();
+            var rb = rea.Pull<int>();
+            Assert.AreEqual(a, ra);
+            Assert.AreEqual(b, rb);
+        }
     }
 }
