@@ -1,35 +1,35 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal class _Enumerator : _EnumeratorBase, IEnumerator, IDisposable
+    internal class _Enumerator : IEnumerator
     {
+        internal _Span _spa;
+        internal object _cur = null;
         internal readonly IPacketConverter _con = null;
 
-        internal object _cur = null;
 
-        internal _Enumerator(PacketReader source, IPacketConverter converter) : base(source, converter) => _con = converter;
+        internal _Enumerator(PacketReader source, IPacketConverter converter)
+        {
+            _spa = source._spa;
+            _con = converter;
+        }
 
         object IEnumerator.Current => _cur;
 
         public bool MoveNext()
         {
-            if (_idx >= _max)
+            if (_spa._Next(_con.Length, false, out var idx, out var len) == false)
                 return false;
-            var val = _bit;
-            var idx = _idx;
-            if ((_bit < 1 && _buf._Read(ref idx, out val, _max) == false) || (_bit > 0 && idx + val > _max))
-                throw new PacketException(PacketError.Overflow);
-            _cur = _con.GetValue(_buf, idx, val);
-            _idx = idx + val;
+            _cur = _con.GetValue(_spa._buf, idx, len);
+            _spa._idx = idx + len;
             return true;
         }
 
         public void Reset()
         {
-            _idx = _off;
+            _spa._idx = _spa._off;
             _cur = null;
         }
     }
@@ -39,5 +39,7 @@ namespace Mikodev.Network
         internal _Enumerator(PacketReader reader, IPacketConverter converter) : base(reader, converter) { }
 
         T IEnumerator<T>.Current => (_cur != null) ? (T)_cur : default(T);
+
+        public void Dispose() { }
     }
 }

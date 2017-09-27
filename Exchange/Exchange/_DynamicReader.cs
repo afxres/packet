@@ -24,12 +24,13 @@ namespace Mikodev.Network
         public override DynamicMetaObject BindConvert(ConvertBinder binder)
         {
             var rea = (PacketReader)Value;
+            var spa = rea._spa;
             var typ = binder.Type;
             var val = default(object);
             var con = default(IPacketConverter);
 
             if ((con = _Caches.Converter(typ, rea._con, true)) != null)
-                val = con.GetValue(rea._buf, rea._off, rea._len);
+                val = con.GetValue(spa._buf, spa._off, spa._len);
             else if (typ._IsGenericEnumerable(out var inn))
                 val = _Caches.PullList(inn).Invoke(rea);
             else throw new PacketException(PacketError.TypeInvalid);

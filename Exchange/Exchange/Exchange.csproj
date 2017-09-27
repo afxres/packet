@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IPacketConverter.cs" />
+    <Compile Include="RawReader.cs" />
     <Compile Include="_ConvertBase.cs" />
     <Compile Include="_ConvertReference.cs" />
     <Compile Include="_DynamicReader.cs" />
@@ -52,7 +53,6 @@
     <Compile Include="_Caches.cs" />
     <Compile Include="_Enumerable.cs" />
     <Compile Include="_Enumerator.cs" />
-    <Compile Include="_EnumeratorBase.cs" />
     <Compile Include="_Extension.cs" />
     <Compile Include="PacketError.cs" />
     <Compile Include="PacketException.cs" />
@@ -63,6 +63,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="_ConvertValue.cs" />
     <Compile Include="_EnumeratorGeneric.cs" />
+    <Compile Include="_Span.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

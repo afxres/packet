@@ -17,13 +17,13 @@ namespace Mikodev.Network
     {
         internal const int _Level = 64;
         internal object _obj = null;
-        internal readonly Dictionary<Type, IPacketConverter> _con = null;
+        internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con = null;
 
         /// <summary>
         /// Create new writer
         /// </summary>
         /// <param name="converters">Packet converters, use default converters if null</param>
-        public PacketWriter(Dictionary<Type, IPacketConverter> converters = null)
+        public PacketWriter(IReadOnlyDictionary<Type, IPacketConverter> converters = null)
         {
             _con = converters;
         }
@@ -210,7 +210,7 @@ namespace Mikodev.Network
             return stb.ToString();
         }
 
-        internal static bool _ItemNode(object val, Dictionary<Type, IPacketConverter> cons, out PacketWriter value)
+        internal static bool _ItemNode(object val, IReadOnlyDictionary<Type, IPacketConverter> cons, out PacketWriter value)
         {
             var wtr = new PacketWriter(cons);
             var con = default(IPacketConverter);

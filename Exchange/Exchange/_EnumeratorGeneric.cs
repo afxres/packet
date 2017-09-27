@@ -3,13 +3,17 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal class _GenericEnumerator<T> : _EnumeratorBase, IEnumerator, IEnumerator<T>
+    internal class _GenericEnumerator<T> : IEnumerator, IEnumerator<T>
     {
+        internal _Span _spa;
+        internal T _cur = default(T);
         internal readonly IPacketConverter<T> _con = null;
 
-        internal T _cur = default(T);
-
-        internal _GenericEnumerator(PacketReader source, IPacketConverter<T> converter) : base(source, converter) => _con = converter;
+        internal _GenericEnumerator(PacketReader source, IPacketConverter<T> converter)
+        {
+            _spa = source._spa;
+            _con = converter;
+        }
 
         object IEnumerator.Current => _cur;
 
@@ -17,21 +21,19 @@ namespace Mikodev.Network
 
         public bool MoveNext()
         {
-            if (_idx >= _max)
+            if (_spa._Next(_con.Length, false, out var idx, out var len) == false)
                 return false;
-            var val = _bit;
-            var idx = _idx;
-            if ((_bit < 1 && _buf._Read(ref idx, out val, _max) == false) || (_bit > 0 && idx + val > _max))
-                throw new PacketException(PacketError.Overflow);
-            _cur = _con.GetValue(_buf, idx, val);
-            _idx = idx + val;
+            _cur = _con.GetValue(_spa._buf, idx, len);
+            _spa._idx = idx + len;
             return true;
         }
 
         public void Reset()
         {
-            _idx = _off;
+            _spa._idx = _spa._off;
             _cur = default(T);
         }
+
+        public void Dispose() { }
     }
 }

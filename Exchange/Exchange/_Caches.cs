@@ -36,7 +36,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Thread safe method
         /// </summary>
-        internal static IPacketConverter Converter(Type type, Dictionary<Type, IPacketConverter> dic, bool nothrow)
+        internal static IPacketConverter Converter(Type type, IReadOnlyDictionary<Type, IPacketConverter> dic, bool nothrow)
         {
             if (dic != null && dic.TryGetValue(type, out var value))
                 return value;
