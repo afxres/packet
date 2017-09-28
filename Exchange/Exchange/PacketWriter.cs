@@ -15,7 +15,6 @@ namespace Mikodev.Network
     /// </summary>
     public sealed class PacketWriter : IDynamicMetaObjectProvider
     {
-        internal const int _Level = 64;
         internal object _obj = null;
         internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con = null;
 
@@ -86,36 +85,29 @@ namespace Mikodev.Network
             return this;
         }
 
-        internal void _ByteList(Type type, Action<MemoryStream, IPacketConverter, bool> action)
-        {
-            var con = _Caches.Converter(type, _con, false);
-            var mst = new MemoryStream();
-            action.Invoke(mst, con, con.Length == null);
-            mst.Dispose();
-            _obj = mst.ToArray();
-        }
-
         internal PacketWriter _ByteList(Type type, IEnumerable val)
         {
-            _ByteList(type, (mst, con, hea) =>
-            {
-                foreach (var i in val)
-                    mst._WriteExt(con.GetBytes(i), hea);
-            });
+            var con = _Caches.Converter(type, _con, false);
+            var hea = con.Length == null;
+            var mst = new MemoryStream(_Caches._StrInit);
+            foreach (var i in val)
+                mst._WriteExt(con.GetBytes(i), hea);
+            _obj = mst.ToArray();
             return this;
         }
 
         internal PacketWriter _ByteList<T>(IEnumerable<T> val)
         {
-            _ByteList(typeof(T), (mst, con, hea) =>
-            {
-                if (con is IPacketConverter<T> res)
-                    foreach (var i in val)
-                        mst._WriteExt(res.GetBytes(i), hea);
-                else
-                    foreach (var i in val)
-                        mst._WriteExt(con.GetBytes(i), hea);
-            });
+            var con = _Caches.Converter(typeof(T), _con, false);
+            var hea = con.Length == null;
+            var mst = new MemoryStream(_Caches._StrInit);
+            if (con is IPacketConverter<T> res)
+                foreach (var i in val)
+                    mst._WriteExt(res.GetBytes(i), hea);
+            else
+                foreach (var i in val)
+                    mst._WriteExt(con.GetBytes(i), hea);
+            _obj = mst.ToArray();
             return this;
         }
 
@@ -149,39 +141,6 @@ namespace Mikodev.Network
             return this;
         }
 
-        internal void _Byte(MemoryStream str, ItemDictionary dic, int lvl)
-        {
-            if (lvl > _Level)
-                throw new PacketException(PacketError.RecursiveError);
-            foreach (var i in dic)
-            {
-                str._WriteExt(Encoding.UTF8.GetBytes(i.Key), true);
-                if (i.Value is PacketWriter val)
-                {
-                    if (val._obj is null)
-                    {
-                        str._WriteLen(0);
-                        continue;
-                    }
-                    if (val._obj is byte[] buf)
-                    {
-                        str._WriteExt(buf, true);
-                        continue;
-                    }
-                }
-                var pos = str.Position;
-                str._WriteLen(0);
-                if (i.Value is PacketWriter wtr)
-                    _Byte(str, (ItemDictionary)wtr._obj, lvl + 1);
-                else
-                    ((PacketRawWriter)i.Value)._Write(str);
-                var end = str.Position;
-                str.Seek(pos, SeekOrigin.Begin);
-                str._WriteLen((int)(end - pos - sizeof(int)));
-                str.Seek(end, SeekOrigin.Begin);
-            }
-        }
-
         /// <summary>
         /// Get binary packet
         /// </summary>
@@ -192,7 +151,7 @@ namespace Mikodev.Network
             var dic = _obj as ItemDictionary;
             if (dic == null)
                 return new byte[0];
-            var mst = new MemoryStream();
+            var mst = new MemoryStream(_Caches._StrInit);
             _Byte(mst, dic, 0);
             return mst.ToArray();
         }
@@ -215,6 +174,39 @@ namespace Mikodev.Network
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
 
+        internal static void _Byte(Stream str, ItemDictionary dic, int lvl)
+        {
+            if (lvl > _Caches._RecDeep)
+                throw new PacketException(PacketError.RecursiveError);
+            foreach (var i in dic)
+            {
+                str._WriteExt(Encoding.UTF8.GetBytes(i.Key), true);
+                if (i.Value is PacketWriter val)
+                {
+                    if (val._obj is null)
+                    {
+                        str._WriteLen(0);
+                        continue;
+                    }
+                    if (val._obj is byte[] buf)
+                    {
+                        str._WriteExt(buf, true);
+                        continue;
+                    }
+                }
+                var pos = str.Position;
+                str._WriteLen(0);
+                if (i.Value is PacketWriter wtr)
+                    _Byte(str, (ItemDictionary)wtr._obj, lvl + 1);
+                else
+                    ((PacketRawWriter)i.Value)._mst.WriteTo(str);
+                var end = str.Position;
+                str.Position = pos;
+                str._WriteLen((int)(end - pos - sizeof(int)));
+                str.Position = end;
+            }
+        }
+
         internal static bool _ItemNode(object val, IReadOnlyDictionary<Type, IPacketConverter> cons, out object value)
         {
             var wtr = default(object);
@@ -236,35 +228,33 @@ namespace Mikodev.Network
             return wtr != null;
         }
 
+        internal static void _SerializePush(string key, object obj, PacketWriter wtr, IReadOnlyDictionary<Type, IPacketConverter> con, int lvl)
+        {
+            var sub = _Serialize(obj, con, lvl + 1);
+            var lst = wtr._ItemList();
+            lst[key] = sub;
+        }
+
         internal static PacketWriter _Serialize(object val, IReadOnlyDictionary<Type, IPacketConverter> con, int lvl)
         {
-            if (lvl > _Level)
+            if (lvl > _Caches._RecDeep)
                 throw new PacketException(PacketError.RecursiveError);
             var wtr = new PacketWriter(con);
 
-            void _push(string key, object obj)
-            {
-                var sub = _Serialize(obj, con, lvl + 1);
-                wtr._ItemList()[key] = sub;
-            }
-
             if (val is IDictionary<string, object> dic)
                 foreach (var p in dic)
-                    _push(p.Key, p.Value);
+                    _SerializePush(p.Key, p.Value, wtr, con, lvl);
             else if (_ItemNode(val, con, out var nod))
                 return (PacketWriter)nod;
             else
                 foreach (var p in val.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
-                    _push(p.Name, p.GetValue(val));
+                    _SerializePush(p.Name, p.GetValue(val), wtr, con, lvl);
             return wtr;
         }
 
         /// <summary>
         /// Create new writer from object or dictionary (generic dictionary with string as key)
         /// </summary>
-        public static PacketWriter Serialize(object obj, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
-        {
-            return _Serialize(obj, converters, 0);
-        }
+        public static PacketWriter Serialize(object obj, IReadOnlyDictionary<Type, IPacketConverter> converters = null) => _Serialize(obj, converters, 0);
     }
 }

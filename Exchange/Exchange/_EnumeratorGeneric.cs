@@ -3,15 +3,15 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal class _GenericEnumerator<T> : IEnumerator, IEnumerator<T>
+    internal class _EnumeratorGeneric<T> : IEnumerator, IEnumerator<T>
     {
-        internal _Span _spa;
+        internal _Portion _spa;
         internal T _cur = default(T);
         internal readonly IPacketConverter<T> _con = null;
 
-        internal _GenericEnumerator(PacketReader source, IPacketConverter<T> converter)
+        internal _EnumeratorGeneric(PacketReader source, IPacketConverter<T> converter)
         {
-            _spa = new _Span(source._spa);
+            _spa = new _Portion(source._spa);
             _con = converter;
         }
 
@@ -23,7 +23,7 @@ namespace Mikodev.Network
         {
             if (_spa._Over())
                 return false;
-            _spa._Next(_con.Length, (idx, len) => _cur = _con.GetValue(_spa._buf, idx, len));
+            _cur = _spa._Next<T>(_con);
             return true;
         }
 

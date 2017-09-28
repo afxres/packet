@@ -47,11 +47,11 @@ namespace Mikodev.Network
             return val;
         }
 
-        internal static byte[] _OfSByte(sbyte value) => new byte[] { (byte)value };
+        internal static byte[] _OfSByte(sbyte value) => new[] { (byte)value };
 
         internal static sbyte _ToSByte(byte[] buffer, int offset) => (sbyte)buffer[offset];
 
-        internal static byte[] _OfByte(byte value) => new byte[] { value };
+        internal static byte[] _OfByte(byte value) => new[] { value };
 
         internal static byte _ToByte(byte[] buffer, int offset) => buffer[offset];
 

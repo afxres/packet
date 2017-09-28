@@ -14,9 +14,7 @@ namespace Mikodev.Network
         {
             try
             {
-                var val = _val.Invoke(buffer, offset, length);
-                var res = (object)val;
-                return res;
+                return _val.Invoke(buffer, offset, length);
             }
             catch (Exception ex)
             {

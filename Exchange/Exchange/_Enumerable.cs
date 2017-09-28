@@ -25,7 +25,7 @@ namespace Mikodev.Network
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             if (_con is IPacketConverter<T> con)
-                return new _GenericEnumerator<T>(_src, con);
+                return new _EnumeratorGeneric<T>(_src, con);
             return new _Enumerator<T>(_src, _con);
         }
     }

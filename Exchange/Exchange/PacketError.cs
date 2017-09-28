@@ -11,26 +11,6 @@
         None,
 
         /// <summary>
-        /// Path error
-        /// </summary>
-        PathError,
-
-        /// <summary>
-        /// Type invalid
-        /// </summary>
-        TypeInvalid,
-
-        /// <summary>
-        /// Data length overflow
-        /// </summary>
-        Overflow,
-
-        /// <summary>
-        /// Recursion limit has been reached
-        /// </summary>
-        RecursiveError,
-
-        /// <summary>
         /// This error should not be thrown
         /// </summary>
         AssertFailed,
@@ -39,5 +19,25 @@
         /// Convert operation error
         /// </summary>
         ConvertError,
+
+        /// <summary>
+        /// Data length overflow
+        /// </summary>
+        Overflow,
+
+        /// <summary>
+        /// Path error
+        /// </summary>
+        PathError,
+
+        /// <summary>
+        /// Recursion limit has been reached
+        /// </summary>
+        RecursiveError,
+
+        /// <summary>
+        /// Type invalid
+        /// </summary>
+        TypeInvalid,
     }
 }

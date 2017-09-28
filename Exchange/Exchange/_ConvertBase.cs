@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Mikodev.Network
 {
@@ -10,7 +11,7 @@ namespace Mikodev.Network
 
         internal void _Raise(Exception ex)
         {
-            if (ex._IsCritical())
+            if (ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException)
                 return;
             throw new PacketException(PacketError.ConvertError, ex);
         }

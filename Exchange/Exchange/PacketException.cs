@@ -15,18 +15,18 @@ namespace Mikodev.Network
         {
             switch (code)
             {
-                case PacketError.PathError:
-                    return "Path not exists";
-                case PacketError.TypeInvalid:
-                    return "Invalid type";
-                case PacketError.Overflow:
-                    return "Data length overflow";
-                case PacketError.RecursiveError:
-                    return "Recursion limit has been reached";
                 case PacketError.AssertFailed:
                     return "Assert failed";
                 case PacketError.ConvertError:
                     return "Convert failed, see inner exception for more information";
+                case PacketError.Overflow:
+                    return "Data length overflow";
+                case PacketError.PathError:
+                    return "Path not exists";
+                case PacketError.RecursiveError:
+                    return "Recursion limit has been reached";
+                case PacketError.TypeInvalid:
+                    return "Invalid type";
                 default:
                     return "Undefined error";
             }

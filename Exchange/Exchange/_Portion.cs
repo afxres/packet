@@ -2,7 +2,7 @@
 
 namespace Mikodev.Network
 {
-    internal struct _Span
+    internal struct _Portion
     {
         internal readonly byte[] _buf;
         internal readonly int _off;
@@ -10,13 +10,13 @@ namespace Mikodev.Network
         internal readonly int _max;
         internal int _idx;
 
-        internal _Span(_Span span)
+        internal _Portion(_Portion span)
         {
             this = span;
             _idx = span._off;
         }
 
-        internal _Span(byte[] buffer)
+        internal _Portion(byte[] buffer)
         {
             _buf = buffer ?? throw new ArgumentNullException();
             _off = 0;
@@ -25,7 +25,7 @@ namespace Mikodev.Network
             _max = buffer.Length;
         }
 
-        internal _Span(byte[] buffer, int offset, int length)
+        internal _Portion(byte[] buffer, int offset, int length)
         {
             _buf = buffer ?? throw new ArgumentNullException();
             if (offset < 0 || length < 0 || buffer.Length - offset < length)
@@ -38,14 +38,26 @@ namespace Mikodev.Network
 
         internal bool _Over() => _idx >= _max;
 
-        internal void _Next(int? bit, Action<int, int> act)
+        internal object _Next(IPacketConverter con)
         {
             var idx = _idx;
-            var len = bit ?? -1;
-            if ((bit.HasValue && idx + len > _max) || (bit.HasValue == false && _buf._Read(_max, ref idx, out len) == false))
+            var len = con.Length ?? -1;
+            if ((len > 0 && idx + len > _max) || (len < 1 && _buf._Read(_max, ref idx, out len) == false))
                 throw new PacketException(PacketError.Overflow);
-            act.Invoke(idx, len);
+            var res = con.GetValue(_buf, idx, len);
             _idx = idx + len;
+            return res;
+        }
+
+        internal T _Next<T>(IPacketConverter con)
+        {
+            var idx = _idx;
+            var len = con.Length ?? -1;
+            if ((len > 0 && idx + len > _max) || (len < 1 && _buf._Read(_max, ref idx, out len) == false))
+                throw new PacketException(PacketError.Overflow);
+            var res = con._GetValue<T>(_buf, idx, len);
+            _idx = idx + len;
+            return res;
         }
     }
 }

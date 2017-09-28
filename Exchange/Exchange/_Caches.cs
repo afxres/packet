@@ -8,9 +8,12 @@ namespace Mikodev.Network
 {
     internal static class _Caches
     {
+        internal const int _RecDeep = 64;
+        internal const int _StrInit = 64;
+
+        internal static readonly MethodInfo s_method = typeof(_Caches).GetMethod(nameof(_Pull), BindingFlags.Static | BindingFlags.NonPublic);
         internal static readonly ConditionalWeakTable<Type, IPacketConverter> s_type = new ConditionalWeakTable<Type, IPacketConverter>();
         internal static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_func = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
-        internal static readonly MethodInfo s_method = typeof(_Caches).GetMethod(nameof(_Pull), BindingFlags.Static | BindingFlags.NonPublic);
 
         internal static IEnumerable<T> _Pull<T>(PacketReader source) => new _Enumerable<T>(source);
 
@@ -33,9 +36,6 @@ namespace Mikodev.Network
             return s_func.GetValue(type, _ => fun);
         }
 
-        /// <summary>
-        /// Thread safe method
-        /// </summary>
         internal static IPacketConverter Converter(Type type, IReadOnlyDictionary<Type, IPacketConverter> dic, bool nothrow)
         {
             if (dic != null && dic.TryGetValue(type, out var value))
@@ -51,6 +51,23 @@ namespace Mikodev.Network
             if (nothrow == true)
                 return null;
             throw new PacketException(PacketError.TypeInvalid);
+        }
+
+        internal static byte[] GetBytes(Type type, IReadOnlyDictionary<Type, IPacketConverter> dic, object value, out bool pre)
+        {
+            var con = Converter(type, dic, false);
+            pre = con.Length == null;
+            var buf = con.GetBytes(value);
+            return buf;
+        }
+
+        internal static byte[] GetBytes<T>(IReadOnlyDictionary<Type, IPacketConverter> dic, T value, out bool pre)
+        {
+            var con = Converter(typeof(T), dic, false);
+            pre = con.Length == null;
+            if (con is IPacketConverter<T> res)
+                return res.GetBytes(value);
+            return con.GetBytes(value);
         }
     }
 }

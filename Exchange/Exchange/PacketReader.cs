@@ -14,7 +14,7 @@ namespace Mikodev.Network
     /// </summary>
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
-        internal _Span _spa;
+        internal _Portion _spa;
         internal Dictionary<string, PacketReader> _dic = null;
         internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con = null;
 
@@ -25,7 +25,7 @@ namespace Mikodev.Network
         /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketReader(byte[] buffer, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
         {
-            _spa = new _Span(buffer);
+            _spa = new _Portion(buffer);
             _con = converters;
         }
 
@@ -38,7 +38,7 @@ namespace Mikodev.Network
         /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketReader(byte[] buffer, int offset, int length, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
         {
-            _spa = new _Span(buffer, offset, length);
+            _spa = new _Portion(buffer, offset, length);
             _con = converters;
         }
 

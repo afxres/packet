@@ -9,58 +9,36 @@ namespace Mikodev.Network
     /// </summary>
     public sealed class PacketRawWriter
     {
-        internal readonly List<byte[]> _lst = new List<byte[]>();
-        internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con;
+        internal readonly MemoryStream _mst = new MemoryStream(_Caches._StrInit);
+        internal readonly IReadOnlyDictionary<Type, IPacketConverter> _dic;
 
         /// <summary>
         /// Create writer with converters
         /// </summary>
-        public PacketRawWriter(IReadOnlyDictionary<Type, IPacketConverter> converters = null) => _con = converters;
+        public PacketRawWriter(IReadOnlyDictionary<Type, IPacketConverter> converters = null) => _dic = converters;
+
+        internal PacketRawWriter _Push(byte[] buf, bool head)
+        {
+            if (buf != null)
+                _mst._WriteExt(buf, head);
+            else if (head)
+                _mst._WriteLen(0);
+            return this;
+        }
 
         /// <summary>
         /// Writer value with target type
         /// </summary>
-        public PacketRawWriter Push(Type type, object value)
-        {
-            var con = _Caches.Converter(type, _con, false);
-            var buf = con.GetBytes(value);
-            if (con.Length == null)
-                _lst.Add(BitConverter.GetBytes(buf?.Length ?? 0));
-            _lst.Add(buf);
-            return this;
-        }
+        public PacketRawWriter Push(Type type, object value) => _Push(_Caches.GetBytes(type, _dic, value, out var hea), hea);
 
         /// <summary>
         /// Writer value with target type (Generic)
         /// </summary>
-        public PacketRawWriter Push<T>(T value)
-        {
-            var con = _Caches.Converter(typeof(T), _con, false);
-            var buf = con._GetBytes(value);
-            if (con.Length == null)
-                _lst.Add(BitConverter.GetBytes(buf?.Length ?? 0));
-            _lst.Add(buf);
-            return this;
-        }
-
-        internal void _Write(Stream stream)
-        {
-            foreach (var i in _lst)
-            {
-                if (i == null)
-                    continue;
-                stream.Write(i, 0, i.Length);
-            }
-        }
+        public PacketRawWriter Push<T>(T value) => _Push(_Caches.GetBytes(_dic, value, out var hea), hea);
 
         /// <summary>
         /// Get binary packet
         /// </summary>
-        public byte[] GetBytes()
-        {
-            var mst = new MemoryStream();
-            _Write(mst);
-            return mst.ToArray();
-        }
+        public byte[] GetBytes() => _mst.ToArray();
     }
 }

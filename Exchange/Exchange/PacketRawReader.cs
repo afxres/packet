@@ -8,7 +8,7 @@ namespace Mikodev.Network
     /// </summary>
     public sealed class PacketRawReader
     {
-        internal _Span _spa;
+        internal _Portion _spa;
         internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con;
 
         /// <summary>
@@ -16,7 +16,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketRawReader(PacketReader source)
         {
-            _spa = new _Span(source._spa);
+            _spa = new _Portion(source._spa);
             _con = source._con;
         }
 
@@ -25,7 +25,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketRawReader(byte[] buffer, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
         {
-            _spa = new _Span(buffer);
+            _spa = new _Portion(buffer);
             _con = converters;
         }
 
@@ -34,7 +34,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketRawReader(byte[] buffer, int offset, int length, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
         {
-            _spa = new _Span(buffer, offset, length);
+            _spa = new _Portion(buffer, offset, length);
             _con = converters;
         }
 
@@ -49,8 +49,7 @@ namespace Mikodev.Network
         public object Pull(Type type)
         {
             var con = _Caches.Converter(type, _con, false);
-            var res = default(object);
-            _spa._Next(con.Length, (idx, len) => res = con.GetValue(_spa._buf, idx, len));
+            var res = _spa._Next(con);
             return res;
         }
 
@@ -60,8 +59,7 @@ namespace Mikodev.Network
         public T Pull<T>()
         {
             var con = _Caches.Converter(typeof(T), _con, false);
-            var res = default(T);
-            _spa._Next(con.Length, (idx, len) => res = con._GetValue<T>(_spa._buf, idx, len));
+            var res = _spa._Next<T>(con);
             return res;
         }
 
