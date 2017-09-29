@@ -104,23 +104,16 @@ namespace Mikodev.Network
         /// </summary>
         /// <param name="path">Node path</param>
         /// <param name="nothrow">return null if path not found</param>
-        /// <param name="separator">Path separators, use default separators if null</param>
+        /// <param name="split">Path separators, use default separators if null</param>
         [IndexerName("Node")]
-        public PacketReader this[string path, bool nothrow = false, char[] separator = null] => _ItemPath(path.Split(separator ?? _Extension.s_seps), nothrow);
+        public PacketReader this[string path, bool nothrow = false, char[] split = null] => _ItemPath(path?.Split(split ?? _Extension.s_seps) ?? new[] { string.Empty }, nothrow);
 
         /// <summary>
         /// Get node by key
         /// </summary>
         /// <param name="key">Node key</param>
         /// <param name="nothrow">return null if key not found</param>
-        public PacketReader Pull(string key, bool nothrow = false) => _Item(key, nothrow);
-
-        /// <summary>
-        /// Get node by keys
-        /// </summary>
-        /// <param name="keys">Node key list</param>
-        /// <param name="nothrow">return null if key not found</param>
-        public PacketReader Pull(string[] keys, bool nothrow = false) => _ItemPath(keys, nothrow);
+        public PacketReader Pull(string key, bool nothrow = false) => _Item(key ?? string.Empty, nothrow);
 
         /// <summary>
         /// Convert current node to target type

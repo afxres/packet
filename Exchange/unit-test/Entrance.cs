@@ -10,7 +10,7 @@ using static Mikodev.UnitTest.Extensions;
 namespace Mikodev.UnitTest
 {
     [TestClass]
-    public class UnitTest
+    public class Entrance
     {
         [TestMethod]
         public void Empty()
@@ -131,6 +131,26 @@ namespace Mikodev.UnitTest
             Assert.AreEqual(u64, ru64);
         }
 
+        public void BasicNonGeneric()
+        {
+            var a = 1234;
+            var b = "test";
+            var c = new[] { 1.1M, 2.2M };
+            var buf = new PacketWriter().
+                Push("a", typeof(int), a).
+                Push("b", typeof(string), b).
+                PushList("c", typeof(decimal), c).
+                GetBytes();
+
+            var rea = new PacketReader(buf);
+            var ra = rea["a"].Pull(typeof(int));
+            var rb = rea["b"].Pull(typeof(string));
+            var rc = rea["b"].PullList(typeof(decimal));
+            Assert.AreEqual(a, ra);
+            Assert.AreEqual(b, rb);
+            ThrowIfNotAllEquals(c, rc.Cast<decimal>().ToArray());
+        }
+
         [TestMethod]
         public void Collection()
         {
@@ -151,6 +171,7 @@ namespace Mikodev.UnitTest
 
             var rdr = new PacketReader(buf);
             var ra = rdr["byte"].Pull<byte[]>();
+            var ral = rdr["byte"].PullList();
             var rb = rdr["ints"].PullList<string>();
             var rc = rdr["buffer"].PullList<byte[]>();
 
@@ -162,6 +183,7 @@ namespace Mikodev.UnitTest
             Assert.AreEqual(c.Count, rc.Count());
 
             ThrowIfNotAllEquals(a, ra);
+            ThrowIfNotAllEquals(a, ral);
             ThrowIfNotAllEquals(b, rb.ToArray());
             ThrowIfNotAllEquals(c.First(), rc.First());
 
@@ -250,15 +272,16 @@ namespace Mikodev.UnitTest
 
             Assert.AreEqual(a, rea[@"a/a"].Pull<int>());
             Assert.AreEqual(a, rea[@"a\a"].Pull<int>());
-            Assert.AreEqual(a, rea["a.a", separator: new[] { '.' }].Pull<int>());
-            Assert.AreEqual(a, rea.Pull(new[] { "a", "a" }).Pull<int>());
+            Assert.AreEqual(a, rea["a.a", split: new[] { '.' }].Pull<int>());
             Assert.AreEqual(a, rea.Pull("a").Pull("a").Pull<int>());
 
             Assert.AreEqual(null, rea["b/a", true]);
             Assert.AreEqual(null, rea["a/b", true]);
             Assert.AreEqual(null, rea.Pull("b", true));
-            Assert.AreEqual(null, rea.Pull(new[] { "a", "b" }, true));
             Assert.AreEqual(null, rea.Pull("a").Pull("b", true));
+
+            Assert.AreEqual(null, rea[null, true]);
+            Assert.AreEqual(null, rea.Pull(default(string), true));
 
             try
             {
@@ -400,7 +423,7 @@ namespace Mikodev.UnitTest
             var arr = PacketWriter.Serialize(src).GetBytes();
             var rea = new PacketRawReader(new PacketReader(arr));
             var res = new List<int>();
-            while (rea.Ended == false)
+            while (rea.Next)
                 res.Add(rea.Pull<int>());
 
             ThrowIfNotAllEquals(src, res.ToArray());
@@ -413,11 +436,15 @@ namespace Mikodev.UnitTest
             var b = 0xFF;
             var res = new PacketRawWriter().Push(a).Push(b).GetBytes();
 
-            var rea = new PacketRawReader(res);
+            var rea = new PacketRawReader(res, 0, res.Length);
             var ra = rea.Pull<string>();
             var rb = rea.Pull<int>();
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
+
+            rea.Reset();
+            Assert.AreEqual(a, rea.Pull(typeof(string)));
+            Assert.AreEqual(b, rea.Pull(typeof(int)));
         }
 
         [TestMethod]
@@ -425,7 +452,7 @@ namespace Mikodev.UnitTest
         {
             var a = "Hello, world!";
             var b = 0xFF;
-            var raw = new PacketRawWriter().Push(a).Push(b);
+            var raw = new PacketRawWriter().Push(typeof(string), a).Push(typeof(int), b);
             var wtr = new PacketWriter() as dynamic;
             wtr.a = a;
             wtr.b = b;

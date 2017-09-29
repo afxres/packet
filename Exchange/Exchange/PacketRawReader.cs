@@ -39,9 +39,9 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Current position end of block
+        /// Current index before maximum
         /// </summary>
-        public bool Ended => _spa._Over();
+        public bool Next => _spa._idx < _spa._max;
 
         /// <summary>
         /// Get value with target type
