@@ -13,32 +13,10 @@ namespace Mikodev.Network
             _len = len;
         }
 
-        public int? Length => _len;
+        public int Length => _len;
 
-        public object GetValue(byte[] buffer, int offset, int length)
-        {
-            try
-            {
-                return _val.Invoke(buffer, offset);
-            }
-            catch (Exception ex)
-            {
-                _Raise(ex);
-                throw;
-            }
-        }
+        public object GetValue(byte[] buffer, int offset, int length) => _val.Invoke(buffer, offset);
 
-        T IPacketConverter<T>.GetValue(byte[] buffer, int offset, int length)
-        {
-            try
-            {
-                return _val.Invoke(buffer, offset);
-            }
-            catch (Exception ex)
-            {
-                _Raise(ex);
-                throw;
-            }
-        }
+        T IPacketConverter<T>.GetValue(byte[] buffer, int offset, int length) => _val.Invoke(buffer, offset);
     }
 }

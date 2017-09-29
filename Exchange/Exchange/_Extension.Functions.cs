@@ -4,7 +4,7 @@ using static System.BitConverter;
 
 namespace Mikodev.Network
 {
-    public static partial class _Extension
+    partial class _Extension
     {
         internal const int _GuidLength = 4 * sizeof(int);
 

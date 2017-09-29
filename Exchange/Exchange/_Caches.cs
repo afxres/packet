@@ -39,15 +39,20 @@ namespace Mikodev.Network
         internal static IPacketConverter Converter(Type type, IReadOnlyDictionary<Type, IPacketConverter> dic, bool nothrow)
         {
             if (dic != null && dic.TryGetValue(type, out var value))
-                return value;
+                if (value == null)
+                    goto fail;
+                else return value;
             if (s_cons.TryGetValue(type, out value))
                 return value;
             if (s_type.TryGetValue(type, out value))
                 return value;
 
             var val = _Create(type);
-            if (val != null)
-                return s_type.GetValue(type, _ => val);
+            if (val == null)
+                goto fail;
+            else return s_type.GetValue(type, _ => val);
+
+            fail:
             if (nothrow == true)
                 return null;
             throw new PacketException(PacketError.TypeInvalid);
@@ -56,18 +61,18 @@ namespace Mikodev.Network
         internal static byte[] GetBytes(Type type, IReadOnlyDictionary<Type, IPacketConverter> dic, object value, out bool pre)
         {
             var con = Converter(type, dic, false);
-            pre = con.Length == null;
-            var buf = con.GetBytes(value);
+            pre = con.Length < 1;
+            var buf = con._GetBytesWrapErr(value);
             return buf;
         }
 
         internal static byte[] GetBytes<T>(IReadOnlyDictionary<Type, IPacketConverter> dic, T value, out bool pre)
         {
             var con = Converter(typeof(T), dic, false);
-            pre = con.Length == null;
+            pre = con.Length < 1;
             if (con is IPacketConverter<T> res)
-                return res.GetBytes(value);
-            return con.GetBytes(value);
+                return res._GetBytesWrapErr(value);
+            return con._GetBytesWrapErr(value);
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Mikodev.Network
     /// </summary>
     public sealed class PacketRawReader
     {
-        internal _Portion _spa;
+        internal _Element _spa;
         internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con;
 
         /// <summary>
@@ -16,7 +16,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketRawReader(PacketReader source)
         {
-            _spa = new _Portion(source._spa);
+            _spa = new _Element(source._spa);
             _con = source._con;
         }
 
@@ -25,7 +25,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketRawReader(byte[] buffer, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
         {
-            _spa = new _Portion(buffer);
+            _spa = new _Element(buffer);
             _con = converters;
         }
 
@@ -34,7 +34,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketRawReader(byte[] buffer, int offset, int length, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
         {
-            _spa = new _Portion(buffer, offset, length);
+            _spa = new _Element(buffer, offset, length);
             _con = converters;
         }
 

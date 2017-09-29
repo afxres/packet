@@ -18,7 +18,7 @@
         /// <summary>
         /// byte length, return null if length not fixed
         /// </summary>
-        int? Length { get; }
+        int Length { get; }
     }
 
     /// <summary>

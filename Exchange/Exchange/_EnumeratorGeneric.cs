@@ -5,13 +5,13 @@ namespace Mikodev.Network
 {
     internal class _EnumeratorGeneric<T> : IEnumerator, IEnumerator<T>
     {
-        internal _Portion _spa;
+        internal _Element _spa;
         internal T _cur = default(T);
         internal readonly IPacketConverter<T> _con = null;
 
         internal _EnumeratorGeneric(PacketReader source, IPacketConverter<T> converter)
         {
-            _spa = new _Portion(source._spa);
+            _spa = new _Element(source._spa);
             _con = converter;
         }
 

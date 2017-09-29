@@ -5,14 +5,14 @@ namespace Mikodev.Network
 {
     internal class _Enumerator : IEnumerator
     {
-        internal _Portion _spa;
+        internal _Element _spa;
         internal object _cur = null;
         internal readonly IPacketConverter _con = null;
 
 
         internal _Enumerator(PacketReader source, IPacketConverter converter)
         {
-            _spa = new _Portion(source._spa);
+            _spa = new _Element(source._spa);
             _con = converter;
         }
 

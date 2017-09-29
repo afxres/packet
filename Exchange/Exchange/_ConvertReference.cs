@@ -8,32 +8,10 @@ namespace Mikodev.Network
 
         internal _ConvertReference(Func<T, byte[]> bin, Func<byte[], int, int, T> val) : base(bin) => _val = val;
 
-        public int? Length => null;
+        public int Length => 0;
 
-        public object GetValue(byte[] buffer, int offset, int length)
-        {
-            try
-            {
-                return _val.Invoke(buffer, offset, length);
-            }
-            catch (Exception ex)
-            {
-                _Raise(ex);
-                throw;
-            }
-        }
+        public object GetValue(byte[] buffer, int offset, int length) => _val.Invoke(buffer, offset, length);
 
-        T IPacketConverter<T>.GetValue(byte[] buffer, int offset, int length)
-        {
-            try
-            {
-                return _val.Invoke(buffer, offset, length);
-            }
-            catch (Exception ex)
-            {
-                _Raise(ex);
-                throw;
-            }
-        }
+        T IPacketConverter<T>.GetValue(byte[] buffer, int offset, int length) => _val.Invoke(buffer, offset, length);
     }
 }

@@ -14,7 +14,7 @@ namespace Mikodev.Network
     /// </summary>
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
-        internal _Portion _spa;
+        internal _Element _spa;
         internal Dictionary<string, PacketReader> _dic = null;
         internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con = null;
 
@@ -25,7 +25,7 @@ namespace Mikodev.Network
         /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketReader(byte[] buffer, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
         {
-            _spa = new _Portion(buffer);
+            _spa = new _Element(buffer);
             _con = converters;
         }
 
@@ -38,7 +38,7 @@ namespace Mikodev.Network
         /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketReader(byte[] buffer, int offset, int length, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
         {
-            _spa = new _Portion(buffer, offset, length);
+            _spa = new _Element(buffer, offset, length);
             _con = converters;
         }
 
@@ -89,13 +89,6 @@ namespace Mikodev.Network
             return rdr;
         }
 
-        internal PacketReader _ItemPath(string path, bool nothrow, char[] separator)
-        {
-            var sts = path.Split(separator ?? _Extension.s_seps);
-            var res = _ItemPath(sts, nothrow);
-            return res;
-        }
-
         /// <summary>
         /// Child node count
         /// </summary>
@@ -113,7 +106,7 @@ namespace Mikodev.Network
         /// <param name="nothrow">return null if path not found</param>
         /// <param name="separator">Path separators, use default separators if null</param>
         [IndexerName("Node")]
-        public PacketReader this[string path, bool nothrow = false, char[] separator = null] => _ItemPath(path, nothrow, separator);
+        public PacketReader this[string path, bool nothrow = false, char[] separator = null] => _ItemPath(path.Split(separator ?? _Extension.s_seps), nothrow);
 
         /// <summary>
         /// Get node by key
@@ -133,13 +126,13 @@ namespace Mikodev.Network
         /// Convert current node to target type
         /// </summary>
         /// <param name="type">Target type</param>
-        public object Pull(Type type) => _Caches.Converter(type, _con, false).GetValue(_spa._buf, _spa._off, _spa._len);
+        public object Pull(Type type) => _Caches.Converter(type, _con, false)._GetValueWrapErr(_spa._buf, _spa._off, _spa._len, true);
 
         /// <summary>
         /// Convert current node to target type.
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
-        public T Pull<T>() => _Caches.Converter(typeof(T), _con, false)._GetValue<T>(_spa._buf, _spa._off, _spa._len);
+        public T Pull<T>() => _Caches.Converter(typeof(T), _con, false)._GetValueWrapErr<T>(_spa._buf, _spa._off, _spa._len, true);
 
         /// <summary>
         /// Get byte array of current node

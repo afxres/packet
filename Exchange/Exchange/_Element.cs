@@ -2,7 +2,7 @@
 
 namespace Mikodev.Network
 {
-    internal struct _Portion
+    internal struct _Element
     {
         internal readonly byte[] _buf;
         internal readonly int _off;
@@ -10,13 +10,13 @@ namespace Mikodev.Network
         internal readonly int _max;
         internal int _idx;
 
-        internal _Portion(_Portion span)
+        internal _Element(_Element ele)
         {
-            this = span;
-            _idx = span._off;
+            this = ele;
+            _idx = ele._off;
         }
 
-        internal _Portion(byte[] buffer)
+        internal _Element(byte[] buffer)
         {
             _buf = buffer ?? throw new ArgumentNullException();
             _off = 0;
@@ -25,7 +25,7 @@ namespace Mikodev.Network
             _max = buffer.Length;
         }
 
-        internal _Portion(byte[] buffer, int offset, int length)
+        internal _Element(byte[] buffer, int offset, int length)
         {
             _buf = buffer ?? throw new ArgumentNullException();
             if (offset < 0 || length < 0 || buffer.Length - offset < length)
@@ -41,10 +41,10 @@ namespace Mikodev.Network
         internal object _Next(IPacketConverter con)
         {
             var idx = _idx;
-            var len = con.Length ?? -1;
+            var len = con.Length;
             if ((len > 0 && idx + len > _max) || (len < 1 && _buf._Read(_max, ref idx, out len) == false))
                 throw new PacketException(PacketError.Overflow);
-            var res = con.GetValue(_buf, idx, len);
+            var res = con._GetValueWrapErr(_buf, idx, len, false);
             _idx = idx + len;
             return res;
         }
@@ -52,10 +52,10 @@ namespace Mikodev.Network
         internal T _Next<T>(IPacketConverter con)
         {
             var idx = _idx;
-            var len = con.Length ?? -1;
+            var len = con.Length;
             if ((len > 0 && idx + len > _max) || (len < 1 && _buf._Read(_max, ref idx, out len) == false))
                 throw new PacketException(PacketError.Overflow);
-            var res = con._GetValue<T>(_buf, idx, len);
+            var res = con._GetValueWrapErr<T>(_buf, idx, len, false);
             _idx = idx + len;
             return res;
         }

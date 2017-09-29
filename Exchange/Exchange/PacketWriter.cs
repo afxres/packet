@@ -52,7 +52,7 @@ namespace Mikodev.Network
         {
             var nod = new PacketWriter(_con);
             var con = _Caches.Converter(type, _con, false);
-            nod._obj = con.GetBytes(val);
+            nod._obj = con._GetBytesWrapErr(val);
             _ItemList()[key] = nod;
             return this;
         }
@@ -68,9 +68,9 @@ namespace Mikodev.Network
             var nod = new PacketWriter(_con);
             var con = _Caches.Converter(typeof(T), _con, false);
             if (con is IPacketConverter<T> res)
-                nod._obj = res.GetBytes(val);
+                nod._obj = res._GetBytesWrapErr(val);
             else
-                nod._obj = con.GetBytes(val);
+                nod._obj = con._GetBytesWrapErr(val);
             _ItemList()[key] = nod;
             return this;
         }
@@ -88,10 +88,10 @@ namespace Mikodev.Network
         internal PacketWriter _ByteList(Type type, IEnumerable val)
         {
             var con = _Caches.Converter(type, _con, false);
-            var hea = con.Length == null;
+            var hea = con.Length < 1;
             var mst = new MemoryStream(_Caches._StrInit);
             foreach (var i in val)
-                mst._WriteExt(con.GetBytes(i), hea);
+                mst._WriteExt(con._GetBytesWrapErr(i), hea);
             _obj = mst.ToArray();
             return this;
         }
@@ -99,14 +99,14 @@ namespace Mikodev.Network
         internal PacketWriter _ByteList<T>(IEnumerable<T> val)
         {
             var con = _Caches.Converter(typeof(T), _con, false);
-            var hea = con.Length == null;
+            var hea = con.Length < 1;
             var mst = new MemoryStream(_Caches._StrInit);
             if (con is IPacketConverter<T> res)
                 foreach (var i in val)
-                    mst._WriteExt(res.GetBytes(i), hea);
+                    mst._WriteExt(res._GetBytesWrapErr(i), hea);
             else
                 foreach (var i in val)
-                    mst._WriteExt(con.GetBytes(i), hea);
+                    mst._WriteExt(con._GetBytesWrapErr(i), hea);
             _obj = mst.ToArray();
             return this;
         }
@@ -219,7 +219,7 @@ namespace Mikodev.Network
             else if (val is PacketWriter wri)
                 wtr = new PacketWriter(cons) { _obj = wri._obj };
             else if ((con = _Caches.Converter(val.GetType(), cons, true)) != null)
-                wtr = new PacketWriter(cons) { _obj = con.GetBytes(val) };
+                wtr = new PacketWriter(cons) { _obj = con._GetBytesWrapErr(val) };
             else if (val.GetType()._IsEnumerable(out var inn))
                 wtr = new PacketWriter(cons)._ByteList(inn, (IEnumerable)val);
             else
