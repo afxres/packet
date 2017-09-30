@@ -70,5 +70,10 @@ namespace Mikodev.Network
         {
             _spa._idx = _spa._off;
         }
+
+        /// <summary>
+        /// Show byte count
+        /// </summary>
+        public override string ToString() => $"{nameof(PacketRawReader)} with {_spa._len} byte(s)";
     }
 }

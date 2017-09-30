@@ -85,8 +85,10 @@ namespace Mikodev.Network
             try
             {
                 var buf = con.GetBytes(val);
+#if DEBUG
                 if (con.Length > 0 && (buf == null || con.Length != buf.Length))
                     _Overflow();
+#endif
                 return buf;
             }
             catch (Exception ex) when (_WrapErr(ex))
@@ -100,8 +102,10 @@ namespace Mikodev.Network
             try
             {
                 var buf = con.GetBytes(val);
+#if DEBUG
                 if (con.Length > 0 && (buf == null || con.Length != buf.Length))
                     _Overflow();
+#endif
                 return buf;
             }
             catch (Exception ex) when (_WrapErr(ex))

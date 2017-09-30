@@ -273,11 +273,13 @@ namespace Mikodev.UnitTest
             Assert.AreEqual(a, rea[@"a/a"].Pull<int>());
             Assert.AreEqual(a, rea[@"a\a"].Pull<int>());
             Assert.AreEqual(a, rea["a.a", split: new[] { '.' }].Pull<int>());
+            Assert.AreEqual(a, rea.Pull(new[] { "a", "a" }).Pull<int>());
             Assert.AreEqual(a, rea.Pull("a").Pull("a").Pull<int>());
 
             Assert.AreEqual(null, rea["b/a", true]);
             Assert.AreEqual(null, rea["a/b", true]);
             Assert.AreEqual(null, rea.Pull("b", true));
+            Assert.AreEqual(null, rea.Pull(new[] { "a", "b" }, true));
             Assert.AreEqual(null, rea.Pull("a").Pull("b", true));
 
             Assert.AreEqual(null, rea[null, true]);
@@ -465,6 +467,32 @@ namespace Mikodev.UnitTest
             var rb = rea.Pull<int>();
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
+        }
+
+        [TestMethod]
+        public void MixMode()
+        {
+            var a = 1234;
+            var b = "What the ...";
+            var wtr = new PacketWriter().
+                Push("a", a).
+                Push("b", b).
+                Push("c", new PacketRawWriter().
+                    Push(a).
+                    Push(b));
+            var buf = wtr.GetBytes();
+            var rea = new PacketReader(buf);
+            var ra = rea["a"].Pull<int>();
+            var rb = rea["b"].Pull<string>();
+            var rc = new PacketRawReader(rea["c"]);
+            var rca = rc.Pull<int>();
+            var rcb = rc.Pull<string>();
+
+            Assert.AreEqual(a, ra);
+            Assert.AreEqual(b, rb);
+            Assert.AreEqual(rca, a);
+            Assert.AreEqual(rcb, b);
+            Assert.AreEqual(false, rc.Next);
         }
     }
 }

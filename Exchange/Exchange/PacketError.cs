@@ -11,11 +11,6 @@
         None,
 
         /// <summary>
-        /// This error should not be thrown
-        /// </summary>
-        AssertFailed,
-
-        /// <summary>
         /// Convert operation error
         /// </summary>
         ConvertError,

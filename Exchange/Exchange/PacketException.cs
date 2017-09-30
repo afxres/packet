@@ -15,8 +15,6 @@ namespace Mikodev.Network
         {
             switch (code)
             {
-                case PacketError.AssertFailed:
-                    return "Assert failed";
                 case PacketError.ConvertError:
                     return "Convert failed, see inner exception for more information";
                 case PacketError.Overflow:

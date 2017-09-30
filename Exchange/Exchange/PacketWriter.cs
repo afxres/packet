@@ -39,7 +39,18 @@ namespace Mikodev.Network
         /// </summary>
         public PacketWriter Push(string key, PacketWriter val)
         {
-            _ItemList()[key] = new PacketWriter(_con) { _obj = val?._obj };
+            var lst = _ItemList();
+            lst[key] = new PacketWriter(_con) { _obj = val?._obj };
+            return this;
+        }
+
+        /// <summary>
+        /// Write key and raw writer
+        /// </summary>
+        public PacketWriter Push(string key, PacketRawWriter val)
+        {
+            var lst = _ItemList();
+            lst[key] = val;
             return this;
         }
 

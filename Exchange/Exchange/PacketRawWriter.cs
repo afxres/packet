@@ -40,5 +40,10 @@ namespace Mikodev.Network
         /// Get binary packet
         /// </summary>
         public byte[] GetBytes() => _mst.ToArray();
+
+        /// <summary>
+        /// Show byte count
+        /// </summary>
+        public override string ToString() => $"{nameof(PacketRawWriter)} with {_mst.Length} byte(s)";
     }
 }

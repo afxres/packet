@@ -104,7 +104,7 @@ namespace Mikodev.Network
         /// Get node by path
         /// </summary>
         /// <param name="path">Node path</param>
-        /// <param name="nothrow">return null if path not found</param>
+        /// <param name="nothrow">return null if not found</param>
         /// <param name="split">Path separators, use default separators if null</param>
         [IndexerName("Node")]
         public PacketReader this[string path, bool nothrow = false, char[] split = null] => _ItemPath(path?.Split(split ?? _Extension.s_seps) ?? new[] { string.Empty }, nothrow);
@@ -113,8 +113,22 @@ namespace Mikodev.Network
         /// Get node by key
         /// </summary>
         /// <param name="key">Node key</param>
-        /// <param name="nothrow">return null if key not found</param>
+        /// <param name="nothrow">return null if not found</param>
         public PacketReader Pull(string key, bool nothrow = false) => _Item(key ?? string.Empty, nothrow);
+
+        /// <summary>
+        /// Get node by key collection
+        /// </summary>
+        /// <param name="keys">key collection</param>
+        /// <param name="nothrow">return null if not found</param>
+        public PacketReader Pull(string[] keys, bool nothrow = false)
+        {
+            if (keys == null)
+                throw new ArgumentNullException(nameof(keys));
+            if (keys.Length < 1)
+                throw new ArgumentException("Key collection can not be empty!");
+            return _ItemPath(keys, nothrow);
+        }
 
         /// <summary>
         /// Convert current node to target type
@@ -152,13 +166,9 @@ namespace Mikodev.Network
         {
             var stb = new StringBuilder(nameof(PacketReader));
             stb.Append(" with ");
-            if (_Init() == false || _dic.Count < 1)
-                if (_spa._len != 0)
-                    stb.AppendFormat("{0} byte(s)", _spa._len);
-                else
-                    stb.Append("none");
-            else
-                stb.AppendFormat("{0} node(s)", _dic.Count);
+            if (_Init())
+                stb.AppendFormat("{0} node(s), ", _dic.Count);
+            stb.AppendFormat("{0} byte(s)", _spa._len);
             return stb.ToString();
         }
 
