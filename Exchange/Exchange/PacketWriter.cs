@@ -6,7 +6,8 @@ using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using ItemDictionary = System.Collections.Generic.Dictionary<string, object>;
+using ItemNodes = System.Collections.Generic.Dictionary<string, object>;
+using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -16,19 +17,19 @@ namespace Mikodev.Network
     public sealed class PacketWriter : IDynamicMetaObjectProvider
     {
         internal object _obj = null;
-        internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con = null;
+        internal readonly TypeTools _con = null;
 
         /// <summary>
         /// Create new writer
         /// </summary>
         /// <param name="converters">Packet converters, use default converters if null</param>
-        public PacketWriter(IReadOnlyDictionary<Type, IPacketConverter> converters = null) => _con = converters;
+        public PacketWriter(TypeTools converters = null) => _con = converters;
 
-        internal ItemDictionary _ItemList()
+        internal ItemNodes _ItemList()
         {
-            if (_obj is ItemDictionary dic)
+            if (_obj is ItemNodes dic)
                 return dic;
-            var val = new ItemDictionary();
+            var val = new ItemNodes();
             _obj = val;
             return val;
         }
@@ -148,7 +149,7 @@ namespace Mikodev.Network
         {
             if (_obj is byte[] buf)
                 return buf;
-            var dic = _obj as ItemDictionary;
+            var dic = _obj as ItemNodes;
             if (dic == null)
                 return new byte[0];
             var mst = new MemoryStream(_Caches._StrInit);
@@ -168,13 +169,13 @@ namespace Mikodev.Network
             else if (_obj is byte[] buf)
                 stb.AppendFormat("{0} byte(s)", buf.Length);
             else
-                stb.AppendFormat("{0} node(s)", ((ItemDictionary)_obj).Count);
+                stb.AppendFormat("{0} node(s)", ((ItemNodes)_obj).Count);
             return stb.ToString();
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
 
-        internal static void _Byte(Stream str, ItemDictionary dic, int lvl)
+        internal static void _Byte(Stream str, ItemNodes dic, int lvl)
         {
             if (lvl > _Caches._RecDeep)
                 throw new PacketException(PacketError.RecursiveError);
@@ -197,7 +198,7 @@ namespace Mikodev.Network
                 var pos = str.Position;
                 str._WriteLen(0);
                 if (i.Value is PacketWriter wtr)
-                    _Byte(str, (ItemDictionary)wtr._obj, lvl + 1);
+                    _Byte(str, (ItemNodes)wtr._obj, lvl + 1);
                 else
                     ((PacketRawWriter)i.Value)._mst.WriteTo(str);
                 var end = str.Position;
@@ -207,7 +208,7 @@ namespace Mikodev.Network
             }
         }
 
-        internal static bool _ItemNode(object val, IReadOnlyDictionary<Type, IPacketConverter> cons, out object value)
+        internal static bool _ItemNode(object val, TypeTools cons, out object value)
         {
             var wtr = default(object);
             var con = default(IPacketConverter);
@@ -228,14 +229,14 @@ namespace Mikodev.Network
             return wtr != null;
         }
 
-        internal static void _SerializePush(string key, object obj, PacketWriter wtr, IReadOnlyDictionary<Type, IPacketConverter> con, int lvl)
+        internal static void _SerializePush(string key, object obj, PacketWriter wtr, TypeTools con, int lvl)
         {
             var sub = _Serialize(obj, con, lvl + 1);
             var lst = wtr._ItemList();
             lst[key] = sub;
         }
 
-        internal static PacketWriter _Serialize(object val, IReadOnlyDictionary<Type, IPacketConverter> con, int lvl)
+        internal static PacketWriter _Serialize(object val, TypeTools con, int lvl)
         {
             if (lvl > _Caches._RecDeep)
                 throw new PacketException(PacketError.RecursiveError);
@@ -255,6 +256,6 @@ namespace Mikodev.Network
         /// <summary>
         /// Create new writer from object or dictionary (generic dictionary with string as key)
         /// </summary>
-        public static PacketWriter Serialize(object obj, IReadOnlyDictionary<Type, IPacketConverter> converters = null) => _Serialize(obj, converters, 0);
+        public static PacketWriter Serialize(object obj, TypeTools converters = null) => _Serialize(obj, converters, 0);
     }
 }

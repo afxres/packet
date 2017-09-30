@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using static System.BitConverter;
 
 namespace Mikodev.Network
@@ -11,6 +10,15 @@ namespace Mikodev.Network
     /// </summary>
     internal static partial class _Extension
     {
+        internal sealed class _Wrapper<T>
+        {
+            internal T _val;
+
+            internal T Value(object _) => _val;
+        }
+
+        internal static _Wrapper<T> _Wrap<T>(T val) => new _Wrapper<T> { _val = val };
+
         internal static readonly char[] s_seps = new[] { '/', '\\' };
 
         static _Extension()

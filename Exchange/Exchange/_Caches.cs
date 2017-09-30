@@ -33,7 +33,7 @@ namespace Mikodev.Network
                 return value;
             var del = Delegate.CreateDelegate(typeof(Func<PacketReader, object>), s_method.MakeGenericMethod(type));
             var fun = (Func<PacketReader, object>)del;
-            return s_func.GetValue(type, _ => fun);
+            return s_func.GetValue(type, _Wrap(fun).Value);
         }
 
         internal static IPacketConverter Converter(Type type, IReadOnlyDictionary<Type, IPacketConverter> dic, bool nothrow)
@@ -50,7 +50,7 @@ namespace Mikodev.Network
             var val = _Create(type);
             if (val == null)
                 goto fail;
-            else return s_type.GetValue(type, _ => val);
+            else return s_type.GetValue(type, _Wrap(val).Value);
 
             fail:
             if (nothrow == true)

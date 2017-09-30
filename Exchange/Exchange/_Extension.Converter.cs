@@ -1,55 +1,54 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using static System.BitConverter;
+using TypeTools = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
 {
     partial class _Extension
     {
-        internal static readonly Dictionary<Type, IPacketConverter> s_cons = null;
+        internal static readonly TypeTools s_cons = null;
 
-        internal static Dictionary<Type, IPacketConverter> _InitConverter()
+        internal static void _Ref<T>(TypeTools dic, Func<T, byte[]> bin, Func<byte[], int, int, T> val) => dic.Add(typeof(T), new _ConvertReference<T>(bin, val));
+
+        internal static void _Val<T>(TypeTools dic, Func<T, byte[]> bin, Func<byte[], int, T> val, int len) => dic.Add(typeof(T), new _ConvertValue<T>(bin, val, len));
+
+        internal static TypeTools _InitConverter()
         {
-            var dic = new Dictionary<Type, IPacketConverter>();
-            void _Ref<T>(Func<T, byte[]> bin, Func<byte[], int, int, T> val) => dic.Add(typeof(T), new _ConvertReference<T>(bin, val));
-            void _Val<T>(Func<T, byte[]> bin, Func<byte[], int, T> val, int len) => dic.Add(typeof(T), new _ConvertValue<T>(bin, val, len));
+            var dic = new TypeTools();
 
-            _Val(GetBytes, ToBoolean, sizeof(bool));
-            _Val(_OfByte, _ToByte, sizeof(byte));
-            _Val(_OfSByte, _ToSByte, sizeof(sbyte));
-            _Val(GetBytes, ToChar, sizeof(char));
-            _Val(GetBytes, ToInt16, sizeof(short));
-            _Val(GetBytes, ToInt32, sizeof(int));
-            _Val(GetBytes, ToInt64, sizeof(long));
-            _Val(GetBytes, ToUInt16, sizeof(ushort));
-            _Val(GetBytes, ToUInt32, sizeof(uint));
-            _Val(GetBytes, ToUInt64, sizeof(ulong));
-            _Val(GetBytes, ToSingle, sizeof(float));
-            _Val(GetBytes, ToDouble, sizeof(double));
-            _Val(_OfDecimal, _ToDecimal, sizeof(decimal));
+            _Val(dic, GetBytes, ToBoolean, sizeof(bool));
+            _Val(dic, _OfByte, _ToByte, sizeof(byte));
+            _Val(dic, _OfSByte, _ToSByte, sizeof(sbyte));
+            _Val(dic, GetBytes, ToChar, sizeof(char));
+            _Val(dic, GetBytes, ToInt16, sizeof(short));
+            _Val(dic, GetBytes, ToInt32, sizeof(int));
+            _Val(dic, GetBytes, ToInt64, sizeof(long));
+            _Val(dic, GetBytes, ToUInt16, sizeof(ushort));
+            _Val(dic, GetBytes, ToUInt32, sizeof(uint));
+            _Val(dic, GetBytes, ToUInt64, sizeof(ulong));
+            _Val(dic, GetBytes, ToSingle, sizeof(float));
+            _Val(dic, GetBytes, ToDouble, sizeof(double));
+            _Val(dic, _OfDecimal, _ToDecimal, sizeof(decimal));
 
-            _Val(_OfDateTime, _ToDateTime, sizeof(long));
-            _Val(_OfTimeSpan, _ToTimeSpan, sizeof(long));
-            _Val(_OfGuid, _ToGuid, _GuidLength);
+            _Val(dic, _OfDateTime, _ToDateTime, sizeof(long));
+            _Val(dic, _OfTimeSpan, _ToTimeSpan, sizeof(long));
+            _Val(dic, _OfGuid, _ToGuid, _GuidLength);
 
-            _Ref(_OfBytes, _ToBytes);
-            _Ref(Encoding.UTF8.GetBytes, Encoding.UTF8.GetString);
-            _Ref(_OfIPAddress, _ToIPAddress);
-            _Ref(_OfEndPoint, _ToEndPoint);
+            _Ref(dic, _OfBytes, _ToBytes);
+            _Ref(dic, Encoding.UTF8.GetBytes, Encoding.UTF8.GetString);
+            _Ref(dic, _OfIPAddress, _ToIPAddress);
+            _Ref(dic, _OfEndPoint, _ToEndPoint);
 
             return dic;
         }
 
-        internal static void _Raise(Exception ex)
-        {
-            if (ex is PacketException || ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException)
-                return;
-            throw new PacketException(PacketError.ConvertError, ex);
-        }
+        internal static bool _WrapErr(Exception ex) => (ex is PacketException || ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException) == false;
 
         internal static void _Overflow() => throw new PacketException(PacketError.Overflow);
+
+        internal static Exception _Raise(Exception ex) => new PacketException(PacketError.ConvertError, ex);
 
         internal static object _GetValueWrapErr(this IPacketConverter con, byte[] buf, int off, int len, bool check)
         {
@@ -59,10 +58,9 @@ namespace Mikodev.Network
                     _Overflow();
                 return con.GetValue(buf, off, len);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (_WrapErr(ex))
             {
-                _Raise(ex);
-                throw;
+                throw _Raise(ex);
             }
         }
 
@@ -76,10 +74,9 @@ namespace Mikodev.Network
                     return res.GetValue(buf, off, len);
                 return (T)con.GetValue(buf, off, len);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (_WrapErr(ex))
             {
-                _Raise(ex);
-                throw;
+                throw _Raise(ex);
             }
         }
 
@@ -92,10 +89,9 @@ namespace Mikodev.Network
                     _Overflow();
                 return buf;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (_WrapErr(ex))
             {
-                _Raise(ex);
-                throw;
+                throw _Raise(ex);
             }
         }
 
@@ -108,10 +104,9 @@ namespace Mikodev.Network
                     _Overflow();
                 return buf;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (_WrapErr(ex))
             {
-                _Raise(ex);
-                throw;
+                throw _Raise(ex);
             }
         }
     }

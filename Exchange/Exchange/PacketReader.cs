@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
+using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -16,14 +17,14 @@ namespace Mikodev.Network
     {
         internal _Element _spa;
         internal Dictionary<string, PacketReader> _dic = null;
-        internal readonly IReadOnlyDictionary<Type, IPacketConverter> _con = null;
+        internal readonly TypeTools _con = null;
 
         /// <summary>
         /// Create new reader
         /// </summary>
         /// <param name="buffer">Binary data packet (Should be readonly)</param>
         /// <param name="converters">Packet converters, use default converters if null</param>
-        public PacketReader(byte[] buffer, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
+        public PacketReader(byte[] buffer, TypeTools converters = null)
         {
             _spa = new _Element(buffer);
             _con = converters;
@@ -36,7 +37,7 @@ namespace Mikodev.Network
         /// <param name="offset">Start index</param>
         /// <param name="length">Packet length</param>
         /// <param name="converters">Packet converters, use default converters if null</param>
-        public PacketReader(byte[] buffer, int offset, int length, IReadOnlyDictionary<Type, IPacketConverter> converters = null)
+        public PacketReader(byte[] buffer, int offset, int length, TypeTools converters = null)
         {
             _spa = new _Element(buffer, offset, length);
             _con = converters;
