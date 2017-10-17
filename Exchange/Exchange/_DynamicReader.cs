@@ -32,7 +32,7 @@ namespace Mikodev.Network
             if ((con = _Caches.Converter(typ, rea._con, true)) != null)
                 val = con._GetValueWrapErr(spa._buf, spa._off, spa._len, true);
             else if (typ._IsEnumerableGeneric(out var inn))
-                val = _Caches.PullList(inn).Invoke(rea);
+                val = _Caches.Enumerable(inn).Invoke(rea);
             else return base.BindConvert(binder);
 
             var exp = Expression.Constant(val);

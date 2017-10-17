@@ -259,8 +259,8 @@ namespace Mikodev.Network
             else if (_ItemNode(val, con, out var nod))
                 return (PacketWriter)nod;
             else
-                foreach (var p in val.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
-                    _SerializePush(p.Name, p.GetValue(val), wtr, con, lvl);
+                foreach (var i in _Caches.GetMethods(val.GetType()))
+                    _SerializePush(i.Key, i.Value.Invoke(val), wtr, con, lvl);
             return wtr;
         }
 
