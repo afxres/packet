@@ -16,7 +16,7 @@
         object GetValue(byte[] buffer, int offset, int length);
 
         /// <summary>
-        /// byte length, return null if length not fixed
+        /// byte length, return zero if length not constant
         /// </summary>
         int Length { get; }
     }
