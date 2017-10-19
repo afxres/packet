@@ -47,6 +47,7 @@
     <Compile Include="IPacketConverter.cs" />
     <Compile Include="PacketRawReader.cs" />
     <Compile Include="PacketRawWriter.cs" />
+    <Compile Include="_Caches.Nested.cs" />
     <Compile Include="_ConvertBase.cs" />
     <Compile Include="_ConvertReference.cs" />
     <Compile Include="_DynamicReader.cs" />

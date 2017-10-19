@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using static Mikodev.Network._Extension;
 
 namespace Mikodev.Network
 {
-    internal static class _Caches
+    internal static partial class _Caches
     {
         internal const int _RecDeep = 64;
         internal const int _StrInit = 64;
@@ -26,17 +25,15 @@ namespace Mikodev.Network
             var met = inf.GetGetMethod();
             var src = inf.DeclaringType;
             var dst = inf.PropertyType;
-            var fun = s_get.MakeGenericMethod(src, dst).Invoke(null, new[] { met });
-            var res = (Func<object, object>)fun;
-            return res;
+            var res = s_get.MakeGenericMethod(src, dst).Invoke(null, new[] { met });
+            return (Func<object, object>)res;
         }
 
         internal static Func<object, object> _BuildGetMethodGeneric<S, R>(MethodInfo inf)
         {
             var del = Delegate.CreateDelegate(typeof(Func<S, R>), inf);
-            var fun = (Func<S, R>)del;
-            var met = new Func<object, object>(e => fun.Invoke((S)e));
-            return met;
+            var box = _Emit((Func<S, R>)del);
+            return box.Value;
         }
 
         internal static IPacketConverter _BuildConverter(Type type)
@@ -53,19 +50,22 @@ namespace Mikodev.Network
         {
             if (s_func.TryGetValue(type, out var val))
                 return val;
-            var del = Delegate.CreateDelegate(typeof(Func<PacketReader, object>), s_itr.MakeGenericMethod(type));
-            var fun = (Func<PacketReader, object>)del;
-            return s_func.GetValue(type, _Wrap(fun).Value);
+            var fun = Delegate.CreateDelegate(typeof(Func<PacketReader, object>), s_itr.MakeGenericMethod(type));
+            return s_func.GetValue(type, _Wrap((Func<PacketReader, object>)fun).Value);
         }
 
         internal static Dictionary<string, Func<object, object>> GetMethods(Type type)
         {
             if (s_prop.TryGetValue(type, out var val))
                 return val;
-            var dic =
-                type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                    .Where(r => r.GetGetMethod() != null)
-                    .ToDictionary(k => k.Name, v => _BuildGetMethod(v));
+            var dic = new Dictionary<string, Func<object, object>>();
+            var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            foreach (var i in pro)
+            {
+                if (i.GetGetMethod() == null)
+                    continue;
+                dic.Add(i.Name, _BuildGetMethod(i));
+            }
             return s_prop.GetValue(type, _Wrap(dic).Value);
         }
 
