@@ -46,7 +46,7 @@ namespace Mikodev.Network
 
         internal static bool _WrapErr(Exception ex) => (ex is PacketException || ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException) == false;
 
-        internal static void _Overflow() => throw new PacketException(PacketError.Overflow);
+        internal static Exception _Overflow() => new PacketException(PacketError.Overflow);
 
         internal static Exception _Raise(Exception ex) => new PacketException(PacketError.ConvertError, ex);
 
@@ -55,7 +55,7 @@ namespace Mikodev.Network
             try
             {
                 if (check && con.Length > len)
-                    _Overflow();
+                    throw _Overflow();
                 return con.GetValue(buf, off, len);
             }
             catch (Exception ex) when (_WrapErr(ex))
@@ -69,7 +69,7 @@ namespace Mikodev.Network
             try
             {
                 if (check && con.Length > len)
-                    _Overflow();
+                    throw _Overflow();
                 if (con is IPacketConverter<T> res)
                     return res.GetValue(buf, off, len);
                 return (T)con.GetValue(buf, off, len);
@@ -87,7 +87,7 @@ namespace Mikodev.Network
                 var buf = con.GetBytes(val);
 #if DEBUG
                 if (con.Length > 0 && (buf == null || con.Length != buf.Length))
-                    _Overflow();
+                    throw _Overflow();
 #endif
                 return buf;
             }
@@ -104,7 +104,7 @@ namespace Mikodev.Network
                 var buf = con.GetBytes(val);
 #if DEBUG
                 if (con.Length > 0 && (buf == null || con.Length != buf.Length))
-                    _Overflow();
+                    throw _Overflow();
 #endif
                 return buf;
             }
