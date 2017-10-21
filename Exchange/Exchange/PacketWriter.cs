@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
 using ItemNodes = System.Collections.Generic.Dictionary<string, object>;
 using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mikodev.Network.IPacketConverter>;
@@ -185,7 +184,7 @@ namespace Mikodev.Network
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
-
+        
         internal static void _Byte(Stream str, ItemNodes dic, int lvl)
         {
             if (lvl > _Caches._RecDeep)
@@ -193,29 +192,32 @@ namespace Mikodev.Network
             foreach (var i in dic)
             {
                 str._WriteExt(Encoding.UTF8.GetBytes(i.Key), true);
-                if (i.Value is PacketWriter val)
+                var val = i.Value;
+                if (val is PacketRawWriter raw)
                 {
-                    if (val._obj is null)
-                    {
-                        str._WriteLen(0);
-                        continue;
-                    }
-                    if (val._obj is byte[] buf)
-                    {
-                        str._WriteExt(buf, true);
-                        continue;
-                    }
+                    var mst = raw._mst;
+                    var len = (int)mst.Length;
+                    str._WriteLen((int)mst.Length);
+                    mst.WriteTo(str);
+                    continue;
                 }
-                var pos = str.Position;
-                str._WriteLen(0);
-                if (i.Value is PacketWriter wtr)
-                    _Byte(str, (ItemNodes)wtr._obj, lvl + 1);
+                var wtr = (PacketWriter)val;
+                var obj = wtr._obj;
+                if (obj == null)
+                    str._WriteLen(0);
+                else if (obj is byte[] buf)
+                    str._WriteExt(buf, true);
                 else
-                    ((PacketRawWriter)i.Value)._mst.WriteTo(str);
-                var end = str.Position;
-                str.Position = pos;
-                str._WriteLen((int)(end - pos - sizeof(int)));
-                str.Position = end;
+                {
+                    var nod = (ItemNodes)obj;
+                    var pos = str.Position;
+                    str._WriteLen(0);
+                    _Byte(str, nod, lvl + 1);
+                    var end = str.Position;
+                    str.Position = pos;
+                    str._WriteLen((int)(end - pos - sizeof(int)));
+                    str.Position = end;
+                }
             }
         }
 

@@ -9,7 +9,7 @@ namespace Mikodev.Network
     internal static partial class _Caches
     {
         internal const int _RecDeep = 64;
-        internal const int _StrInit = 64;
+        internal const int _StrInit = 256;
 
         internal static readonly MethodInfo s_itr = typeof(_Caches).GetMethod(nameof(_BuildEnumerable), BindingFlags.Static | BindingFlags.NonPublic);
         internal static readonly MethodInfo s_get = typeof(_Caches).GetMethod(nameof(_BuildGetMethodGeneric), BindingFlags.Static | BindingFlags.NonPublic);
