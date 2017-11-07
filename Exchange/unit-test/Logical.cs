@@ -17,7 +17,7 @@ namespace Mikodev.UnitTest
 
         byte[] IPacketConverter.GetBytes(object value) => throw new Exception(_BytesErr);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => throw new StackOverflowException(_ValueErr);
+        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => throw new OutOfMemoryException(_ValueErr);
     }
 
     [TestClass]
@@ -47,6 +47,18 @@ namespace Mikodev.UnitTest
             {
                 // ignore
             }
+        }
+
+        [TestMethod]
+        public void SpecialSerialize()
+        {
+            var msg = "Hello, exception!";
+            var e = new Exception(msg);
+            var pkt = PacketWriter.Serialize(e);
+            var buf = pkt.GetBytes();
+
+            var rea = new PacketReader(buf);
+            Assert.AreEqual(msg, rea[nameof(Exception.Message)].Pull<string>());
         }
     }
 }

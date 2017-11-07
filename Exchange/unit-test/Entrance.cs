@@ -210,23 +210,37 @@ namespace Mikodev.UnitTest
             dwt.c = c;
             dwt.d = d;
             dwt.e = e;
+            dwt.list.a = a;
+            dwt.list.b = b;
+            dwt.list.c = c;
+            dwt.list.d = d;
 
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
             var dre = (dynamic)rea;
+
             var ra = (int)dre.a;
             var rb = (string)dre.b;
             var rc = (byte[])dre.c;
             var rd = (IEnumerable<string>)dre.d;
             var re = (IEnumerable<byte[]>)dre.e;
 
+            var rla = (int)dre.list.a;
+            var rlb = (string)dre.list.b;
+            var rlc = (byte[])dre.list.c;
+            var rld = (IEnumerable<string>)dre.list.d;
+
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
+            Assert.AreEqual(a, rla);
+            Assert.AreEqual(b, rlb);
             Assert.AreEqual(e.Count, re.Count());
 
             ThrowIfNotAllEquals(c, rc);
             ThrowIfNotAllEquals(d, rd.ToArray());
             ThrowIfNotAllEquals(e.First(), re.First());
+            ThrowIfNotAllEquals(c, rlc);
+            ThrowIfNotAllEquals(d, rld.ToArray());
         }
 
         [TestMethod]

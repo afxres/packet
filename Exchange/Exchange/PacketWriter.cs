@@ -38,8 +38,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketWriter Push(string key, PacketWriter val)
         {
-            var lst = _ItemList();
-            lst[key] = new PacketWriter(_con) { _obj = val?._obj };
+            _ItemList()[key] = new PacketWriter(_con) { _obj = val?._obj };
             return this;
         }
 
@@ -48,8 +47,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketWriter Push(string key, PacketRawWriter val)
         {
-            var lst = _ItemList();
-            lst[key] = val;
+            _ItemList()[key] = val;
             return this;
         }
 
@@ -96,9 +94,8 @@ namespace Mikodev.Network
             return this;
         }
 
-        internal PacketWriter _ByteList(Type type, IEnumerable val)
+        internal PacketWriter _ByteList(IPacketConverter con, IEnumerable val)
         {
-            var con = _Caches.Converter(type, _con, false);
             var hea = con.Length < 1;
             var mst = new MemoryStream(_Caches._StrInit);
             foreach (var i in val)
@@ -132,7 +129,7 @@ namespace Mikodev.Network
         {
             var nod = new PacketWriter(_con);
             if (val != null)
-                nod._ByteList(type, val);
+                nod._ByteList(_Caches.Converter(type, _con, false), val);
             _ItemList()[key] = nod;
             return this;
         }
@@ -184,10 +181,10 @@ namespace Mikodev.Network
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
-        
-        internal static void _Byte(Stream str, ItemNodes dic, int lvl)
+
+        internal static void _Byte(Stream str, ItemNodes dic, int lev)
         {
-            if (lvl > _Caches._RecDeep)
+            if (lev > _Caches._RecDeep)
                 throw new PacketException(PacketError.RecursiveError);
             foreach (var i in dic)
             {
@@ -212,7 +209,7 @@ namespace Mikodev.Network
                     var nod = (ItemNodes)obj;
                     var pos = str.Position;
                     str._WriteLen(0);
-                    _Byte(str, nod, lvl + 1);
+                    _Byte(str, nod, lev + 1);
                     var end = str.Position;
                     str.Position = pos;
                     str._WriteLen((int)(end - pos - sizeof(int)));
@@ -234,35 +231,29 @@ namespace Mikodev.Network
                 wtr = new PacketWriter(cons) { _obj = wri._obj };
             else if ((con = _Caches.Converter(val.GetType(), cons, true)) != null)
                 wtr = new PacketWriter(cons) { _obj = con._GetBytesWrapErr(val) };
-            else if (val.GetType()._IsEnumerable(out var inn))
-                wtr = new PacketWriter(cons)._ByteList(inn, (IEnumerable)val);
-            else
-                wtr = null;
+            else if (val.GetType()._IsEnumerable(out var inn) && (con = _Caches.Converter(inn, cons, true)) != null)
+                wtr = new PacketWriter(cons)._ByteList(con, (IEnumerable)val);
+
             value = wtr;
             return wtr != null;
         }
 
-        internal static void _SerializePush(string key, object obj, PacketWriter wtr, TypeTools con, int lvl)
+        internal static PacketWriter _Serialize(object val, TypeTools cons, int lev)
         {
-            var sub = _Serialize(obj, con, lvl + 1);
-            var lst = wtr._ItemList();
-            lst[key] = sub;
-        }
-
-        internal static PacketWriter _Serialize(object val, TypeTools con, int lvl)
-        {
-            if (lvl > _Caches._RecDeep)
+            if (lev > _Caches._RecDeep)
                 throw new PacketException(PacketError.RecursiveError);
-            var wtr = new PacketWriter(con);
+            if (_ItemNode(val, cons, out var nod))
+                return (PacketWriter)nod;
+
+            var wtr = new PacketWriter(cons);
+            var lst = wtr._ItemList();
 
             if (val is IDictionary<string, object> dic)
-                foreach (var p in dic)
-                    _SerializePush(p.Key, p.Value, wtr, con, lvl);
-            else if (_ItemNode(val, con, out var nod))
-                return (PacketWriter)nod;
+                foreach (var i in dic)
+                    lst[i.Key] = _Serialize(i.Value, cons, lev + 1);
             else
                 foreach (var i in _Caches.GetMethods(val.GetType()))
-                    _SerializePush(i.Key, i.Value.Invoke(val), wtr, con, lvl);
+                    lst[i.Key] = _Serialize(i.Value.Invoke(val), cons, lev + 1);
             return wtr;
         }
 

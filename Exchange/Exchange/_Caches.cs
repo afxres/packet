@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using static Mikodev.Network._Extension;
+using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -15,24 +16,15 @@ namespace Mikodev.Network
         internal static readonly MethodInfo s_get = typeof(_Caches).GetMethod(nameof(_BuildGetMethodGeneric), BindingFlags.Static | BindingFlags.NonPublic);
 
         internal static readonly ConditionalWeakTable<Type, IPacketConverter> s_type = new ConditionalWeakTable<Type, IPacketConverter>();
-        internal static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_func = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
+        internal static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_enum = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
         internal static readonly ConditionalWeakTable<Type, Dictionary<string, Func<object, object>>> s_prop = new ConditionalWeakTable<Type, Dictionary<string, Func<object, object>>>();
 
         internal static IEnumerable<T> _BuildEnumerable<T>(PacketReader source) => new _Enumerable<T>(source);
 
-        internal static Func<object, object> _BuildGetMethod(PropertyInfo inf)
+        internal static Func<object, object> _BuildGetMethodGeneric<T, R>(MethodInfo inf)
         {
-            var met = inf.GetGetMethod();
-            var src = inf.DeclaringType;
-            var dst = inf.PropertyType;
-            var res = s_get.MakeGenericMethod(src, dst).Invoke(null, new[] { met });
-            return (Func<object, object>)res;
-        }
-
-        internal static Func<object, object> _BuildGetMethodGeneric<S, R>(MethodInfo inf)
-        {
-            var del = Delegate.CreateDelegate(typeof(Func<S, R>), inf);
-            var box = _Emit((Func<S, R>)del);
+            var del = Delegate.CreateDelegate(typeof(Func<T, R>), inf);
+            var box = _Emit((Func<T, R>)del);
             return box.Value;
         }
 
@@ -48,10 +40,10 @@ namespace Mikodev.Network
 
         internal static Func<PacketReader, object> Enumerable(Type type)
         {
-            if (s_func.TryGetValue(type, out var val))
+            if (s_enum.TryGetValue(type, out var val))
                 return val;
             var fun = Delegate.CreateDelegate(typeof(Func<PacketReader, object>), s_itr.MakeGenericMethod(type));
-            return s_func.GetValue(type, _Wrap((Func<PacketReader, object>)fun).Value);
+            return s_enum.GetValue(type, _Wrap((Func<PacketReader, object>)fun).Value);
         }
 
         internal static Dictionary<string, Func<object, object>> GetMethods(Type type)
@@ -62,14 +54,21 @@ namespace Mikodev.Network
             var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             foreach (var i in pro)
             {
-                if (i.GetGetMethod() == null)
+                var met = i.GetGetMethod();
+                if (met == null)
                     continue;
-                dic.Add(i.Name, _BuildGetMethod(i));
+                var arg = met.GetParameters();
+                if (arg == null || arg.Length != 0)
+                    continue;
+                var src = i.DeclaringType;
+                var dst = i.PropertyType;
+                var res = s_get.MakeGenericMethod(src, dst).Invoke(null, new[] { met });
+                dic.Add(i.Name, (Func<object, object>)res);
             }
             return s_prop.GetValue(type, _Wrap(dic).Value);
         }
 
-        internal static IPacketConverter Converter(Type type, IReadOnlyDictionary<Type, IPacketConverter> dic, bool nothrow)
+        internal static IPacketConverter Converter(Type type, TypeTools dic, bool nothrow)
         {
             if (dic != null && dic.TryGetValue(type, out var val))
                 if (val == null)
@@ -91,7 +90,7 @@ namespace Mikodev.Network
             throw new PacketException(PacketError.TypeInvalid);
         }
 
-        internal static byte[] GetBytes(Type type, IReadOnlyDictionary<Type, IPacketConverter> dic, object value, out bool pre)
+        internal static byte[] GetBytes(Type type, TypeTools dic, object value, out bool pre)
         {
             var con = Converter(type, dic, false);
             pre = con.Length < 1;
@@ -99,7 +98,7 @@ namespace Mikodev.Network
             return buf;
         }
 
-        internal static byte[] GetBytes<T>(IReadOnlyDictionary<Type, IPacketConverter> dic, T value, out bool pre)
+        internal static byte[] GetBytes<T>(TypeTools dic, T value, out bool pre)
         {
             var con = Converter(typeof(T), dic, false);
             pre = con.Length < 1;
