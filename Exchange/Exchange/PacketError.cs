@@ -1,37 +1,37 @@
 ﻿namespace Mikodev.Network
 {
     /// <summary>
-    /// Error code
+    /// 错误代码. Error code
     /// </summary>
     public enum PacketError
     {
         /// <summary>
-        /// Default
+        /// 默认值. Default
         /// </summary>
         None,
 
         /// <summary>
-        /// Convert operation error
+        /// 转换器异常. Convert operation error
         /// </summary>
         ConvertError,
 
         /// <summary>
-        /// Data length overflow
+        /// 数据长度溢出. Data length overflow
         /// </summary>
         Overflow,
 
         /// <summary>
-        /// Path error
+        /// 路径错误. Path error
         /// </summary>
         PathError,
 
         /// <summary>
-        /// Recursion limit has been reached
+        /// 递归深度已达上限. Recursion limit has been reached
         /// </summary>
         RecursiveError,
 
         /// <summary>
-        /// Type invalid
+        /// 无效的类型. Type invalid
         /// </summary>
         TypeInvalid,
     }

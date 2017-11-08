@@ -45,7 +45,5 @@ namespace Mikodev.Test
             // more samples, see unit test.
             Performance.DoWork();
         }
-
-
     }
 }

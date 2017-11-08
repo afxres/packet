@@ -1,4 +1,5 @@
-﻿using System.Dynamic;
+﻿using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq.Expressions;
 
 namespace Mikodev.Network
@@ -41,6 +42,14 @@ namespace Mikodev.Network
             lst[key] = nod;
             var exp = Expression.Constant(val, typeof(object));
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
+        }
+
+        public override IEnumerable<string> GetDynamicMemberNames()
+        {
+            var wtr = (PacketWriter)Value;
+            if (wtr._obj is IDictionary<string, object> dic)
+                return dic.Keys;
+            return base.GetDynamicMemberNames();
         }
     }
 }

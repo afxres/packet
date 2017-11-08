@@ -2,6 +2,7 @@
 using Mikodev.Network;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Mikodev.UnitTest
 {
@@ -59,6 +60,37 @@ namespace Mikodev.UnitTest
 
             var rea = new PacketReader(buf);
             Assert.AreEqual(msg, rea[nameof(Exception.Message)].Pull<string>());
+        }
+
+        [TestMethod]
+        public void MultiThread()
+        {
+            var lst = new List<Task>();
+            const int _max = 1 << 16;
+            const int _tasks = 16;
+            for (int i = 0; i < _tasks; i++)
+            {
+                var idx = i;
+                lst.Add(new Task(() =>
+                {
+                    for (int k = 0; k < _max; k++)
+                    {
+                        var obj = new
+                        {
+                            task = idx,
+                            data = k,
+                        };
+                        var pkt = PacketWriter.Serialize(obj);
+                        var buf = pkt.GetBytes();
+                        var rea = new PacketReader(buf);
+                        Assert.AreEqual(idx, rea["task"].Pull<int>());
+                        Assert.AreEqual(k, rea["data"].Pull<int>());
+                    }
+                }));
+            }
+
+            lst.ForEach(r => r.Start());
+            lst.ForEach(r => r.Wait());
         }
     }
 }

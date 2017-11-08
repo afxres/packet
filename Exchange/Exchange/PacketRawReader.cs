@@ -4,7 +4,7 @@ using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mi
 namespace Mikodev.Network
 {
     /// <summary>
-    /// Raw reader without any format
+    /// 原始数据包解析工具. Raw reader without any format
     /// </summary>
     public sealed class PacketRawReader
     {
@@ -12,7 +12,7 @@ namespace Mikodev.Network
         internal readonly TypeTools _con;
 
         /// <summary>
-        /// Create reader
+        /// 创建对象. Create reader
         /// </summary>
         public PacketRawReader(PacketReader source)
         {
@@ -21,7 +21,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Create reader with byte array and converters
+        /// 创建对象并指定字节数组和转换器. Create reader with byte array and converters
         /// </summary>
         public PacketRawReader(byte[] buffer, TypeTools converters = null)
         {
@@ -30,7 +30,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Create reader with part of byte array and converters
+        /// 创建对象并指定部分字节数组和转换器. Create reader with part of byte array and converters
         /// </summary>
         public PacketRawReader(byte[] buffer, int offset, int length, TypeTools converters = null)
         {
@@ -39,12 +39,12 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Current index before maximum
+        /// 是否可以继续读取. Current index is not at the end of the buffer
         /// </summary>
         public bool Next => _spa._idx < _spa._max;
 
         /// <summary>
-        /// Get value with target type
+        /// 读取一个目标类型对象. Get value with target type
         /// </summary>
         public object Pull(Type type)
         {
@@ -54,7 +54,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Get value with target type (Generic)
+        /// 读取一个目标类型对象 (泛型). Get value with target type (Generic)
         /// </summary>
         public T Pull<T>()
         {
@@ -64,7 +64,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Move current position to origin
+        /// 重置读取索引. Move current position to origin
         /// </summary>
         public void Reset()
         {
@@ -72,7 +72,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Show byte count
+        /// 打印对象类型和字节长度. Show type and byte count
         /// </summary>
         public override string ToString() => $"{nameof(PacketRawReader)} with {_spa._len} byte(s)";
     }

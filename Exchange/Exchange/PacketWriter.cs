@@ -11,15 +11,15 @@ using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mi
 namespace Mikodev.Network
 {
     /// <summary>
-    /// Binary packet writer
+    /// 数据包生成工具. Binary packet writer
     /// </summary>
-    public sealed class PacketWriter : IDynamicMetaObjectProvider
+    public sealed partial class PacketWriter : IDynamicMetaObjectProvider
     {
         internal object _obj = null;
         internal readonly TypeTools _con = null;
 
         /// <summary>
-        /// Create new writer
+        /// 创建对象并指定转换器. Create writer with converters
         /// </summary>
         /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketWriter(TypeTools converters = null) => _con = converters;
@@ -34,7 +34,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Write key and another instance
+        /// 写入标签和另一个实例. Write key and another instance
         /// </summary>
         public PacketWriter Push(string key, PacketWriter val)
         {
@@ -43,7 +43,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Write key and raw writer
+        /// 写入标签和原始数据包生成工具. Write key and raw writer
         /// </summary>
         public PacketWriter Push(string key, PacketRawWriter val)
         {
@@ -52,7 +52,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Write key and data
+        /// 写入标签和数据. Write key and data
         /// </summary>
         /// <param name="key">Node tag</param>
         /// <param name="type">Source type</param>
@@ -67,7 +67,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Write key and data
+        /// 写入标签和数据 (泛型). Write key and data
         /// </summary>
         /// <typeparam name="T">Source type</typeparam>
         /// <param name="key">Node tag</param>
@@ -85,7 +85,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Set key and byte array
+        /// 写入标签和字节数组. Set key and byte array
         /// </summary>
         public PacketWriter PushList(string key, byte[] buf)
         {
@@ -97,7 +97,7 @@ namespace Mikodev.Network
         internal PacketWriter _ByteList(IPacketConverter con, IEnumerable val)
         {
             var hea = con.Length < 1;
-            var mst = new MemoryStream(_Caches._StrInit);
+            var mst = _GetStream();
             foreach (var i in val)
                 mst._WriteExt(con._GetBytesWrapErr(i), hea);
             _obj = mst.ToArray();
@@ -108,7 +108,7 @@ namespace Mikodev.Network
         {
             var con = _Caches.Converter(typeof(T), _con, false);
             var hea = con.Length < 1;
-            var mst = new MemoryStream(_Caches._StrInit);
+            var mst = _GetStream();
             if (con is IPacketConverter<T> res)
                 foreach (var i in val)
                     mst._WriteExt(res._GetBytesWrapErr(i), hea);
@@ -120,7 +120,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Write key and collections
+        /// 写入标签和数据集合. Write key and collections
         /// </summary>
         /// <param name="key">Node tag</param>
         /// <param name="type">Source type</param>
@@ -135,7 +135,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Write key and collections
+        /// 写入标签和数据集合 (泛型). Write key and collections
         /// </summary>
         /// <typeparam name="T">Source type</typeparam>
         /// <param name="key">Node tag</param>
@@ -150,7 +150,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Get binary packet
+        /// 生成数据包. Get binary packet
         /// </summary>
         public byte[] GetBytes()
         {
@@ -159,13 +159,14 @@ namespace Mikodev.Network
             var dic = _obj as ItemNodes;
             if (dic == null)
                 return new byte[0];
-            var mst = new MemoryStream(_Caches._StrInit);
+            var mst = _GetStream();
             _Byte(mst, dic, 0);
-            return mst.ToArray();
+            var res = mst.ToArray();
+            return res;
         }
 
         /// <summary>
-        /// Show byte count or node count
+        /// 打印对象类型, 子节点个数和字节长度. Show byte count or node count
         /// </summary>
         public override string ToString()
         {
@@ -258,7 +259,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Create new writer from object or dictionary (generic dictionary with string as key)
+        /// 从对象或字典创建对象. Create new writer from object or dictionary (generic dictionary with string as key)
         /// </summary>
         public static PacketWriter Serialize(object obj, TypeTools converters = null) => _Serialize(obj, converters, 0);
     }

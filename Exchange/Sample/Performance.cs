@@ -1,5 +1,7 @@
 ﻿using Mikodev.Network;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Mikodev.Test
 {
@@ -10,12 +12,21 @@ namespace Mikodev.Test
         /// </summary>
         internal static void DoWork()
         {
+            var dic = new Dictionary<string, List<TimeSpan>>();
+            TraceWatch.InstanceDisposed += (tag, span) =>
+            {
+                if (dic.TryGetValue(tag, out var val))
+                    val.Add(span);
+                else dic.Add(tag, new List<TimeSpan>() { span });
+            };
+
             const int max = 1 << 20;
+            const int loop = 16;
 
             // time cost in release mode
-            for (int idx = 0; idx < 10; idx++)
+            for (int idx = 0; idx < loop; idx++)
             {
-                using (new TraceWatch("Box and unbox")) // < 1 ms
+                using (new TraceWatch("Box and unbox")) // 0.28 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -24,7 +35,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("BitConverter")) // 9 ms
+                using (new TraceWatch("BitConverter")) // 8.40 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -33,7 +44,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("PacketWriter.Serialize")) // 140 ms, avg
+                using (new TraceWatch("Serialize")) // 133.79 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -42,16 +53,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("PacketWriter<>")) // 650 ms, avg
-                {
-                    for (int i = 0; i < max; i++)
-                    {
-                        var buf = new PacketWriter().Push("some", i).GetBytes();
-                        var res = new PacketReader(buf)["some"].Pull<int>();
-                    }
-                }
-
-                using (new TraceWatch("PacketRawWriter<>")) // 182 ms, avg
+                using (new TraceWatch("PacketRawWriter<>")) // 153.51 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -60,7 +62,39 @@ namespace Mikodev.Test
                     }
                 }
 
-                Console.WriteLine();
+                using (new TraceWatch("Serialize (anonymous)")) // 936.41 ms, avg | 919.67 ms (thread static)
+                {
+
+                    for (int i = 0; i < max; i++)
+                    {
+                        var obj = new
+                        {
+                            data = i,
+                        };
+                        var buf = PacketWriter.Serialize(obj).GetBytes();
+                        var res = new PacketReader(buf)["data"].Pull<int>();
+                    }
+                }
+
+                using (new TraceWatch("PacketWriter<>")) // 676.06 ms, avg | 646.73 ms (thread static)
+                {
+                    for (int i = 0; i < max; i++)
+                    {
+                        var buf = new PacketWriter().Push("some", i).GetBytes();
+                        var res = new PacketReader(buf)["some"].Pull<int>();
+                    }
+                }
+            }
+
+            foreach (var i in dic)
+            {
+                var key = i.Key;
+                var val = i.Value;
+                if (val.Count > 5)
+                    val.RemoveRange(0, 4);
+                var sum = val.Select(r => r.Ticks).Sum();
+                var avg = new TimeSpan(sum / val.Count);
+                Console.WriteLine($"{key,-24} | total: {new TimeSpan(sum).TotalMilliseconds,10:0.000} ms | avg: {avg.TotalMilliseconds,10:0.000} ms");
             }
         }
     }

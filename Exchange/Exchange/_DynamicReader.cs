@@ -1,4 +1,5 @@
-﻿using System.Dynamic;
+﻿using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq.Expressions;
 
 namespace Mikodev.Network
@@ -19,7 +20,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Cast node to target type, throw if type invalid
+        /// Cast node to target type
         /// </summary>
         public override DynamicMetaObject BindConvert(ConvertBinder binder)
         {
@@ -37,6 +38,14 @@ namespace Mikodev.Network
 
             var exp = Expression.Constant(val);
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
+        }
+
+        public override IEnumerable<string> GetDynamicMemberNames()
+        {
+            var rea = (PacketReader)Value;
+            if (rea._Init())
+                return rea._dic.Keys;
+            return base.GetDynamicMemberNames();
         }
     }
 }

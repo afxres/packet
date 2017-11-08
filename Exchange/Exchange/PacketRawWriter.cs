@@ -5,7 +5,7 @@ using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mi
 namespace Mikodev.Network
 {
     /// <summary>
-    /// Raw writer without any format
+    /// 原始数据包生成工具. Raw writer without any format
     /// </summary>
     public sealed class PacketRawWriter
     {
@@ -13,7 +13,7 @@ namespace Mikodev.Network
         internal readonly TypeTools _dic;
 
         /// <summary>
-        /// Create writer with converters
+        /// 创建对象并指定转换器. Create writer with converters
         /// </summary>
         public PacketRawWriter(TypeTools converters = null) => _dic = converters;
 
@@ -27,22 +27,22 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Writer value with target type
+        /// 写入一个目标类型对象. Writer value with target type
         /// </summary>
         public PacketRawWriter Push(Type type, object value) => _Push(_Caches.GetBytes(type, _dic, value, out var hea), hea);
 
         /// <summary>
-        /// Writer value with target type (Generic)
+        /// 写入一个目标类型对象 (泛型). Writer value with target type (Generic)
         /// </summary>
         public PacketRawWriter Push<T>(T value) => _Push(_Caches.GetBytes(_dic, value, out var hea), hea);
 
         /// <summary>
-        /// Get binary packet
+        /// 生成数据包. Get binary packet
         /// </summary>
         public byte[] GetBytes() => _mst.ToArray();
 
         /// <summary>
-        /// Show byte count
+        /// 打印对象类型和字节长度. Show type and byte count
         /// </summary>
         public override string ToString() => $"{nameof(PacketRawWriter)} with {_mst.Length} byte(s)";
     }

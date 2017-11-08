@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
+// using System.Threading.Tasks;
 
 namespace Mikodev.Test
 {
     internal class TraceWatch : IDisposable
     {
+        internal static Action<string, TimeSpan> InstanceDisposed = null;
+
         internal readonly string _msg = null;
         internal readonly Stopwatch _watch = new Stopwatch();
 
@@ -22,7 +25,11 @@ namespace Mikodev.Test
         public void Dispose()
         {
             _watch.Stop();
-            Console.WriteLine($"[{_watch.ElapsedMilliseconds} ms] {_msg}");
+            //Task.Factory.FromAsync(
+            //    (tag, span, callback, obj) => InstanceDisposed.BeginInvoke(tag, span, callback, obj),
+            //    (iasync) => InstanceDisposed.EndInvoke(iasync),
+            //    _msg, _watch.Elapsed, null);
+            InstanceDisposed.Invoke(_msg, _watch.Elapsed);
         }
     }
 }

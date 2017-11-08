@@ -11,7 +11,7 @@ using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mi
 namespace Mikodev.Network
 {
     /// <summary>
-    /// Binary packet reader
+    /// 数据包解析工具. Binary packet reader
     /// </summary>
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
@@ -20,7 +20,7 @@ namespace Mikodev.Network
         internal readonly TypeTools _con = null;
 
         /// <summary>
-        /// Create new reader
+        /// 创建对象并指定字节数组和转换器. Create reader with byte array and converters
         /// </summary>
         /// <param name="buffer">Binary data packet (Should be readonly)</param>
         /// <param name="converters">Packet converters, use default converters if null</param>
@@ -31,7 +31,7 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Create new reader
+        /// 创建对象并指定部分字节数组和转换器. Create reader with part of byte array and converters
         /// </summary>
         /// <param name="buffer">Binary data packet (Should be readonly)</param>
         /// <param name="offset">Start index</param>
@@ -60,6 +60,8 @@ namespace Mikodev.Network
                 if (_spa._buf._Read(_spa._max, ref _spa._idx, out len) == false)
                     return false;
                 var key = Encoding.UTF8.GetString(_spa._buf, _spa._idx, len);
+                if (dic.ContainsKey(key))
+                    return false;
                 _spa._idx += len;
                 if (_spa._buf._Read(_spa._max, ref _spa._idx, out len) == false)
                     return false;
@@ -81,7 +83,7 @@ namespace Mikodev.Network
             throw new PacketException(res ? PacketError.PathError : PacketError.Overflow);
         }
 
-        internal PacketReader _ItemPath(string[] keys, bool nothrow)
+        internal PacketReader _ItemPath(IEnumerable<string> keys, bool nothrow)
         {
             var rdr = this;
             foreach (var i in keys)
@@ -91,17 +93,17 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Child node count
+        /// 子节点个数. Child node count
         /// </summary>
         public int Count => _Init() ? _dic.Count : 0;
 
         /// <summary>
-        /// Child node keys
+        /// 字节点标签集合. Child node keys
         /// </summary>
         public IEnumerable<string> Keys => _Init() ? _dic.Keys : Enumerable.Empty<string>();
 
         /// <summary>
-        /// Get node by path
+        /// 根据路径获取子节点. Get node by path
         /// </summary>
         /// <param name="path">Node path</param>
         /// <param name="nothrow">return null if not found</param>
@@ -110,14 +112,14 @@ namespace Mikodev.Network
         public PacketReader this[string path, bool nothrow = false, char[] split = null] => _ItemPath(path?.Split(split ?? _Extension.s_seps) ?? new[] { string.Empty }, nothrow);
 
         /// <summary>
-        /// Get node by key
+        /// 根据标签获取子节点. Get node by key
         /// </summary>
         /// <param name="key">Node key</param>
         /// <param name="nothrow">return null if not found</param>
         public PacketReader Pull(string key, bool nothrow = false) => _Item(key ?? string.Empty, nothrow);
 
         /// <summary>
-        /// Get node by key collection
+        /// 根据标签集合依序获取子节点. Get node by key collection
         /// </summary>
         /// <param name="keys">key collection</param>
         /// <param name="nothrow">return null if not found</param>
@@ -131,36 +133,36 @@ namespace Mikodev.Network
         }
 
         /// <summary>
-        /// Convert current node to target type
+        /// 从当前节点读取目标类型对象. Convert current node to target type object
         /// </summary>
         /// <param name="type">Target type</param>
         public object Pull(Type type) => _Caches.Converter(type, _con, false)._GetValueWrapErr(_spa._buf, _spa._off, _spa._len, true);
 
         /// <summary>
-        /// Convert current node to target type.
+        /// 从当前节点读取目标类型对象 (泛型). Convert current node to target type object
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
         public T Pull<T>() => _Caches.Converter(typeof(T), _con, false)._GetValueWrapErr<T>(_spa._buf, _spa._off, _spa._len, true);
 
         /// <summary>
-        /// Get byte array of current node
+        /// 复制当前节点部分的字节数组. Get byte array of current node
         /// </summary>
         public byte[] PullList() => _spa._buf._ToBytes(_spa._off, _spa._len);
 
         /// <summary>
-        /// Convert current node to target type collection
+        /// 从当前节点读取目标类型对象集合. Convert current node to target type object collection
         /// </summary>
         /// <param name="type">Target type</param>
         public IEnumerable PullList(Type type) => new _Enumerable(this, type);
 
         /// <summary>
-        /// Convert current node to target type collection
+        /// 从当前节点读取目标类型对象集合 (泛型). Convert current node to target type object collection
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
         public IEnumerable<T> PullList<T>() => new _Enumerable<T>(this);
 
         /// <summary>
-        /// Show byte count or node count
+        /// 打印对象类型, 子节点个数和字节长度. Show byte count or node count
         /// </summary>
         public override string ToString()
         {
