@@ -131,6 +131,7 @@ namespace Mikodev.UnitTest
             Assert.AreEqual(u64, ru64);
         }
 
+        [TestMethod]
         public void BasicNonGeneric()
         {
             var a = 1234;
@@ -145,7 +146,7 @@ namespace Mikodev.UnitTest
             var rea = new PacketReader(buf);
             var ra = rea["a"].Pull(typeof(int));
             var rb = rea["b"].Pull(typeof(string));
-            var rc = rea["b"].PullList(typeof(decimal));
+            var rc = rea["c"].PullList(typeof(decimal));
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
             ThrowIfNotAllEquals(c, rc.Cast<decimal>().ToArray());

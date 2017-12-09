@@ -59,10 +59,8 @@ namespace Mikodev.Network
         /// <param name="val">Value to be written</param>
         public PacketWriter Push(string key, Type type, object val)
         {
-            var nod = new PacketWriter(_con);
-            var con = _Caches.Converter(type, _con, false);
-            nod._obj = con._GetBytesWrapErr(val);
-            _ItemList()[key] = nod;
+            var buf = _Caches.GetBytes(type, _con, val);
+            _ItemList()[key] = new PacketWriter(_con) { _obj = buf };
             return this;
         }
 
@@ -74,13 +72,8 @@ namespace Mikodev.Network
         /// <param name="val">Value to be written</param>
         public PacketWriter Push<T>(string key, T val)
         {
-            var nod = new PacketWriter(_con);
-            var con = _Caches.Converter(typeof(T), _con, false);
-            if (con is IPacketConverter<T> res)
-                nod._obj = res._GetBytesWrapErr(val);
-            else
-                nod._obj = con._GetBytesWrapErr(val);
-            _ItemList()[key] = nod;
+            var buf = _Caches.GetBytes(_con, val);
+            _ItemList()[key] = new PacketWriter(_con) { _obj = buf };
             return this;
         }
 

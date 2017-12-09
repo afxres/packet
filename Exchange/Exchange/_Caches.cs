@@ -90,6 +90,21 @@ namespace Mikodev.Network
             throw new PacketException(PacketError.TypeInvalid);
         }
 
+        internal static byte[] GetBytes(Type type, TypeTools dic, object value)
+        {
+            var con = Converter(type, dic, false);
+            var buf = con._GetBytesWrapErr(value);
+            return buf;
+        }
+
+        internal static byte[] GetBytes<T>(TypeTools dic, T value)
+        {
+            var con = Converter(typeof(T), dic, false);
+            if (con is IPacketConverter<T> res)
+                return res._GetBytesWrapErr(value);
+            return con._GetBytesWrapErr(value);
+        }
+
         internal static byte[] GetBytes(Type type, TypeTools dic, object value, out bool pre)
         {
             var con = Converter(type, dic, false);
