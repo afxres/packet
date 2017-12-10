@@ -3,7 +3,7 @@
 
 ## 基本信息
 * 示例代码: [`Program.cs`](https://github.com/afxres/data-packet/blob/master/Exchange/Sample/Program.cs)<br />
-* 单元测试: [`Entrance.cs`](https://github.com/afxres/data-packet/blob/master/Exchange/unit-test/Entrance.cs)<br />
+* 单元测试: [`Entrance.cs`](https://github.com/afxres/data-packet/blob/master/Exchange/Testing/Entrance.cs)<br />
 * NuGet Package: [`Mikodev.Exchange`](https://www.nuget.org/packages/Mikodev.Exchange/)<br />
 
 ## 代码示例
