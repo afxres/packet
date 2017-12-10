@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Mikodev.UnitTest
+namespace Mikodev.Testing
 {
     internal static class Extensions
     {

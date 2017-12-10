@@ -7,8 +7,8 @@
     <ProjectGuid>{42DC9004-EEC2-4FFB-971F-399408C0F714}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Mikodev.UnitTest</RootNamespace>
-    <AssemblyName>Mikodev.UnitTest</AssemblyName>
+    <RootNamespace>Mikodev.Testing</RootNamespace>
+    <AssemblyName>Mikodev.Testing</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>

@@ -92,7 +92,7 @@ namespace Mikodev.Network
             var hea = con.Length < 1;
             var mst = _GetStream();
             foreach (var i in val)
-                mst._WriteExt(con._GetBytesWrapErr(i), hea);
+                mst._WriteOpt(con._GetBytesWrapErr(i), hea);
             _obj = mst.ToArray();
             return this;
         }
@@ -104,10 +104,10 @@ namespace Mikodev.Network
             var mst = _GetStream();
             if (con is IPacketConverter<T> res)
                 foreach (var i in val)
-                    mst._WriteExt(res._GetBytesWrapErr(i), hea);
+                    mst._WriteOpt(res._GetBytesWrapErr(i), hea);
             else
                 foreach (var i in val)
-                    mst._WriteExt(con._GetBytesWrapErr(i), hea);
+                    mst._WriteOpt(con._GetBytesWrapErr(i), hea);
             _obj = mst.ToArray();
             return this;
         }
@@ -176,20 +176,17 @@ namespace Mikodev.Network
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
 
-        internal static void _Byte(Stream str, ItemNodes dic, int lev)
+        internal static void _Byte(MemoryStream str, ItemNodes dic, int lev)
         {
             if (lev > _Caches._RecDeep)
                 throw new PacketException(PacketError.RecursiveError);
             foreach (var i in dic)
             {
-                str._WriteExt(Encoding.UTF8.GetBytes(i.Key), true);
+                str._WriteExt(Encoding.UTF8.GetBytes(i.Key));
                 var val = i.Value;
                 if (val is PacketRawWriter raw)
                 {
-                    var mst = raw._mst;
-                    var len = (int)mst.Length;
-                    str._WriteLen((int)mst.Length);
-                    mst.WriteTo(str);
+                    str._WriteExt(raw._mst);
                     continue;
                 }
                 var wtr = (PacketWriter)val;
@@ -197,16 +194,19 @@ namespace Mikodev.Network
                 if (obj == null)
                     str._WriteLen(0);
                 else if (obj is byte[] buf)
-                    str._WriteExt(buf, true);
+                    str._WriteExt(buf);
                 else
                 {
                     var nod = (ItemNodes)obj;
                     var pos = str.Position;
-                    str._WriteLen(0);
+                    str.Position += sizeof(int);
                     _Byte(str, nod, lev + 1);
                     var end = str.Position;
+                    var len = end - pos - sizeof(int);
+                    if (len > int.MaxValue)
+                        throw new PacketException(PacketError.Overflow);
                     str.Position = pos;
-                    str._WriteLen((int)(end - pos - sizeof(int)));
+                    str._WriteLen((int)len);
                     str.Position = end;
                 }
             }

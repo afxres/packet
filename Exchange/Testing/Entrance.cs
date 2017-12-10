@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
-using static Mikodev.UnitTest.Extensions;
+using static Mikodev.Testing.Extensions;
 
-namespace Mikodev.UnitTest
+namespace Mikodev.Testing
 {
     [TestClass]
     public class Entrance

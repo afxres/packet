@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Mikodev.UnitTest
+namespace Mikodev.Testing
 {
     internal class _Ref { }
 

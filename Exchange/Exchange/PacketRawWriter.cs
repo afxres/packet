@@ -20,7 +20,7 @@ namespace Mikodev.Network
         internal PacketRawWriter _Push(byte[] buf, bool head)
         {
             if (buf != null)
-                _mst._WriteExt(buf, head);
+                _mst._WriteOpt(buf, head);
             else if (head)
                 _mst._WriteLen(0);
             return this;

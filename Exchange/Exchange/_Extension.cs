@@ -59,11 +59,26 @@ namespace Mikodev.Network
 
         internal static void _WriteLen(this Stream stream, int value) => stream._Write(GetBytes(value));
 
-        internal static void _WriteExt(this Stream stream, byte[] buffer, bool header)
+        internal static void _WriteOpt(this Stream stream, byte[] buffer, bool header)
         {
             if (header)
                 stream._Write(GetBytes(buffer.Length));
             stream._Write(buffer);
+        }
+
+        internal static void _WriteExt(this Stream stream, byte[] buffer)
+        {
+            stream._Write(GetBytes(buffer.Length));
+            stream._Write(buffer);
+        }
+
+        internal static void _WriteExt(this Stream stream, MemoryStream memory)
+        {
+            var len = memory.Length;
+            if (len > int.MaxValue)
+                throw new PacketException(PacketError.Overflow);
+            stream._WriteLen((int)len);
+            memory.WriteTo(stream);
         }
 
         internal static byte[] _Borrow(byte[] buffer, int offset, int length)
