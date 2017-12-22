@@ -31,7 +31,7 @@ namespace Mikodev.Network
             var con = default(IPacketConverter);
 
             if ((con = _Caches.Converter(typ, rea._con, true)) != null)
-                val = con._GetValueWrapErr(spa._buf, spa._off, spa._len, true);
+                val = con._GetValueWrapErr(spa, true);
             else if (typ._IsEnumerableGeneric(out var inn))
                 val = _Caches.Enumerable(inn).Invoke(rea);
             else return base.BindConvert(binder);

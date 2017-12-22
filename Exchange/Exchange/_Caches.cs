@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using static Mikodev.Network._Extension;
@@ -17,7 +18,8 @@ namespace Mikodev.Network
 
         internal static readonly ConditionalWeakTable<Type, IPacketConverter> s_type = new ConditionalWeakTable<Type, IPacketConverter>();
         internal static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_enum = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
-        internal static readonly ConditionalWeakTable<Type, Dictionary<string, Func<object, object>>> s_prop = new ConditionalWeakTable<Type, Dictionary<string, Func<object, object>>>();
+        internal static readonly ConditionalWeakTable<Type, Dictionary<string, Func<object, object>>> s_gets = new ConditionalWeakTable<Type, Dictionary<string, Func<object, object>>>();
+        internal static readonly ConditionalWeakTable<Type, _AnonInfo> s_anon = new ConditionalWeakTable<Type, _AnonInfo>();
 
         internal static IEnumerable<T> _BuildEnumerable<T>(PacketReader source) => new _Enumerable<T>(source);
 
@@ -48,7 +50,7 @@ namespace Mikodev.Network
 
         internal static Dictionary<string, Func<object, object>> GetMethods(Type type)
         {
-            if (s_prop.TryGetValue(type, out var val))
+            if (s_gets.TryGetValue(type, out var val))
                 return val;
             var dic = new Dictionary<string, Func<object, object>>();
             var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
@@ -65,7 +67,77 @@ namespace Mikodev.Network
                 var res = s_get.MakeGenericMethod(src, dst).Invoke(null, new[] { met });
                 dic.Add(i.Name, (Func<object, object>)res);
             }
-            return s_prop.GetValue(type, _Wrap(dic).Value);
+            return s_gets.GetValue(type, _Wrap(dic).Value);
+        }
+
+        internal static _AnonInfo _DissolveAnonymousType(Type type)
+        {
+            var cts = type.GetConstructors();
+            if (cts.Length != 1)
+                return null;
+
+            var con = cts[0];
+            var arg = con.GetParameters();
+            var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            if (pro.Length != arg.Length)
+                return null;
+
+            for (int i = 0; i < pro.Length; i++)
+                if (pro[i].Name != arg[i].Name || pro[i].PropertyType != arg[i].ParameterType)
+                    return null;
+
+            var ipt = Expression.Parameter(typeof(object[]), "inputs");
+            var arr = new Expression[arg.Length];
+            var inf = new _KeyValue<string, Type>[arg.Length];
+            for (int i = 0; i < arg.Length; i++)
+            {
+                var cur = arg[i];
+                var idx = Expression.ArrayIndex(ipt, Expression.Constant(i));
+                var cvt = Expression.Convert(idx, cur.ParameterType);
+                arr[i] = cvt;
+                inf[i] = new _KeyValue<string, Type> { _key = cur.Name, _value = cur.ParameterType };
+            }
+
+            var ins = Expression.New(con, arr);
+            var exp = Expression.Lambda<Func<object[], object>>(ins, ipt);
+            var fun = exp.Compile();
+            var res = new _AnonInfo { _func = fun, _args = inf };
+
+            return s_anon.GetValue(type, _Wrap(res).Value);
+        }
+
+        internal static _AnonInfo SetMethods(Type type)
+        {
+            if (s_anon.TryGetValue(type, out var val))
+                return val;
+
+            var con = type.GetConstructor(new Type[0]);
+            if (con == null)
+                return _DissolveAnonymousType(type);
+
+            var lst = new List<_KeyValue<string, MethodInfo>>();
+            var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            foreach (var i in pro)
+            {
+                var get = i.GetGetMethod();
+                var set = i.GetSetMethod();
+                if (get == null || set == null)
+                    continue;
+                var arg = set.GetParameters();
+                if (arg == null || arg.Length != 1)
+                    continue;
+                lst.Add(new _KeyValue<string, MethodInfo> { _key = i.Name, _value = set });
+            }
+
+
+            var ipt = Expression.Parameter(typeof(object[]), "input");
+            var arr = new Expression[lst.Count];
+            var inf = new _KeyValue<string, Type>[lst.Count];
+            for (int i = 0; i < lst.Count; i++)
+            {
+                var cur = lst[i];
+            }
+            return null;
         }
 
         internal static IPacketConverter Converter(Type type, TypeTools dic, bool nothrow)

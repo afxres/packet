@@ -136,7 +136,7 @@ namespace Mikodev.Network
         /// 从当前节点读取目标类型对象. Convert current node to target type object
         /// </summary>
         /// <param name="type">Target type</param>
-        public object Pull(Type type) => _Caches.Converter(type, _con, false)._GetValueWrapErr(_spa._buf, _spa._off, _spa._len, true);
+        public object Pull(Type type) => _Caches.Converter(type, _con, false)._GetValueWrapErr(_spa, true);
 
         /// <summary>
         /// 从当前节点读取目标类型对象 (泛型). Convert current node to target type object
@@ -175,5 +175,52 @@ namespace Mikodev.Network
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
+
+
+        /// <summary>
+        /// 反序列化当前节点. Deserialize current node
+        /// </summary>
+        /// <typeparam name="T">Target type</typeparam>
+        /// <param name="anonymous">Anonymous object</param>
+        public T Deserialize<T>(T anonymous) => (T)_Deserialize(this, typeof(T));
+
+        /// <summary>
+        /// 反序列化当前节点. Deserialize current node
+        /// </summary>
+        /// <typeparam name="T">Target type</typeparam>
+        public T Deserialize<T>() => (T)_Deserialize(this, typeof(T));
+
+        /// <summary>
+        /// 反序列化当前节点. Deserialize current node
+        /// </summary>
+        /// <param name="target">Target type</param>
+        public object Deserialize(Type target)
+        {
+            if (target == null)
+                throw new ArgumentNullException(nameof(target));
+            return _Deserialize(this, target);
+        }
+
+        internal static object _Deserialize(PacketReader reader, Type type)
+        {
+            if (type == typeof(object))
+                return reader;
+
+            var cvt = default(IPacketConverter);
+            if ((cvt = _Caches.Converter(type, reader._con, true)) != null)
+                return cvt._GetValueWrapErr(reader._spa, true);
+
+            var inf = _Caches.SetMethods(type);
+            if (inf == null)
+                throw new PacketException(PacketError.TypeInvalid);
+            var arr = inf._args;
+            var fun = inf._func;
+            var obj = new object[arr.Length];
+
+            for (int i = 0; i < arr.Length; i++)
+                obj[i] = _Deserialize(reader._Item(arr[i]._key, false), arr[i]._value);
+            var res = fun.Invoke(obj);
+            return res;
+        }
     }
 }

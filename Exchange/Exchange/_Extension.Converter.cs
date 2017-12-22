@@ -50,6 +50,8 @@ namespace Mikodev.Network
 
         internal static Exception _Raise(Exception ex) => new PacketException(PacketError.ConvertError, ex);
 
+        internal static object _GetValueWrapErr(this IPacketConverter con, _Element ele, bool check) => _GetValueWrapErr(con, ele._buf, ele._off, ele._len, check);
+
         internal static object _GetValueWrapErr(this IPacketConverter con, byte[] buf, int off, int len, bool check)
         {
             try

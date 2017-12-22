@@ -1,9 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
     partial class _Caches
     {
+        internal struct _KeyValue<K, V>
+        {
+            internal K _key;
+            internal V _value;
+        }
+
+        internal sealed class _AnonInfo
+        {
+            /* Anonymous type constructor and parameter list */
+            internal Func<object[], object> _func;
+            internal _KeyValue<string, Type>[] _args;
+        }
+
         internal sealed class _Wrapper<T>
         {
             internal T _val;
