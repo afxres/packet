@@ -14,10 +14,10 @@ namespace Mikodev.Network
 
         static _Extension()
         {
-            s_cons = _InitConverter();
+            s_cons = _InitDictionary();
         }
 
-        internal static bool _IsEnumerableGeneric(this Type type, out Type inner)
+        internal static bool _IsGenericEnumerable(this Type type, out Type inner)
         {
             if (type.IsGenericType == false || type.GetGenericTypeDefinition() != typeof(IEnumerable<>))
                 goto fail;
@@ -26,17 +26,51 @@ namespace Mikodev.Network
                 goto fail;
             inner = som[0];
             return true;
+
             fail:
             inner = null;
             return false;
         }
 
-        internal static bool _IsEnumerable(this Type typ, out Type inn)
+        internal static bool _IsEnumerable(this Type type, out Type inner)
         {
-            foreach (var i in typ.GetInterfaces())
-                if (i._IsEnumerableGeneric(out inn))
+            foreach (var i in type.GetInterfaces())
+                if (i._IsGenericEnumerable(out inner))
                     return true;
-            inn = null;
+            inner = null;
+            return false;
+        }
+
+        internal static bool _IsArray(this Type type, out Type inner)
+        {
+            if (type.IsArray == false || type.GetArrayRank() != 1)
+                goto fail;
+            inner = type.GetElementType();
+            return true;
+
+            fail:
+            inner = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Is <see cref="List{T}"/> or <see cref="IList{T}"/>
+        /// </summary>
+        internal static bool _IsList(this Type type, out Type inner)
+        {
+            if (type.IsGenericType == false)
+                goto fail;
+            var def = type.GetGenericTypeDefinition();
+            if (def != typeof(List<>) && def != typeof(IList<>))
+                goto fail;
+            var som = type.GetGenericArguments();
+            if (som.Length != 1)
+                goto fail;
+            inner = som[0];
+            return true;
+
+            fail:
+            inner = null;
             return false;
         }
 

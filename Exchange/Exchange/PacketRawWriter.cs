@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -9,13 +9,13 @@ namespace Mikodev.Network
     /// </summary>
     public sealed class PacketRawWriter
     {
-        internal readonly MemoryStream _mst = new MemoryStream(_Caches._StrInit);
-        internal readonly TypeTools _dic;
+        internal readonly MemoryStream _mst = new MemoryStream(_Caches._StreamLength);
+        internal readonly ConverterDictionary _dic;
 
         /// <summary>
         /// 创建对象并指定转换器. Create writer with converters
         /// </summary>
-        public PacketRawWriter(TypeTools converters = null) => _dic = converters;
+        public PacketRawWriter(ConverterDictionary converters = null) => _dic = converters;
 
         internal PacketRawWriter _Push(byte[] buf, bool head)
         {

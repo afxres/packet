@@ -11,7 +11,7 @@ namespace Mikodev.Network
     {
         internal readonly PacketError _code = PacketError.None;
 
-        internal static string _Message(PacketError code)
+        internal static string _GetMessage(PacketError code)
         {
             switch (code)
             {
@@ -23,7 +23,7 @@ namespace Mikodev.Network
                     return "Path not exists";
                 case PacketError.RecursiveError:
                     return "Recursion limit has been reached";
-                case PacketError.TypeInvalid:
+                case PacketError.InvalidType:
                     return "Invalid type";
                 default:
                     return "Undefined error";
@@ -38,12 +38,12 @@ namespace Mikodev.Network
         /// <summary>
         /// 创建对象并指定异常代码. Create new instance with error code
         /// </summary>
-        public PacketException(PacketError code) : base(_Message(code)) => _code = code;
+        public PacketException(PacketError code) : base(_GetMessage(code)) => _code = code;
 
         /// <summary>
         /// 创建对象并指定异常代码和内部异常. Create new instance with error code and inner exception
         /// </summary>
-        public PacketException(PacketError code, Exception except) : base(_Message(code), except) => _code = code;
+        public PacketException(PacketError code, Exception except) : base(_GetMessage(code), except) => _code = code;
 
         internal PacketException(SerializationInfo info, StreamingContext context) : base(info, context)
         {

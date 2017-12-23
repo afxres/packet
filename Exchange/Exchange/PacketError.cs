@@ -31,8 +31,8 @@
         RecursiveError,
 
         /// <summary>
-        /// 无效的类型. Type invalid
+        /// 无效的类型. Invalid type
         /// </summary>
-        TypeInvalid,
+        InvalidType,
     }
 }

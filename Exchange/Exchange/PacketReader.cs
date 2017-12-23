@@ -6,7 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
-using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -17,14 +17,14 @@ namespace Mikodev.Network
     {
         internal _Element _spa;
         internal Dictionary<string, PacketReader> _dic = null;
-        internal readonly TypeTools _con = null;
+        internal readonly ConverterDictionary _con = null;
 
         /// <summary>
         /// 创建对象并指定字节数组和转换器. Create reader with byte array and converters
         /// </summary>
         /// <param name="buffer">Binary data packet (Should be readonly)</param>
         /// <param name="converters">Packet converters, use default converters if null</param>
-        public PacketReader(byte[] buffer, TypeTools converters = null)
+        public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
             _spa = new _Element(buffer);
             _con = converters;
@@ -37,7 +37,7 @@ namespace Mikodev.Network
         /// <param name="offset">Start index</param>
         /// <param name="length">Packet length</param>
         /// <param name="converters">Packet converters, use default converters if null</param>
-        public PacketReader(byte[] buffer, int offset, int length, TypeTools converters = null)
+        public PacketReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
             _spa = new _Element(buffer, offset, length);
             _con = converters;
@@ -73,7 +73,7 @@ namespace Mikodev.Network
             return true;
         }
 
-        internal PacketReader _Item(string key, bool nothrow)
+        internal PacketReader _GetItem(string key, bool nothrow)
         {
             var res = _Init();
             if (res == true && _dic.TryGetValue(key, out var val))
@@ -83,11 +83,11 @@ namespace Mikodev.Network
             throw new PacketException(res ? PacketError.PathError : PacketError.Overflow);
         }
 
-        internal PacketReader _ItemPath(IEnumerable<string> keys, bool nothrow)
+        internal PacketReader _SetItem(IEnumerable<string> keys, bool nothrow)
         {
             var rdr = this;
             foreach (var i in keys)
-                if ((rdr = rdr._Item(i, nothrow)) == null)
+                if ((rdr = rdr._GetItem(i, nothrow)) == null)
                     return null;
             return rdr;
         }
@@ -109,14 +109,14 @@ namespace Mikodev.Network
         /// <param name="nothrow">return null if not found</param>
         /// <param name="split">Path separators, use default separators if null</param>
         [IndexerName("Node")]
-        public PacketReader this[string path, bool nothrow = false, char[] split = null] => _ItemPath(path?.Split(split ?? _Extension.s_seps) ?? new[] { string.Empty }, nothrow);
+        public PacketReader this[string path, bool nothrow = false, char[] split = null] => _SetItem(path?.Split(split ?? _Extension.s_seps) ?? new[] { string.Empty }, nothrow);
 
         /// <summary>
         /// 根据标签获取子节点. Get node by key
         /// </summary>
         /// <param name="key">Node key</param>
         /// <param name="nothrow">return null if not found</param>
-        public PacketReader Pull(string key, bool nothrow = false) => _Item(key ?? string.Empty, nothrow);
+        public PacketReader Pull(string key, bool nothrow = false) => _GetItem(key ?? string.Empty, nothrow);
 
         /// <summary>
         /// 根据标签集合依序获取子节点. Get node by key collection
@@ -129,7 +129,7 @@ namespace Mikodev.Network
                 throw new ArgumentNullException(nameof(keys));
             if (keys.Length < 1)
                 throw new ArgumentException("Key collection can not be empty!");
-            return _ItemPath(keys, nothrow);
+            return _SetItem(keys, nothrow);
         }
 
         /// <summary>
@@ -176,6 +176,27 @@ namespace Mikodev.Network
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
 
+        internal bool _Convert(Type type, out object value)
+        {
+            var val = default(object);
+            var con = default(IPacketConverter);
+            if ((con = _Caches.Converter(type, _con, true)) != null)
+                val = con._GetValueWrapErr(_spa, true);
+            else if (type._IsGenericEnumerable(out var inn))
+                val = _Caches.Enumerable(this, inn);
+            else if (type._IsArray(out inn))
+                val = _Caches.Array(this, inn);
+            else if (type._IsList(out inn))
+                val = _Caches.List(this, inn);
+            else goto fail;
+
+            value = val;
+            return true;
+
+            fail:
+            value = null;
+            return false;
+        }
 
         /// <summary>
         /// 反序列化当前节点. Deserialize current node
@@ -206,21 +227,36 @@ namespace Mikodev.Network
             if (type == typeof(object))
                 return reader;
 
-            var cvt = default(IPacketConverter);
-            if ((cvt = _Caches.Converter(type, reader._con, true)) != null)
-                return cvt._GetValueWrapErr(reader._spa, true);
+            if (reader._Convert(type, out var ret))
+                return ret;
 
-            var inf = _Caches.SetMethods(type);
-            if (inf == null)
-                throw new PacketException(PacketError.TypeInvalid);
-            var arr = inf._args;
-            var fun = inf._func;
-            var obj = new object[arr.Length];
+            var res = _Caches.SetMethods(type);
+            if (res is _Caches._AnonInfo ann)
+            {
+                var arr = ann._args;
+                var fun = ann._func;
+                var obj = new object[arr.Length];
 
-            for (int i = 0; i < arr.Length; i++)
-                obj[i] = _Deserialize(reader._Item(arr[i]._key, false), arr[i]._value);
-            var res = fun.Invoke(obj);
-            return res;
+                for (int i = 0; i < arr.Length; i++)
+                    obj[i] = _Deserialize(reader._GetItem(arr[i]._name, false), arr[i]._type);
+                var val = fun.Invoke(obj);
+                return val;
+            }
+            else if (res is _Caches._SetInfo set)
+            {
+                var arr = set._sets;
+                var fun = set._func;
+                var obj = fun.Invoke();
+
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    var cur = arr[i];
+                    var val = _Deserialize(reader._GetItem(cur._name, false), cur._type);
+                    cur._func.Invoke(obj, val);
+                }
+                return obj;
+            }
+            throw new PacketException(PacketError.InvalidType);
         }
     }
 }

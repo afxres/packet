@@ -8,9 +8,9 @@ namespace Mikodev.Network
     {
         public _DynamicWriter(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 
-        internal PacketWriter _Node(PacketWriter wtr, string key)
+        internal PacketWriter _GetItem(PacketWriter wtr, string key)
         {
-            var lst = wtr._ItemList();
+            var lst = wtr._GetItems();
             if (lst.TryGetValue(key, out var res) && res is PacketWriter pkt)
                 return pkt;
             var nod = new PacketWriter(wtr._con);
@@ -23,7 +23,7 @@ namespace Mikodev.Network
         /// </summary>
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
-            var val = _Node((PacketWriter)Value, binder.Name);
+            var val = _GetItem((PacketWriter)Value, binder.Name);
             var exp = Expression.Constant(val);
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
@@ -36,9 +36,9 @@ namespace Mikodev.Network
             var wtr = (PacketWriter)Value;
             var key = binder.Name;
             var val = value.Value;
-            if (PacketWriter._ItemNode(val, wtr._con, out var nod) == false)
-                throw new PacketException(PacketError.TypeInvalid);
-            var lst = wtr._ItemList();
+            if (PacketWriter._GetWriter(val, wtr._con, out var nod) == false)
+                throw new PacketException(PacketError.InvalidType);
+            var lst = wtr._GetItems();
             lst[key] = nod;
             var exp = Expression.Constant(val, typeof(object));
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));

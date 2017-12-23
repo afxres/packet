@@ -1,5 +1,5 @@
 ﻿using System;
-using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -9,7 +9,7 @@ namespace Mikodev.Network
     public sealed class PacketRawReader
     {
         internal _Element _spa;
-        internal readonly TypeTools _con;
+        internal readonly ConverterDictionary _con;
 
         /// <summary>
         /// 创建对象. Create reader
@@ -23,7 +23,7 @@ namespace Mikodev.Network
         /// <summary>
         /// 创建对象并指定字节数组和转换器. Create reader with byte array and converters
         /// </summary>
-        public PacketRawReader(byte[] buffer, TypeTools converters = null)
+        public PacketRawReader(byte[] buffer, ConverterDictionary converters = null)
         {
             _spa = new _Element(buffer);
             _con = converters;
@@ -32,7 +32,7 @@ namespace Mikodev.Network
         /// <summary>
         /// 创建对象并指定部分字节数组和转换器. Create reader with part of byte array and converters
         /// </summary>
-        public PacketRawReader(byte[] buffer, int offset, int length, TypeTools converters = null)
+        public PacketRawReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
             _spa = new _Element(buffer, offset, length);
             _con = converters;

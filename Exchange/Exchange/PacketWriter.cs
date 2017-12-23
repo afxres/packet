@@ -5,8 +5,8 @@ using System.Dynamic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Text;
-using ItemNodes = System.Collections.Generic.Dictionary<string, object>;
-using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ItemDirectory = System.Collections.Generic.Dictionary<string, object>;
 
 namespace Mikodev.Network
 {
@@ -16,19 +16,19 @@ namespace Mikodev.Network
     public sealed partial class PacketWriter : IDynamicMetaObjectProvider
     {
         internal object _obj = null;
-        internal readonly TypeTools _con = null;
+        internal readonly ConverterDictionary _con = null;
 
         /// <summary>
         /// 创建对象并指定转换器. Create writer with converters
         /// </summary>
         /// <param name="converters">Packet converters, use default converters if null</param>
-        public PacketWriter(TypeTools converters = null) => _con = converters;
+        public PacketWriter(ConverterDictionary converters = null) => _con = converters;
 
-        internal ItemNodes _ItemList()
+        internal ItemDirectory _GetItems()
         {
-            if (_obj is ItemNodes dic)
+            if (_obj is ItemDirectory dic)
                 return dic;
-            var val = new ItemNodes();
+            var val = new ItemDirectory();
             _obj = val;
             return val;
         }
@@ -38,7 +38,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketWriter Push(string key, PacketWriter val)
         {
-            _ItemList()[key] = new PacketWriter(_con) { _obj = val?._obj };
+            _GetItems()[key] = new PacketWriter(_con) { _obj = val?._obj };
             return this;
         }
 
@@ -47,7 +47,7 @@ namespace Mikodev.Network
         /// </summary>
         public PacketWriter Push(string key, PacketRawWriter val)
         {
-            _ItemList()[key] = val;
+            _GetItems()[key] = val;
             return this;
         }
 
@@ -60,7 +60,7 @@ namespace Mikodev.Network
         public PacketWriter Push(string key, Type type, object val)
         {
             var buf = _Caches.GetBytes(type, _con, val);
-            _ItemList()[key] = new PacketWriter(_con) { _obj = buf };
+            _GetItems()[key] = new PacketWriter(_con) { _obj = buf };
             return this;
         }
 
@@ -73,7 +73,7 @@ namespace Mikodev.Network
         public PacketWriter Push<T>(string key, T val)
         {
             var buf = _Caches.GetBytes(_con, val);
-            _ItemList()[key] = new PacketWriter(_con) { _obj = buf };
+            _GetItems()[key] = new PacketWriter(_con) { _obj = buf };
             return this;
         }
 
@@ -83,11 +83,11 @@ namespace Mikodev.Network
         public PacketWriter PushList(string key, byte[] buf)
         {
             var nod = new PacketWriter(_con) { _obj = buf };
-            _ItemList()[key] = nod;
+            _GetItems()[key] = nod;
             return this;
         }
 
-        internal PacketWriter _ByteList(IPacketConverter con, IEnumerable val)
+        internal PacketWriter _GetBytes(IPacketConverter con, IEnumerable val)
         {
             var hea = con.Length < 1;
             var mst = _GetStream();
@@ -97,7 +97,7 @@ namespace Mikodev.Network
             return this;
         }
 
-        internal PacketWriter _ByteList<T>(IEnumerable<T> val)
+        internal PacketWriter _GetBytes<T>(IEnumerable<T> val)
         {
             var con = _Caches.Converter(typeof(T), _con, false);
             var hea = con.Length < 1;
@@ -122,8 +122,8 @@ namespace Mikodev.Network
         {
             var nod = new PacketWriter(_con);
             if (val != null)
-                nod._ByteList(_Caches.Converter(type, _con, false), val);
-            _ItemList()[key] = nod;
+                nod._GetBytes(_Caches.Converter(type, _con, false), val);
+            _GetItems()[key] = nod;
             return this;
         }
 
@@ -137,8 +137,8 @@ namespace Mikodev.Network
         {
             var nod = new PacketWriter(_con);
             if (val != null)
-                nod._ByteList(val);
-            _ItemList()[key] = nod;
+                nod._GetBytes(val);
+            _GetItems()[key] = nod;
             return this;
         }
 
@@ -149,11 +149,11 @@ namespace Mikodev.Network
         {
             if (_obj is byte[] buf)
                 return buf;
-            var dic = _obj as ItemNodes;
+            var dic = _obj as ItemDirectory;
             if (dic == null)
                 return new byte[0];
             var mst = _GetStream();
-            _Byte(mst, dic, 0);
+            _GetBytes(mst, dic, 0);
             var res = mst.ToArray();
             return res;
         }
@@ -170,15 +170,15 @@ namespace Mikodev.Network
             else if (_obj is byte[] buf)
                 stb.AppendFormat("{0} byte(s)", buf.Length);
             else
-                stb.AppendFormat("{0} node(s)", ((ItemNodes)_obj).Count);
+                stb.AppendFormat("{0} node(s)", ((ItemDirectory)_obj).Count);
             return stb.ToString();
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
 
-        internal static void _Byte(MemoryStream str, ItemNodes dic, int lev)
+        internal static void _GetBytes(MemoryStream str, ItemDirectory dic, int lev)
         {
-            if (lev > _Caches._RecDeep)
+            if (lev > _Caches._RecursionDepth)
                 throw new PacketException(PacketError.RecursiveError);
             foreach (var i in dic)
             {
@@ -197,10 +197,10 @@ namespace Mikodev.Network
                     str._WriteExt(buf);
                 else
                 {
-                    var nod = (ItemNodes)obj;
+                    var nod = (ItemDirectory)obj;
                     var pos = str.Position;
                     str.Position += sizeof(int);
-                    _Byte(str, nod, lev + 1);
+                    _GetBytes(str, nod, lev + 1);
                     var end = str.Position;
                     var len = end - pos - sizeof(int);
                     if (len > int.MaxValue)
@@ -212,7 +212,7 @@ namespace Mikodev.Network
             }
         }
 
-        internal static bool _ItemNode(object val, TypeTools cons, out object value)
+        internal static bool _GetWriter(object val, ConverterDictionary cons, out object value)
         {
             var wtr = default(object);
             var con = default(IPacketConverter);
@@ -226,34 +226,34 @@ namespace Mikodev.Network
             else if ((con = _Caches.Converter(val.GetType(), cons, true)) != null)
                 wtr = new PacketWriter(cons) { _obj = con._GetBytesWrapErr(val) };
             else if (val.GetType()._IsEnumerable(out var inn) && (con = _Caches.Converter(inn, cons, true)) != null)
-                wtr = new PacketWriter(cons)._ByteList(con, (IEnumerable)val);
+                wtr = new PacketWriter(cons)._GetBytes(con, (IEnumerable)val);
 
             value = wtr;
             return wtr != null;
         }
 
-        internal static PacketWriter _Serialize(object val, TypeTools cons, int lev)
+        internal static PacketWriter _Serialize(object val, ConverterDictionary cons, int lev)
         {
-            if (lev > _Caches._RecDeep)
+            if (lev > _Caches._RecursionDepth)
                 throw new PacketException(PacketError.RecursiveError);
-            if (_ItemNode(val, cons, out var nod))
+            if (_GetWriter(val, cons, out var nod))
                 return (PacketWriter)nod;
 
             var wtr = new PacketWriter(cons);
-            var lst = wtr._ItemList();
+            var lst = wtr._GetItems();
 
             if (val is IDictionary<string, object> dic)
                 foreach (var i in dic)
                     lst[i.Key] = _Serialize(i.Value, cons, lev + 1);
             else
                 foreach (var i in _Caches.GetMethods(val.GetType()))
-                    lst[i.Key] = _Serialize(i.Value.Invoke(val), cons, lev + 1);
+                    lst[i._name] = _Serialize(i._func.Invoke(val), cons, lev + 1);
             return wtr;
         }
 
         /// <summary>
         /// 从对象或字典创建对象. Create new writer from object or dictionary (generic dictionary with string as key)
         /// </summary>
-        public static PacketWriter Serialize(object obj, TypeTools converters = null) => _Serialize(obj, converters, 0);
+        public static PacketWriter Serialize(object obj, ConverterDictionary converters = null) => _Serialize(obj, converters, 0);
     }
 }

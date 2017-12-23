@@ -217,14 +217,18 @@ namespace Mikodev.Testing
             dwt.list.d = d;
 
             var buf = wtr.GetBytes();
-            var rea = new PacketReader(buf);
-            var dre = (dynamic)rea;
+            var rdr = new PacketReader(buf);
+            var dre = (dynamic)rdr;
 
             var ra = (int)dre.a;
             var rb = (string)dre.b;
             var rc = (byte[])dre.c;
-            var rd = (IEnumerable<string>)dre.d;
-            var re = (IEnumerable<byte[]>)dre.e;
+            var rde = (IEnumerable<string>)dre.d;
+            var rdl = (List<string>)dre.d;
+            var rda = (string[])dre.d;
+            var ree = (IEnumerable<byte[]>)dre.e;
+            var rel = (IList<byte[]>)dre.e;
+            var rea = (byte[][])dre.e;
 
             var rla = (int)dre.list.a;
             var rlb = (string)dre.list.b;
@@ -235,11 +239,15 @@ namespace Mikodev.Testing
             Assert.AreEqual(b, rb);
             Assert.AreEqual(a, rla);
             Assert.AreEqual(b, rlb);
-            Assert.AreEqual(e.Count, re.Count());
+            Assert.AreEqual(e.Count, ree.Count());
 
             ThrowIfNotAllEquals(c, rc);
-            ThrowIfNotAllEquals(d, rd.ToArray());
-            ThrowIfNotAllEquals(e.First(), re.First());
+            ThrowIfNotAllEquals(d, rde.ToArray());
+            ThrowIfNotAllEquals(d, rdl.ToArray());
+            ThrowIfNotAllEquals(d, rda);
+            ThrowIfNotAllEquals(e.First(), ree.First());
+            ThrowIfNotAllEquals(e.First(), rel.First());
+            ThrowIfNotAllEquals(e.First(), rea.First());
             ThrowIfNotAllEquals(c, rlc);
             ThrowIfNotAllEquals(d, rld.ToArray());
         }

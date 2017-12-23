@@ -2,21 +2,21 @@
 using System.Text;
 using System.Threading;
 using static System.BitConverter;
-using TypeTools = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
 {
     partial class _Extension
     {
-        internal static readonly TypeTools s_cons = null;
+        internal static readonly ConverterDictionary s_cons = null;
 
-        internal static void _Ref<T>(TypeTools dic, Func<T, byte[]> bin, Func<byte[], int, int, T> val) => dic.Add(typeof(T), new _ConvertReference<T>(bin, val));
+        internal static void _Ref<T>(ConverterDictionary dic, Func<T, byte[]> bin, Func<byte[], int, int, T> val) => dic.Add(typeof(T), new _ConvertReference<T>(bin, val));
 
-        internal static void _Val<T>(TypeTools dic, Func<T, byte[]> bin, Func<byte[], int, T> val, int len) => dic.Add(typeof(T), new _ConvertValue<T>(bin, val, len));
+        internal static void _Val<T>(ConverterDictionary dic, Func<T, byte[]> bin, Func<byte[], int, T> val, int len) => dic.Add(typeof(T), new _ConvertValue<T>(bin, val, len));
 
-        internal static TypeTools _InitConverter()
+        internal static ConverterDictionary _InitDictionary()
         {
-            var dic = new TypeTools();
+            var dic = new ConverterDictionary();
 
             _Val(dic, GetBytes, ToBoolean, sizeof(bool));
             _Val(dic, _OfByte, _ToByte, sizeof(byte));

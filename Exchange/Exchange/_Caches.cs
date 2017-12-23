@@ -4,31 +4,25 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using static Mikodev.Network._Extension;
-using TypeTools = System.Collections.Generic.IReadOnlyDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
 {
     internal static partial class _Caches
     {
-        internal const int _RecDeep = 64;
-        internal const int _StrInit = 64;
+        internal const int _StreamLength = 64;
+        internal const int _RecursionDepth = 64;
 
-        internal static readonly MethodInfo s_itr = typeof(_Caches).GetMethod(nameof(_BuildEnumerable), BindingFlags.Static | BindingFlags.NonPublic);
-        internal static readonly MethodInfo s_get = typeof(_Caches).GetMethod(nameof(_BuildGetMethodGeneric), BindingFlags.Static | BindingFlags.NonPublic);
+        internal static readonly MethodInfo s_getlist = typeof(_Caches).GetMethod(nameof(_List), BindingFlags.Static | BindingFlags.NonPublic);
+        internal static readonly MethodInfo s_getarray = typeof(_Caches).GetMethod(nameof(_Array), BindingFlags.Static | BindingFlags.NonPublic);
 
         internal static readonly ConditionalWeakTable<Type, IPacketConverter> s_type = new ConditionalWeakTable<Type, IPacketConverter>();
         internal static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_enum = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
-        internal static readonly ConditionalWeakTable<Type, Dictionary<string, Func<object, object>>> s_gets = new ConditionalWeakTable<Type, Dictionary<string, Func<object, object>>>();
-        internal static readonly ConditionalWeakTable<Type, _AnonInfo> s_anon = new ConditionalWeakTable<Type, _AnonInfo>();
+        internal static readonly ConditionalWeakTable<Type, _Get[]> s_gets = new ConditionalWeakTable<Type, _Get[]>();
+        internal static readonly ConditionalWeakTable<Type, object> s_anon = new ConditionalWeakTable<Type, object>();
 
-        internal static IEnumerable<T> _BuildEnumerable<T>(PacketReader source) => new _Enumerable<T>(source);
-
-        internal static Func<object, object> _BuildGetMethodGeneric<T, R>(MethodInfo inf)
-        {
-            var del = Delegate.CreateDelegate(typeof(Func<T, R>), inf);
-            var box = _Emit((Func<T, R>)del);
-            return box.Value;
-        }
+        internal static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_list = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
+        internal static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_array = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
 
         internal static IPacketConverter _BuildConverter(Type type)
         {
@@ -40,37 +34,103 @@ namespace Mikodev.Network
             return null;
         }
 
-        internal static Func<PacketReader, object> Enumerable(Type type)
+        internal static List<T> _List<T>(_Element element, IPacketConverter con)
         {
-            if (s_enum.TryGetValue(type, out var val))
-                return val;
-            var fun = Delegate.CreateDelegate(typeof(Func<PacketReader, object>), s_itr.MakeGenericMethod(type));
-            return s_enum.GetValue(type, _Wrap((Func<PacketReader, object>)fun).Value);
+            var spa = new _Element(element);
+            var lst = new List<T>();
+            if (con is IPacketConverter<T> gen)
+                while (spa._Over() == false)
+                    lst.Add(spa._Next<T>(gen));
+            else
+                while (spa._Over() == false)
+                    lst.Add((T)spa._Next(con));
+            return lst;
         }
 
-        internal static Dictionary<string, Func<object, object>> GetMethods(Type type)
+        internal static T[] _Array<T>(_Element element, IPacketConverter con) => _List<T>(element, con).ToArray();
+
+        internal static object List(PacketReader reader, Type type)
+        {
+            var con = Converter(type, reader._con, false);
+            if (s_list.TryGetValue(type, out var val) == false)
+            {
+                var met = s_getlist.MakeGenericMethod(type);
+                var ele = Expression.Parameter(typeof(_Element), "element");
+                var arg = Expression.Parameter(typeof(IPacketConverter), "converter");
+                var inv = Expression.Call(met, ele, arg);
+                var cvt = Expression.Convert(inv, typeof(object));
+                var fun = Expression.Lambda<Func<_Element, IPacketConverter, object>>(cvt, ele, arg);
+                var com = fun.Compile();
+                val = s_list.GetValue(type, _Wrap(com).Value);
+            }
+            return val.Invoke(reader._spa, con);
+        }
+
+        internal static object Array(PacketReader reader, Type type)
+        {
+            var con = Converter(type, reader._con, false);
+            if (s_array.TryGetValue(type, out var val) == false)
+            {
+                var met = s_getarray.MakeGenericMethod(type);
+                var ele = Expression.Parameter(typeof(_Element), "element");
+                var arg = Expression.Parameter(typeof(IPacketConverter), "converter");
+                var inv = Expression.Call(met, ele, arg);
+                var cvt = Expression.Convert(inv, typeof(object));
+                var fun = Expression.Lambda<Func<_Element, IPacketConverter, object>>(cvt, ele, arg);
+                var com = fun.Compile();
+                val = s_array.GetValue(type, _Wrap(com).Value);
+            }
+            return val.Invoke(reader._spa, con);
+        }
+
+        internal static object Enumerable(PacketReader reader, Type type)
+        {
+            if (s_enum.TryGetValue(type, out var val) == false)
+            {
+                var typ = typeof(_Enumerable<>).MakeGenericType(type);
+                var cts = typ.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic);
+
+                var par = Expression.Parameter(typeof(PacketReader), "reader");
+                var exp = Expression.New(cts[0], par);
+                var cvt = Expression.Convert(exp, typeof(object));
+                var fun = Expression.Lambda<Func<PacketReader, object>>(cvt, par);
+                var com = fun.Compile();
+                val = s_enum.GetValue(type, _Wrap(com).Value);
+            }
+            return val.Invoke(reader);
+        }
+
+        internal static _Get[] GetMethods(Type type)
         {
             if (s_gets.TryGetValue(type, out var val))
                 return val;
-            var dic = new Dictionary<string, Func<object, object>>();
+
+            var lst = new List<_Get>();
             var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             foreach (var i in pro)
             {
-                var met = i.GetGetMethod();
-                if (met == null)
+                var get = i.GetGetMethod();
+                if (get == null)
                     continue;
-                var arg = met.GetParameters();
+                var arg = get.GetParameters();
+                // Length != 0 -> indexer
                 if (arg == null || arg.Length != 0)
                     continue;
                 var src = i.DeclaringType;
                 var dst = i.PropertyType;
-                var res = s_get.MakeGenericMethod(src, dst).Invoke(null, new[] { met });
-                dic.Add(i.Name, (Func<object, object>)res);
+
+                var ins = Expression.Parameter(typeof(object), "instance");
+                var cvt = Expression.Convert(ins, src);
+                var inv = Expression.Call(cvt, get);
+                var box = Expression.Convert(inv, typeof(object));
+                var fun = Expression.Lambda<Func<object, object>>(box, ins);
+                lst.Add(new _Get { _name = i.Name, _func = fun.Compile() });
             }
-            return s_gets.GetValue(type, _Wrap(dic).Value);
+            var arr = lst.ToArray();
+            return s_gets.GetValue(type, _Wrap(arr).Value);
         }
 
-        internal static _AnonInfo _DissolveAnonymousType(Type type)
+        internal static object _DissolveAnonymousType(Type type)
         {
             var cts = type.GetConstructors();
             if (cts.Length != 1)
@@ -88,25 +148,24 @@ namespace Mikodev.Network
 
             var ipt = Expression.Parameter(typeof(object[]), "inputs");
             var arr = new Expression[arg.Length];
-            var inf = new _KeyValue<string, Type>[arg.Length];
+            var inf = new _Anon[arg.Length];
             for (int i = 0; i < arg.Length; i++)
             {
                 var cur = arg[i];
                 var idx = Expression.ArrayIndex(ipt, Expression.Constant(i));
                 var cvt = Expression.Convert(idx, cur.ParameterType);
                 arr[i] = cvt;
-                inf[i] = new _KeyValue<string, Type> { _key = cur.Name, _value = cur.ParameterType };
+                inf[i] = new _Anon { _name = cur.Name, _type = cur.ParameterType };
             }
 
             var ins = Expression.New(con, arr);
             var exp = Expression.Lambda<Func<object[], object>>(ins, ipt);
-            var fun = exp.Compile();
-            var res = new _AnonInfo { _func = fun, _args = inf };
+            var res = new _AnonInfo { _func = exp.Compile(), _args = inf };
 
             return s_anon.GetValue(type, _Wrap(res).Value);
         }
 
-        internal static _AnonInfo SetMethods(Type type)
+        internal static object SetMethods(Type type)
         {
             if (s_anon.TryGetValue(type, out var val))
                 return val;
@@ -115,7 +174,7 @@ namespace Mikodev.Network
             if (con == null)
                 return _DissolveAnonymousType(type);
 
-            var lst = new List<_KeyValue<string, MethodInfo>>();
+            var lst = new List<_Set>();
             var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             foreach (var i in pro)
             {
@@ -126,21 +185,25 @@ namespace Mikodev.Network
                 var arg = set.GetParameters();
                 if (arg == null || arg.Length != 1)
                     continue;
-                lst.Add(new _KeyValue<string, MethodInfo> { _key = i.Name, _value = set });
+                var src = i.DeclaringType;
+                var dst = i.PropertyType;
+
+                var ins = Expression.Parameter(typeof(object), "instance");
+                var par = Expression.Parameter(typeof(object), "value");
+                var cvt = Expression.Convert(ins, src);
+                var cas = Expression.Convert(par, dst);
+                var inv = Expression.Call(cvt, set, cas);
+                var fun = Expression.Lambda<Action<object, object>>(inv, ins, par);
+                lst.Add(new _Set { _name = i.Name, _type = dst, _func = fun.Compile() });
             }
 
+            var obj = Expression.Lambda<Func<object>>(Expression.Convert(Expression.New(con), typeof(object)));
+            var res = new _SetInfo { _func = obj.Compile(), _sets = lst.ToArray() };
 
-            var ipt = Expression.Parameter(typeof(object[]), "input");
-            var arr = new Expression[lst.Count];
-            var inf = new _KeyValue<string, Type>[lst.Count];
-            for (int i = 0; i < lst.Count; i++)
-            {
-                var cur = lst[i];
-            }
-            return null;
+            return s_anon.GetValue(type, _Wrap(res).Value);
         }
 
-        internal static IPacketConverter Converter(Type type, TypeTools dic, bool nothrow)
+        internal static IPacketConverter Converter(Type type, ConverterDictionary dic, bool nothrow)
         {
             if (dic != null && dic.TryGetValue(type, out var val))
                 if (val == null)
@@ -159,17 +222,17 @@ namespace Mikodev.Network
             fail:
             if (nothrow == true)
                 return null;
-            throw new PacketException(PacketError.TypeInvalid);
+            throw new PacketException(PacketError.InvalidType);
         }
 
-        internal static byte[] GetBytes(Type type, TypeTools dic, object value)
+        internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value)
         {
             var con = Converter(type, dic, false);
             var buf = con._GetBytesWrapErr(value);
             return buf;
         }
 
-        internal static byte[] GetBytes<T>(TypeTools dic, T value)
+        internal static byte[] GetBytes<T>(ConverterDictionary dic, T value)
         {
             var con = Converter(typeof(T), dic, false);
             if (con is IPacketConverter<T> res)
@@ -177,7 +240,7 @@ namespace Mikodev.Network
             return con._GetBytesWrapErr(value);
         }
 
-        internal static byte[] GetBytes(Type type, TypeTools dic, object value, out bool pre)
+        internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value, out bool pre)
         {
             var con = Converter(type, dic, false);
             pre = con.Length < 1;
@@ -185,7 +248,7 @@ namespace Mikodev.Network
             return buf;
         }
 
-        internal static byte[] GetBytes<T>(TypeTools dic, T value, out bool pre)
+        internal static byte[] GetBytes<T>(ConverterDictionary dic, T value, out bool pre)
         {
             var con = Converter(typeof(T), dic, false);
             pre = con.Length < 1;
