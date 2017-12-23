@@ -39,10 +39,10 @@ namespace Mikodev.Network
             var spa = new _Element(element);
             var lst = new List<T>();
             if (con is IPacketConverter<T> gen)
-                while (spa._Over() == false)
+                while (spa._Any())
                     lst.Add(spa._Next<T>(gen));
             else
-                while (spa._Over() == false)
+                while (spa._Any())
                     lst.Add((T)spa._Next(con));
             return lst;
         }

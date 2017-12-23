@@ -1,17 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Mikodev.Testing
 {
     internal static class Extensions
     {
-        public static void ThrowIfNotAllEquals<T>(T[] a, T[] b)
+        public static void ThrowIfNotSequenceEqual<T>(IEnumerable<T> a, IEnumerable<T> b)
         {
-            if (a.Length != b.Length)
-                throw new ApplicationException();
-            for (int i = 0; i < a.Length && i < b.Length; i++)
-                if (a[i].Equals(b[i]) == false)
-                    throw new ApplicationException();
-            return;
+            if (a.SequenceEqual(b))
+                return;
+            throw new ApplicationException();
         }
     }
 }

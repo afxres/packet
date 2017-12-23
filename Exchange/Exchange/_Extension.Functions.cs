@@ -59,9 +59,26 @@ namespace Mikodev.Network
 
         internal static byte[] _ToBytes(this byte[] buffer, int offset, int length)
         {
-            if (length > buffer.Length)
+            if (length > (buffer?.Length ?? 0))
                 throw new PacketException(PacketError.Overflow);
             var buf = new byte[length];
+            Buffer.BlockCopy(buffer, offset, buf, 0, length);
+            return buf;
+        }
+
+        internal static byte[] _OfSBytes(sbyte[] buffer)
+        {
+            var len = buffer?.Length ?? 0;
+            var buf = new byte[len];
+            Buffer.BlockCopy(buffer, 0, buf, 0, len);
+            return buf;
+        }
+
+        internal static sbyte[] _ToSBytes(this byte[] buffer, int offset, int length)
+        {
+            if (length > (buffer?.Length ?? 0))
+                throw new PacketException(PacketError.Overflow);
+            var buf = new sbyte[length];
             Buffer.BlockCopy(buffer, offset, buf, 0, length);
             return buf;
         }

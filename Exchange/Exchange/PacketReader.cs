@@ -182,7 +182,7 @@ namespace Mikodev.Network
             var con = default(IPacketConverter);
             if ((con = _Caches.Converter(type, _con, true)) != null)
                 val = con._GetValueWrapErr(_spa, true);
-            else if (type._IsGenericEnumerable(out var inn))
+            else if (type._IsEnumerable(out var inn))
                 val = _Caches.Enumerable(this, inn);
             else if (type._IsArray(out inn))
                 val = _Caches.Array(this, inn);

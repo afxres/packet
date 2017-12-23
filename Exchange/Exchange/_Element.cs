@@ -36,7 +36,9 @@ namespace Mikodev.Network
             _max = offset + length;
         }
 
-        internal bool _Over() => _idx >= _max;
+        internal bool _End() => _idx >= _max;
+
+        internal bool _Any() => _idx < _max;
 
         internal object _Next(IPacketConverter con)
         {

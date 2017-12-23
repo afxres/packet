@@ -225,7 +225,7 @@ namespace Mikodev.Network
                 wtr = new PacketWriter(cons) { _obj = wri._obj };
             else if ((con = _Caches.Converter(val.GetType(), cons, true)) != null)
                 wtr = new PacketWriter(cons) { _obj = con._GetBytesWrapErr(val) };
-            else if (val.GetType()._IsEnumerable(out var inn) && (con = _Caches.Converter(inn, cons, true)) != null)
+            else if (val.GetType()._IsImplOfEnumerable(out var inn) && (con = _Caches.Converter(inn, cons, true)) != null)
                 wtr = new PacketWriter(cons)._GetBytes(con, (IEnumerable)val);
 
             value = wtr;

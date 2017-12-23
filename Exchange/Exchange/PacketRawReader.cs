@@ -41,7 +41,7 @@ namespace Mikodev.Network
         /// <summary>
         /// 是否可以继续读取. Current index is not at the end of the buffer
         /// </summary>
-        public bool Next => _spa._idx < _spa._max;
+        public bool Any => _spa._Any();
 
         /// <summary>
         /// 读取一个目标类型对象. Get value with target type

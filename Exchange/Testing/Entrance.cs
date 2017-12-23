@@ -149,7 +149,7 @@ namespace Mikodev.Testing
             var rc = rea["c"].PullList(typeof(decimal));
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
-            ThrowIfNotAllEquals(c, rc.Cast<decimal>().ToArray());
+            ThrowIfNotSequenceEqual(c, rc.Cast<decimal>());
         }
 
         [TestMethod]
@@ -183,13 +183,13 @@ namespace Mikodev.Testing
             Assert.AreEqual(3, rdr.Keys.Count());
             Assert.AreEqual(c.Count, rc.Count());
 
-            ThrowIfNotAllEquals(a, ra);
-            ThrowIfNotAllEquals(a, ral);
-            ThrowIfNotAllEquals(b, rb.ToArray());
-            ThrowIfNotAllEquals(c.First(), rc.First());
+            ThrowIfNotSequenceEqual(a, ra);
+            ThrowIfNotSequenceEqual(a, ral);
+            ThrowIfNotSequenceEqual(b, rb);
+            ThrowIfNotSequenceEqual(c.First(), rc.First());
 
-            ThrowIfNotAllEquals(a, rax.Cast<byte>().ToArray());
-            ThrowIfNotAllEquals(b, rbx.Cast<string>().ToArray());
+            ThrowIfNotSequenceEqual(a, rax.Cast<byte>());
+            ThrowIfNotSequenceEqual(b, rbx.Cast<string>());
         }
 
         [TestMethod]
@@ -241,15 +241,15 @@ namespace Mikodev.Testing
             Assert.AreEqual(b, rlb);
             Assert.AreEqual(e.Count, ree.Count());
 
-            ThrowIfNotAllEquals(c, rc);
-            ThrowIfNotAllEquals(d, rde.ToArray());
-            ThrowIfNotAllEquals(d, rdl.ToArray());
-            ThrowIfNotAllEquals(d, rda);
-            ThrowIfNotAllEquals(e.First(), ree.First());
-            ThrowIfNotAllEquals(e.First(), rel.First());
-            ThrowIfNotAllEquals(e.First(), rea.First());
-            ThrowIfNotAllEquals(c, rlc);
-            ThrowIfNotAllEquals(d, rld.ToArray());
+            ThrowIfNotSequenceEqual(c, rc);
+            ThrowIfNotSequenceEqual(d, rde);
+            ThrowIfNotSequenceEqual(d, rdl);
+            ThrowIfNotSequenceEqual(d, rda);
+            ThrowIfNotSequenceEqual(e.First(), ree.First());
+            ThrowIfNotSequenceEqual(e.First(), rel.First());
+            ThrowIfNotSequenceEqual(e.First(), rea.First());
+            ThrowIfNotSequenceEqual(c, rlc);
+            ThrowIfNotSequenceEqual(d, rld);
         }
 
         [TestMethod]
@@ -279,8 +279,8 @@ namespace Mikodev.Testing
 
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
-            ThrowIfNotAllEquals(c, rc.ToArray());
-            ThrowIfNotAllEquals(d, rd.ToArray());
+            ThrowIfNotSequenceEqual(c, rc);
+            ThrowIfNotSequenceEqual(d, rd);
         }
 
         [TestMethod]
@@ -401,7 +401,7 @@ namespace Mikodev.Testing
             Assert.AreEqual(a, BitConverter.ToInt32(ta, 0));
             Assert.AreEqual(b, sb.Pull<string>());
             Assert.AreEqual(b, Encoding.UTF8.GetString(tb));
-            ThrowIfNotAllEquals(c, sc.PullList<int>().ToArray());
+            ThrowIfNotSequenceEqual(c, sc.PullList<int>());
         }
 
         [TestMethod]
@@ -448,10 +448,10 @@ namespace Mikodev.Testing
             var arr = PacketWriter.Serialize(src).GetBytes();
             var rea = new PacketRawReader(new PacketReader(arr));
             var res = new List<int>();
-            while (rea.Next)
+            while (rea.Any)
                 res.Add(rea.Pull<int>());
 
-            ThrowIfNotAllEquals(src, res.ToArray());
+            ThrowIfNotSequenceEqual(src, res);
         }
 
         [TestMethod]
@@ -515,7 +515,7 @@ namespace Mikodev.Testing
             Assert.AreEqual(b, rb);
             Assert.AreEqual(rca, a);
             Assert.AreEqual(rcb, b);
-            Assert.AreEqual(false, rc.Next);
+            Assert.AreEqual(false, rc.Any);
         }
     }
 }

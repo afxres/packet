@@ -17,7 +17,7 @@ namespace Mikodev.Network
             s_cons = _InitDictionary();
         }
 
-        internal static bool _IsGenericEnumerable(this Type type, out Type inner)
+        internal static bool _IsEnumerable(this Type type, out Type inner)
         {
             if (type.IsGenericType == false || type.GetGenericTypeDefinition() != typeof(IEnumerable<>))
                 goto fail;
@@ -32,10 +32,10 @@ namespace Mikodev.Network
             return false;
         }
 
-        internal static bool _IsEnumerable(this Type type, out Type inner)
+        internal static bool _IsImplOfEnumerable(this Type type, out Type inner)
         {
             foreach (var i in type.GetInterfaces())
-                if (i._IsGenericEnumerable(out inner))
+                if (i._IsEnumerable(out inner))
                     return true;
             inner = null;
             return false;

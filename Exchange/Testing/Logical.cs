@@ -92,5 +92,23 @@ namespace Mikodev.Testing
             lst.ForEach(r => r.Start());
             lst.ForEach(r => r.Wait());
         }
+
+        [TestMethod]
+        public void DeSerialize()
+        {
+            var pkt = PacketWriter.Serialize(new
+            {
+                id = 0,
+                name = "Bob",
+                data = new
+                {
+                    array = new[] { 1, 2, 3, 4 },
+                    buffer = new byte[] { 1, 2, 3, 4 },
+                }
+            });
+            var buf = pkt.GetBytes();
+            var rea = new PacketReader(buf);
+            var obj = rea.Deserialize(new { id = 0, name = string.Empty, data = new { array = default(int[]), buffer = default(byte[]) } });
+        }
     }
 }

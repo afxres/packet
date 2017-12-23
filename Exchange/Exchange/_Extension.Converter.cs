@@ -37,6 +37,7 @@ namespace Mikodev.Network
             _Val(dic, _OfGuid, _ToGuid, _GuidLength);
 
             _Ref(dic, _OfBytes, _ToBytes);
+            _Ref(dic, _OfSBytes, _ToSBytes);
             _Ref(dic, Encoding.UTF8.GetBytes, Encoding.UTF8.GetString);
             _Ref(dic, _OfIPAddress, _ToIPAddress);
             _Ref(dic, _OfEndPoint, _ToEndPoint);
