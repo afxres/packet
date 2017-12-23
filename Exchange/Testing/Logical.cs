@@ -3,6 +3,7 @@ using Mikodev.Network;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using static Mikodev.Testing.Extensions;
 
 namespace Mikodev.Testing
 {
@@ -19,6 +20,35 @@ namespace Mikodev.Testing
         byte[] IPacketConverter.GetBytes(object value) => throw new Exception(_BytesErr);
 
         object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => throw new OutOfMemoryException(_ValueErr);
+    }
+
+    internal class _Empty { }
+
+    internal class _Person
+    {
+        public int Age { get; set; }
+
+        public string Name { get; set; }
+    }
+
+    internal class _ReadOnly
+    {
+        public int Number { get; }
+
+        public string Text { get; }
+
+        public _ReadOnly(int num, string text)
+        {
+            Number = num;
+            Text = text;
+        }
+    }
+
+    internal class _WriteOnly
+    {
+        public string Name => nameof(_WriteOnly);
+
+        public string Value { set { } }
     }
 
     [TestClass]
@@ -94,9 +124,9 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
-        public void DeSerialize()
+        public void DeserializeAnonymous()
         {
-            var pkt = PacketWriter.Serialize(new
+            var a = new
             {
                 id = 0,
                 name = "Bob",
@@ -105,10 +135,74 @@ namespace Mikodev.Testing
                     array = new[] { 1, 2, 3, 4 },
                     buffer = new byte[] { 1, 2, 3, 4 },
                 }
-            });
+            };
+            var pkt = PacketWriter.Serialize(a);
             var buf = pkt.GetBytes();
             var rea = new PacketReader(buf);
-            var obj = rea.Deserialize(new { id = 0, name = string.Empty, data = new { array = default(int[]), buffer = default(byte[]) } });
+            var val = rea.Deserialize(new { id = 0, name = string.Empty, data = new { array = default(int[]), buffer = default(byte[]) } });
+
+            Assert.AreEqual(a.id, val.id);
+            Assert.AreEqual(a.name, val.name);
+
+            ThrowIfNotSequenceEqual(a.data.array, val.data.array);
+            ThrowIfNotSequenceEqual(a.data.buffer, val.data.buffer);
+        }
+
+        [TestMethod]
+        public void Deserialize()
+        {
+            var p = new _Person() { Age = 20, Name = "Bob" };
+            var pkt = PacketWriter.Serialize(p);
+            var buf = pkt.GetBytes();
+            var rea = new PacketReader(buf);
+            var val = rea.Deserialize<_Person>();
+
+            Assert.AreEqual(p.Age, val.Age);
+            Assert.AreEqual(p.Name, val.Name);
+        }
+
+        [TestMethod]
+        public void DeserializeReadOnly()
+        {
+            var a = new _ReadOnly(10, "read");
+            var pkt = PacketWriter.Serialize(a);
+            var buf = pkt.GetBytes();
+            var rea = new PacketReader(buf);
+
+            try
+            {
+                var val = rea.Deserialize<_ReadOnly>();
+                Assert.Fail();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.InvalidType)
+            {
+                // ignore
+            }
+        }
+
+        [TestMethod]
+        public void DeserializeWriteOnly()
+        {
+            var a = new _WriteOnly();
+            var pkt = PacketWriter.Serialize(a);
+            var buf = pkt.GetBytes();
+            var rea = new PacketReader(buf);
+            var obj = rea.Deserialize<_WriteOnly>();
+            var val = rea.Pull(nameof(_WriteOnly.Value), true);
+
+            Assert.AreEqual(val, null);
+        }
+
+        [TestMethod]
+        public void DeserializeEmpty()
+        {
+            var a = new _Empty();
+            var pkt = PacketWriter.Serialize(a);
+            var buf = pkt.GetBytes();
+            var rea = new PacketReader(buf);
+            var obj = rea.Deserialize<_Empty>();
+
+            Assert.AreEqual(buf.Length, 0);
         }
     }
 }
