@@ -127,7 +127,7 @@ public class PersonConverter : IPacketConverter<Person>
         p.Name = raw.Pull<string>();
 
         var tags = new List<string>();
-        while (raw.Next)
+        while (raw.Any)
             tags.Add(raw.Pull<string>());
         p.Tags = tags;
         return p;
