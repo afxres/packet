@@ -92,7 +92,7 @@ namespace Mikodev.Network
             var hea = con.Length < 1;
             var mst = _GetStream();
             foreach (var i in val)
-                mst._WriteOpt(con._GetBytesWrapErr(i), hea);
+                mst._WriteOpt(con._GetBytesWrapError(i), hea);
             _obj = mst.ToArray();
             return this;
         }
@@ -104,10 +104,10 @@ namespace Mikodev.Network
             var mst = _GetStream();
             if (con is IPacketConverter<T> res)
                 foreach (var i in val)
-                    mst._WriteOpt(res._GetBytesWrapErr(i), hea);
+                    mst._WriteOpt(res._GetBytesWrapError(i), hea);
             else
                 foreach (var i in val)
-                    mst._WriteOpt(con._GetBytesWrapErr(i), hea);
+                    mst._WriteOpt(con._GetBytesWrapError(i), hea);
             _obj = mst.ToArray();
             return this;
         }
@@ -224,7 +224,7 @@ namespace Mikodev.Network
             else if (val is PacketWriter wri)
                 wtr = new PacketWriter(cons) { _obj = wri._obj };
             else if ((con = _Caches.Converter(val.GetType(), cons, true)) != null)
-                wtr = new PacketWriter(cons) { _obj = con._GetBytesWrapErr(val) };
+                wtr = new PacketWriter(cons) { _obj = con._GetBytesWrapError(val) };
             else if (val.GetType()._IsImplOfEnumerable(out var inn) && (con = _Caches.Converter(inn, cons, true)) != null)
                 wtr = new PacketWriter(cons)._GetBytes(con, (IEnumerable)val);
 

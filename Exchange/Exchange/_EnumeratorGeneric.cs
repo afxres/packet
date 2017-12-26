@@ -23,7 +23,7 @@ namespace Mikodev.Network
         {
             if (_spa._End())
                 return false;
-            _cur = _spa._Next<T>(_con);
+            _cur = _spa._NextGeneric(_con);
             return true;
         }
 

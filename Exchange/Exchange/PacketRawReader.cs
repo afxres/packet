@@ -59,7 +59,7 @@ namespace Mikodev.Network
         public T Pull<T>()
         {
             var con = _Caches.Converter(typeof(T), _con, false);
-            var res = _spa._Next<T>(con);
+            var res = _spa._NextAuto<T>(con);
             return res;
         }
 

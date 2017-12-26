@@ -136,13 +136,13 @@ namespace Mikodev.Network
         /// 从当前节点读取目标类型对象. Convert current node to target type object
         /// </summary>
         /// <param name="type">Target type</param>
-        public object Pull(Type type) => _Caches.Converter(type, _con, false)._GetValueWrapErr(_spa, true);
+        public object Pull(Type type) => _Caches.Converter(type, _con, false)._GetValueWrapError(_spa._buf, _spa._off, _spa._len, true);
 
         /// <summary>
         /// 从当前节点读取目标类型对象 (泛型). Convert current node to target type object
         /// </summary>
         /// <typeparam name="T">Target type</typeparam>
-        public T Pull<T>() => _Caches.Converter(typeof(T), _con, false)._GetValueWrapErr<T>(_spa._buf, _spa._off, _spa._len, true);
+        public T Pull<T>() => _Caches.Converter(typeof(T), _con, false)._GetValueWrapErrorAuto<T>(_spa._buf, _spa._off, _spa._len, true);
 
         /// <summary>
         /// 复制当前节点部分的字节数组. Get byte array of current node
@@ -181,7 +181,7 @@ namespace Mikodev.Network
             var val = default(object);
             var con = default(IPacketConverter);
             if ((con = _Caches.Converter(type, _con, true)) != null)
-                val = con._GetValueWrapErr(_spa, true);
+                val = con._GetValueWrapError(_spa._buf, _spa._off, _spa._len, true);
             else if (type._IsEnumerable(out var inn))
                 val = _Caches.Enumerable(this, inn);
             else if (type._IsArray(out inn))

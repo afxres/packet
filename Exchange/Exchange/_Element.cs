@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using static Mikodev.Network._Extension;
 
 namespace Mikodev.Network
 {
@@ -40,26 +42,111 @@ namespace Mikodev.Network
 
         internal bool _Any() => _idx < _max;
 
-        internal object _Next(IPacketConverter con)
+        internal void _EnsureNext(int def, out int pos, out int len)
         {
             var idx = _idx;
-            var len = con.Length;
-            if ((len > 0 && idx + len > _max) || (len < 1 && _buf._Read(_max, ref idx, out len) == false))
-                throw new PacketException(PacketError.Overflow);
-            var res = con._GetValueWrapErr(_buf, idx, len, false);
-            _idx = idx + len;
+            if ((def > 0 && idx + def > _max) || (def < 1 && _buf._Read(_max, ref idx, out def) == false))
+                throw _Overflow();
+            pos = idx;
+            len = def;
+        }
+
+        internal object _Next(IPacketConverter con)
+        {
+            _EnsureNext(con.Length, out var pos, out var len);
+            var res = con._GetValueWrapError(_buf, pos, len, false);
+            _idx = pos + len;
             return res;
         }
 
-        internal T _Next<T>(IPacketConverter con)
+        internal T _NextGeneric<T>(IPacketConverter<T> con)
         {
-            var idx = _idx;
-            var len = con.Length;
-            if ((len > 0 && idx + len > _max) || (len < 1 && _buf._Read(_max, ref idx, out len) == false))
-                throw new PacketException(PacketError.Overflow);
-            var res = con._GetValueWrapErr<T>(_buf, idx, len, false);
-            _idx = idx + len;
+            _EnsureNext(con.Length, out var pos, out var len);
+            var res = con._GetValueWrapErrorGeneric(_buf, pos, len, false);
+            _idx = pos + len;
             return res;
+        }
+
+        internal T _NextAuto<T>(IPacketConverter con)
+        {
+            _EnsureNext(con.Length, out var pos, out var len);
+            var res = con._GetValueWrapErrorAuto<T>(_buf, pos, len, false);
+            _idx = pos + len;
+            return res;
+        }
+
+        internal bool _EnsureBuild(ref int idx, out int pos, out int len)
+        {
+            if (idx == _max)
+                goto fail;
+            if (_buf._Read(_max, ref idx, out var tmp) == false)
+                throw _Overflow();
+            pos = idx;
+            len = tmp;
+            idx = pos + tmp;
+            return true;
+
+            fail:
+            pos = 0;
+            len = 0;
+            return false;
+        }
+
+        internal object _BuildVariable<T>(IPacketConverter con)
+        {
+            var idx = _off;
+            var lst = new List<T>();
+            var gen = con as IPacketConverter<T>;
+            var pos = default(int);
+            var len = default(int);
+
+            try
+            {
+                if (gen != null)
+                    while (_EnsureBuild(ref idx, out pos, out len))
+                        lst.Add(gen.GetValue(_buf, pos, len));
+                else
+                    while (_EnsureBuild(ref idx, out pos, out len))
+                        lst.Add((T)con.GetValue(_buf, pos, len));
+            }
+            catch (Exception ex) when (_WrapError(ex))
+            {
+                throw _ConvertError(ex);
+            }
+            return lst;
+        }
+
+        internal object _BuildCollection<T>(IPacketConverter con)
+        {
+            if (_len < 1)
+                return null;
+
+            var len = con.Length;
+            if (len < 1)
+                return _BuildVariable<T>(con);
+
+            var buf = _buf;
+            var off = _off;
+            var sum = Math.DivRem(_len, len, out var rem);
+            if (rem != 0)
+                throw _Overflow();
+            var arr = new T[sum];
+            var gen = con as IPacketConverter<T>;
+
+            try
+            {
+                if (gen != null)
+                    for (int i = 0; i < sum; i++)
+                        arr[i] = gen.GetValue(buf, off + i * len, len);
+                else
+                    for (int i = 0; i < sum; i++)
+                        arr[i] = (T)con.GetValue(buf, off + i * len, len);
+            }
+            catch (Exception ex) when (_WrapError(ex))
+            {
+                throw _ConvertError(ex);
+            }
+            return arr;
         }
     }
 }

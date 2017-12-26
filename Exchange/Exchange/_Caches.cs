@@ -36,18 +36,27 @@ namespace Mikodev.Network
 
         internal static List<T> _List<T>(_Element element, IPacketConverter con)
         {
-            var spa = new _Element(element);
-            var lst = new List<T>();
-            if (con is IPacketConverter<T> gen)
-                while (spa._Any())
-                    lst.Add(spa._Next<T>(gen));
-            else
-                while (spa._Any())
-                    lst.Add((T)spa._Next(con));
-            return lst;
+            var res = element._BuildCollection<T>(con);
+            if (res == null)
+                return new List<T>();
+            if (res is T[] arr)
+                return new List<T>(arr);
+            if (res is List<T> lst)
+                return lst;
+            throw new InvalidOperationException();
         }
 
-        internal static T[] _Array<T>(_Element element, IPacketConverter con) => _List<T>(element, con).ToArray();
+        internal static T[] _Array<T>(_Element element, IPacketConverter con)
+        {
+            var res = element._BuildCollection<T>(con);
+            if (res == null)
+                return new T[0];
+            if (res is T[] arr)
+                return arr;
+            if (res is List<T> lst)
+                return lst.ToArray();
+            throw new InvalidOperationException();
+        }
 
         internal static object List(PacketReader reader, Type type)
         {
@@ -58,8 +67,7 @@ namespace Mikodev.Network
                 var ele = Expression.Parameter(typeof(_Element), "element");
                 var arg = Expression.Parameter(typeof(IPacketConverter), "converter");
                 var inv = Expression.Call(met, ele, arg);
-                var cvt = Expression.Convert(inv, typeof(object));
-                var fun = Expression.Lambda<Func<_Element, IPacketConverter, object>>(cvt, ele, arg);
+                var fun = Expression.Lambda<Func<_Element, IPacketConverter, object>>(inv, ele, arg);
                 var com = fun.Compile();
                 val = s_list.GetValue(type, _Wrap(com).Value);
             }
@@ -75,8 +83,7 @@ namespace Mikodev.Network
                 var ele = Expression.Parameter(typeof(_Element), "element");
                 var arg = Expression.Parameter(typeof(IPacketConverter), "converter");
                 var inv = Expression.Call(met, ele, arg);
-                var cvt = Expression.Convert(inv, typeof(object));
-                var fun = Expression.Lambda<Func<_Element, IPacketConverter, object>>(cvt, ele, arg);
+                var fun = Expression.Lambda<Func<_Element, IPacketConverter, object>>(inv, ele, arg);
                 var com = fun.Compile();
                 val = s_array.GetValue(type, _Wrap(com).Value);
             }
@@ -91,9 +98,8 @@ namespace Mikodev.Network
                 var cts = typ.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic);
 
                 var par = Expression.Parameter(typeof(PacketReader), "reader");
-                var exp = Expression.New(cts[0], par);
-                var cvt = Expression.Convert(exp, typeof(object));
-                var fun = Expression.Lambda<Func<PacketReader, object>>(cvt, par);
+                var inv = Expression.New(cts[0], par);
+                var fun = Expression.Lambda<Func<PacketReader, object>>(inv, par);
                 var com = fun.Compile();
                 val = s_enum.GetValue(type, _Wrap(com).Value);
             }
@@ -228,7 +234,7 @@ namespace Mikodev.Network
         internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value)
         {
             var con = Converter(type, dic, false);
-            var buf = con._GetBytesWrapErr(value);
+            var buf = con._GetBytesWrapError(value);
             return buf;
         }
 
@@ -236,15 +242,15 @@ namespace Mikodev.Network
         {
             var con = Converter(typeof(T), dic, false);
             if (con is IPacketConverter<T> res)
-                return res._GetBytesWrapErr(value);
-            return con._GetBytesWrapErr(value);
+                return res._GetBytesWrapError(value);
+            return con._GetBytesWrapError(value);
         }
 
         internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value, out bool pre)
         {
             var con = Converter(type, dic, false);
             pre = con.Length < 1;
-            var buf = con._GetBytesWrapErr(value);
+            var buf = con._GetBytesWrapError(value);
             return buf;
         }
 
@@ -253,8 +259,8 @@ namespace Mikodev.Network
             var con = Converter(typeof(T), dic, false);
             pre = con.Length < 1;
             if (con is IPacketConverter<T> res)
-                return res._GetBytesWrapErr(value);
-            return con._GetBytesWrapErr(value);
+                return res._GetBytesWrapError(value);
+            return con._GetBytesWrapError(value);
         }
     }
 }
