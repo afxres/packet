@@ -4,36 +4,22 @@ namespace Mikodev.Network
 {
     partial class _Caches
     {
-        internal struct _Get
-        {
-            internal string _name;
-            internal Func<object, object> _func;
-        }
-
-        internal struct _Anon
+        internal struct _Info
         {
             internal string _name;
             internal Type _type;
         }
 
-        internal struct _Set
+        internal sealed class _SolveInfo
         {
-            internal string _name;
-            internal Type _type;
-            internal Action<object, object> _func;
+            internal Action<object, object[]> _func;
+            internal _Info[] _args;
         }
 
-        internal sealed class _AnonInfo
+        internal sealed class _DissoInfo
         {
-            /* Anonymous type constructor and parameter list */
             internal Func<object[], object> _func;
-            internal _Anon[] _args;
-        }
-
-        internal sealed class _SetInfo
-        {
-            internal Func<object> _func;
-            internal _Set[] _sets;
+            internal _Info[] _args;
         }
 
         internal sealed class _Wrapper<T>

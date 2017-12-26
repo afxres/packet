@@ -50,6 +50,13 @@ namespace Mikodev.Testing
 
         public string Value { set { } }
     }
+    
+    internal struct _Value
+    {
+        public int One { get; set; }
+
+        public string Two { get; set; }
+    }
 
     [TestClass]
     public class Logical
@@ -203,6 +210,19 @@ namespace Mikodev.Testing
             var obj = rea.Deserialize<_Empty>();
 
             Assert.AreEqual(buf.Length, 0);
+        }
+
+        [TestMethod]
+        public void DeserializeStructural()
+        {
+            var v = new _Value { One = 1, Two = "Two" };
+            var pkt = PacketWriter.Serialize(v);
+            var buf = pkt.GetBytes();
+            var rea = new PacketReader(buf);
+            var obj = rea.Deserialize<_Value>();
+
+            Assert.AreEqual(obj.One, 1);
+            Assert.AreEqual(obj.Two, "Two");
         }
     }
 }

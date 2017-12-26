@@ -246,9 +246,20 @@ namespace Mikodev.Network
                 foreach (var i in dic)
                     lst[i.Key] = _Serialize(i.Value, cons, lev + 1);
             else
-                foreach (var i in _Caches.GetMethods(val.GetType()))
-                    lst[i._name] = _Serialize(i._func.Invoke(val), cons, lev + 1);
+                _SerializeViaGetMethods(lst, val, cons, lev);
             return wtr;
+        }
+
+        internal static void _SerializeViaGetMethods(ItemDirectory items, object val, ConverterDictionary cons, int lev)
+        {
+            var inf = _Caches.GetMethods(val.GetType());
+            var fun = inf._func;
+            var arg = inf._args;
+            var res = new object[arg.Length];
+            fun.Invoke(val, res);
+            for (int i = 0; i < arg.Length; i++)
+                items[arg[i]._name] = _Serialize(res[i], cons, lev + 1);
+            return;
         }
 
         /// <summary>

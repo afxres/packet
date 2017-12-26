@@ -18,8 +18,9 @@ namespace Mikodev.Network
 
         internal static readonly ConditionalWeakTable<Type, IPacketConverter> s_type = new ConditionalWeakTable<Type, IPacketConverter>();
         internal static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_enum = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
-        internal static readonly ConditionalWeakTable<Type, _Get[]> s_gets = new ConditionalWeakTable<Type, _Get[]>();
-        internal static readonly ConditionalWeakTable<Type, object> s_anon = new ConditionalWeakTable<Type, object>();
+
+        internal static readonly ConditionalWeakTable<Type, _SolveInfo> s_solv = new ConditionalWeakTable<Type, _SolveInfo>();
+        internal static readonly ConditionalWeakTable<Type, _DissoInfo> s_anon = new ConditionalWeakTable<Type, _DissoInfo>();
 
         internal static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_list = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
         internal static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_array = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
@@ -106,37 +107,54 @@ namespace Mikodev.Network
             return val.Invoke(reader);
         }
 
-        internal static _Get[] GetMethods(Type type)
-        {
-            if (s_gets.TryGetValue(type, out var val))
-                return val;
+        internal static _SolveInfo GetMethods(Type type) => _SolveType(type);
 
-            var lst = new List<_Get>();
-            var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            foreach (var i in pro)
+        internal static _SolveInfo _SolveType(Type type)
+        {
+            if (s_solv.TryGetValue(type, out var sol))
+                return sol;
+
+            var inf = new List<_Info>();
+            var met = new List<MethodInfo>();
+            var pro = type.GetProperties();
+            for (int i = 0; i < pro.Length; i++)
             {
-                var get = i.GetGetMethod();
+                var cur = pro[i];
+                var get = cur.GetGetMethod();
                 if (get == null)
                     continue;
                 var arg = get.GetParameters();
                 // Length != 0 -> indexer
                 if (arg == null || arg.Length != 0)
                     continue;
-                var src = i.DeclaringType;
-                var dst = i.PropertyType;
-
-                var ins = Expression.Parameter(typeof(object), "instance");
-                var cvt = Expression.Convert(ins, src);
-                var inv = Expression.Call(cvt, get);
-                var box = Expression.Convert(inv, typeof(object));
-                var fun = Expression.Lambda<Func<object, object>>(box, ins);
-                lst.Add(new _Get { _name = i.Name, _func = fun.Compile() });
+                inf.Add(new _Info { _name = cur.Name, _type = cur.PropertyType });
+                met.Add(get);
             }
-            var arr = lst.ToArray();
-            return s_gets.GetValue(type, _Wrap(arr).Value);
+
+            var exp = new List<Expression>();
+            var ipt = Expression.Parameter(typeof(object), "parameter");
+            var arr = Expression.Parameter(typeof(object[]), "array");
+            var val = Expression.Variable(type, "value");
+            var ass = Expression.Assign(val, Expression.Convert(ipt, type));
+            exp.Add(ass);
+
+            for (int i = 0; i < inf.Count; i++)
+            {
+                var idx = Expression.ArrayAccess(arr, Expression.Constant(i));
+                var inv = Expression.Call(val, met[i]);
+                var cvt = Expression.Convert(inv, typeof(object));
+                var set = Expression.Assign(idx, cvt);
+                exp.Add(set);
+            }
+
+            var blk = Expression.Block(new[] { val }, exp);
+            var del = Expression.Lambda<Action<object, object[]>>(blk, ipt, arr);
+
+            var res = new _SolveInfo { _func = del.Compile(), _args = inf.ToArray() };
+            return s_solv.GetValue(type, _Wrap(res).Value);
         }
 
-        internal static object _DissolveAnonymousType(Type type)
+        internal static _DissoInfo _DissolveAnonymousType(Type type)
         {
             var cts = type.GetConstructors();
             if (cts.Length != 1)
@@ -152,61 +170,85 @@ namespace Mikodev.Network
                 if (pro[i].Name != arg[i].Name || pro[i].PropertyType != arg[i].ParameterType)
                     return null;
 
-            var ipt = Expression.Parameter(typeof(object[]), "inputs");
+            var ipt = Expression.Parameter(typeof(object[]), "parameters");
             var arr = new Expression[arg.Length];
-            var inf = new _Anon[arg.Length];
+            var inf = new _Info[arg.Length];
             for (int i = 0; i < arg.Length; i++)
             {
                 var cur = arg[i];
                 var idx = Expression.ArrayIndex(ipt, Expression.Constant(i));
                 var cvt = Expression.Convert(idx, cur.ParameterType);
                 arr[i] = cvt;
-                inf[i] = new _Anon { _name = cur.Name, _type = cur.ParameterType };
+                inf[i] = new _Info { _name = cur.Name, _type = cur.ParameterType };
             }
 
+            // Reference type
             var ins = Expression.New(con, arr);
-            var exp = Expression.Lambda<Func<object[], object>>(ins, ipt);
-            var res = new _AnonInfo { _func = exp.Compile(), _args = inf };
+            var del = Expression.Lambda<Func<object[], object>>(ins, ipt);
+            var res = new _DissoInfo { _func = del.Compile(), _args = inf };
 
             return s_anon.GetValue(type, _Wrap(res).Value);
         }
 
-        internal static object SetMethods(Type type)
+        internal static _DissoInfo _DissolveType(Type type, ConstructorInfo constructor)
         {
-            if (s_anon.TryGetValue(type, out var val))
-                return val;
+            var pro = type.GetProperties();
+            var ins = (constructor == null) ? Expression.New(type) : Expression.New(constructor);
+            var inf = new List<_Info>();
+            var met = new List<MethodInfo>();
 
-            var con = type.GetConstructor(new Type[0]);
-            if (con == null)
-                return _DissolveAnonymousType(type);
-
-            var lst = new List<_Set>();
-            var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            foreach (var i in pro)
+            for (int i = 0; i < pro.Length; i++)
             {
-                var get = i.GetGetMethod();
-                var set = i.GetSetMethod();
+                var cur = pro[i];
+                var get = cur.GetGetMethod();
+                var set = cur.GetSetMethod();
                 if (get == null || set == null)
                     continue;
                 var arg = set.GetParameters();
                 if (arg == null || arg.Length != 1)
                     continue;
-                var src = i.DeclaringType;
-                var dst = i.PropertyType;
-
-                var ins = Expression.Parameter(typeof(object), "instance");
-                var par = Expression.Parameter(typeof(object), "value");
-                var cvt = Expression.Convert(ins, src);
-                var cas = Expression.Convert(par, dst);
-                var inv = Expression.Call(cvt, set, cas);
-                var fun = Expression.Lambda<Action<object, object>>(inv, ins, par);
-                lst.Add(new _Set { _name = i.Name, _type = dst, _func = fun.Compile() });
+                inf.Add(new _Info { _name = cur.Name, _type = cur.PropertyType });
+                met.Add(set);
             }
 
-            var obj = Expression.Lambda<Func<object>>(Expression.Convert(Expression.New(con), typeof(object)));
-            var res = new _SetInfo { _func = obj.Compile(), _sets = lst.ToArray() };
+            var exp = new List<Expression>();
+            var ipt = Expression.Parameter(typeof(object[]), "parameters");
+            var val = Expression.Variable(type, "value");
+            var ass = Expression.Assign(val, ins);
+            exp.Add(ass);
 
+            for (int i = 0; i < inf.Count; i++)
+            {
+                var idx = Expression.ArrayIndex(ipt, Expression.Constant(i));
+                var cvt = Expression.Convert(idx, inf[i]._type);
+                var set = Expression.Call(val, met[i], cvt);
+                exp.Add(set);
+            }
+
+            var lbl = Expression.Label(typeof(object), "result");
+            var cst = Expression.Convert(val, typeof(object));
+            var ret = Expression.Return(lbl, cst);
+            exp.Add(ret);
+            exp.Add(Expression.Label(lbl, Expression.Constant(null)));
+
+            var blk = Expression.Block(new[] { val }, exp);
+            var del = Expression.Lambda<Func<object[], object>>(blk, ipt);
+
+            var res = new _DissoInfo { _func = del.Compile(), _args = inf.ToArray() };
             return s_anon.GetValue(type, _Wrap(res).Value);
+        }
+
+        internal static _DissoInfo SetMethods(Type type)
+        {
+            if (s_anon.TryGetValue(type, out var val))
+                return val;
+
+            if (type.IsValueType)
+                return _DissolveType(type, null);
+            var con = type.GetConstructor(Type.EmptyTypes);
+            if (con != null)
+                return _DissolveType(type, con);
+            return _DissolveAnonymousType(type);
         }
 
         internal static IPacketConverter Converter(Type type, ConverterDictionary dic, bool nothrow)

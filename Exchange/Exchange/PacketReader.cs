@@ -231,32 +231,16 @@ namespace Mikodev.Network
                 return ret;
 
             var res = _Caches.SetMethods(type);
-            if (res is _Caches._AnonInfo ann)
-            {
-                var arr = ann._args;
-                var fun = ann._func;
-                var obj = new object[arr.Length];
+            if (res == null)
+                throw new PacketException(PacketError.InvalidType);
+            var arr = res._args;
+            var fun = res._func;
+            var obj = new object[arr.Length];
 
-                for (int i = 0; i < arr.Length; i++)
-                    obj[i] = _Deserialize(reader._GetItem(arr[i]._name, false), arr[i]._type);
-                var val = fun.Invoke(obj);
-                return val;
-            }
-            else if (res is _Caches._SetInfo set)
-            {
-                var arr = set._sets;
-                var fun = set._func;
-                var obj = fun.Invoke();
-
-                for (int i = 0; i < arr.Length; i++)
-                {
-                    var cur = arr[i];
-                    var val = _Deserialize(reader._GetItem(cur._name, false), cur._type);
-                    cur._func.Invoke(obj, val);
-                }
-                return obj;
-            }
-            throw new PacketException(PacketError.InvalidType);
+            for (int i = 0; i < arr.Length; i++)
+                obj[i] = _Deserialize(reader._GetItem(arr[i]._name, false), arr[i]._type);
+            var val = fun.Invoke(obj);
+            return val;
         }
     }
 }
