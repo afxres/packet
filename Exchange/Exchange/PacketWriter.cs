@@ -10,18 +10,11 @@ using ItemDirectory = System.Collections.Generic.Dictionary<string, object>;
 
 namespace Mikodev.Network
 {
-    /// <summary>
-    /// 数据包生成工具. Binary packet writer
-    /// </summary>
     public sealed partial class PacketWriter : IDynamicMetaObjectProvider
     {
         internal object _obj = null;
         internal readonly ConverterDictionary _con = null;
 
-        /// <summary>
-        /// 创建对象并指定转换器. Create writer with converters
-        /// </summary>
-        /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketWriter(ConverterDictionary converters = null) => _con = converters;
 
         internal ItemDirectory _GetItems()
@@ -33,30 +26,21 @@ namespace Mikodev.Network
             return val;
         }
 
-        /// <summary>
-        /// 写入标签和另一个实例. Write key and another instance
-        /// </summary>
+        [Obsolete]
         public PacketWriter Push(string key, PacketWriter val)
         {
             _GetItems()[key] = new PacketWriter(_con) { _obj = val?._obj };
             return this;
         }
 
-        /// <summary>
-        /// 写入标签和原始数据包生成工具. Write key and raw writer
-        /// </summary>
+        [Obsolete]
         public PacketWriter Push(string key, PacketRawWriter val)
         {
             _GetItems()[key] = val;
             return this;
         }
 
-        /// <summary>
-        /// 写入标签和数据. Write key and data
-        /// </summary>
-        /// <param name="key">Node tag</param>
-        /// <param name="type">Source type</param>
-        /// <param name="val">Value to be written</param>
+        [Obsolete]
         public PacketWriter Push(string key, Type type, object val)
         {
             var buf = _Caches.GetBytes(type, _con, val);
@@ -64,12 +48,7 @@ namespace Mikodev.Network
             return this;
         }
 
-        /// <summary>
-        /// 写入标签和数据 (泛型). Write key and data
-        /// </summary>
-        /// <typeparam name="T">Source type</typeparam>
-        /// <param name="key">Node tag</param>
-        /// <param name="val">Value to be written</param>
+        [Obsolete]
         public PacketWriter Push<T>(string key, T val)
         {
             var buf = _Caches.GetBytes(_con, val);
@@ -77,14 +56,18 @@ namespace Mikodev.Network
             return this;
         }
 
-        /// <summary>
-        /// 写入标签和字节数组. Set key and byte array
-        /// </summary>
+        [Obsolete]
         public PacketWriter PushList(string key, byte[] buf)
         {
             var nod = new PacketWriter(_con) { _obj = buf };
             _GetItems()[key] = nod;
             return this;
+        }
+
+        internal void _GetBytes(Type type, IEnumerable val)
+        {
+            var con = _Caches.Converter(type, _con, false);
+            _GetBytes(con, val);
         }
 
         internal PacketWriter _GetBytes(IPacketConverter con, IEnumerable val)
@@ -97,7 +80,7 @@ namespace Mikodev.Network
             return this;
         }
 
-        internal PacketWriter _GetBytes<T>(IEnumerable<T> val)
+        internal void _GetBytes<T>(IEnumerable<T> val)
         {
             var con = _Caches.Converter(typeof(T), _con, false);
             var hea = con.Length < 1;
@@ -109,30 +92,19 @@ namespace Mikodev.Network
                 foreach (var i in val)
                     mst._WriteOpt(con._GetBytesWrapError(i), hea);
             _obj = mst.ToArray();
-            return this;
         }
 
-        /// <summary>
-        /// 写入标签和数据集合. Write key and collections
-        /// </summary>
-        /// <param name="key">Node tag</param>
-        /// <param name="type">Source type</param>
-        /// <param name="val">Value collection</param>
+        [Obsolete]
         public PacketWriter PushList(string key, Type type, IEnumerable val)
         {
             var nod = new PacketWriter(_con);
             if (val != null)
-                nod._GetBytes(_Caches.Converter(type, _con, false), val);
+                nod._GetBytes(type, val);
             _GetItems()[key] = nod;
             return this;
         }
 
-        /// <summary>
-        /// 写入标签和数据集合 (泛型). Write key and collections
-        /// </summary>
-        /// <typeparam name="T">Source type</typeparam>
-        /// <param name="key">Node tag</param>
-        /// <param name="val">Value collection</param>
+        [Obsolete]
         public PacketWriter PushList<T>(string key, IEnumerable<T> val)
         {
             var nod = new PacketWriter(_con);
@@ -142,9 +114,6 @@ namespace Mikodev.Network
             return this;
         }
 
-        /// <summary>
-        /// 生成数据包. Get binary packet
-        /// </summary>
         public byte[] GetBytes()
         {
             if (_obj is byte[] buf)
@@ -158,9 +127,6 @@ namespace Mikodev.Network
             return res;
         }
 
-        /// <summary>
-        /// 打印对象类型, 子节点个数和字节长度. Show byte count or node count
-        /// </summary>
         public override string ToString()
         {
             var stb = new StringBuilder(nameof(PacketWriter));
@@ -262,9 +228,6 @@ namespace Mikodev.Network
             return;
         }
 
-        /// <summary>
-        /// 从对象或字典创建对象. Create new writer from object or dictionary (generic dictionary with string as key)
-        /// </summary>
         public static PacketWriter Serialize(object obj, ConverterDictionary converters = null) => _Serialize(obj, converters, 0);
     }
 }

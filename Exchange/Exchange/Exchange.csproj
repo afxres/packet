@@ -49,6 +49,7 @@
     <Compile Include="IPacketConverter.cs" />
     <Compile Include="PacketConvert.cs" />
     <Compile Include="PacketConvert.Reader.cs" />
+    <Compile Include="PacketConvert.Writer.cs" />
     <Compile Include="PacketRawReader.cs" />
     <Compile Include="PacketRawWriter.cs" />
     <Compile Include="PacketWriter.ThreadStatic.cs" />

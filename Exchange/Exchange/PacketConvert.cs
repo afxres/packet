@@ -6,6 +6,20 @@ namespace Mikodev.Network
 {
     public static partial class PacketConvert
     {
+        internal static void ThrowIfArgumentError(string key)
+        {
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+            return;
+        }
+
+        internal static void ThrowIfArgumentError(PacketWriter writer)
+        {
+            if (writer == null)
+                throw new ArgumentNullException(nameof(writer));
+            return;
+        }
+
         internal static void ThrowIfArgumentError(PacketReader reader)
         {
             if (reader == null)

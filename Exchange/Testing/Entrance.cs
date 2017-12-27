@@ -39,17 +39,17 @@ namespace Mikodev.Testing
             var j = TimeSpan.MaxValue;
             var k = Guid.NewGuid();
             var wtr = new PacketWriter();
-            wtr.Push("a", a).
-                Push("b", b).
-                Push("c", c).
-                Push("d", d).
-                Push("e", e).
-                Push("f", f).
-                Push("g", g).
-                Push("h", h).
-                Push("i", i).
-                Push("j", j).
-                Push("k", k);
+            wtr.SetValue("a", a).
+                SetValue("b", b).
+                SetValue("c", c).
+                SetValue("d", d).
+                SetValue("e", e).
+                SetValue("f", f).
+                SetValue("g", g).
+                SetValue("h", h).
+                SetValue("i", i).
+                SetValue("j", j).
+                SetValue("k", k);
             var buf = wtr.GetBytes();
 
             var rea = new PacketReader(buf);
@@ -99,14 +99,14 @@ namespace Mikodev.Testing
             var u64 = 1UL;
 
             var wtr = new PacketWriter();
-            wtr.Push("a", i8).
-                Push("b", u8).
-                Push("c", i16).
-                Push("d", u16).
-                Push("e", i32).
-                Push("f", u32).
-                Push("g", i64).
-                Push("h", u64);
+            wtr.SetValue("a", i8).
+                SetValue("b", u8).
+                SetValue("c", i16).
+                SetValue("d", u16).
+                SetValue("e", i32).
+                SetValue("f", u32).
+                SetValue("g", i64).
+                SetValue("h", u64);
             var buf = wtr.GetBytes();
 
             var rdr = new PacketReader(buf);
@@ -138,9 +138,9 @@ namespace Mikodev.Testing
             var b = "test";
             var c = new[] { 1.1M, 2.2M };
             var buf = new PacketWriter().
-                Push("a", typeof(int), a).
-                Push("b", typeof(string), b).
-                PushList("c", typeof(decimal), c).
+                SetValue("a", typeof(int), a).
+                SetValue("b", typeof(string), b).
+                SetEnumerable("c", typeof(decimal), c).
                 GetBytes();
 
             var rea = new PacketReader(buf);
@@ -165,9 +165,9 @@ namespace Mikodev.Testing
                 new byte[] { 1, 2, 3, 4 }
             };
 
-            wtr.PushList("byte", a).
-                PushList("ints", b).
-                PushList("buffer", c);
+            wtr.SetEnumerable("byte", a).
+                SetEnumerable("ints", b).
+                SetEnumerable("buffer", c);
             var buf = wtr.GetBytes();
 
             var rdr = new PacketReader(buf);
@@ -288,7 +288,7 @@ namespace Mikodev.Testing
         {
             var a = 1;
             var wtr = new PacketWriter();
-            wtr.Push("a", new PacketWriter().Push("a", a));
+            wtr.SetItem("a", new PacketWriter().SetValue("a", a));
 
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
@@ -358,8 +358,8 @@ namespace Mikodev.Testing
             var a = 1;
             var b = DateTime.Now;
             var wtr = new PacketWriter();
-            wtr.Push("a", a);
-            wtr.Push("b", b);
+            wtr.SetValue("a", a);
+            wtr.SetValue("b", b);
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
 
@@ -372,7 +372,7 @@ namespace Mikodev.Testing
         {
             var a = DayOfWeek.Wednesday;
             var wtr = new PacketWriter();
-            wtr.Push("a", a);
+            wtr.SetValue("a", a);
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
             Assert.AreEqual(a, rea["a"].GetValue<DayOfWeek>());
@@ -494,9 +494,9 @@ namespace Mikodev.Testing
             var a = 1234;
             var b = "What the ...";
             var wtr = new PacketWriter().
-                Push("a", a).
-                Push("b", b).
-                Push("c", new PacketRawWriter().
+                SetValue("a", a).
+                SetValue("b", b).
+                SetItem("c", new PacketRawWriter().
                     Push(a).
                     Push(b));
             var buf = wtr.GetBytes();

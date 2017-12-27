@@ -29,12 +29,6 @@ namespace Mikodev.Network
             return reader._spa.GetBytes();
         }
 
-        public static sbyte[] GetSBytes(this PacketReader reader)
-        {
-            ThrowIfArgumentError(reader);
-            return reader._spa.GetSBytes();
-        }
-
         public static IEnumerable GetEnumerable(this PacketReader reader, Type type)
         {
             ThrowIfArgumentError(type);
@@ -66,9 +60,8 @@ namespace Mikodev.Network
 
         public static PacketReader GetItem(this PacketReader reader, string key, bool nothrow = false)
         {
+            ThrowIfArgumentError(key);
             ThrowIfArgumentError(reader);
-            if (key == null)
-                throw new ArgumentNullException(nameof(key));
             return reader._GetItem(key, nothrow);
         }
 

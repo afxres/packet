@@ -177,10 +177,5 @@ namespace Mikodev.Network
         {
             return _buf._ToBytes(_off, _len);
         }
-
-        internal sbyte[] GetSBytes()
-        {
-            return _buf._ToSBytes(_off, _len);
-        }
     }
 }

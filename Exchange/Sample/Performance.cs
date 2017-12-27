@@ -53,7 +53,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("PacketRawWriter<>")) // 153.51 ms, avg
+                using (new TraceWatch("PacketRawWriter<>")) // 153.51 ms, best (unstable)
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -80,7 +80,7 @@ namespace Mikodev.Test
                 {
                     for (int i = 0; i < max; i++)
                     {
-                        var buf = new PacketWriter().Push("some", i).GetBytes();
+                        var buf = new PacketWriter().SetValue("some", i).GetBytes();
                         var res = new PacketReader(buf)["some"].GetValue<int>();
                     }
                 }
