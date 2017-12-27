@@ -13,19 +13,19 @@ namespace Mikodev.Network
         internal const int _StreamLength = 64;
         internal const int _RecursionDepth = 64;
 
-        internal static readonly MethodInfo s_getlist = typeof(_Caches).GetMethod(nameof(_List), BindingFlags.Static | BindingFlags.NonPublic);
-        internal static readonly MethodInfo s_getarray = typeof(_Caches).GetMethod(nameof(_Array), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_getlist = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_getarray = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
 
-        internal static readonly ConditionalWeakTable<Type, IPacketConverter> s_type = new ConditionalWeakTable<Type, IPacketConverter>();
-        internal static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_enum = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
+        private static readonly ConditionalWeakTable<Type, IPacketConverter> s_type = new ConditionalWeakTable<Type, IPacketConverter>();
+        private static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_enum = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
 
-        internal static readonly ConditionalWeakTable<Type, _SolveInfo> s_solv = new ConditionalWeakTable<Type, _SolveInfo>();
-        internal static readonly ConditionalWeakTable<Type, _DissoInfo> s_anon = new ConditionalWeakTable<Type, _DissoInfo>();
+        private static readonly ConditionalWeakTable<Type, SolveInfo> s_solv = new ConditionalWeakTable<Type, SolveInfo>();
+        private static readonly ConditionalWeakTable<Type, DissoInfo> s_anon = new ConditionalWeakTable<Type, DissoInfo>();
 
-        internal static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_list = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
-        internal static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_array = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
+        private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_list = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
+        private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_array = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
 
-        internal static IPacketConverter _BuildConverter(Type type)
+        private static IPacketConverter _BuildConverter(Type type)
         {
             if (type.IsEnum == false)
                 return null;
@@ -33,30 +33,6 @@ namespace Mikodev.Network
             if (s_cons.TryGetValue(und, out var res))
                 return res;
             return null;
-        }
-
-        internal static List<T> _List<T>(_Element element, IPacketConverter con)
-        {
-            var res = element._BuildCollection<T>(con);
-            if (res == null)
-                return new List<T>();
-            if (res is T[] arr)
-                return new List<T>(arr);
-            if (res is List<T> lst)
-                return lst;
-            throw new InvalidOperationException();
-        }
-
-        internal static T[] _Array<T>(_Element element, IPacketConverter con)
-        {
-            var res = element._BuildCollection<T>(con);
-            if (res == null)
-                return new T[0];
-            if (res is T[] arr)
-                return arr;
-            if (res is List<T> lst)
-                return lst.ToArray();
-            throw new InvalidOperationException();
         }
 
         internal static object List(PacketReader reader, Type type)
@@ -67,10 +43,10 @@ namespace Mikodev.Network
                 var met = s_getlist.MakeGenericMethod(type);
                 var ele = Expression.Parameter(typeof(_Element), "element");
                 var arg = Expression.Parameter(typeof(IPacketConverter), "converter");
-                var inv = Expression.Call(met, ele, arg);
+                var inv = Expression.Call(ele, met, arg);
                 var fun = Expression.Lambda<Func<_Element, IPacketConverter, object>>(inv, ele, arg);
                 var com = fun.Compile();
-                val = s_list.GetValue(type, _Wrap(com).Value);
+                val = s_list.GetValue(type, Wrap(com).Value);
             }
             return val.Invoke(reader._spa, con);
         }
@@ -83,10 +59,10 @@ namespace Mikodev.Network
                 var met = s_getarray.MakeGenericMethod(type);
                 var ele = Expression.Parameter(typeof(_Element), "element");
                 var arg = Expression.Parameter(typeof(IPacketConverter), "converter");
-                var inv = Expression.Call(met, ele, arg);
+                var inv = Expression.Call(ele, met, arg);
                 var fun = Expression.Lambda<Func<_Element, IPacketConverter, object>>(inv, ele, arg);
                 var com = fun.Compile();
-                val = s_array.GetValue(type, _Wrap(com).Value);
+                val = s_array.GetValue(type, Wrap(com).Value);
             }
             return val.Invoke(reader._spa, con);
         }
@@ -102,19 +78,17 @@ namespace Mikodev.Network
                 var inv = Expression.New(cts[0], par);
                 var fun = Expression.Lambda<Func<PacketReader, object>>(inv, par);
                 var com = fun.Compile();
-                val = s_enum.GetValue(type, _Wrap(com).Value);
+                val = s_enum.GetValue(type, Wrap(com).Value);
             }
             return val.Invoke(reader);
         }
 
-        internal static _SolveInfo GetMethods(Type type) => _SolveType(type);
-
-        internal static _SolveInfo _SolveType(Type type)
+        internal static SolveInfo GetMethods(Type type)
         {
             if (s_solv.TryGetValue(type, out var sol))
                 return sol;
 
-            var inf = new List<_Info>();
+            var inf = new List<Info>();
             var met = new List<MethodInfo>();
             var pro = type.GetProperties();
             for (int i = 0; i < pro.Length; i++)
@@ -127,7 +101,7 @@ namespace Mikodev.Network
                 // Length != 0 -> indexer
                 if (arg == null || arg.Length != 0)
                     continue;
-                inf.Add(new _Info { _name = cur.Name, _type = cur.PropertyType });
+                inf.Add(new Info { name = cur.Name, type = cur.PropertyType });
                 met.Add(get);
             }
 
@@ -150,11 +124,11 @@ namespace Mikodev.Network
             var blk = Expression.Block(new[] { val }, exp);
             var del = Expression.Lambda<Action<object, object[]>>(blk, ipt, arr);
 
-            var res = new _SolveInfo { _func = del.Compile(), _args = inf.ToArray() };
-            return s_solv.GetValue(type, _Wrap(res).Value);
+            var res = new SolveInfo { func = del.Compile(), args = inf.ToArray() };
+            return s_solv.GetValue(type, Wrap(res).Value);
         }
 
-        internal static _DissoInfo _DissolveAnonymousType(Type type)
+        private static DissoInfo _DissolveAnonymousType(Type type)
         {
             var cts = type.GetConstructors();
             if (cts.Length != 1)
@@ -172,29 +146,29 @@ namespace Mikodev.Network
 
             var ipt = Expression.Parameter(typeof(object[]), "parameters");
             var arr = new Expression[arg.Length];
-            var inf = new _Info[arg.Length];
+            var inf = new Info[arg.Length];
             for (int i = 0; i < arg.Length; i++)
             {
                 var cur = arg[i];
                 var idx = Expression.ArrayIndex(ipt, Expression.Constant(i));
                 var cvt = Expression.Convert(idx, cur.ParameterType);
                 arr[i] = cvt;
-                inf[i] = new _Info { _name = cur.Name, _type = cur.ParameterType };
+                inf[i] = new Info { name = cur.Name, type = cur.ParameterType };
             }
 
             // Reference type
             var ins = Expression.New(con, arr);
             var del = Expression.Lambda<Func<object[], object>>(ins, ipt);
-            var res = new _DissoInfo { _func = del.Compile(), _args = inf };
+            var res = new DissoInfo { func = del.Compile(), args = inf };
 
-            return s_anon.GetValue(type, _Wrap(res).Value);
+            return s_anon.GetValue(type, Wrap(res).Value);
         }
 
-        internal static _DissoInfo _DissolveType(Type type, ConstructorInfo constructor)
+        private static DissoInfo _DissolveType(Type type, ConstructorInfo constructor)
         {
             var pro = type.GetProperties();
             var ins = (constructor == null) ? Expression.New(type) : Expression.New(constructor);
-            var inf = new List<_Info>();
+            var inf = new List<Info>();
             var met = new List<MethodInfo>();
 
             for (int i = 0; i < pro.Length; i++)
@@ -207,7 +181,7 @@ namespace Mikodev.Network
                 var arg = set.GetParameters();
                 if (arg == null || arg.Length != 1)
                     continue;
-                inf.Add(new _Info { _name = cur.Name, _type = cur.PropertyType });
+                inf.Add(new Info { name = cur.Name, type = cur.PropertyType });
                 met.Add(set);
             }
 
@@ -220,25 +194,22 @@ namespace Mikodev.Network
             for (int i = 0; i < inf.Count; i++)
             {
                 var idx = Expression.ArrayIndex(ipt, Expression.Constant(i));
-                var cvt = Expression.Convert(idx, inf[i]._type);
+                var cvt = Expression.Convert(idx, inf[i].type);
                 var set = Expression.Call(val, met[i], cvt);
                 exp.Add(set);
             }
 
-            var lbl = Expression.Label(typeof(object), "result");
             var cst = Expression.Convert(val, typeof(object));
-            var ret = Expression.Return(lbl, cst);
-            exp.Add(ret);
-            exp.Add(Expression.Label(lbl, Expression.Constant(null)));
+            exp.Add(cst);
 
             var blk = Expression.Block(new[] { val }, exp);
             var del = Expression.Lambda<Func<object[], object>>(blk, ipt);
 
-            var res = new _DissoInfo { _func = del.Compile(), _args = inf.ToArray() };
-            return s_anon.GetValue(type, _Wrap(res).Value);
+            var res = new DissoInfo { func = del.Compile(), args = inf.ToArray() };
+            return s_anon.GetValue(type, Wrap(res).Value);
         }
 
-        internal static _DissoInfo SetMethods(Type type)
+        internal static DissoInfo SetMethods(Type type)
         {
             if (s_anon.TryGetValue(type, out var val))
                 return val;
@@ -251,8 +222,15 @@ namespace Mikodev.Network
             return _DissolveAnonymousType(type);
         }
 
+        internal static IPacketConverter Converter<T>(ConverterDictionary dic, bool nothrow)
+        {
+            return Converter(typeof(T), dic, nothrow);
+        }
+
         internal static IPacketConverter Converter(Type type, ConverterDictionary dic, bool nothrow)
         {
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
             if (dic != null && dic.TryGetValue(type, out var val))
                 if (val == null)
                     goto fail;
@@ -265,7 +243,7 @@ namespace Mikodev.Network
             var res = _BuildConverter(type);
             if (res == null)
                 goto fail;
-            else return s_type.GetValue(type, _Wrap(res).Value);
+            else return s_type.GetValue(type, Wrap(res).Value);
 
             fail:
             if (nothrow == true)

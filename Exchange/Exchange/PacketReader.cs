@@ -4,48 +4,29 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
 {
-    /// <summary>
-    /// 数据包解析工具. Binary packet reader
-    /// </summary>
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
         internal _Element _spa;
         internal Dictionary<string, PacketReader> _dic = null;
         internal readonly ConverterDictionary _con = null;
 
-        /// <summary>
-        /// 创建对象并指定字节数组和转换器. Create reader with byte array and converters
-        /// </summary>
-        /// <param name="buffer">Binary data packet (Should be readonly)</param>
-        /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
             _spa = new _Element(buffer);
             _con = converters;
         }
 
-        /// <summary>
-        /// 创建对象并指定部分字节数组和转换器. Create reader with part of byte array and converters
-        /// </summary>
-        /// <param name="buffer">Binary data packet (Should be readonly)</param>
-        /// <param name="offset">Start index</param>
-        /// <param name="length">Packet length</param>
-        /// <param name="converters">Packet converters, use default converters if null</param>
         public PacketReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
             _spa = new _Element(buffer, offset, length);
             _con = converters;
         }
 
-        /// <summary>
-        /// Parse this packet (return false if error)
-        /// </summary>
         internal bool _Init()
         {
             if (_dic != null)
@@ -73,6 +54,9 @@ namespace Mikodev.Network
             return true;
         }
 
+        /// <summary>
+        /// <paramref name="key"/> not null
+        /// </summary>
         internal PacketReader _GetItem(string key, bool nothrow)
         {
             var res = _Init();
@@ -83,7 +67,10 @@ namespace Mikodev.Network
             throw new PacketException(res ? PacketError.PathError : PacketError.Overflow);
         }
 
-        internal PacketReader _SetItem(IEnumerable<string> keys, bool nothrow)
+        /// <summary>
+        /// <paramref name="keys"/> not null
+        /// </summary>
+        internal PacketReader _GetItem(IEnumerable<string> keys, bool nothrow)
         {
             var rdr = this;
             foreach (var i in keys)
@@ -92,78 +79,53 @@ namespace Mikodev.Network
             return rdr;
         }
 
-        /// <summary>
-        /// 子节点个数. Child node count
-        /// </summary>
         public int Count => _Init() ? _dic.Count : 0;
 
-        /// <summary>
-        /// 字节点标签集合. Child node keys
-        /// </summary>
         public IEnumerable<string> Keys => _Init() ? _dic.Keys : Enumerable.Empty<string>();
 
-        /// <summary>
-        /// 根据路径获取子节点. Get node by path
-        /// </summary>
-        /// <param name="path">Node path</param>
-        /// <param name="nothrow">return null if not found</param>
-        /// <param name="split">Path separators, use default separators if null</param>
-        [IndexerName("Node")]
-        public PacketReader this[string path, bool nothrow = false, char[] split = null] => _SetItem(path?.Split(split ?? _Extension.s_seps) ?? new[] { string.Empty }, nothrow);
+        public PacketReader this[string path, bool nothrow = false]
+        {
+            get
+            {
+                if (path == null)
+                    throw new ArgumentNullException(nameof(path));
+                var key = path.Split(_Extension.s_seps);
+                var val = _GetItem(key, nothrow);
+                return val;
+            }
+        }
 
-        /// <summary>
-        /// 根据标签获取子节点. Get node by key
-        /// </summary>
-        /// <param name="key">Node key</param>
-        /// <param name="nothrow">return null if not found</param>
-        public PacketReader Pull(string key, bool nothrow = false) => _GetItem(key ?? string.Empty, nothrow);
+        [Obsolete]
+        public PacketReader this[string path, bool nothrow, char[] split] => _GetItem(path?.Split(split ?? _Extension.s_seps), nothrow);
 
-        /// <summary>
-        /// 根据标签集合依序获取子节点. Get node by key collection
-        /// </summary>
-        /// <param name="keys">key collection</param>
-        /// <param name="nothrow">return null if not found</param>
+        [Obsolete]
+        public PacketReader Pull(string key, bool nothrow = false) => _GetItem(key, nothrow);
+
+        [Obsolete]
         public PacketReader Pull(string[] keys, bool nothrow = false)
         {
             if (keys == null)
                 throw new ArgumentNullException(nameof(keys));
             if (keys.Length < 1)
                 throw new ArgumentException("Key collection can not be empty!");
-            return _SetItem(keys, nothrow);
+            return _GetItem(keys, nothrow);
         }
 
-        /// <summary>
-        /// 从当前节点读取目标类型对象. Convert current node to target type object
-        /// </summary>
-        /// <param name="type">Target type</param>
+        [Obsolete]
         public object Pull(Type type) => _Caches.Converter(type, _con, false)._GetValueWrapError(_spa._buf, _spa._off, _spa._len, true);
 
-        /// <summary>
-        /// 从当前节点读取目标类型对象 (泛型). Convert current node to target type object
-        /// </summary>
-        /// <typeparam name="T">Target type</typeparam>
+        [Obsolete]
         public T Pull<T>() => _Caches.Converter(typeof(T), _con, false)._GetValueWrapErrorAuto<T>(_spa._buf, _spa._off, _spa._len, true);
 
-        /// <summary>
-        /// 复制当前节点部分的字节数组. Get byte array of current node
-        /// </summary>
+        [Obsolete]
         public byte[] PullList() => _spa._buf._ToBytes(_spa._off, _spa._len);
 
-        /// <summary>
-        /// 从当前节点读取目标类型对象集合. Convert current node to target type object collection
-        /// </summary>
-        /// <param name="type">Target type</param>
+        [Obsolete]
         public IEnumerable PullList(Type type) => new _Enumerable(this, type);
 
-        /// <summary>
-        /// 从当前节点读取目标类型对象集合 (泛型). Convert current node to target type object collection
-        /// </summary>
-        /// <typeparam name="T">Target type</typeparam>
+        [Obsolete]
         public IEnumerable<T> PullList<T>() => new _Enumerable<T>(this);
 
-        /// <summary>
-        /// 打印对象类型, 子节点个数和字节长度. Show byte count or node count
-        /// </summary>
         public override string ToString()
         {
             var stb = new StringBuilder(nameof(PacketReader));
@@ -198,23 +160,10 @@ namespace Mikodev.Network
             return false;
         }
 
-        /// <summary>
-        /// 反序列化当前节点. Deserialize current node
-        /// </summary>
-        /// <typeparam name="T">Target type</typeparam>
-        /// <param name="anonymous">Anonymous object</param>
         public T Deserialize<T>(T anonymous) => (T)_Deserialize(this, typeof(T));
 
-        /// <summary>
-        /// 反序列化当前节点. Deserialize current node
-        /// </summary>
-        /// <typeparam name="T">Target type</typeparam>
         public T Deserialize<T>() => (T)_Deserialize(this, typeof(T));
 
-        /// <summary>
-        /// 反序列化当前节点. Deserialize current node
-        /// </summary>
-        /// <param name="target">Target type</param>
         public object Deserialize(Type target)
         {
             if (target == null)
@@ -233,12 +182,12 @@ namespace Mikodev.Network
             var res = _Caches.SetMethods(type);
             if (res == null)
                 throw new PacketException(PacketError.InvalidType);
-            var arr = res._args;
-            var fun = res._func;
+            var arr = res.args;
+            var fun = res.func;
             var obj = new object[arr.Length];
 
             for (int i = 0; i < arr.Length; i++)
-                obj[i] = _Deserialize(reader._GetItem(arr[i]._name, false), arr[i]._type);
+                obj[i] = _Deserialize(reader._GetItem(arr[i].name, false), arr[i].type);
             var val = fun.Invoke(obj);
             return val;
         }

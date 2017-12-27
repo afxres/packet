@@ -53,17 +53,17 @@ namespace Mikodev.Testing
             var buf = wtr.GetBytes();
 
             var rea = new PacketReader(buf);
-            var ra = rea["a"].Pull<IPAddress>();
-            var rb = rea["b"].Pull<IPEndPoint>();
-            var rc = rea["c"].Pull<DateTime>();
-            var rd = rea["d"].Pull<string>();
-            var re = rea["e"].Pull<char>();
-            var rf = rea["f"].Pull<float>();
-            var rg = rea["g"].Pull<double>();
-            var rh = rea["h"].Pull<bool>();
-            var ri = rea["i"].Pull<decimal>();
-            var rj = rea["j"].Pull<TimeSpan>();
-            var rk = rea["k"].Pull<Guid>();
+            var ra = rea["a"].GetValue<IPAddress>();
+            var rb = rea["b"].GetValue<IPEndPoint>();
+            var rc = rea["c"].GetValue<DateTime>();
+            var rd = rea["d"].GetValue<string>();
+            var re = rea["e"].GetValue<char>();
+            var rf = rea["f"].GetValue<float>();
+            var rg = rea["g"].GetValue<double>();
+            var rh = rea["h"].GetValue<bool>();
+            var ri = rea["i"].GetValue<decimal>();
+            var rj = rea["j"].GetValue<TimeSpan>();
+            var rk = rea["k"].GetValue<Guid>();
 
             Assert.AreEqual(11, rea.Count);
             Assert.AreEqual(11, rea.Keys.Count());
@@ -79,11 +79,11 @@ namespace Mikodev.Testing
             Assert.AreEqual(j, rj);
             Assert.AreEqual(k, rk);
 
-            Assert.AreEqual(a, rea["a"].Pull(typeof(IPAddress)));
-            Assert.AreEqual(b, rea["b"].Pull(typeof(IPEndPoint)));
-            Assert.AreEqual(c, rea["c"].Pull(typeof(DateTime)));
-            Assert.AreEqual(j, rea["j"].Pull(typeof(TimeSpan)));
-            Assert.AreEqual(k, rea["k"].Pull(typeof(Guid)));
+            Assert.AreEqual(a, rea["a"].GetValue(typeof(IPAddress)));
+            Assert.AreEqual(b, rea["b"].GetValue(typeof(IPEndPoint)));
+            Assert.AreEqual(c, rea["c"].GetValue(typeof(DateTime)));
+            Assert.AreEqual(j, rea["j"].GetValue(typeof(TimeSpan)));
+            Assert.AreEqual(k, rea["k"].GetValue(typeof(Guid)));
         }
 
         [TestMethod]
@@ -110,14 +110,14 @@ namespace Mikodev.Testing
             var buf = wtr.GetBytes();
 
             var rdr = new PacketReader(buf);
-            var ri8 = rdr["a"].Pull<sbyte>();
-            var ru8 = rdr["b"].Pull<byte>();
-            var ri16 = rdr["c"].Pull<short>();
-            var ru16 = rdr["d"].Pull<ushort>();
-            var ri32 = rdr["e"].Pull<int>();
-            var ru32 = rdr["f"].Pull<uint>();
-            var ri64 = rdr["g"].Pull<long>();
-            var ru64 = rdr["h"].Pull<ulong>();
+            var ri8 = rdr["a"].GetValue<sbyte>();
+            var ru8 = rdr["b"].GetValue<byte>();
+            var ri16 = rdr["c"].GetValue<short>();
+            var ru16 = rdr["d"].GetValue<ushort>();
+            var ri32 = rdr["e"].GetValue<int>();
+            var ru32 = rdr["f"].GetValue<uint>();
+            var ri64 = rdr["g"].GetValue<long>();
+            var ru64 = rdr["h"].GetValue<ulong>();
 
             Assert.AreEqual(8, rdr.Count);
             Assert.AreEqual(8, rdr.Keys.Count());
@@ -144,9 +144,9 @@ namespace Mikodev.Testing
                 GetBytes();
 
             var rea = new PacketReader(buf);
-            var ra = rea["a"].Pull(typeof(int));
-            var rb = rea["b"].Pull(typeof(string));
-            var rc = rea["c"].PullList(typeof(decimal));
+            var ra = rea["a"].GetValue(typeof(int));
+            var rb = rea["b"].GetValue(typeof(string));
+            var rc = rea["c"].GetEnumerable(typeof(decimal));
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
             ThrowIfNotSequenceEqual(c, rc.Cast<decimal>());
@@ -171,13 +171,13 @@ namespace Mikodev.Testing
             var buf = wtr.GetBytes();
 
             var rdr = new PacketReader(buf);
-            var ra = rdr["byte"].Pull<byte[]>();
-            var ral = rdr["byte"].PullList();
-            var rb = rdr["ints"].PullList<string>();
-            var rc = rdr["buffer"].PullList<byte[]>();
+            var ra = rdr["byte"].GetValue<byte[]>();
+            var ral = rdr["byte"].GetBytes();
+            var rb = rdr["ints"].GetEnumerable<string>();
+            var rc = rdr["buffer"].GetEnumerable<byte[]>();
 
-            var rax = rdr["byte"].PullList(typeof(byte));
-            var rbx = rdr["ints"].PullList(typeof(string));
+            var rax = rdr["byte"].GetEnumerable(typeof(byte));
+            var rbx = rdr["ints"].GetEnumerable(typeof(string));
 
             Assert.AreEqual(3, rdr.Count);
             Assert.AreEqual(3, rdr.Keys.Count());
@@ -272,10 +272,10 @@ namespace Mikodev.Testing
 
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
-            var ra = rea["a"].Pull<int>();
-            var rb = rea["obj/b"].Pull<string>();
-            var rc = rea["c"].PullList<byte>();
-            var rd = rea["obj/d"].PullList<int>();
+            var ra = rea["a"].GetValue<int>();
+            var rb = rea["obj/b"].GetValue<string>();
+            var rc = rea["c"].GetEnumerable<byte>();
+            var rd = rea["obj/d"].GetEnumerable<int>();
 
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
@@ -293,20 +293,16 @@ namespace Mikodev.Testing
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
 
-            Assert.AreEqual(a, rea[@"a/a"].Pull<int>());
-            Assert.AreEqual(a, rea[@"a\a"].Pull<int>());
-            Assert.AreEqual(a, rea["a.a", split: new[] { '.' }].Pull<int>());
-            Assert.AreEqual(a, rea.Pull(new[] { "a", "a" }).Pull<int>());
-            Assert.AreEqual(a, rea.Pull("a").Pull("a").Pull<int>());
+            Assert.AreEqual(a, rea[@"a/a"].GetValue<int>());
+            Assert.AreEqual(a, rea[@"a\a"].GetValue<int>());
+            Assert.AreEqual(a, rea.GetItem(new[] { "a", "a" }).GetValue<int>());
+            Assert.AreEqual(a, rea.GetItem("a").GetItem("a").GetValue<int>());
 
             Assert.AreEqual(null, rea["b/a", true]);
             Assert.AreEqual(null, rea["a/b", true]);
-            Assert.AreEqual(null, rea.Pull("b", true));
-            Assert.AreEqual(null, rea.Pull(new[] { "a", "b" }, true));
-            Assert.AreEqual(null, rea.Pull("a").Pull("b", true));
-
-            Assert.AreEqual(null, rea[null, true]);
-            Assert.AreEqual(null, rea.Pull(default(string), true));
+            Assert.AreEqual(null, rea.GetItem("b", true));
+            Assert.AreEqual(null, rea.GetItem(new[] { "a", "b" }, true));
+            Assert.AreEqual(null, rea.GetItem("a").GetItem("b", true));
 
             try
             {
@@ -320,7 +316,7 @@ namespace Mikodev.Testing
 
             try
             {
-                var ta = rea.Pull("b").Pull("a");
+                var ta = rea.GetItem("b").GetItem("a");
                 Assert.Fail();
             }
             catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError)
@@ -350,10 +346,10 @@ namespace Mikodev.Testing
 
             Assert.AreEqual(dic.Count, rea.Count);
             Assert.AreEqual(dic.Count, rea.Keys.Count());
-            Assert.AreEqual(a, rea["a"].Pull<int>());
-            Assert.AreEqual(b, rea["b"].Pull<string>());
-            Assert.AreEqual(a, rea["c/a"].Pull<int>());
-            Assert.AreEqual(b, rea["c/b"].Pull<string>());
+            Assert.AreEqual(a, rea["a"].GetValue<int>());
+            Assert.AreEqual(b, rea["b"].GetValue<string>());
+            Assert.AreEqual(a, rea["c/a"].GetValue<int>());
+            Assert.AreEqual(b, rea["c/b"].GetValue<string>());
         }
 
         [TestMethod]
@@ -367,8 +363,8 @@ namespace Mikodev.Testing
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
 
-            Assert.AreEqual(a, rea["a"].PullList<int>().First());
-            Assert.AreEqual(b, rea["b"].PullList<DateTime>().First());
+            Assert.AreEqual(a, rea["a"].GetEnumerable<int>().First());
+            Assert.AreEqual(b, rea["b"].GetEnumerable<DateTime>().First());
         }
 
         [TestMethod]
@@ -379,7 +375,7 @@ namespace Mikodev.Testing
             wtr.Push("a", a);
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
-            Assert.AreEqual(a, rea["a"].Pull<DayOfWeek>());
+            Assert.AreEqual(a, rea["a"].GetValue<DayOfWeek>());
         }
 
         [TestMethod]
@@ -397,11 +393,11 @@ namespace Mikodev.Testing
             var sb = new PacketReader(tb);
             var sc = new PacketReader(tc);
 
-            Assert.AreEqual(a, sa.Pull<int>());
+            Assert.AreEqual(a, sa.GetValue<int>());
             Assert.AreEqual(a, BitConverter.ToInt32(ta, 0));
-            Assert.AreEqual(b, sb.Pull<string>());
+            Assert.AreEqual(b, sb.GetValue<string>());
             Assert.AreEqual(b, Encoding.UTF8.GetString(tb));
-            ThrowIfNotSequenceEqual(c, sc.PullList<int>());
+            ThrowIfNotSequenceEqual(c, sc.GetEnumerable<int>());
         }
 
         [TestMethod]
@@ -413,7 +409,7 @@ namespace Mikodev.Testing
 
             var rea = new PacketReader(buf);
             var ra = rea["invalid", true];
-            var rb = rea.Pull("invalid", true);
+            var rb = rea.GetItem("invalid", true);
 
             Assert.AreEqual(0, rea.Count);
             Assert.AreEqual(0, rea.Keys.Count());
@@ -432,7 +428,7 @@ namespace Mikodev.Testing
 
             try
             {
-                var ta = rea.Pull("invalid");
+                var ta = rea.GetItem("invalid");
                 Assert.Fail();
             }
             catch (PacketException ex) when (ex.ErrorCode == PacketError.Overflow)
@@ -505,8 +501,8 @@ namespace Mikodev.Testing
                     Push(b));
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
-            var ra = rea["a"].Pull<int>();
-            var rb = rea["b"].Pull<string>();
+            var ra = rea["a"].GetValue<int>();
+            var rb = rea["b"].GetValue<string>();
             var rc = new PacketRawReader(rea["c"]);
             var rca = rc.Pull<int>();
             var rcb = rc.Pull<string>();

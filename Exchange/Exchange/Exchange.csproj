@@ -21,7 +21,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\Mikodev.Exchange.xml</DocumentationFile>
+    <DocumentationFile>
+    </DocumentationFile>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
     <LangVersion>7</LangVersion>
@@ -33,7 +34,8 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\Mikodev.Exchange.xml</DocumentationFile>
+    <DocumentationFile>
+    </DocumentationFile>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
     <LangVersion>7</LangVersion>
@@ -45,6 +47,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IPacketConverter.cs" />
+    <Compile Include="PacketConvert.cs" />
+    <Compile Include="PacketConvert.Reader.cs" />
     <Compile Include="PacketRawReader.cs" />
     <Compile Include="PacketRawWriter.cs" />
     <Compile Include="PacketWriter.ThreadStatic.cs" />

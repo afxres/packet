@@ -253,12 +253,12 @@ namespace Mikodev.Network
         internal static void _SerializeViaGetMethods(ItemDirectory items, object val, ConverterDictionary cons, int lev)
         {
             var inf = _Caches.GetMethods(val.GetType());
-            var fun = inf._func;
-            var arg = inf._args;
+            var fun = inf.func;
+            var arg = inf.args;
             var res = new object[arg.Length];
             fun.Invoke(val, res);
             for (int i = 0; i < arg.Length; i++)
-                items[arg[i]._name] = _Serialize(res[i], cons, lev + 1);
+                items[arg[i].name] = _Serialize(res[i], cons, lev + 1);
             return;
         }
 

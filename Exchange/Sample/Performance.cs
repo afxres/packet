@@ -49,7 +49,7 @@ namespace Mikodev.Test
                     for (int i = 0; i < max; i++)
                     {
                         var buf = PacketWriter.Serialize(i).GetBytes();
-                        var res = new PacketReader(buf).Pull<int>();
+                        var res = new PacketReader(buf).GetValue<int>();
                     }
                 }
 
@@ -72,7 +72,7 @@ namespace Mikodev.Test
                             data = i,
                         };
                         var buf = PacketWriter.Serialize(obj).GetBytes();
-                        var res = new PacketReader(buf)["data"].Pull<int>();
+                        var res = new PacketReader(buf)["data"].GetValue<int>();
                     }
                 }
 
@@ -81,7 +81,7 @@ namespace Mikodev.Test
                     for (int i = 0; i < max; i++)
                     {
                         var buf = new PacketWriter().Push("some", i).GetBytes();
-                        var res = new PacketReader(buf)["some"].Pull<int>();
+                        var res = new PacketReader(buf)["some"].GetValue<int>();
                     }
                 }
             }

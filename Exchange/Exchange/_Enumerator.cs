@@ -20,9 +20,9 @@ namespace Mikodev.Network
 
         public bool MoveNext()
         {
-            if (_spa._End())
+            if (_spa.End())
                 return false;
-            _cur = _spa._Next(_con);
+            _cur = _spa.Next(_con);
             return true;
         }
 

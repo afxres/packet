@@ -41,7 +41,7 @@ namespace Mikodev.Network
         /// <summary>
         /// 是否可以继续读取. Current index is not at the end of the buffer
         /// </summary>
-        public bool Any => _spa._Any();
+        public bool Any => _spa.Any();
 
         /// <summary>
         /// 读取一个目标类型对象. Get value with target type
@@ -49,7 +49,7 @@ namespace Mikodev.Network
         public object Pull(Type type)
         {
             var con = _Caches.Converter(type, _con, false);
-            var res = _spa._Next(con);
+            var res = _spa.Next(con);
             return res;
         }
 
@@ -59,7 +59,7 @@ namespace Mikodev.Network
         public T Pull<T>()
         {
             var con = _Caches.Converter(typeof(T), _con, false);
-            var res = _spa._NextAuto<T>(con);
+            var res = _spa.NextAuto<T>(con);
             return res;
         }
 

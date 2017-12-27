@@ -38,9 +38,9 @@ namespace Mikodev.Network
             _max = offset + length;
         }
 
-        internal bool _End() => _idx >= _max;
+        internal bool End() => _idx >= _max;
 
-        internal bool _Any() => _idx < _max;
+        internal bool Any() => _idx < _max;
 
         internal void _EnsureNext(int def, out int pos, out int len)
         {
@@ -51,7 +51,7 @@ namespace Mikodev.Network
             len = def;
         }
 
-        internal object _Next(IPacketConverter con)
+        internal object Next(IPacketConverter con)
         {
             _EnsureNext(con.Length, out var pos, out var len);
             var res = con._GetValueWrapError(_buf, pos, len, false);
@@ -59,7 +59,7 @@ namespace Mikodev.Network
             return res;
         }
 
-        internal T _NextGeneric<T>(IPacketConverter<T> con)
+        internal T NextGeneric<T>(IPacketConverter<T> con)
         {
             _EnsureNext(con.Length, out var pos, out var len);
             var res = con._GetValueWrapErrorGeneric(_buf, pos, len, false);
@@ -67,7 +67,7 @@ namespace Mikodev.Network
             return res;
         }
 
-        internal T _NextAuto<T>(IPacketConverter con)
+        internal T NextAuto<T>(IPacketConverter con)
         {
             _EnsureNext(con.Length, out var pos, out var len);
             var res = con._GetValueWrapErrorAuto<T>(_buf, pos, len, false);
@@ -147,6 +147,40 @@ namespace Mikodev.Network
                 throw _ConvertError(ex);
             }
             return arr;
+        }
+
+        internal List<T> List<T>(IPacketConverter con)
+        {
+            var res = _BuildCollection<T>(con);
+            if (res == null)
+                return new List<T>();
+            if (res is T[] arr)
+                return new List<T>(arr);
+            if (res is List<T> lst)
+                return lst;
+            throw new InvalidOperationException();
+        }
+
+        internal T[] Array<T>(IPacketConverter con)
+        {
+            var res = _BuildCollection<T>(con);
+            if (res == null)
+                return new T[0];
+            if (res is T[] arr)
+                return arr;
+            if (res is List<T> lst)
+                return lst.ToArray();
+            throw new InvalidOperationException();
+        }
+
+        internal byte[] GetBytes()
+        {
+            return _buf._ToBytes(_off, _len);
+        }
+
+        internal sbyte[] GetSBytes()
+        {
+            return _buf._ToSBytes(_off, _len);
         }
     }
 }

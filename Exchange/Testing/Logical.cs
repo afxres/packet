@@ -96,7 +96,7 @@ namespace Mikodev.Testing
             var buf = pkt.GetBytes();
 
             var rea = new PacketReader(buf);
-            Assert.AreEqual(msg, rea[nameof(Exception.Message)].Pull<string>());
+            Assert.AreEqual(msg, rea[nameof(Exception.Message)].GetValue<string>());
         }
 
         [TestMethod]
@@ -120,8 +120,8 @@ namespace Mikodev.Testing
                         var pkt = PacketWriter.Serialize(obj);
                         var buf = pkt.GetBytes();
                         var rea = new PacketReader(buf);
-                        Assert.AreEqual(idx, rea["task"].Pull<int>());
-                        Assert.AreEqual(k, rea["data"].Pull<int>());
+                        Assert.AreEqual(idx, rea["task"].GetValue<int>());
+                        Assert.AreEqual(k, rea["data"].GetValue<int>());
                     }
                 }));
             }
@@ -195,7 +195,7 @@ namespace Mikodev.Testing
             var buf = pkt.GetBytes();
             var rea = new PacketReader(buf);
             var obj = rea.Deserialize<_WriteOnly>();
-            var val = rea.Pull(nameof(_WriteOnly.Value), true);
+            var val = rea.GetItem(nameof(_WriteOnly.Value), true);
 
             Assert.AreEqual(val, null);
         }

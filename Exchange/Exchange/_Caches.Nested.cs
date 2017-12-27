@@ -4,31 +4,30 @@ namespace Mikodev.Network
 {
     partial class _Caches
     {
-        internal struct _Info
+        internal struct Info
         {
-            internal string _name;
-            internal Type _type;
+            internal string name;
+            internal Type type;
         }
 
-        internal sealed class _SolveInfo
+        internal sealed class SolveInfo
         {
-            internal Action<object, object[]> _func;
-            internal _Info[] _args;
+            internal Action<object, object[]> func;
+            internal Info[] args;
         }
 
-        internal sealed class _DissoInfo
+        internal sealed class DissoInfo
         {
-            internal Func<object[], object> _func;
-            internal _Info[] _args;
+            internal Func<object[], object> func;
+            internal Info[] args;
         }
 
-        internal sealed class _Wrapper<T>
+        internal sealed class Wrapper<T>
         {
-            internal T _val;
-
-            internal T Value(object _) => _val;
+            internal T val;
+            internal T Value(object _) => val;
         }
 
-        internal static _Wrapper<T> _Wrap<T>(T val) => new _Wrapper<T> { _val = val };
+        internal static Wrapper<T> Wrap<T>(T val) => new Wrapper<T> { val = val };
     }
 }
