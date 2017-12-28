@@ -57,8 +57,8 @@ namespace Mikodev.Test
                 {
                     for (int i = 0; i < max; i++)
                     {
-                        var buf = new PacketRawWriter().Push(i).GetBytes();
-                        var res = new PacketRawReader(buf).Pull<int>();
+                        var buf = new PacketRawWriter().SetValue(i).GetBytes();
+                        var res = new PacketRawReader(buf).GetValue<int>();
                     }
                 }
 

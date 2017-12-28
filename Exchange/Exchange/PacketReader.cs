@@ -142,12 +142,17 @@ namespace Mikodev.Network
         {
             var val = default(object);
             var con = default(IPacketConverter);
-            if ((con = _Caches.Converter(type, _con, true)) != null)
+
+            if (type == typeof(PacketReader))
+                val = this;
+            else if (type == typeof(PacketRawReader))
+                val = new PacketRawReader(this);
+            else if ((con = _Caches.Converter(type, _con, true)) != null)
                 val = con._GetValueWrapError(_spa._buf, _spa._off, _spa._len, true);
-            else if (type._IsEnumerable(out var inn))
-                val = _Caches.Enumerable(this, inn);
-            else if (type._IsArray(out inn))
+            else if (type._IsArray(out var inn))
                 val = _Caches.Array(this, inn);
+            else if (type._IsEnumerable(out inn))
+                val = _Caches.Enumerable(this, inn);
             else if (type._IsList(out inn))
                 val = _Caches.List(this, inn);
             else goto fail;
@@ -175,7 +180,6 @@ namespace Mikodev.Network
         {
             if (type == typeof(object))
                 return reader;
-
             if (reader._Convert(type, out var ret))
                 return ret;
 

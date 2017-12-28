@@ -73,7 +73,7 @@ namespace Mikodev.Network
         internal PacketWriter _GetBytes(IPacketConverter con, IEnumerable val)
         {
             var hea = con.Length < 1;
-            var mst = _GetStream();
+            var mst = PacketConvert.GetStream();
             foreach (var i in val)
                 mst._WriteOpt(con._GetBytesWrapError(i), hea);
             _obj = mst.ToArray();
@@ -84,7 +84,7 @@ namespace Mikodev.Network
         {
             var con = _Caches.Converter(typeof(T), _con, false);
             var hea = con.Length < 1;
-            var mst = _GetStream();
+            var mst = PacketConvert.GetStream();
             if (con is IPacketConverter<T> res)
                 foreach (var i in val)
                     mst._WriteOpt(res._GetBytesWrapError(i), hea);
@@ -121,7 +121,7 @@ namespace Mikodev.Network
             var dic = _obj as ItemDirectory;
             if (dic == null)
                 return new byte[0];
-            var mst = _GetStream();
+            var mst = PacketConvert.GetStream();
             _GetBytes(mst, dic, 0);
             var res = mst.ToArray();
             return res;
@@ -193,9 +193,14 @@ namespace Mikodev.Network
                 wtr = new PacketWriter(cons) { _obj = con._GetBytesWrapError(val) };
             else if (val.GetType()._IsImplOfEnumerable(out var inn) && (con = _Caches.Converter(inn, cons, true)) != null)
                 wtr = new PacketWriter(cons)._GetBytes(con, (IEnumerable)val);
+            else goto fail;
 
             value = wtr;
-            return wtr != null;
+            return true;
+
+            fail:
+            value = null;
+            return false;
         }
 
         internal static PacketWriter _Serialize(object val, ConverterDictionary cons, int lev)
@@ -228,6 +233,8 @@ namespace Mikodev.Network
             return;
         }
 
-        public static PacketWriter Serialize(object obj, ConverterDictionary converters = null) => _Serialize(obj, converters, 0);
+        public static PacketWriter Serialize(object value, ConverterDictionary converters = null) => _Serialize(value, converters, 0);
+
+        public static PacketWriter Serialize(IDictionary<string, object> dictionary, ConverterDictionary converters = null) => Serialize((object)dictionary, converters);
     }
 }

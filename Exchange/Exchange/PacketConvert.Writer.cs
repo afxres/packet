@@ -6,7 +6,7 @@ namespace Mikodev.Network
 {
     partial class PacketConvert
     {
-        public static PacketWriter SetValue(this PacketWriter writer, string key, Type type, object value)
+        public static PacketWriter SetValue(this PacketWriter writer, string key, object value, Type type)
         {
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(type);
@@ -72,7 +72,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._con) { _obj = another._obj };
+            itm[key] = new PacketWriter(writer._con) { _obj = another?._obj };
             return writer;
         }
 

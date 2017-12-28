@@ -138,8 +138,8 @@ namespace Mikodev.Testing
             var b = "test";
             var c = new[] { 1.1M, 2.2M };
             var buf = new PacketWriter().
-                SetValue("a", typeof(int), a).
-                SetValue("b", typeof(string), b).
+                SetValue("a", a, typeof(int)).
+                SetValue("b", b, typeof(string)).
                 SetEnumerable("c", typeof(decimal), c).
                 GetBytes();
 
@@ -401,6 +401,28 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void SerializeDirectly()
+        {
+            var a = 1;
+            var b = "Sample text.";
+            var c = new[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+
+            var ta = PacketConvert.Serialize(a);
+            var tb = PacketConvert.Serialize(b);
+            var tc = PacketConvert.Serialize(c);
+
+            var sa = PacketConvert.GetValue<int>(ta);
+            var sb = PacketConvert.GetValue(tb, typeof(string)) as string;
+            var sc = new PacketReader(tc);
+
+            Assert.AreEqual(a, sa);
+            Assert.AreEqual(a, BitConverter.ToInt32(ta, 0));
+            Assert.AreEqual(b, sb);
+            Assert.AreEqual(b, Encoding.UTF8.GetString(tb));
+            ThrowIfNotSequenceEqual(c, sc.GetEnumerable<int>());
+        }
+
+        [TestMethod]
         public void Invalid()
         {
             var buf = new byte[1024];
@@ -445,7 +467,7 @@ namespace Mikodev.Testing
             var rea = new PacketRawReader(new PacketReader(arr));
             var res = new List<int>();
             while (rea.Any)
-                res.Add(rea.Pull<int>());
+                res.Add(rea.GetValue<int>());
 
             ThrowIfNotSequenceEqual(src, res);
         }
@@ -455,17 +477,17 @@ namespace Mikodev.Testing
         {
             var a = "Hello, world!";
             var b = 0xFF;
-            var res = new PacketRawWriter().Push(a).Push(b).GetBytes();
+            var res = new PacketRawWriter().SetValue(a).SetValue(b).GetBytes();
 
             var rea = new PacketRawReader(res, 0, res.Length);
-            var ra = rea.Pull<string>();
-            var rb = rea.Pull<int>();
+            var ra = rea.GetValue<string>();
+            var rb = rea.GetValue<int>();
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
 
             rea.Reset();
-            Assert.AreEqual(a, rea.Pull(typeof(string)));
-            Assert.AreEqual(b, rea.Pull(typeof(int)));
+            Assert.AreEqual(a, rea.GetValue(typeof(string)));
+            Assert.AreEqual(b, rea.GetValue(typeof(int)));
         }
 
         [TestMethod]
@@ -473,7 +495,7 @@ namespace Mikodev.Testing
         {
             var a = "Hello, world!";
             var b = 0xFF;
-            var raw = new PacketRawWriter().Push(typeof(string), a).Push(typeof(int), b);
+            var raw = new PacketRawWriter().SetValue(a, typeof(string)).SetValue(b, typeof(int));
             var wtr = new PacketWriter() as dynamic;
             wtr.a = a;
             wtr.b = b;
@@ -482,8 +504,8 @@ namespace Mikodev.Testing
 
             var src = new PacketReader(res) as dynamic;
             var rea = new PacketRawReader(src.raw); // PacketReader or byte[]? Both of them can work
-            var ra = rea.Pull<string>();
-            var rb = rea.Pull<int>();
+            var ra = rea.GetValue<string>();
+            var rb = rea.GetValue<int>();
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
         }
@@ -497,15 +519,15 @@ namespace Mikodev.Testing
                 SetValue("a", a).
                 SetValue("b", b).
                 SetItem("c", new PacketRawWriter().
-                    Push(a).
-                    Push(b));
+                    SetValue(a).
+                    SetValue(b));
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
             var ra = rea["a"].GetValue<int>();
             var rb = rea["b"].GetValue<string>();
             var rc = new PacketRawReader(rea["c"]);
-            var rca = rc.Pull<int>();
-            var rcb = rc.Pull<string>();
+            var rca = rc.GetValue<int>();
+            var rcb = rc.GetValue<string>();
 
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);

@@ -27,8 +27,7 @@ namespace Mikodev.Network
             var rea = (PacketReader)Value;
             var typ = binder.Type;
             if (rea._Convert(typ, out var val) == false)
-                return base.BindConvert(binder);
-
+                throw new PacketException(PacketError.InvalidType);
             var exp = Expression.Constant(val);
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }

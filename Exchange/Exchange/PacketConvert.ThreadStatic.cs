@@ -3,20 +3,20 @@ using System.IO;
 
 namespace Mikodev.Network
 {
-    partial class PacketWriter
+    partial class PacketConvert
     {
-        internal const int _StreamLength = 1024;
+        internal const int _InitialLength = 1024;
 
         [ThreadStatic]
         internal static WeakReference s_stream;
 
-        internal static MemoryStream _GetStream()
+        internal static MemoryStream GetStream()
         {
             var val = default(MemoryStream);
             var mst = s_stream;
             if (mst == null)
             {
-                val = new MemoryStream(_StreamLength);
+                val = new MemoryStream(_InitialLength);
                 s_stream = new WeakReference(val);
                 return val;
             }
@@ -29,7 +29,7 @@ namespace Mikodev.Network
                 return val;
             }
 
-            val = new MemoryStream(_StreamLength);
+            val = new MemoryStream(_InitialLength);
             mst.Target = val;
             return val;
         }

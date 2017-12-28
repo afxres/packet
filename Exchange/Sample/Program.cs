@@ -16,9 +16,9 @@ namespace Mikodev.Test
             {
                 var endpoint = new IPEndPoint(IPAddress.Any, IPEndPoint.MinPort);
                 var bytes = server.EndReceive(r, ref endpoint);
-                var reader = new PacketReader(bytes);
+
                 // Deserialize anonymous object
-                var value = reader.Deserialize(new
+                var value = PacketConvert.Deserialize(bytes, new
                 {
                     id = 0,
                     name = string.Empty,
@@ -38,7 +38,7 @@ namespace Mikodev.Test
             }, null);
 
             // Serialize an anonymous object.
-            var buffer = PacketWriter.Serialize(new
+            var buffer = PacketConvert.Serialize(new
             {
                 id = 1,
                 name = "sharp",
@@ -47,7 +47,7 @@ namespace Mikodev.Test
                     token = Guid.NewGuid(),
                     timestamp = DateTime.Now,
                 }
-            }).GetBytes();
+            });
 
             var client = new UdpClient();
             client.Send(buffer, buffer.Length, new IPEndPoint(IPAddress.Loopback, port));

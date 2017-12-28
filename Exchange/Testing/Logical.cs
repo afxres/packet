@@ -69,7 +69,7 @@ namespace Mikodev.Testing
 
             try
             {
-                var buf = new PacketRawWriter(con).Push(val);
+                var buf = new PacketRawWriter(con).SetValue(val);
                 Assert.Fail();
             }
             catch (PacketException ex) when (ex.ErrorCode == PacketError.ConvertError && ex.InnerException.Message == _Converter._BytesErr)
@@ -79,7 +79,7 @@ namespace Mikodev.Testing
 
             try
             {
-                var res = new PacketRawReader(new byte[4], con).Pull<_Ref>();
+                var res = new PacketRawReader(new byte[4], con).GetValue<_Ref>();
             }
             catch (Exception ex) when (ex.Message == _Converter._ValueErr)
             {

@@ -20,7 +20,7 @@ namespace Mikodev.Network
 
         internal _Element(byte[] buffer)
         {
-            _buf = buffer ?? throw new ArgumentNullException();
+            _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             _off = 0;
             _idx = 0;
             _len = buffer.Length;
@@ -29,7 +29,7 @@ namespace Mikodev.Network
 
         internal _Element(byte[] buffer, int offset, int length)
         {
-            _buf = buffer ?? throw new ArgumentNullException();
+            _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             if (offset < 0 || length < 0 || buffer.Length - offset < length)
                 throw new ArgumentOutOfRangeException();
             _off = offset;
