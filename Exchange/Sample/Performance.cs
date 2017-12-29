@@ -21,9 +21,23 @@ namespace Mikodev.Test
             };
 
             const int max = 1 << 20;
-            const int loop = 16;
+            const int loop = 10;
 
-            // time cost in release mode
+            var ano = new
+            {
+                num = 1024,
+                str = "string",
+                arr = new[] { 7, 11, 555, 1313 },
+                sub = new
+                {
+                    sum = 2.2D,
+                    lst = new List<string> { "one", "two", "three" },
+                }
+            };
+
+            var tmp = PacketConvert.Serialize(ano);
+
+            // release mode
             for (int idx = 0; idx < loop; idx++)
             {
                 using (new TraceWatch("Box and unbox")) // 0.28 ms
@@ -35,7 +49,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("BitConverter")) // 8.40 ms
+                using (new TraceWatch("BitConverter")) // 8.00 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -44,7 +58,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Serialize")) // 133.79 ms, avg
+                using (new TraceWatch("Serialize object")) // 138.64 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -53,7 +67,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("PacketRawWriter<>")) // 153.51 ms, best (unstable)
+                using (new TraceWatch("PacketRawWriter<>")) // 182.63 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -62,26 +76,36 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Serialize (anonymous)")) // 936.41 ms, avg | 919.67 ms (thread static)
-                {
-
-                    for (int i = 0; i < max; i++)
-                    {
-                        var obj = new
-                        {
-                            data = i,
-                        };
-                        var buf = PacketWriter.Serialize(obj).GetBytes();
-                        var res = new PacketReader(buf)["data"].GetValue<int>();
-                    }
-                }
-
-                using (new TraceWatch("PacketWriter<>")) // 676.06 ms, avg | 646.73 ms (thread static)
+                using (new TraceWatch("PacketWriter<>")) // 639.415 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
                         var buf = new PacketWriter().SetValue("some", i).GetBytes();
                         var res = new PacketReader(buf)["some"].GetValue<int>();
+                    }
+                }
+
+                using (new TraceWatch("PacketWriter.Serialize")) // 4825.12 ms, avg
+                {
+                    for (int i = 0; i < max; i++)
+                    {
+                        var _ = PacketWriter.Serialize(ano).GetBytes();
+                    }
+                }
+
+                using (new TraceWatch("PacketConvert.Serialize")) // 4280.60 ms, avg
+                {
+                    for (int i = 0; i < max; i++)
+                    {
+                        var _ = PacketConvert.Serialize(ano);
+                    }
+                }
+
+                using (new TraceWatch("Deserialize (anonymous)")) // 3272.76 ms, avg
+                {
+                    for (int i = 0; i < max; i++)
+                    {
+                        var _ = PacketConvert.Deserialize(tmp, ano);
                     }
                 }
             }
@@ -90,11 +114,15 @@ namespace Mikodev.Test
             {
                 var key = i.Key;
                 var val = i.Value;
-                if (val.Count > 5)
-                    val.RemoveRange(0, 4);
+                if (val.Count > 4)
+                    val.RemoveRange(0, 2);
                 var sum = val.Select(r => r.Ticks).Sum();
-                var avg = new TimeSpan(sum / val.Count);
-                Console.WriteLine($"{key,-24} | total: {new TimeSpan(sum).TotalMilliseconds,10:0.000} ms | avg: {avg.TotalMilliseconds,10:0.000} ms");
+                var cir = new TimeSpan(sum / val.Count);
+                var avg = new TimeSpan(1000 * sum / val.Count / max);
+                Console.WriteLine($"{key,-24} | " +
+                    $"total: {new TimeSpan(sum).TotalMilliseconds,10:0.000} ms | " +
+                    $"loop: {cir.TotalMilliseconds,10:0.000} ms | " +
+                    $"avg: {avg.TotalMilliseconds,10:0.0000} ns");
             }
         }
     }

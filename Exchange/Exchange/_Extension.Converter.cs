@@ -122,7 +122,7 @@ namespace Mikodev.Network
             }
         }
 
-        internal static byte[] _GetBytesWrapError<T>(this IPacketConverter<T> con, T val)
+        internal static byte[] _GetBytesWrapErrorGeneric<T>(this IPacketConverter<T> con, T val)
         {
             try
             {

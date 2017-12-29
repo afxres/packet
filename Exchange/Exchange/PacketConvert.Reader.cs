@@ -10,7 +10,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(reader);
-            var con = _Caches.Converter(type, reader._con, false);
+            var con = _Caches.Converter(reader._cvt, type, false);
             var val = con._GetValueWrapError(reader._spa, true);
             return val;
         }
@@ -18,7 +18,7 @@ namespace Mikodev.Network
         public static T GetValue<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.Converter<T>(reader._con, false);
+            var con = _Caches.Converter<T>(reader._cvt, false);
             var val = con._GetValueWrapErrorAuto<T>(reader._spa, true);
             return val;
         }
@@ -45,7 +45,7 @@ namespace Mikodev.Network
         public static T[] GetArray<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.Converter<T>(reader._con, false);
+            var con = _Caches.Converter<T>(reader._cvt, false);
             var val = reader._spa.Array<T>(con);
             return val;
         }
@@ -53,7 +53,7 @@ namespace Mikodev.Network
         public static List<T> GetList<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.Converter<T>(reader._con, false);
+            var con = _Caches.Converter<T>(reader._cvt, false);
             var val = reader._spa.List<T>(con);
             return val;
         }

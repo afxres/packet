@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -12,24 +11,24 @@ namespace Mikodev.Network
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
         internal _Element _spa;
-        internal Dictionary<string, PacketReader> _dic = null;
-        internal readonly ConverterDictionary _con = null;
+        internal Dictionary<string, PacketReader> _itm = null;
+        internal readonly ConverterDictionary _cvt = null;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
             _spa = new _Element(buffer);
-            _con = converters;
+            _cvt = converters;
         }
 
         public PacketReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
             _spa = new _Element(buffer, offset, length);
-            _con = converters;
+            _cvt = converters;
         }
 
         internal bool _Init()
         {
-            if (_dic != null)
+            if (_itm != null)
                 return true;
             if (_spa._idx != _spa._off)
                 return false;
@@ -38,19 +37,19 @@ namespace Mikodev.Network
 
             while (_spa._idx < _spa._max)
             {
-                if (_spa._buf._Read(_spa._max, ref _spa._idx, out len) == false)
+                if (_spa._buf._CanRead(_spa._max, ref _spa._idx, out len) == false)
                     return false;
                 var key = Encoding.UTF8.GetString(_spa._buf, _spa._idx, len);
                 if (dic.ContainsKey(key))
                     return false;
                 _spa._idx += len;
-                if (_spa._buf._Read(_spa._max, ref _spa._idx, out len) == false)
+                if (_spa._buf._CanRead(_spa._max, ref _spa._idx, out len) == false)
                     return false;
-                dic.Add(key, new PacketReader(_spa._buf, _spa._idx, len, _con));
+                dic.Add(key, new PacketReader(_spa._buf, _spa._idx, len, _cvt));
                 _spa._idx += len;
             }
 
-            _dic = dic;
+            _itm = dic;
             return true;
         }
 
@@ -60,7 +59,7 @@ namespace Mikodev.Network
         internal PacketReader _GetItem(string key, bool nothrow)
         {
             var res = _Init();
-            if (res == true && _dic.TryGetValue(key, out var val))
+            if (res == true && _itm.TryGetValue(key, out var val))
                 return val;
             if (nothrow)
                 return null;
@@ -74,14 +73,14 @@ namespace Mikodev.Network
         {
             var rdr = this;
             foreach (var i in keys)
-                if ((rdr = rdr._GetItem(i, nothrow)) == null)
+                if ((rdr = rdr._GetItem(i ?? throw new ArgumentNullException(), nothrow)) == null)
                     return null;
             return rdr;
         }
 
-        public int Count => _Init() ? _dic.Count : 0;
+        public int Count => _Init() ? _itm.Count : 0;
 
-        public IEnumerable<string> Keys => _Init() ? _dic.Keys : Enumerable.Empty<string>();
+        public IEnumerable<string> Keys => _Init() ? _itm.Keys : Enumerable.Empty<string>();
 
         public PacketReader this[string path, bool nothrow = false]
         {
@@ -95,43 +94,12 @@ namespace Mikodev.Network
             }
         }
 
-        [Obsolete]
-        public PacketReader this[string path, bool nothrow, char[] split] => _GetItem(path?.Split(split ?? _Extension.s_seps), nothrow);
-
-        [Obsolete]
-        public PacketReader Pull(string key, bool nothrow = false) => _GetItem(key, nothrow);
-
-        [Obsolete]
-        public PacketReader Pull(string[] keys, bool nothrow = false)
-        {
-            if (keys == null)
-                throw new ArgumentNullException(nameof(keys));
-            if (keys.Length < 1)
-                throw new ArgumentException("Key collection can not be empty!");
-            return _GetItem(keys, nothrow);
-        }
-
-        [Obsolete]
-        public object Pull(Type type) => _Caches.Converter(type, _con, false)._GetValueWrapError(_spa._buf, _spa._off, _spa._len, true);
-
-        [Obsolete]
-        public T Pull<T>() => _Caches.Converter(typeof(T), _con, false)._GetValueWrapErrorAuto<T>(_spa._buf, _spa._off, _spa._len, true);
-
-        [Obsolete]
-        public byte[] PullList() => _spa._buf._ToBytes(_spa._off, _spa._len);
-
-        [Obsolete]
-        public IEnumerable PullList(Type type) => new _Enumerable(this, type);
-
-        [Obsolete]
-        public IEnumerable<T> PullList<T>() => new _Enumerable<T>(this);
-
         public override string ToString()
         {
             var stb = new StringBuilder(nameof(PacketReader));
             stb.Append(" with ");
             if (_Init())
-                stb.AppendFormat("{0} node(s), ", _dic.Count);
+                stb.AppendFormat("{0} node(s), ", _itm.Count);
             stb.AppendFormat("{0} byte(s)", _spa._len);
             return stb.ToString();
         }
@@ -147,7 +115,7 @@ namespace Mikodev.Network
                 val = this;
             else if (type == typeof(PacketRawReader))
                 val = new PacketRawReader(this);
-            else if ((con = _Caches.Converter(type, _con, true)) != null)
+            else if ((con = _Caches.Converter(_cvt, type, true)) != null)
                 val = con._GetValueWrapError(_spa._buf, _spa._off, _spa._len, true);
             else if (type._IsArray(out var inn))
                 val = _Caches.Array(this, inn);
@@ -169,11 +137,11 @@ namespace Mikodev.Network
 
         public T Deserialize<T>() => (T)_Deserialize(this, typeof(T));
 
-        public object Deserialize(Type target)
+        public object Deserialize(Type type)
         {
-            if (target == null)
-                throw new ArgumentNullException(nameof(target));
-            return _Deserialize(this, target);
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+            return _Deserialize(this, type);
         }
 
         internal static object _Deserialize(PacketReader reader, Type type)

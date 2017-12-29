@@ -3,9 +3,9 @@ using System.IO;
 
 namespace Mikodev.Network
 {
-    partial class PacketConvert
+    partial class _Caches
     {
-        internal const int _InitialLength = 1024;
+        internal const int _Initial = 1024;
 
         [ThreadStatic]
         internal static WeakReference s_stream;
@@ -16,7 +16,7 @@ namespace Mikodev.Network
             var mst = s_stream;
             if (mst == null)
             {
-                val = new MemoryStream(_InitialLength);
+                val = new MemoryStream(_Initial);
                 s_stream = new WeakReference(val);
                 return val;
             }
@@ -29,7 +29,7 @@ namespace Mikodev.Network
                 return val;
             }
 
-            val = new MemoryStream(_InitialLength);
+            val = new MemoryStream(_Initial);
             mst.Target = val;
             return val;
         }

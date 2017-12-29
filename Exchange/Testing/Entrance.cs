@@ -137,19 +137,23 @@ namespace Mikodev.Testing
             var a = 1234;
             var b = "test";
             var c = new[] { 1.1M, 2.2M };
+            var d = new[] { "one", "two", "three" };
             var buf = new PacketWriter().
                 SetValue("a", a, typeof(int)).
                 SetValue("b", b, typeof(string)).
-                SetEnumerable("c", typeof(decimal), c).
+                SetEnumerable("c", c, typeof(decimal)).
+                SetEnumerable("d", d, typeof(string)).
                 GetBytes();
 
             var rea = new PacketReader(buf);
             var ra = rea["a"].GetValue(typeof(int));
             var rb = rea["b"].GetValue(typeof(string));
             var rc = rea["c"].GetEnumerable(typeof(decimal));
+            var rd = rea["d"].GetEnumerable(typeof(string));
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
             ThrowIfNotSequenceEqual(c, rc.Cast<decimal>());
+            ThrowIfNotSequenceEqual(d, rd.Cast<string>());
         }
 
         [TestMethod]
@@ -284,6 +288,36 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void SerializeDirectly()
+        {
+            var a = 1;
+            var b = "value";
+            var c = new byte[] { 1, 2, 3, 4 };
+            var d = new[] { 1, 2, 3, 4 };
+            var buf = PacketConvert.Serialize(new
+            {
+                a = a,
+                c = c,
+                obj = new
+                {
+                    b = b,
+                    d = d,
+                }
+            });
+
+            var rea = new PacketReader(buf);
+            var ra = rea["a"].GetValue<int>();
+            var rb = rea["obj/b"].GetValue<string>();
+            var rc = rea["c"].GetEnumerable<byte>();
+            var rd = rea["obj/d"].GetEnumerable<int>();
+
+            Assert.AreEqual(a, ra);
+            Assert.AreEqual(b, rb);
+            ThrowIfNotSequenceEqual(c, rc);
+            ThrowIfNotSequenceEqual(d, rd);
+        }
+
+        [TestMethod]
         public void Path()
         {
             var a = 1;
@@ -309,24 +343,32 @@ namespace Mikodev.Testing
                 var ta = rea["a/b"];
                 Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError)
-            {
-                // ignore
-            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError) { /* ignore */ }
 
             try
             {
                 var ta = rea.GetItem("b").GetItem("a");
                 Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError)
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError) { /* ignore */ }
+
+            try
             {
-                // ignore
+                var _ = rea.GetItem((string)null);
+                Assert.Fail();
             }
+            catch (ArgumentNullException) { /* ignore */ }
+
+            try
+            {
+                var _ = rea.GetItem(new[] { (string)null });
+                Assert.Fail();
+            }
+            catch (ArgumentNullException) { /* ignore */ }
         }
 
         [TestMethod]
-        public void Dictionary()
+        public void SerializeDictionary()
         {
             var a = 1;
             var b = "some";
@@ -342,6 +384,32 @@ namespace Mikodev.Testing
             };
             var wtr = PacketWriter.Serialize(dic);
             var buf = wtr.GetBytes();
+            var rea = new PacketReader(buf);
+
+            Assert.AreEqual(dic.Count, rea.Count);
+            Assert.AreEqual(dic.Count, rea.Keys.Count());
+            Assert.AreEqual(a, rea["a"].GetValue<int>());
+            Assert.AreEqual(b, rea["b"].GetValue<string>());
+            Assert.AreEqual(a, rea["c/a"].GetValue<int>());
+            Assert.AreEqual(b, rea["c/b"].GetValue<string>());
+        }
+
+        [TestMethod]
+        public void SerializeDictionaryDirectly()
+        {
+            var a = 1;
+            var b = "some";
+            var dic = new Dictionary<string, object>
+            {
+                ["a"] = a,
+                ["b"] = b,
+                ["c"] = new Dictionary<string, object>()
+                {
+                    ["a"] = a,
+                    ["b"] = b,
+                }
+            };
+            var buf = PacketConvert.Serialize(dic);
             var rea = new PacketReader(buf);
 
             Assert.AreEqual(dic.Count, rea.Count);
@@ -401,7 +469,7 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
-        public void SerializeDirectly()
+        public void SerializeObjectDirectly()
         {
             var a = 1;
             var b = "Sample text.";

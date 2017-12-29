@@ -12,9 +12,9 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(writer);
 
-            var val = _Caches.GetBytes(type, writer._con, value);
+            var val = _Caches.GetBytes(type, writer._cvt, value);
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._con) { _obj = val };
+            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
             return writer;
         }
 
@@ -23,9 +23,9 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var val = _Caches.GetBytes(writer._con, value);
+            var val = _Caches.GetBytesAuto(writer._cvt, value);
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._con) { _obj = val };
+            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
             return writer;
         }
 
@@ -35,21 +35,21 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._con) { _obj = buffer };
+            itm[key] = new PacketWriter(writer._cvt) { _itm = buffer };
             return writer;
         }
 
-        public static PacketWriter SetEnumerable(this PacketWriter writer, string key, Type type, IEnumerable enumerable)
+        public static PacketWriter SetEnumerable(this PacketWriter writer, string key, IEnumerable enumerable, Type type)
         {
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(writer);
 
-            var nod = new PacketWriter(writer._con);
+            var sub = new PacketWriter(writer._cvt);
             if (enumerable != null)
-                nod._GetBytes(type, enumerable);
+                sub._itm = _Caches.GetBytes(writer._cvt, enumerable, type);
             var itm = writer._GetItems();
-            itm[key] = nod;
+            itm[key] = sub;
             return writer;
         }
 
@@ -58,11 +58,11 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var nod = new PacketWriter(writer._con);
+            var sub = new PacketWriter(writer._cvt);
             if (enumerable != null)
-                nod._GetBytes(enumerable);
+                sub._itm = _Caches.GetBytesGeneric<T>(writer._cvt, enumerable);
             var itm = writer._GetItems();
-            itm[key] = nod;
+            itm[key] = sub;
             return writer;
         }
 
@@ -72,7 +72,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._con) { _obj = another?._obj };
+            itm[key] = new PacketWriter(writer._cvt) { _itm = another?._itm };
             return writer;
         }
 

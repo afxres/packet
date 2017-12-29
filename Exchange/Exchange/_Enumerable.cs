@@ -12,7 +12,7 @@ namespace Mikodev.Network
         internal _Enumerable(PacketReader source, Type type)
         {
             _src = source;
-            _con = _Caches.Converter(type, source._con, false);
+            _con = _Caches.Converter(source._cvt, type, false);
         }
 
         IEnumerator IEnumerable.GetEnumerator() => new _Enumerator(_src, _con);

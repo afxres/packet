@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
@@ -70,14 +69,14 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer);
-            return _Caches.Converter(type, null, false)._GetValueWrapError(buffer, 0, buffer.Length, true);
+            return _Caches.Converter(null, type, false)._GetValueWrapError(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue(byte[] buffer, int offset, int length, Type type)
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer, offset, length);
-            return _Caches.Converter(type, null, false)._GetValueWrapError(buffer, offset, length, true);
+            return _Caches.Converter(null, type, false)._GetValueWrapError(buffer, offset, length, true);
         }
 
         public static object GetValue<T>(byte[] buffer)
@@ -100,21 +99,9 @@ namespace Mikodev.Network
 
         public static byte[] GetBytes<T>(T value)
         {
-            return _Caches.GetBytes(null, value);
+            return _Caches.GetBytesAuto(null, value);
         }
-
-        public static byte[] Serialize(object value, ConverterDictionary converters = null)
-        {
-            var wtr = PacketWriter._Serialize(value, converters, 0);
-            var buf = wtr.GetBytes();
-            return buf;
-        }
-
-        public static byte[] Serialize(IDictionary<string, object> dictionary, ConverterDictionary converters = null)
-        {
-            return Serialize((object)dictionary, converters);
-        }
-
+        
         public static object Deserialize(byte[] buffer, Type type, ConverterDictionary converters = null)
         {
             ThrowIfArgumentError(type);

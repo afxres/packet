@@ -8,9 +8,6 @@ namespace Mikodev.Network
     {
         public _DynamicReader(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 
-        /// <summary>
-        /// Get node by key, throw if not found
-        /// </summary>
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
             var rea = (PacketReader)Value;
@@ -19,9 +16,6 @@ namespace Mikodev.Network
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
 
-        /// <summary>
-        /// Cast node to target type
-        /// </summary>
         public override DynamicMetaObject BindConvert(ConvertBinder binder)
         {
             var rea = (PacketReader)Value;
@@ -36,7 +30,7 @@ namespace Mikodev.Network
         {
             var rea = (PacketReader)Value;
             if (rea._Init())
-                return rea._dic.Keys;
+                return rea._itm.Keys;
             return base.GetDynamicMemberNames();
         }
     }

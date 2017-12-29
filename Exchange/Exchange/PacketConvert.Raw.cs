@@ -9,7 +9,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(reader);
 
-            var con = _Caches.Converter(type, reader._con, false);
+            var con = _Caches.Converter(reader._cvt, type, false);
             var val = reader._spa.Next(con);
             return val;
         }
@@ -18,7 +18,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(reader);
 
-            var con = _Caches.Converter<T>(reader._con, false);
+            var con = _Caches.Converter<T>(reader._cvt, false);
             var val = reader._spa.NextAuto<T>(con);
             return val;
         }
@@ -28,8 +28,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(writer);
 
-            var buf = _Caches.GetBytes(type, writer._dic, value, out var head);
-            writer._SetValue(buf, head);
+            writer._str._WriteValue(writer._cvt, value, type);
             return writer;
         }
 
@@ -37,8 +36,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(writer);
 
-            var buf = _Caches.GetBytes(writer._dic, value, out var head);
-            writer._SetValue(buf, head);
+            writer._str._WriteValueGeneric(writer._cvt, value);
             return writer;
         }
     }

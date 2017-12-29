@@ -53,7 +53,7 @@ namespace Mikodev.Test
             client.Send(buffer, buffer.Length, new IPEndPoint(IPAddress.Loopback, port));
             Thread.Sleep(1000);
 
-            // more samples, see unit test.
+            // More samples, see unit test.
             Performance.DoWork();
         }
     }

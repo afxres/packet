@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -10,8 +11,8 @@ namespace Mikodev.Network
 {
     internal static partial class _Caches
     {
-        internal const int _StreamLength = 64;
-        internal const int _RecursionDepth = 64;
+        internal const int _Length = 64;
+        internal const int _Depth = 64;
 
         private static readonly MethodInfo s_getlist = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly MethodInfo s_getarray = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
@@ -37,7 +38,7 @@ namespace Mikodev.Network
 
         internal static object List(PacketReader reader, Type type)
         {
-            var con = Converter(type, reader._con, false);
+            var con = Converter(reader._cvt, type, false);
             if (s_list.TryGetValue(type, out var val) == false)
             {
                 var met = s_getlist.MakeGenericMethod(type);
@@ -53,7 +54,7 @@ namespace Mikodev.Network
 
         internal static object Array(PacketReader reader, Type type)
         {
-            var con = Converter(type, reader._con, false);
+            var con = Converter(reader._cvt, type, false);
             if (s_array.TryGetValue(type, out var val) == false)
             {
                 var met = s_getarray.MakeGenericMethod(type);
@@ -224,10 +225,10 @@ namespace Mikodev.Network
 
         internal static IPacketConverter Converter<T>(ConverterDictionary dic, bool nothrow)
         {
-            return Converter(typeof(T), dic, nothrow);
+            return Converter(dic, typeof(T), nothrow);
         }
 
-        internal static IPacketConverter Converter(Type type, ConverterDictionary dic, bool nothrow)
+        internal static IPacketConverter Converter(ConverterDictionary dic, Type type, bool nothrow)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
@@ -253,34 +254,40 @@ namespace Mikodev.Network
 
         internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value)
         {
-            var con = Converter(type, dic, false);
+            var con = Converter(dic, type, false);
             var buf = con._GetBytesWrapError(value);
             return buf;
         }
 
-        internal static byte[] GetBytes<T>(ConverterDictionary dic, T value)
+        internal static byte[] GetBytesAuto<T>(ConverterDictionary dic, T value)
         {
-            var con = Converter(typeof(T), dic, false);
+            var con = Converter<T>(dic, false);
             if (con is IPacketConverter<T> res)
-                return res._GetBytesWrapError(value);
+                return res._GetBytesWrapErrorGeneric(value);
             return con._GetBytesWrapError(value);
         }
 
-        internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value, out bool pre)
+        internal static byte[] GetBytes(ConverterDictionary dic, IEnumerable itr, Type type)
         {
-            var con = Converter(type, dic, false);
-            pre = con.Length < 1;
-            var buf = con._GetBytesWrapError(value);
-            return buf;
+            var con = Converter(dic, type, false);
+            var mst = GetStream();
+            mst._WriteEnumerable(con, itr);
+            return mst.ToArray();
         }
 
-        internal static byte[] GetBytes<T>(ConverterDictionary dic, T value, out bool pre)
+        internal static byte[] GetBytesGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
         {
-            var con = Converter(typeof(T), dic, false);
-            pre = con.Length < 1;
-            if (con is IPacketConverter<T> res)
-                return res._GetBytesWrapError(value);
-            return con._GetBytesWrapError(value);
+            var con = Converter<T>(dic, false);
+            var mst = GetStream();
+            mst._WriteEnumerableGeneric(con, itr);
+            return mst.ToArray();
+        }
+
+        internal static byte[] GetBytes(IPacketConverter con, IEnumerable itr)
+        {
+            var mst = GetStream();
+            mst._WriteEnumerable(con, itr);
+            return mst.ToArray();
         }
     }
 }

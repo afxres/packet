@@ -13,14 +13,11 @@ namespace Mikodev.Network
             var lst = wtr._GetItems();
             if (lst.TryGetValue(key, out var res) && res is PacketWriter pkt)
                 return pkt;
-            var nod = new PacketWriter(wtr._con);
+            var nod = new PacketWriter(wtr._cvt);
             lst[key] = nod;
             return nod;
         }
 
-        /// <summary>
-        /// Create node
-        /// </summary>
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
             var val = _GetItem((PacketWriter)Value, binder.Name);
@@ -28,15 +25,12 @@ namespace Mikodev.Network
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
 
-        /// <summary>
-        /// Set node, throw if type invalid
-        /// </summary>
         public override DynamicMetaObject BindSetMember(SetMemberBinder binder, DynamicMetaObject value)
         {
             var wtr = (PacketWriter)Value;
             var key = binder.Name;
             var val = value.Value;
-            if (PacketWriter._GetWriter(val, wtr._con, out var nod) == false)
+            if (PacketWriter._GetWriter(val, wtr._cvt, out var nod) == false)
                 throw new PacketException(PacketError.InvalidType);
             var lst = wtr._GetItems();
             lst[key] = nod;
@@ -47,7 +41,7 @@ namespace Mikodev.Network
         public override IEnumerable<string> GetDynamicMemberNames()
         {
             var wtr = (PacketWriter)Value;
-            if (wtr._obj is IDictionary<string, object> dic)
+            if (wtr._itm is IDictionary<string, object> dic)
                 return dic.Keys;
             return base.GetDynamicMemberNames();
         }

@@ -42,10 +42,12 @@ namespace Mikodev.Network
 
         internal bool Any() => _idx < _max;
 
+        internal void Reset() => _idx = _off;
+
         internal void _EnsureNext(int def, out int pos, out int len)
         {
             var idx = _idx;
-            if ((def > 0 && idx + def > _max) || (def < 1 && _buf._Read(_max, ref idx, out def) == false))
+            if ((def > 0 && idx + def > _max) || (def < 1 && _buf._CanRead(_max, ref idx, out def) == false))
                 throw _Overflow();
             pos = idx;
             len = def;
@@ -79,7 +81,7 @@ namespace Mikodev.Network
         {
             if (idx == _max)
                 goto fail;
-            if (_buf._Read(_max, ref idx, out var tmp) == false)
+            if (_buf._CanRead(_max, ref idx, out var tmp) == false)
                 throw _Overflow();
             pos = idx;
             len = tmp;

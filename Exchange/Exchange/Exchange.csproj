@@ -50,10 +50,11 @@
     <Compile Include="PacketConvert.cs" />
     <Compile Include="PacketConvert.Raw.cs" />
     <Compile Include="PacketConvert.Reader.cs" />
+    <Compile Include="PacketConvert.Serialize.cs" />
     <Compile Include="PacketConvert.Writer.cs" />
     <Compile Include="PacketRawReader.cs" />
     <Compile Include="PacketRawWriter.cs" />
-    <Compile Include="PacketConvert.ThreadStatic.cs" />
+    <Compile Include="_Caches.ThreadStatic.cs" />
     <Compile Include="_Caches.Nested.cs" />
     <Compile Include="_ConvertBase.cs" />
     <Compile Include="_ConvertReference.cs" />
