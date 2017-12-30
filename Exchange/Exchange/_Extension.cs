@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using static System.BitConverter;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
@@ -88,14 +89,27 @@ namespace Mikodev.Network
             return false;
         }
 
-        internal static void _Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
+        internal static void _Write(this Stream str, byte[] buf) => str.Write(buf, 0, buf.Length);
 
-        internal static void _WriteLen(this Stream stream, int value) => stream._Write(GetBytes(value));
-
-        internal static void _WriteExt(this Stream stream, byte[] buffer)
+        internal static void _WriteLen(this Stream str, int val)
         {
-            stream._Write(GetBytes(buffer.Length));
-            stream._Write(buffer);
+            var len = GetBytes(val);
+            str.Write(len, 0, len.Length);
+        }
+
+        internal static void _WriteKey(this Stream str, string key)
+        {
+            var buf = Encoding.UTF8.GetBytes(key);
+            var len = GetBytes(buf.Length);
+            str.Write(len, 0, len.Length);
+            str.Write(buf, 0, buf.Length);
+        }
+
+        internal static void _WriteExt(this Stream str, byte[] buf)
+        {
+            var len = GetBytes(buf.Length);
+            str.Write(len, 0, len.Length);
+            str.Write(buf, 0, buf.Length);
         }
 
         internal static void _WriteExt(this Stream str, MemoryStream mst)
@@ -103,7 +117,8 @@ namespace Mikodev.Network
             var len = mst.Length;
             if (len > int.MaxValue)
                 throw new PacketException(PacketError.Overflow);
-            str._WriteLen((int)len);
+            var buf = GetBytes((int)len);
+            str.Write(buf, 0, buf.Length);
             mst.WriteTo(str);
         }
 

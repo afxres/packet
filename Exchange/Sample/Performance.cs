@@ -21,7 +21,7 @@ namespace Mikodev.Test
             };
 
             const int max = 1 << 20;
-            const int loop = 10;
+            const int loop = 8;
 
             var ano = new
             {
@@ -58,11 +58,20 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Serialize object")) // 138.64 ms, avg
+                using (new TraceWatch("PacketWriter")) // 138.64 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
                         var buf = PacketWriter.Serialize(i).GetBytes();
+                        var res = new PacketReader(buf).GetValue<int>();
+                    }
+                }
+
+                using (new TraceWatch("PacketConvert")) // 118.71 ms, avg
+                {
+                    for (int i = 0; i < max; i++)
+                    {
+                        var buf = PacketConvert.Serialize(i);
                         var res = new PacketReader(buf).GetValue<int>();
                     }
                 }
@@ -85,7 +94,22 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("PacketWriter.Serialize")) // 4825.12 ms, avg
+                using (new TraceWatch("PacketWriter<> Set")) // 2200.16 ms, avg
+                {
+                    for (int i = 0; i < max; i++)
+                    {
+                        var wtr = new PacketWriter().
+                            SetValue(nameof(ano.num), ano.num).
+                            SetValue(nameof(ano.str), ano.str).
+                            SetEnumerable(nameof(ano.arr), ano.arr).
+                            SetItem(nameof(ano.sub), new PacketWriter().
+                                SetValue(nameof(ano.sub.sum), ano.sub.sum).
+                                SetEnumerable(nameof(ano.sub.lst), ano.sub.lst));
+                        var buf = wtr.GetBytes();
+                    }
+                }
+
+                using (new TraceWatch("PacketWriter.Serialize")) // 4692.35 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -93,7 +117,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("PacketConvert.Serialize")) // 4280.60 ms, avg
+                using (new TraceWatch("PacketConvert.Serialize")) // 4250.74 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {

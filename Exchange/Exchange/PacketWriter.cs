@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
@@ -53,17 +54,17 @@ namespace Mikodev.Network
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
 
-        internal static void _GetBytes(MemoryStream str, ItemDirectory dic, int level)
+        internal static void _GetBytes(Stream str, ItemDirectory dic, int lev)
         {
-            if (level > _Caches._Depth)
+            if (lev > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
-            level += 1;
+            lev += 1;
 
             foreach (var i in dic)
             {
                 var key = i.Key;
                 var val = i.Value;
-                str._WriteExt(Encoding.UTF8.GetBytes(key));
+                str._WriteKey(key);
 
                 if (val is PacketRawWriter raw)
                 {
@@ -81,38 +82,39 @@ namespace Mikodev.Network
                 {
                     var nod = (ItemDirectory)obj;
                     str._BeginInternal(out var src);
-                    _GetBytes(str, nod, level);
+                    _GetBytes(str, nod, lev);
                     str._EndInternal(src);
                 }
             }
         }
 
-        internal static bool _GetWriter(object val, ConverterDictionary cons, out object value)
+        internal static bool _GetWriter(object itm, ConverterDictionary cvt, out object val)
         {
             var wtr = default(object);
             var con = default(IPacketConverter);
+            var typ = default(Type);
 
-            if (val == null)
-                wtr = new PacketWriter(cons);
-            else if (val is PacketRawWriter raw)
+            if ((typ = itm?.GetType()) == null)
+                wtr = new PacketWriter(cvt);
+            else if (itm is PacketRawWriter raw)
                 wtr = raw;
-            else if (val is PacketWriter wri)
-                wtr = new PacketWriter(cons) { _itm = wri._itm };
-            else if ((con = _Caches.Converter(cons, val.GetType(), true)) != null)
-                wtr = new PacketWriter(cons) { _itm = con._GetBytesWrapError(val) };
-            else if (val.GetType()._IsImplOfEnumerable(out var inn) && (con = _Caches.Converter(cons, inn, true)) != null)
-                wtr = new PacketWriter(cons) { _itm = _Caches.GetBytes(con, (IEnumerable)val) };
+            else if (itm is PacketWriter wri)
+                wtr = new PacketWriter(cvt) { _itm = wri._itm };
+            else if ((con = _Caches.Converter(cvt, typ, true)) != null)
+                wtr = new PacketWriter(cvt) { _itm = con._GetBytesWrapError(itm) };
+            else if (itm is IEnumerable && typ._IsImplOfEnumerable(out var inn) && (con = _Caches.Converter(cvt, inn, true)) != null)
+                wtr = new PacketWriter(cvt) { _itm = _Caches.GetBytes(con, (IEnumerable)itm) };
             else goto fail;
 
-            value = wtr;
+            val = wtr;
             return true;
 
             fail:
-            value = null;
+            val = null;
             return false;
         }
 
-        internal static PacketWriter _Serialize(int lev, ConverterDictionary cvt, object itm)
+        internal static PacketWriter _Serialize(ConverterDictionary cvt, object itm, int lev)
         {
             if (lev > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
@@ -125,13 +127,13 @@ namespace Mikodev.Network
 
             if (itm is IDictionary<string, object> dic)
                 foreach (var i in dic)
-                    lst[i.Key] = _Serialize(lev, cvt, i.Value);
+                    lst[i.Key] = _Serialize(cvt, i.Value, lev);
             else
-                _SerializeViaGetMethods(lev, lst, cvt, itm);
+                _SerializeProperties(lst, cvt, itm, lev);
             return wtr;
         }
 
-        internal static void _SerializeViaGetMethods(int lev, ItemDirectory dst, ConverterDictionary cvt, object itm)
+        internal static void _SerializeProperties(ItemDirectory dst, ConverterDictionary cvt, object itm, int lev)
         {
             var typ = itm.GetType();
             var inf = _Caches.GetMethods(typ);
@@ -140,11 +142,11 @@ namespace Mikodev.Network
             var res = new object[arg.Length];
             fun.Invoke(itm, res);
             for (int i = 0; i < arg.Length; i++)
-                dst[arg[i].name] = _Serialize(lev, cvt, res[i]);
+                dst[arg[i].name] = _Serialize(cvt, res[i], lev);
             return;
         }
 
-        public static PacketWriter Serialize(object value, ConverterDictionary converters = null) => _Serialize(0, converters, value);
+        public static PacketWriter Serialize(object value, ConverterDictionary converters = null) => _Serialize(converters, value, 0);
 
         public static PacketWriter Serialize(IDictionary<string, object> dictionary, ConverterDictionary converters = null) => Serialize((object)dictionary, converters);
     }
