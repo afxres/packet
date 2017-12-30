@@ -13,9 +13,9 @@ namespace Mikodev.Network
             var lst = wtr._GetItems();
             if (lst.TryGetValue(key, out var res) && res is PacketWriter pkt)
                 return pkt;
-            var nod = new PacketWriter(wtr._cvt);
-            lst[key] = nod;
-            return nod;
+            var sub = new PacketWriter(wtr._cvt);
+            lst[key] = sub;
+            return sub;
         }
 
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
@@ -30,10 +30,10 @@ namespace Mikodev.Network
             var wtr = (PacketWriter)Value;
             var key = binder.Name;
             var val = value.Value;
-            if (PacketWriter._GetWriter(val, wtr._cvt, out var nod) == false)
+            if (PacketWriter._GetWriter(val, wtr._cvt, out var sub) == false)
                 throw new PacketException(PacketError.InvalidType);
             var lst = wtr._GetItems();
-            lst[key] = nod;
+            lst[key] = sub;
             var exp = Expression.Constant(val, typeof(object));
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }

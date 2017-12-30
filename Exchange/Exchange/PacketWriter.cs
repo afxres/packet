@@ -6,14 +6,14 @@ using System.IO;
 using System.Linq.Expressions;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
-using ItemDirectory = System.Collections.Generic.Dictionary<string, object>;
+using ItemDirectory = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
 
 namespace Mikodev.Network
 {
     public sealed partial class PacketWriter : IDynamicMetaObjectProvider
     {
-        internal object _itm = null;
         internal readonly ConverterDictionary _cvt = null;
+        internal object _itm = null;
 
         public PacketWriter(ConverterDictionary converters = null) => _cvt = converters;
 
@@ -28,11 +28,13 @@ namespace Mikodev.Network
 
         public byte[] GetBytes()
         {
-            if (_itm is byte[] buf)
-                return buf;
-            var dic = _itm as ItemDirectory;
-            if (dic == null)
+            if (_itm == null)
                 return new byte[0];
+            else if (_itm is byte[] buf)
+                return buf;
+            else if (_itm is PacketRawWriter raw)
+                return raw._str.ToArray();
+            var dic = (ItemDirectory)_itm;
             var mst = _Caches.GetStream();
             _GetBytes(mst, dic, 0);
             var res = mst.ToArray();
@@ -63,50 +65,44 @@ namespace Mikodev.Network
             foreach (var i in dic)
             {
                 var key = i.Key;
-                var val = i.Value;
+                var obj = i.Value._itm;
                 str._WriteKey(key);
-
-                if (val is PacketRawWriter raw)
-                {
-                    str._WriteExt(raw._str);
-                    continue;
-                }
-                var wtr = (PacketWriter)val;
-                var obj = wtr._itm;
 
                 if (obj == null)
                     str._WriteLen(0);
                 else if (obj is byte[] buf)
                     str._WriteExt(buf);
+                else if (obj is PacketRawWriter raw)
+                    str._WriteExt(raw._str);
                 else
                 {
-                    var nod = (ItemDirectory)obj;
+                    var sub = (ItemDirectory)obj;
                     str._BeginInternal(out var src);
-                    _GetBytes(str, nod, lev);
+                    _GetBytes(str, sub, lev);
                     str._EndInternal(src);
                 }
             }
         }
 
-        internal static bool _GetWriter(object itm, ConverterDictionary cvt, out object val)
+        internal static bool _GetWriter(object itm, ConverterDictionary cvt, out PacketWriter val)
         {
-            var wtr = default(object);
+            var obj = default(object);
             var con = default(IPacketConverter);
             var typ = default(Type);
 
             if ((typ = itm?.GetType()) == null)
-                wtr = new PacketWriter(cvt);
+                obj = null;
             else if (itm is PacketRawWriter raw)
-                wtr = raw;
+                obj = raw;
             else if (itm is PacketWriter wri)
-                wtr = new PacketWriter(cvt) { _itm = wri._itm };
+                obj = wri._itm;
             else if ((con = _Caches.Converter(cvt, typ, true)) != null)
-                wtr = new PacketWriter(cvt) { _itm = con._GetBytesWrapError(itm) };
+                obj = con._GetBytesWrapError(itm);
             else if (itm is IEnumerable && typ._IsImplOfEnumerable(out var inn) && (con = _Caches.Converter(cvt, inn, true)) != null)
-                wtr = new PacketWriter(cvt) { _itm = _Caches.GetBytes(con, (IEnumerable)itm) };
+                obj = _Caches.GetBytes(con, (IEnumerable)itm);
             else goto fail;
 
-            val = wtr;
+            val = new PacketWriter(cvt) { _itm = obj };
             return true;
 
             fail:
@@ -118,8 +114,8 @@ namespace Mikodev.Network
         {
             if (lev > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
-            if (_GetWriter(itm, cvt, out var nod))
-                return (PacketWriter)nod;
+            if (_GetWriter(itm, cvt, out var sub))
+                return sub;
             lev += 1;
 
             var wtr = new PacketWriter(cvt);

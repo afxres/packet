@@ -21,7 +21,7 @@ namespace Mikodev.Test
             };
 
             const int max = 1 << 20;
-            const int loop = 8;
+            const int loop = 10;
 
             var ano = new
             {
@@ -40,15 +40,6 @@ namespace Mikodev.Test
             // release mode
             for (int idx = 0; idx < loop; idx++)
             {
-                using (new TraceWatch("Box and unbox")) // 0.28 ms
-                {
-                    for (int i = 0; i < max; i++)
-                    {
-                        var k = (object)1.1;
-                        var r = (double)k;
-                    }
-                }
-
                 using (new TraceWatch("BitConverter")) // 8.00 ms
                 {
                     for (int i = 0; i < max; i++)
@@ -63,15 +54,6 @@ namespace Mikodev.Test
                     for (int i = 0; i < max; i++)
                     {
                         var buf = PacketWriter.Serialize(i).GetBytes();
-                        var res = new PacketReader(buf).GetValue<int>();
-                    }
-                }
-
-                using (new TraceWatch("PacketConvert")) // 118.71 ms, avg
-                {
-                    for (int i = 0; i < max; i++)
-                    {
-                        var buf = PacketConvert.Serialize(i);
                         var res = new PacketReader(buf).GetValue<int>();
                     }
                 }
@@ -109,15 +91,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("PacketWriter.Serialize")) // 4692.35 ms, avg
-                {
-                    for (int i = 0; i < max; i++)
-                    {
-                        var _ = PacketWriter.Serialize(ano).GetBytes();
-                    }
-                }
-
-                using (new TraceWatch("PacketConvert.Serialize")) // 4250.74 ms, avg
+                using (new TraceWatch("Serialize (anonymous)")) // 4762.43 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -138,8 +112,8 @@ namespace Mikodev.Test
             {
                 var key = i.Key;
                 var val = i.Value;
-                if (val.Count > 4)
-                    val.RemoveRange(0, 2);
+                if (val.Count > 6)
+                    val.RemoveRange(0, 4);
                 var sum = val.Select(r => r.Ticks).Sum();
                 var cir = new TimeSpan(sum / val.Count);
                 var avg = new TimeSpan(1000 * sum / val.Count / max);

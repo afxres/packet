@@ -10,9 +10,9 @@ namespace Mikodev.Network
 {
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
-        internal _Element _spa;
-        internal Dictionary<string, PacketReader> _itm = null;
         internal readonly ConverterDictionary _cvt = null;
+        internal Dictionary<string, PacketReader> _itm = null;
+        internal _Element _spa;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {

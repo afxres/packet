@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
@@ -140,6 +141,18 @@ namespace Mikodev.Network
         public static T Deserialize<T>(byte[] buffer, int offset, int length, T anonymous, ConverterDictionary converters = null)
         {
             return (T)Deserialize(buffer, offset, length, typeof(T), converters);
+        }
+
+        public static byte[] Serialize(object value, ConverterDictionary converters = null)
+        {
+            var wtr = PacketWriter._Serialize(converters, value, 0);
+            var buf = wtr.GetBytes();
+            return buf;
+        }
+
+        public static byte[] Serialize(IDictionary<string, object> dictionary, ConverterDictionary converters = null)
+        {
+            return Serialize((object)dictionary, converters);
         }
     }
 }

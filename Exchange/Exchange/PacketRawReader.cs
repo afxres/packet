@@ -4,8 +4,8 @@ namespace Mikodev.Network
 {
     public sealed class PacketRawReader
     {
-        internal _Element _spa;
         internal readonly ConverterDictionary _cvt;
+        internal _Element _spa;
 
         public PacketRawReader(PacketReader source)
         {

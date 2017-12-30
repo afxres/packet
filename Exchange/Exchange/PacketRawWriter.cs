@@ -5,8 +5,8 @@ namespace Mikodev.Network
 {
     public sealed class PacketRawWriter
     {
-        internal readonly MemoryStream _str = new MemoryStream(_Caches._Length);
         internal readonly ConverterDictionary _cvt;
+        internal readonly MemoryStream _str = new MemoryStream(_Caches._Length);
 
         public PacketRawWriter(ConverterDictionary converters = null) => _cvt = converters;
 

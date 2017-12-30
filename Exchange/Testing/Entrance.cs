@@ -263,6 +263,7 @@ namespace Mikodev.Testing
             var b = "value";
             var c = new byte[] { 1, 2, 3, 4 };
             var d = new[] { 1, 2, 3, 4 };
+            var e = new PacketRawWriter().SetValue(a).SetValue(b);
             var wtr = PacketWriter.Serialize(new
             {
                 a = a,
@@ -271,18 +272,31 @@ namespace Mikodev.Testing
                 {
                     b = b,
                     d = d,
-                }
+                    e = e,
+                },
+                sub = new PacketWriter().SetValue("a", a).SetValue("b", b),
             });
 
             var buf = wtr.GetBytes();
             var rea = new PacketReader(buf);
+            var raw = new PacketRawReader(rea["obj/e"]);
             var ra = rea["a"].GetValue<int>();
             var rb = rea["obj/b"].GetValue<string>();
             var rc = rea["c"].GetEnumerable<byte>();
             var rd = rea["obj/d"].GetEnumerable<int>();
 
+            var ta = raw.GetValue<int>();
+            var tb = raw.GetValue<string>();
+
+            var sa = rea["sub/a"].GetValue<int>();
+            var sb = rea["sub/b"].GetValue<string>();
+
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
+            Assert.AreEqual(a, ta);
+            Assert.AreEqual(b, tb);
+            Assert.AreEqual(a, sa);
+            Assert.AreEqual(b, sb);
             ThrowIfNotSequenceEqual(c, rc);
             ThrowIfNotSequenceEqual(d, rd);
         }
@@ -574,6 +588,9 @@ namespace Mikodev.Testing
             var rea = new PacketRawReader(src.raw); // PacketReader or byte[]? Both of them can work
             var ra = rea.GetValue<string>();
             var rb = rea.GetValue<int>();
+
+            Assert.AreEqual(a, (string)src.a);
+            Assert.AreEqual(b, (int)src.b);
             Assert.AreEqual(a, ra);
             Assert.AreEqual(b, rb);
         }
