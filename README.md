@@ -2,9 +2,9 @@
 基于键值对形式的二进制数据包生成解析工具, 方便在网络上传输数据.
 
 ## 基本信息
-* 示例代码: [`Program.cs`](https://github.com/afxres/packet/blob/master/Exchange/Sample/Program.cs)<br />
-* 单元测试: [`Entrance.cs`](https://github.com/afxres/packet/blob/master/Exchange/Testing/Entrance.cs)<br />
-* NuGet Package: [`Mikodev.Exchange`](https://www.nuget.org/packages/Mikodev.Exchange/)<br />
+* 示例代码: [`Program.cs`](https://github.com/afxres/packet/blob/master/Exchange/Sample/Program.cs)
+* 单元测试: [`Entrance.cs`](https://github.com/afxres/packet/blob/master/Exchange/Testing/Entrance.cs)
+* NuGet Package: [`Mikodev.Exchange`](https://www.nuget.org/packages/Mikodev.Exchange/)
 
 ## 代码示例
 
@@ -18,20 +18,20 @@ using Mikodev.Network;
 基本格式读写
 ```csharp
 var packet = new PacketWriter()
-    .Push("id", Guid.NewGuid())
-    .Push("name", "Alice")
-    .Push("data", new PacketWriter() // 嵌套
-        .Push("timestamp", DateTime.Now)
-        .PushList("tags", new[] { "girl", "doctor" }) // 写入集合
+    .SetValue("id", Guid.NewGuid())
+    .SetValue("name", "Alice")
+    .SetItem("data", new PacketWriter() // 嵌套
+        .SetValue("timestamp", DateTime.Now)
+        .SetEnumerable("tags", new[] { "girl", "doctor" }) // 写入集合
     );
 
 var buffer = packet.GetBytes(); // 生成二进制数据包
 var reader = new PacketReader(buffer); // 读取数据包
 
-var id = reader["id"].Pull<Guid>();
-var name = (string)reader["name"].Pull(typeof(string)); // 指定类型读取
-var time = reader["data/timestamp"].Pull<DateTime>(); // 读取子节点
-var tags = reader["data/tags"].PullList<string>().ToArray();
+var id = reader["id"].GetValue<Guid>();
+var name = (string)reader["name"].GetValue(typeof(string)); // 指定类型读取
+var time = reader["data/timestamp"].GetValue<DateTime>(); // 读取子节点
+var tags = reader["data/tags"].GetArray();
 ```
 
 动态读写
@@ -50,7 +50,7 @@ var r = (dynamic)reader;
 var id = (int)r.id;
 var name = (string)r.name;
 var address = (IPAddress)r.data.ipaddr;
-var tags = ((IEnumerable<string>)r.data.tags).ToArray(); // 必须是泛型的 IEnumerable
+var tags = (string[])r.data.tags;
 ```
 
 ### 序列化写入
@@ -72,14 +72,14 @@ var packet = PacketWriter.Serialize(new
 ```csharp
 var packet = PacketWriter.Serialize(new Dictionary<string, object>()
 {
-    ["id"] = 1024,
-    ["info"] = new Dictionary<string, object>()
+    ["integer"] = 1024,
+    ["directory"] = new Dictionary<string, object>()
     {
-        ["name"] = "Dave",
+        ["string"] = "Dave",
     },
-    ["misc"] = new
+    ["anonymous"] = new
     {
-        age = 20,
+        number = 20,
     },
 });
 ```
@@ -108,13 +108,13 @@ public class PersonConverter : IPacketConverter<Person>
             return new byte[0];
         // 借助 PacketRawWriter, 生成固定格式数据包
         var raw = new PacketRawWriter();
-        raw.Push(value.Id);
-        raw.Push(value.Name);
+        raw.SetValue(value.Id);
+        raw.SetValue(value.Name);
 
         var tags = value.Tags;
         if (tags != null)
             foreach (var i in tags)
-                raw.Push(i);
+                raw.SetValue(i);
         return raw.GetBytes();
     }
 
@@ -123,12 +123,12 @@ public class PersonConverter : IPacketConverter<Person>
         var p = new Person();
         // 使用 PacketRawReader, 解析固定格式数据包
         var raw = new PacketRawReader(buffer, offset, length);
-        p.Id = raw.Pull<int>();
-        p.Name = raw.Pull<string>();
+        p.Id = raw.GetValue<int>();
+        p.Name = raw.GetValue<string>();
 
         var tags = new List<string>();
         while (raw.Any)
-            tags.Add(raw.Pull<string>());
+            tags.Add(raw.GetValue<string>());
         p.Tags = tags;
         return p;
     }
@@ -162,5 +162,5 @@ var customConverters = new Dictionary<Type, IPacketConverter>()
 var packet = PacketWriter.Serialize(p, customConverters);
 var buffer = packet.GetBytes();
 var reader = new PacketReader(buffer, customConverters);
-var person = reader.Pull<Person>();
+var person = reader.GetValue<Person>();
 ```
