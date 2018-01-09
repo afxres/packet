@@ -157,6 +157,25 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void Array()
+        {
+            var a = new byte[] { 1, 2, 3, 4 };
+            var b = new List<byte> { 0, 2, 4, 8 } as ICollection<byte>;
+
+            var wtr = new PacketWriter().
+                SetValue("a", a).
+                SetValue("b", b);
+            var buf = wtr.GetBytes();
+
+            var rea = new PacketReader(buf);
+            var ra = rea["a"].GetArray<byte>();
+            var rb = rea["b"].GetArray<byte>();
+
+            ThrowIfNotSequenceEqual(a, ra);
+            ThrowIfNotSequenceEqual(b, rb);
+        }
+
+        [TestMethod]
         public void Collection()
         {
             var wtr = new PacketWriter();

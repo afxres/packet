@@ -39,6 +39,24 @@ namespace Mikodev.Network
             return writer;
         }
 
+        public static PacketWriter SetValue(this PacketWriter writer, string key, ICollection<byte> buffer)
+        {
+            ThrowIfArgumentError(key);
+            ThrowIfArgumentError(writer);
+
+            var len = 0;
+            var buf = default(byte[]);
+            if (buffer != null && (len = buffer.Count) > 0)
+            {
+                buf = new byte[len];
+                buffer.CopyTo(buf, 0);
+            }
+
+            var itm = writer._GetItems();
+            itm[key] = new PacketWriter(writer._cvt) { _itm = buf };
+            return writer;
+        }
+        
         public static PacketWriter SetEnumerable(this PacketWriter writer, string key, IEnumerable enumerable, Type type)
         {
             ThrowIfArgumentError(key);
