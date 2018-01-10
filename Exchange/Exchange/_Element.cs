@@ -124,9 +124,9 @@ namespace Mikodev.Network
                 return null;
 
             if (typeof(T) == typeof(byte))
-                return _buf._ToBytes(_off, _len);
+                return _buf._ToByteArray(_off, _len);
             else if (typeof(T) == typeof(sbyte))
-                return _buf._ToSBytes(_off, _len);
+                return _buf._ToSByteArray(_off, _len);
 
             var len = con.Length;
             if (len < 1)

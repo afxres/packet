@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using static System.BitConverter;
 
@@ -49,37 +50,64 @@ namespace Mikodev.Network
 
         internal static byte[] _OfSByte(sbyte value) => new[] { (byte)value };
 
-        internal static sbyte _ToSByte(byte[] buffer, int offset) => (sbyte)buffer[offset];
-
         internal static byte[] _OfByte(byte value) => new[] { value };
+
+        internal static sbyte _ToSByte(byte[] buffer, int offset) => (sbyte)buffer[offset];
 
         internal static byte _ToByte(byte[] buffer, int offset) => buffer[offset];
 
-        internal static byte[] _OfBytes(byte[] buffer) => buffer;
+        internal static byte[] _OfByteArray(this byte[] buffer) => buffer;
 
-        internal static byte[] _ToBytes(this byte[] buffer, int offset, int length)
-        {
-            if (length > (buffer?.Length ?? 0))
-                throw new PacketException(PacketError.Overflow);
-            var buf = new byte[length];
-            Buffer.BlockCopy(buffer, offset, buf, 0, length);
-            return buf;
-        }
-
-        internal static byte[] _OfSBytes(sbyte[] buffer)
+        internal static byte[] _OfSByteArray(this sbyte[] buffer)
         {
             var len = buffer?.Length ?? 0;
             var buf = new byte[len];
-            Buffer.BlockCopy(buffer, 0, buf, 0, len);
+            if (len > 0)
+                Buffer.BlockCopy(buffer, 0, buf, 0, len);
             return buf;
         }
 
-        internal static sbyte[] _ToSBytes(this byte[] buffer, int offset, int length)
+        internal static byte[] _ToByteArray(this byte[] buffer, int offset, int length)
         {
-            if (length > (buffer?.Length ?? 0))
+            var len = buffer?.Length ?? 0;
+            if (length < 0 || length > len)
+                throw new PacketException(PacketError.Overflow);
+            var buf = new byte[length];
+            if (length > 0)
+                Buffer.BlockCopy(buffer, offset, buf, 0, length);
+            return buf;
+        }
+
+        internal static sbyte[] _ToSByteArray(this byte[] buffer, int offset, int length)
+        {
+            var len = buffer?.Length ?? 0;
+            if (length < 0 || length > len)
                 throw new PacketException(PacketError.Overflow);
             var buf = new sbyte[length];
-            Buffer.BlockCopy(buffer, offset, buf, 0, length);
+            if (length > 0)
+                Buffer.BlockCopy(buffer, offset, buf, 0, length);
+            return buf;
+        }
+
+        internal static byte[] _OfByteCollection(this ICollection<byte> buffer)
+        {
+            var len = buffer?.Count ?? 0;
+            var buf = new byte[len];
+            if (len > 0)
+                buffer.CopyTo(buf, 0);
+            return buf;
+        }
+
+        internal static byte[] _OfSByteCollection(this ICollection<sbyte> buffer)
+        {
+            var len = buffer?.Count ?? 0;
+            var buf = new byte[len];
+            if (len > 0)
+            {
+                var tmp = new sbyte[len];
+                buffer.CopyTo(tmp, 0);
+                Buffer.BlockCopy(tmp, 0, buf, 0, len);
+            }
             return buf;
         }
 

@@ -92,12 +92,16 @@ namespace Mikodev.Network
 
             if ((typ = itm?.GetType()) == null)
                 obj = null;
-            else if (itm is PacketRawWriter raw)
-                obj = raw;
             else if (itm is PacketWriter wri)
                 obj = wri._itm;
+            else if (itm is PacketRawWriter raw)
+                obj = raw;
             else if ((con = _Caches.Converter(cvt, typ, true)) != null)
                 obj = con._GetBytesWrapError(itm);
+            else if (itm is ICollection<byte> byt)
+                obj = byt._OfByteCollection();
+            else if (itm is ICollection<sbyte> sby)
+                obj = sby._OfSByteCollection();
             else if (itm is IEnumerable && typ._IsImplOfEnumerable(out var inn) && (con = _Caches.Converter(cvt, inn, true)) != null)
                 obj = _Caches.GetBytes(con, (IEnumerable)itm);
             else goto fail;

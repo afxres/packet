@@ -176,7 +176,7 @@ namespace Mikodev.Testing
             var rb = rea["b"].GetArray<byte>();
             var rc = rea["c"].GetArray<sbyte>();
             var rd = rea["d"].GetArray<sbyte>();
-            
+
             ThrowIfNotSequenceEqual(a, ra);
             ThrowIfNotSequenceEqual(b, rb);
             ThrowIfNotSequenceEqual(c, rc);
@@ -196,7 +196,7 @@ namespace Mikodev.Testing
                 new byte[] { 1, 2, 3, 4 }
             };
 
-            wtr.SetEnumerable<byte>("byte", a).
+            wtr.SetEnumerable("byte", a).
                 SetEnumerable("ints", b).
                 SetEnumerable("buffer", c);
             var buf = wtr.GetBytes();
@@ -293,14 +293,9 @@ namespace Mikodev.Testing
             var e = new PacketRawWriter().SetValue(a).SetValue(b);
             var wtr = PacketWriter.Serialize(new
             {
-                a = a,
-                c = c,
-                obj = new
-                {
-                    b = b,
-                    d = d,
-                    e = e,
-                },
+                a,
+                c,
+                obj = new { b, d, e, },
                 sub = new PacketWriter().SetValue("a", a).SetValue("b", b),
             });
 
@@ -329,33 +324,27 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
-        public void SerializeDirectly()
+        public void SerializeCollection()
         {
-            var a = 1;
-            var b = "value";
-            var c = new byte[] { 1, 2, 3, 4 };
-            var d = new[] { 1, 2, 3, 4 };
-            var buf = PacketConvert.Serialize(new
+            var a = new byte[] { 1, 3, 5, 7 };
+            var b = new sbyte[] { -6, -3, 0, 3, 6, 9 };
+            var c = new List<byte> { 192, 128, 64, 0 };
+            var d = new List<sbyte> { -14, -7, 0, 7, 14, 21 };
+
+            var obj = new
             {
-                a = a,
-                c = c,
-                obj = new
-                {
-                    b = b,
-                    d = d,
-                }
-            });
+                a,
+                b,
+                sub = new { c, d },
+            };
 
-            var rea = new PacketReader(buf);
-            var ra = rea["a"].GetValue<int>();
-            var rb = rea["obj/b"].GetValue<string>();
-            var rc = rea["c"].GetEnumerable<byte>();
-            var rd = rea["obj/d"].GetEnumerable<int>();
+            var buf = PacketConvert.Serialize(obj);
+            var val = PacketConvert.Deserialize(buf, obj);
 
-            Assert.AreEqual(a, ra);
-            Assert.AreEqual(b, rb);
-            ThrowIfNotSequenceEqual(c, rc);
-            ThrowIfNotSequenceEqual(d, rd);
+            ThrowIfNotSequenceEqual(a, val.a);
+            ThrowIfNotSequenceEqual(b, val.b);
+            ThrowIfNotSequenceEqual(c, val.sub.c);
+            ThrowIfNotSequenceEqual(d, val.sub.d);
         }
 
         [TestMethod]
