@@ -161,18 +161,26 @@ namespace Mikodev.Testing
         {
             var a = new byte[] { 1, 2, 3, 4 };
             var b = new List<byte> { 0, 2, 4, 8 } as ICollection<byte>;
+            var c = new sbyte[] { -1, 0, 1, 2 };
+            var d = new List<sbyte> { -2, 0, 2, 4 } as ICollection<sbyte>;
 
             var wtr = new PacketWriter().
-                SetValue("a", a).
-                SetValue("b", b);
+                SetEnumerable("a", a).
+                SetEnumerable("b", b).
+                SetEnumerable("c", c).
+                SetEnumerable("d", d);
             var buf = wtr.GetBytes();
 
             var rea = new PacketReader(buf);
             var ra = rea["a"].GetArray<byte>();
             var rb = rea["b"].GetArray<byte>();
-
+            var rc = rea["c"].GetArray<sbyte>();
+            var rd = rea["d"].GetArray<sbyte>();
+            
             ThrowIfNotSequenceEqual(a, ra);
             ThrowIfNotSequenceEqual(b, rb);
+            ThrowIfNotSequenceEqual(c, rc);
+            ThrowIfNotSequenceEqual(d, rd);
         }
 
         [TestMethod]
@@ -188,14 +196,14 @@ namespace Mikodev.Testing
                 new byte[] { 1, 2, 3, 4 }
             };
 
-            wtr.SetEnumerable("byte", a).
+            wtr.SetEnumerable<byte>("byte", a).
                 SetEnumerable("ints", b).
                 SetEnumerable("buffer", c);
             var buf = wtr.GetBytes();
 
             var rdr = new PacketReader(buf);
             var ra = rdr["byte"].GetValue<byte[]>();
-            var ral = rdr["byte"].GetBytes();
+            var ral = rdr["byte"].GetArray<byte>();
             var rb = rdr["ints"].GetEnumerable<string>();
             var rc = rdr["buffer"].GetEnumerable<byte[]>();
 

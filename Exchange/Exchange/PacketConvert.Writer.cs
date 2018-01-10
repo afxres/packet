@@ -29,7 +29,7 @@ namespace Mikodev.Network
             return writer;
         }
 
-        public static PacketWriter SetValue(this PacketWriter writer, string key, byte[] buffer)
+        public static PacketWriter SetEnumerable(this PacketWriter writer, string key, byte[] buffer)
         {
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
@@ -39,7 +39,7 @@ namespace Mikodev.Network
             return writer;
         }
 
-        public static PacketWriter SetValue(this PacketWriter writer, string key, ICollection<byte> buffer)
+        public static PacketWriter SetEnumerable(this PacketWriter writer, string key, ICollection<byte> buffer)
         {
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
@@ -56,7 +56,45 @@ namespace Mikodev.Network
             itm[key] = new PacketWriter(writer._cvt) { _itm = buf };
             return writer;
         }
-        
+
+        public static PacketWriter SetEnumerable(this PacketWriter writer, string key, sbyte[] buffer)
+        {
+            ThrowIfArgumentError(key);
+            ThrowIfArgumentError(writer);
+
+            var len = 0;
+            var buf = default(byte[]);
+            if (buffer != null && (len = buffer.Length) > 0)
+            {
+                buf = new byte[len];
+                Buffer.BlockCopy(buffer, 0, buf, 0, len);
+            }
+
+            var itm = writer._GetItems();
+            itm[key] = new PacketWriter(writer._cvt) { _itm = buf };
+            return writer;
+        }
+
+        public static PacketWriter SetEnumerable(this PacketWriter writer, string key, ICollection<sbyte> buffer)
+        {
+            ThrowIfArgumentError(key);
+            ThrowIfArgumentError(writer);
+
+            var len = 0;
+            var buf = default(byte[]);
+            if (buffer != null && (len = buffer.Count) > 0)
+            {
+                buf = new byte[len];
+                var tmp = new sbyte[len];
+                buffer.CopyTo(tmp, 0);
+                Buffer.BlockCopy(tmp, 0, buf, 0, len);
+            }
+
+            var itm = writer._GetItems();
+            itm[key] = new PacketWriter(writer._cvt) { _itm = buf };
+            return writer;
+        }
+
         public static PacketWriter SetEnumerable(this PacketWriter writer, string key, IEnumerable enumerable, Type type)
         {
             ThrowIfArgumentError(key);
@@ -78,7 +116,7 @@ namespace Mikodev.Network
 
             var sub = new PacketWriter(writer._cvt);
             if (enumerable != null)
-                sub._itm = _Caches.GetBytesGeneric<T>(writer._cvt, enumerable);
+                sub._itm = _Caches.GetBytesGeneric(writer._cvt, enumerable);
             var itm = writer._GetItems();
             itm[key] = sub;
             return writer;

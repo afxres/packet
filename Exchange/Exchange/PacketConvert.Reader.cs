@@ -23,12 +23,6 @@ namespace Mikodev.Network
             return val;
         }
 
-        public static byte[] GetBytes(this PacketReader reader)
-        {
-            ThrowIfArgumentError(reader);
-            return reader._spa.GetBytes();
-        }
-
         public static IEnumerable GetEnumerable(this PacketReader reader, Type type)
         {
             ThrowIfArgumentError(type);

@@ -123,12 +123,15 @@ namespace Mikodev.Network
             if (_len < 1)
                 return null;
 
+            if (typeof(T) == typeof(byte))
+                return _buf._ToBytes(_off, _len);
+            else if (typeof(T) == typeof(sbyte))
+                return _buf._ToSBytes(_off, _len);
+
             var len = con.Length;
             if (len < 1)
                 return _BuildVariable<T>(con);
 
-            var buf = _buf;
-            var off = _off;
             var sum = Math.DivRem(_len, len, out var rem);
             if (rem != 0)
                 throw _Overflow();
@@ -139,10 +142,10 @@ namespace Mikodev.Network
             {
                 if (gen != null)
                     for (int i = 0; i < sum; i++)
-                        arr[i] = gen.GetValue(buf, off + i * len, len);
+                        arr[i] = gen.GetValue(_buf, _off + i * len, len);
                 else
                     for (int i = 0; i < sum; i++)
-                        arr[i] = (T)con.GetValue(buf, off + i * len, len);
+                        arr[i] = (T)con.GetValue(_buf, _off + i * len, len);
             }
             catch (Exception ex) when (_WrapError(ex))
             {
@@ -173,11 +176,6 @@ namespace Mikodev.Network
             if (res is List<T> lst)
                 return lst.ToArray();
             throw new InvalidOperationException();
-        }
-
-        internal byte[] GetBytes()
-        {
-            return _buf._ToBytes(_off, _len);
         }
     }
 }
