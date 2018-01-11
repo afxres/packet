@@ -277,13 +277,6 @@ namespace Mikodev.Network
 
         internal static byte[] GetBytesGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
         {
-            var typ = typeof(T);
-            // sbyte[] is ICollection<byte> ??? WTF!
-            if (typ == typeof(byte) && itr is ICollection<byte> byt)
-                return byt._OfByteCollection();
-            else if (typ == typeof(sbyte) && itr is ICollection<sbyte> sby)
-                return sby._OfSByteCollection();
-
             var con = Converter<T>(dic, false);
             var mst = GetStream();
             mst._WriteEnumerableGeneric(con, itr);

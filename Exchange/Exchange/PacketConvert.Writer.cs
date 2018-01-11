@@ -29,28 +29,50 @@ namespace Mikodev.Network
             return writer;
         }
 
-        public static PacketWriter SetEnumerable(this PacketWriter writer, string key, IEnumerable enumerable, Type type)
+        public static PacketWriter SetEnumerable(this PacketWriter writer, string key, ICollection<byte> value)
+        {
+            ThrowIfArgumentError(key);
+            ThrowIfArgumentError(writer);
+
+            var val = value._OfByteCollection();
+            var itm = writer._GetItems();
+            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
+            return writer;
+        }
+
+        public static PacketWriter SetEnumerable(this PacketWriter writer, string key, ICollection<sbyte> value)
+        {
+            ThrowIfArgumentError(key);
+            ThrowIfArgumentError(writer);
+
+            var val = value._OfSByteCollection();
+            var itm = writer._GetItems();
+            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
+            return writer;
+        }
+
+        public static PacketWriter SetEnumerable(this PacketWriter writer, string key, IEnumerable value, Type type)
         {
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(writer);
 
             var sub = new PacketWriter(writer._cvt);
-            if (enumerable != null)
-                sub._itm = _Caches.GetBytes(writer._cvt, enumerable, type);
+            if (value != null)
+                sub._itm = _Caches.GetBytes(writer._cvt, value, type);
             var itm = writer._GetItems();
             itm[key] = sub;
             return writer;
         }
 
-        public static PacketWriter SetEnumerable<T>(this PacketWriter writer, string key, IEnumerable<T> enumerable)
+        public static PacketWriter SetEnumerable<T>(this PacketWriter writer, string key, IEnumerable<T> value)
         {
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
             var sub = new PacketWriter(writer._cvt);
-            if (enumerable != null)
-                sub._itm = _Caches.GetBytesGeneric(writer._cvt, enumerable);
+            if (value != null)
+                sub._itm = _Caches.GetBytesGeneric(writer._cvt, value);
             var itm = writer._GetItems();
             itm[key] = sub;
             return writer;
