@@ -115,14 +115,14 @@ namespace Mikodev.Network
                 val = this;
             else if (type == typeof(PacketRawReader))
                 val = new PacketRawReader(this);
-            else if ((con = _Caches.Converter(_cvt, type, true)) != null)
+            else if ((con = _Caches.GetConverter(_cvt, type, true)) != null)
                 val = con._GetValueWrapError(_spa._buf, _spa._off, _spa._len, true);
             else if (type._IsArray(out var inn))
-                val = _Caches.Array(this, inn);
+                val = _Caches.GetArray(this, inn);
             else if (type._IsEnumerable(out inn))
-                val = _Caches.Enumerable(this, inn);
+                val = _Caches.GetEnumerable(this, inn);
             else if (type._IsList(out inn))
-                val = _Caches.List(this, inn);
+                val = _Caches.GetList(this, inn);
             else goto fail;
 
             value = val;
@@ -151,7 +151,7 @@ namespace Mikodev.Network
             if (reader._Convert(type, out var ret))
                 return ret;
 
-            var res = _Caches.SetMethods(type);
+            var res = _Caches.GetSetMethods(type);
             if (res == null)
                 throw new PacketException(PacketError.InvalidType);
             var arr = res.args;

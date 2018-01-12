@@ -9,7 +9,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(reader);
 
-            var con = _Caches.Converter(reader._cvt, type, false);
+            var con = _Caches.GetConverter(reader._cvt, type, false);
             var val = reader._spa.Next(con);
             return val;
         }
@@ -18,7 +18,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(reader);
 
-            var con = _Caches.Converter<T>(reader._cvt, false);
+            var con = _Caches.GetConverter<T>(reader._cvt, false);
             var val = reader._spa.NextAuto<T>(con);
             return val;
         }

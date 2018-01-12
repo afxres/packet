@@ -89,6 +89,8 @@ namespace Mikodev.Network
             var obj = default(object);
             var con = default(IPacketConverter);
             var typ = default(Type);
+            var buf = default(byte[]);
+            var itr = default(IEnumerable);
 
             if ((typ = itm?.GetType()) == null)
                 obj = null;
@@ -96,16 +98,16 @@ namespace Mikodev.Network
                 obj = wri._itm;
             else if (itm is PacketRawWriter raw)
                 obj = raw;
-            else if ((con = _Caches.Converter(cvt, typ, true)) != null)
+            else if ((con = _Caches.GetConverter(cvt, typ, true)) != null)
                 obj = con._GetBytesWrapError(itm);
-            else if (itm is IEnumerable == false || typ._IsImplOfEnumerable(out var inn) == false)
+            else if ((itr = itm as IEnumerable) == null || typ._IsImplOfEnumerable(out var inn) == false)
                 goto fail;
             else if (inn == typeof(byte) && itm is ICollection<byte> byt)
                 obj = byt._OfByteCollection();
             else if (inn == typeof(sbyte) && itm is ICollection<sbyte> sby)
                 obj = sby._OfSByteCollection();
-            else if ((con = _Caches.Converter(cvt, inn, true)) != null)
-                obj = _Caches.GetBytes(con, (IEnumerable)itm);
+            else if ((buf = _Caches.GetBytesEnumerableReflection(cvt, itr, inn)) != null)
+                obj = buf;
             else goto fail;
 
             val = new PacketWriter(cvt) { _itm = obj };
@@ -138,7 +140,7 @@ namespace Mikodev.Network
         internal static void _SerializeProperties(ItemDirectory dst, ConverterDictionary cvt, object itm, int lev)
         {
             var typ = itm.GetType();
-            var inf = _Caches.GetMethods(typ);
+            var inf = _Caches.GetGetMethods(typ);
             var fun = inf.func;
             var arg = inf.args;
             var res = new object[arg.Length];

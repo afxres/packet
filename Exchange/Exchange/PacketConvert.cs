@@ -70,26 +70,26 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer);
-            return _Caches.Converter(null, type, false)._GetValueWrapError(buffer, 0, buffer.Length, true);
+            return _Caches.GetConverter(null, type, false)._GetValueWrapError(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue(byte[] buffer, int offset, int length, Type type)
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer, offset, length);
-            return _Caches.Converter(null, type, false)._GetValueWrapError(buffer, offset, length, true);
+            return _Caches.GetConverter(null, type, false)._GetValueWrapError(buffer, offset, length, true);
         }
 
         public static object GetValue<T>(byte[] buffer)
         {
             ThrowIfArgumentError(buffer);
-            return _Caches.Converter<T>(null, false)._GetValueWrapErrorAuto<T>(buffer, 0, buffer.Length, true);
+            return _Caches.GetConverter<T>(null, false)._GetValueWrapErrorAuto<T>(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue<T>(byte[] buffer, int offset, int length)
         {
             ThrowIfArgumentError(buffer, offset, length);
-            return _Caches.Converter<T>(null, false)._GetValueWrapError(buffer, offset, length, true);
+            return _Caches.GetConverter<T>(null, false)._GetValueWrapError(buffer, offset, length, true);
         }
 
         public static byte[] GetBytes(object value, Type type)

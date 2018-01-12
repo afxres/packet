@@ -155,7 +155,7 @@ namespace Mikodev.Network
 
         internal static void _WriteValue(this Stream str, ConverterDictionary cvt, object itm, Type type)
         {
-            var con = _Caches.Converter(cvt, type, false);
+            var con = _Caches.GetConverter(cvt, type, false);
             var len = con.Length > 0;
             if (len)
                 str._Write(con._GetBytesWrapError(itm));
@@ -166,7 +166,7 @@ namespace Mikodev.Network
 
         internal static void _WriteValueGeneric<T>(this Stream str, ConverterDictionary cvt, T itm)
         {
-            var con = _Caches.Converter<T>(cvt, false);
+            var con = _Caches.GetConverter<T>(cvt, false);
             var len = con.Length > 0;
             var res = con as IPacketConverter<T>;
             if (len && res != null)

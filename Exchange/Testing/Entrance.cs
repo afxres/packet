@@ -31,12 +31,12 @@ namespace Mikodev.Testing
             var b = new IPEndPoint(IPAddress.Any, IPEndPoint.MaxPort);
             var c = DateTime.Now;
             var d = "sample text";
-            var e = 'A';
-            var f = 1.1F;
-            var g = 1.1D;
+            var e = '一';
+            var f = 1.313131F;
+            var g = 1.3131313131313131D;
             var h = true;
             var i = 1.2345678901234567890123456789M;
-            var j = TimeSpan.MaxValue;
+            var j = DateTime.MaxValue - DateTime.Now;
             var k = Guid.NewGuid();
             var wtr = new PacketWriter();
             wtr.SetValue("a", a).
@@ -89,14 +89,14 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Integer()
         {
-            var i8 = (sbyte)-1;
-            var u8 = (byte)1;
-            var i16 = (short)-1;
-            var u16 = (ushort)1;
-            var i32 = -1;
-            var u32 = 1U;
-            var i64 = -1L;
-            var u64 = 1UL;
+            var i8 = (sbyte)-13;
+            var u8 = (byte)131;
+            var i16 = (short)-13131;
+            var u16 = (ushort)13131;
+            var i32 = -1313131313;
+            var u32 = 1313131313U;
+            var i64 = -1313131313131313131L;
+            var u64 = 1313131313131313131UL;
 
             var wtr = new PacketWriter();
             wtr.SetValue("a", i8).

@@ -59,7 +59,7 @@ namespace Mikodev.Network
 
             var sub = new PacketWriter(writer._cvt);
             if (value != null)
-                sub._itm = _Caches.GetBytes(writer._cvt, value, type);
+                sub._itm = _Caches.GetBytesEnumerable(writer._cvt, value, type);
             var itm = writer._GetItems();
             itm[key] = sub;
             return writer;
@@ -72,7 +72,7 @@ namespace Mikodev.Network
 
             var sub = new PacketWriter(writer._cvt);
             if (value != null)
-                sub._itm = _Caches.GetBytesGeneric(writer._cvt, value);
+                sub._itm = _Caches.GetBytesEnumerableGeneric(writer._cvt, value);
             var itm = writer._GetItems();
             itm[key] = sub;
             return writer;

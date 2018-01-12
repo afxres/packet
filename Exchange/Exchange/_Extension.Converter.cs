@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Mikodev.Network.Converters;
+using System;
 using System.Text;
 using System.Threading;
-using static System.BitConverter;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
@@ -12,29 +12,22 @@ namespace Mikodev.Network
 
         internal static void _Ref<T>(ConverterDictionary dic, Func<T, byte[]> bin, Func<byte[], int, int, T> val) => dic.Add(typeof(T), new _ConvertReference<T>(bin, val));
 
-        internal static void _Val<T>(ConverterDictionary dic, Func<T, byte[]> bin, Func<byte[], int, T> val, int len) => dic.Add(typeof(T), new _ConvertValue<T>(bin, val, len));
-
         internal static ConverterDictionary _InitDictionary()
         {
             var dic = new ConverterDictionary();
 
-            _Val(dic, GetBytes, ToBoolean, sizeof(bool));
-            _Val(dic, _OfByte, _ToByte, sizeof(byte));
-            _Val(dic, _OfSByte, _ToSByte, sizeof(sbyte));
-            _Val(dic, GetBytes, ToChar, sizeof(char));
-            _Val(dic, GetBytes, ToInt16, sizeof(short));
-            _Val(dic, GetBytes, ToInt32, sizeof(int));
-            _Val(dic, GetBytes, ToInt64, sizeof(long));
-            _Val(dic, GetBytes, ToUInt16, sizeof(ushort));
-            _Val(dic, GetBytes, ToUInt32, sizeof(uint));
-            _Val(dic, GetBytes, ToUInt64, sizeof(ulong));
-            _Val(dic, GetBytes, ToSingle, sizeof(float));
-            _Val(dic, GetBytes, ToDouble, sizeof(double));
-            _Val(dic, _OfDecimal, _ToDecimal, sizeof(decimal));
-
-            _Val(dic, _OfDateTime, _ToDateTime, sizeof(long));
-            _Val(dic, _OfTimeSpan, _ToTimeSpan, sizeof(long));
-            _Val(dic, _OfGuid, _ToGuid, _GuidLength);
+            var ass = typeof(_Extension).Assembly;
+            var tps = ass.GetTypes();
+            foreach (var t in ass.GetTypes())
+            {
+                var ats = t.GetCustomAttributes(typeof(_ConverterAttribute), false);
+                if (ats.Length != 1)
+                    continue;
+                var att = (_ConverterAttribute)ats[0];
+                var typ = att.Type;
+                var ins = (IPacketConverter)Activator.CreateInstance(t);
+                dic.Add(typ, ins);
+            }
 
             _Ref(dic, _OfByteArray, _ToByteArray);
             _Ref(dic, _OfSByteArray, _ToSByteArray);

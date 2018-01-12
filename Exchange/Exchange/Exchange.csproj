@@ -46,6 +46,23 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Converters\BooleanConverter.cs" />
+    <Compile Include="Converters\ByteConverter.cs" />
+    <Compile Include="Converters\CharConverter.cs" />
+    <Compile Include="Converters\DateTimeConverter.cs" />
+    <Compile Include="Converters\DecimalConverter.cs" />
+    <Compile Include="Converters\DoubleConverter.cs" />
+    <Compile Include="Converters\GuidConverter.cs" />
+    <Compile Include="Converters\Int16Converter.cs" />
+    <Compile Include="Converters\Int32Converter.cs" />
+    <Compile Include="Converters\Int64Converter.cs" />
+    <Compile Include="Converters\SByteConverter.cs" />
+    <Compile Include="Converters\SingleConverter.cs" />
+    <Compile Include="Converters\TimeSpanConverter.cs" />
+    <Compile Include="Converters\UInt16Converter.cs" />
+    <Compile Include="Converters\UInt32Converter.cs" />
+    <Compile Include="Converters\UInt64Converter.cs" />
+    <Compile Include="Converters\_ConverterAttribute.cs" />
     <Compile Include="IPacketConverter.cs" />
     <Compile Include="PacketConvert.cs" />
     <Compile Include="PacketConvert.Raw.cs" />
@@ -70,9 +87,9 @@
     <Compile Include="PacketReader.cs" />
     <Compile Include="PacketWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="_ConvertValue.cs" />
     <Compile Include="_EnumeratorGeneric.cs" />
     <Compile Include="_Element.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
