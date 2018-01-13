@@ -2,7 +2,7 @@
 
 namespace Mikodev.Network
 {
-    internal class _ConvertBase<T>
+    internal sealed class _ConvertBase<T>
     {
         internal readonly Func<T, byte[]> _bin = null;
 

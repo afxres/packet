@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(sbyte[]))]
-    public class SByteArrayConverter : IPacketConverter, IPacketConverter<sbyte[]>
+    internal sealed class SByteArrayConverter : IPacketConverter, IPacketConverter<sbyte[]>
     {
         public static byte[] ToBytes(sbyte[] buffer)
         {

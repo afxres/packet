@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(Decimal))]
-    internal class DecimalConverter : IPacketConverter, IPacketConverter<Decimal>
+    internal sealed class DecimalConverter : IPacketConverter, IPacketConverter<Decimal>
     {
         public static byte[] ToBytes(Decimal value)
         {

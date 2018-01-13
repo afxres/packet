@@ -4,7 +4,7 @@ using System.Net;
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(IPEndPoint))]
-    public class IPEndPointConverter : IPacketConverter, IPacketConverter<IPEndPoint>
+    internal sealed class IPEndPointConverter : IPacketConverter, IPacketConverter<IPEndPoint>
     {
         public static byte[] ToBytes(IPEndPoint value)
         {

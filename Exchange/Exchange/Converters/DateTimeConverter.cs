@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(DateTime))]
-    internal class DateTimeConverter : IPacketConverter, IPacketConverter<DateTime>
+    internal sealed class DateTimeConverter : IPacketConverter, IPacketConverter<DateTime>
     {
         public static byte[] ToBytes(DateTime value) => BitConverter.GetBytes(value.ToBinary());
 

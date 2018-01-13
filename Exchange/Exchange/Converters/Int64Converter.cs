@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(Int64))]
-    internal class Int64Converter : IPacketConverter, IPacketConverter<Int64>
+    internal sealed class Int64Converter : IPacketConverter, IPacketConverter<Int64>
     {
         public int Length => sizeof(Int64);
 

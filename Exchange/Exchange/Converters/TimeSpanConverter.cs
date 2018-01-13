@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(TimeSpan))]
-    internal class TimeSpanConverter : IPacketConverter, IPacketConverter<TimeSpan>
+    internal sealed class TimeSpanConverter : IPacketConverter, IPacketConverter<TimeSpan>
     {
         public static byte[] ToBytes(TimeSpan value) => BitConverter.GetBytes(value.Ticks);
 

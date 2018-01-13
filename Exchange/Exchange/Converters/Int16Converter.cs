@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(Int16))]
-    internal class Int16Converter : IPacketConverter, IPacketConverter<Int16>
+    internal sealed class Int16Converter : IPacketConverter, IPacketConverter<Int16>
     {
         public int Length => sizeof(Int16);
 

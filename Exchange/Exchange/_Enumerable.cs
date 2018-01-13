@@ -18,7 +18,7 @@ namespace Mikodev.Network
         IEnumerator IEnumerable.GetEnumerator() => new _Enumerator(_src, _con);
     }
 
-    internal class _Enumerable<T> : _Enumerable, IEnumerable<T>
+    internal sealed class _Enumerable<T> : _Enumerable, IEnumerable<T>
     {
         internal _Enumerable(PacketReader reader) : base(reader, typeof(T)) { }
 

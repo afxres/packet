@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(IPAddress))]
-    public class IPAddressConverter : IPacketConverter, IPacketConverter<IPAddress>
+    internal sealed class IPAddressConverter : IPacketConverter, IPacketConverter<IPAddress>
     {
         public static byte[] ToBytes(IPAddress value) => value.GetAddressBytes();
 

@@ -1,7 +1,7 @@
 ﻿namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(byte))]
-    internal class ByteConverter : IPacketConverter, IPacketConverter<byte>
+    internal sealed class ByteConverter : IPacketConverter, IPacketConverter<byte>
     {
         public int Length => sizeof(byte);
 

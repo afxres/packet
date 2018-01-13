@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(Double))]
-    internal class DoubleConverter : IPacketConverter, IPacketConverter<Double>
+    internal sealed class DoubleConverter : IPacketConverter, IPacketConverter<Double>
     {
         public int Length => sizeof(Double);
 

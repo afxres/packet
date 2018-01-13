@@ -8,8 +8,7 @@ namespace Mikodev.Network
         internal _Element _spa;
         internal object _cur = null;
         internal readonly IPacketConverter _con = null;
-
-
+        
         internal _Enumerator(PacketReader source, IPacketConverter converter)
         {
             _spa = new _Element(source._spa);
@@ -33,7 +32,7 @@ namespace Mikodev.Network
         }
     }
 
-    internal class _Enumerator<T> : _Enumerator, IEnumerator<T>
+    internal sealed class _Enumerator<T> : _Enumerator, IEnumerator<T>
     {
         internal _Enumerator(PacketReader reader, IPacketConverter converter) : base(reader, converter) { }
 

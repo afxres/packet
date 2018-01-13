@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(Char))]
-    internal class CharConverter : IPacketConverter, IPacketConverter<Char>
+    internal sealed class CharConverter : IPacketConverter, IPacketConverter<Char>
     {
         public int Length => sizeof(Char);
 

@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [_Converter(typeof(Guid))]
-    internal class GuidConverter : IPacketConverter, IPacketConverter<Guid>
+    internal sealed class GuidConverter : IPacketConverter, IPacketConverter<Guid>
     {
         private const int _Length = 16;
 
