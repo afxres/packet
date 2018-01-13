@@ -88,7 +88,7 @@ namespace Mikodev.Network
             {
                 if (path == null)
                     throw new ArgumentNullException(nameof(path));
-                var key = path.Split(_Extension.s_seps);
+                var key = path.Split(_Extension.s_separators);
                 var val = _GetItem(key, nothrow);
                 return val;
             }

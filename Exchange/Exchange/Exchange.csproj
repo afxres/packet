@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Converters\BooleanConverter.cs" />
+    <Compile Include="Converters\ByteArrayConverter.cs" />
     <Compile Include="Converters\ByteConverter.cs" />
     <Compile Include="Converters\CharConverter.cs" />
     <Compile Include="Converters\DateTimeConverter.cs" />
@@ -56,8 +57,12 @@
     <Compile Include="Converters\Int16Converter.cs" />
     <Compile Include="Converters\Int32Converter.cs" />
     <Compile Include="Converters\Int64Converter.cs" />
+    <Compile Include="Converters\IPAddressConverter.cs" />
+    <Compile Include="Converters\IPEndPointConverter.cs" />
+    <Compile Include="Converters\SByteArrayConverter.cs" />
     <Compile Include="Converters\SByteConverter.cs" />
     <Compile Include="Converters\SingleConverter.cs" />
+    <Compile Include="Converters\StringConverter.cs" />
     <Compile Include="Converters\TimeSpanConverter.cs" />
     <Compile Include="Converters\UInt16Converter.cs" />
     <Compile Include="Converters\UInt32Converter.cs" />
@@ -73,7 +78,6 @@
     <Compile Include="_Caches.ThreadStatic.cs" />
     <Compile Include="_Caches.Nested.cs" />
     <Compile Include="_ConvertBase.cs" />
-    <Compile Include="_ConvertReference.cs" />
     <Compile Include="_DynamicReader.cs" />
     <Compile Include="_DynamicWriter.cs" />
     <Compile Include="_Caches.cs" />

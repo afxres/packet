@@ -1,6 +1,5 @@
 ﻿using Mikodev.Network.Converters;
 using System;
-using System.Text;
 using System.Threading;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
@@ -8,16 +7,13 @@ namespace Mikodev.Network
 {
     partial class _Extension
     {
-        internal static readonly ConverterDictionary s_cons = null;
+        internal static readonly ConverterDictionary s_dic = null;
 
-        internal static void _Ref<T>(ConverterDictionary dic, Func<T, byte[]> bin, Func<byte[], int, int, T> val) => dic.Add(typeof(T), new _ConvertReference<T>(bin, val));
-
-        internal static ConverterDictionary _InitDictionary()
+        static _Extension()
         {
             var dic = new ConverterDictionary();
-
             var ass = typeof(_Extension).Assembly;
-            var tps = ass.GetTypes();
+
             foreach (var t in ass.GetTypes())
             {
                 var ats = t.GetCustomAttributes(typeof(_ConverterAttribute), false);
@@ -28,14 +24,7 @@ namespace Mikodev.Network
                 var ins = (IPacketConverter)Activator.CreateInstance(t);
                 dic.Add(typ, ins);
             }
-
-            _Ref(dic, _OfByteArray, _ToByteArray);
-            _Ref(dic, _OfSByteArray, _ToSByteArray);
-            _Ref(dic, Encoding.UTF8.GetBytes, Encoding.UTF8.GetString);
-            _Ref(dic, _OfIPAddress, _ToIPAddress);
-            _Ref(dic, _OfEndPoint, _ToEndPoint);
-
-            return dic;
+            s_dic = dic;
         }
 
         internal static bool _WrapError(Exception ex) => (ex is PacketException || ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException) == false;

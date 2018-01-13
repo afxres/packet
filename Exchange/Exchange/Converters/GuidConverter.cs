@@ -9,7 +9,7 @@ namespace Mikodev.Network.Converters
 
         public static byte[] ToBytes(Guid value) => value.ToByteArray();
 
-        public static Guid ToGuid(byte[] buffer, int offset) => new Guid(_Extension._Borrow(buffer, offset, _Length));
+        public static Guid ToGuid(byte[] buffer, int offset) => new Guid(_Extension._Span(buffer, offset, _Length));
 
         public int Length => _Length;
 

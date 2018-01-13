@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Network.Converters;
+using System;
 using System.Collections.Generic;
 using static Mikodev.Network._Extension;
 
@@ -124,9 +125,9 @@ namespace Mikodev.Network
                 return null;
 
             if (typeof(T) == typeof(byte))
-                return _buf._ToByteArray(_off, _len);
+                return ByteArrayConverter.ToByteArray(_buf, _off, _len);
             else if (typeof(T) == typeof(sbyte))
-                return _buf._ToSByteArray(_off, _len);
+                return SByteArrayConverter.ToSbyteArray(_buf, _off, _len);
 
             var len = con.Length;
             if (len < 1)

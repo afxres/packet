@@ -34,7 +34,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var val = value._OfByteCollection();
+            var val = value._ToBytes();
             var itm = writer._GetItems();
             itm[key] = new PacketWriter(writer._cvt) { _itm = val };
             return writer;
@@ -45,7 +45,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var val = value._OfSByteCollection();
+            var val = value._ToBytes();
             var itm = writer._GetItems();
             itm[key] = new PacketWriter(writer._cvt) { _itm = val };
             return writer;

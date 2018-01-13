@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq.Expressions;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
-using ItemDirectory = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
+using WriterDirectory = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
 
 namespace Mikodev.Network
 {
@@ -17,11 +17,11 @@ namespace Mikodev.Network
 
         public PacketWriter(ConverterDictionary converters = null) => _cvt = converters;
 
-        internal ItemDirectory _GetItems()
+        internal WriterDirectory _GetItems()
         {
-            if (_itm is ItemDirectory dic)
+            if (_itm is WriterDirectory dic)
                 return dic;
-            var val = new ItemDirectory();
+            var val = new WriterDirectory();
             _itm = val;
             return val;
         }
@@ -29,12 +29,12 @@ namespace Mikodev.Network
         public byte[] GetBytes()
         {
             if (_itm == null)
-                return new byte[0];
+                return _Extension.s_empty_bytes;
             else if (_itm is byte[] buf)
                 return buf;
             else if (_itm is PacketRawWriter raw)
                 return raw._str.ToArray();
-            var dic = (ItemDirectory)_itm;
+            var dic = (WriterDirectory)_itm;
             var mst = _Caches.GetStream();
             _GetBytes(mst, dic, 0);
             var res = mst.ToArray();
@@ -50,13 +50,13 @@ namespace Mikodev.Network
             else if (_itm is byte[] buf)
                 stb.AppendFormat("{0} byte(s)", buf.Length);
             else
-                stb.AppendFormat("{0} node(s)", ((ItemDirectory)_itm).Count);
+                stb.AppendFormat("{0} node(s)", ((WriterDirectory)_itm).Count);
             return stb.ToString();
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
 
-        internal static void _GetBytes(Stream str, ItemDirectory dic, int lev)
+        internal static void _GetBytes(Stream str, WriterDirectory dic, int lev)
         {
             if (lev > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
@@ -76,7 +76,7 @@ namespace Mikodev.Network
                     str._WriteExt(raw._str);
                 else
                 {
-                    var sub = (ItemDirectory)obj;
+                    var sub = (WriterDirectory)obj;
                     str._BeginInternal(out var src);
                     _GetBytes(str, sub, lev);
                     str._EndInternal(src);
@@ -103,9 +103,9 @@ namespace Mikodev.Network
             else if ((itr = itm as IEnumerable) == null || typ._IsImplOfEnumerable(out var inn) == false)
                 goto fail;
             else if (inn == typeof(byte) && itm is ICollection<byte> byt)
-                obj = byt._OfByteCollection();
+                obj = byt._ToBytes();
             else if (inn == typeof(sbyte) && itm is ICollection<sbyte> sby)
-                obj = sby._OfSByteCollection();
+                obj = sby._ToBytes();
             else if ((buf = _Caches.GetBytesEnumerableReflection(cvt, itr, inn)) != null)
                 obj = buf;
             else goto fail;
@@ -137,7 +137,7 @@ namespace Mikodev.Network
             return wtr;
         }
 
-        internal static void _SerializeProperties(ItemDirectory dst, ConverterDictionary cvt, object itm, int lev)
+        internal static void _SerializeProperties(WriterDirectory dst, ConverterDictionary cvt, object itm, int lev)
         {
             var typ = itm.GetType();
             var inf = _Caches.GetGetMethods(typ);

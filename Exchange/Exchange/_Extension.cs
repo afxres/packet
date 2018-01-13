@@ -10,12 +10,9 @@ namespace Mikodev.Network
 {
     internal static partial class _Extension
     {
-        internal static readonly char[] s_seps = new[] { '/', '\\' };
+        internal static readonly byte[] s_empty_bytes = new byte[0];
 
-        static _Extension()
-        {
-            s_cons = _InitDictionary();
-        }
+        internal static readonly char[] s_separators = new[] { '/', '\\' };
 
         internal static bool _IsEnumerable(this Type type, out Type inner)
         {
@@ -122,12 +119,14 @@ namespace Mikodev.Network
             mst.WriteTo(str);
         }
 
-        internal static byte[] _Borrow(byte[] buffer, int offset, int length)
+        internal static byte[] _Span(byte[] buffer, int offset, int length)
         {
             if (offset == 0 && length == buffer.Length)
                 return buffer;
             if (offset < 0 || length < 0 || buffer.Length - offset < length)
                 throw new PacketException(PacketError.Overflow);
+            if (length == 0)
+                return s_empty_bytes;
             var buf = new byte[length];
             Buffer.BlockCopy(buffer, offset, buf, 0, length);
             return buf;

@@ -28,6 +28,6 @@ namespace Mikodev.Network
             internal T Value(object _) => val;
         }
 
-        internal static Wrapper<T> Wrap<T>(T val) => new Wrapper<T> { val = val };
+        internal static Wrapper<T> _Wrap<T>(T val) => new Wrapper<T> { val = val };
     }
 }

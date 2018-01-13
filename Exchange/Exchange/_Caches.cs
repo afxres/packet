@@ -34,7 +34,7 @@ namespace Mikodev.Network
             if (type.IsEnum == false)
                 return null;
             var und = Enum.GetUnderlyingType(type);
-            if (s_cons.TryGetValue(und, out var res))
+            if (s_dic.TryGetValue(und, out var res))
                 return res;
             return null;
         }
@@ -50,7 +50,7 @@ namespace Mikodev.Network
                 var inv = Expression.Call(ele, met, arg);
                 var fun = Expression.Lambda<Func<_Element, IPacketConverter, object>>(inv, ele, arg);
                 var com = fun.Compile();
-                val = s_lst.GetValue(type, Wrap(com).Value);
+                val = s_lst.GetValue(type, _Wrap(com).Value);
             }
             return val.Invoke(reader._spa, con);
         }
@@ -66,7 +66,7 @@ namespace Mikodev.Network
                 var inv = Expression.Call(ele, met, arg);
                 var fun = Expression.Lambda<Func<_Element, IPacketConverter, object>>(inv, ele, arg);
                 var com = fun.Compile();
-                val = s_arr.GetValue(type, Wrap(com).Value);
+                val = s_arr.GetValue(type, _Wrap(com).Value);
             }
             return val.Invoke(reader._spa, con);
         }
@@ -82,7 +82,7 @@ namespace Mikodev.Network
                 var inv = Expression.New(cts[0], par);
                 var fun = Expression.Lambda<Func<PacketReader, object>>(inv, par);
                 var com = fun.Compile();
-                val = s_itr.GetValue(type, Wrap(com).Value);
+                val = s_itr.GetValue(type, _Wrap(com).Value);
             }
             return val.Invoke(reader);
         }
@@ -129,7 +129,7 @@ namespace Mikodev.Network
             var del = Expression.Lambda<Action<object, object[]>>(blk, ipt, arr);
 
             var res = new SolveInfo { func = del.Compile(), args = inf.ToArray() };
-            return s_slv.GetValue(type, Wrap(res).Value);
+            return s_slv.GetValue(type, _Wrap(res).Value);
         }
 
         private static DissoInfo _DissolveAnonymousType(Type type)
@@ -165,7 +165,7 @@ namespace Mikodev.Network
             var del = Expression.Lambda<Func<object[], object>>(ins, ipt);
             var res = new DissoInfo { func = del.Compile(), args = inf };
 
-            return s_dis.GetValue(type, Wrap(res).Value);
+            return s_dis.GetValue(type, _Wrap(res).Value);
         }
 
         private static DissoInfo _DissolveType(Type type, ConstructorInfo constructor)
@@ -210,7 +210,7 @@ namespace Mikodev.Network
             var del = Expression.Lambda<Func<object[], object>>(blk, ipt);
 
             var res = new DissoInfo { func = del.Compile(), args = inf.ToArray() };
-            return s_dis.GetValue(type, Wrap(res).Value);
+            return s_dis.GetValue(type, _Wrap(res).Value);
         }
 
         internal static Func<IPacketConverter, IEnumerable, byte[]> _EnumerableFunction(Type type)
@@ -223,7 +223,7 @@ namespace Mikodev.Network
             var cal = Expression.Call(inf, cvt, itr);
             var fun = Expression.Lambda<Func<IPacketConverter, IEnumerable, byte[]>>(cal, cvt, itr);
             var com = fun.Compile();
-            return s_itr_bin.GetValue(type, Wrap(com).Value);
+            return s_itr_bin.GetValue(type, _Wrap(com).Value);
         }
 
         internal static DissoInfo GetSetMethods(Type type)
@@ -252,7 +252,7 @@ namespace Mikodev.Network
                 if (val == null)
                     goto fail;
                 else return val;
-            if (s_cons.TryGetValue(type, out val))
+            if (s_dic.TryGetValue(type, out val))
                 return val;
             if (s_cvt.TryGetValue(type, out val))
                 return val;
@@ -260,7 +260,7 @@ namespace Mikodev.Network
             var res = _BuildConverter(type);
             if (res == null)
                 goto fail;
-            else return s_cvt.GetValue(type, Wrap(res).Value);
+            else return s_cvt.GetValue(type, _Wrap(res).Value);
 
             fail:
             if (nothrow == true)
