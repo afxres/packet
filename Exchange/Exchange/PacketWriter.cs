@@ -90,7 +90,7 @@ namespace Mikodev.Network
             var con = default(IPacketConverter);
             var typ = default(Type);
             var buf = default(byte[]);
-            var itr = default(IEnumerable);
+            var det = default(_DetailInfo);
 
             if ((typ = itm?.GetType()) == null)
                 obj = null;
@@ -100,13 +100,13 @@ namespace Mikodev.Network
                 obj = raw;
             else if ((con = _Caches.GetConverter(cvt, typ, true)) != null)
                 obj = con._GetBytesWrapError(itm);
-            else if ((itr = itm as IEnumerable) == null || typ._IsImplOfEnumerable(out var inn) == false)
+            else if ((det = _Caches.GetDetail(typ)).is_itr_imp == false)
                 goto fail;
-            else if (inn == typeof(byte) && itm is ICollection<byte> byt)
+            else if (det.arg_of_itr_imp == typeof(byte) && itm is ICollection<byte> byt)
                 obj = byt._ToBytes();
-            else if (inn == typeof(sbyte) && itm is ICollection<sbyte> sby)
+            else if (det.arg_of_itr_imp == typeof(sbyte) && itm is ICollection<sbyte> sby)
                 obj = sby._ToBytes();
-            else if ((buf = _Caches.GetBytesEnumerableReflection(cvt, itr, inn)) != null)
+            else if ((buf = _Caches.GetBytesEnumerableReflection(cvt, (IEnumerable)itm, det.arg_of_itr_imp)) != null)
                 obj = buf;
             else goto fail;
 

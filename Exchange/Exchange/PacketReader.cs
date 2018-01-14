@@ -37,13 +37,13 @@ namespace Mikodev.Network
 
             while (_spa._idx < _spa._max)
             {
-                if (_spa._buf._CanRead(_spa._max, ref _spa._idx, out len) == false)
+                if (_spa._buf._HasNext(_spa._max, ref _spa._idx, out len) == false)
                     return false;
                 var key = Encoding.UTF8.GetString(_spa._buf, _spa._idx, len);
                 if (dic.ContainsKey(key))
                     return false;
                 _spa._idx += len;
-                if (_spa._buf._CanRead(_spa._max, ref _spa._idx, out len) == false)
+                if (_spa._buf._HasNext(_spa._max, ref _spa._idx, out len) == false)
                     return false;
                 dic.Add(key, new PacketReader(_spa._buf, _spa._idx, len, _cvt));
                 _spa._idx += len;
@@ -110,6 +110,7 @@ namespace Mikodev.Network
         {
             var val = default(object);
             var con = default(IPacketConverter);
+            var det = default(_DetailInfo);
 
             if (type == typeof(PacketReader))
                 val = this;
@@ -117,12 +118,12 @@ namespace Mikodev.Network
                 val = new PacketRawReader(this);
             else if ((con = _Caches.GetConverter(_cvt, type, true)) != null)
                 val = con._GetValueWrapError(_spa._buf, _spa._off, _spa._len, true);
-            else if (type._IsArray(out var inn))
-                val = _Caches.GetArray(this, inn);
-            else if (type._IsEnumerable(out inn))
-                val = _Caches.GetEnumerable(this, inn);
-            else if (type._IsList(out inn))
-                val = _Caches.GetList(this, inn);
+            else if ((det = _Caches.GetDetail(type)).is_arr)
+                val = _Caches.GetArray(this, det.arg_of_arr);
+            else if (det.is_itr)
+                val = _Caches.GetEnumerable(this, det.arg_of_itr);
+            else if (det.is_lst)
+                val = _Caches.GetList(this, det.arg_of_lst);
             else goto fail;
 
             value = val;

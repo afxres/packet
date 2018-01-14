@@ -68,6 +68,7 @@
     <Compile Include="Converters\UInt32Converter.cs" />
     <Compile Include="Converters\UInt64Converter.cs" />
     <Compile Include="Converters\_ConverterAttribute.cs" />
+    <Compile Include="_DetailInfo.cs" />
     <Compile Include="IPacketConverter.cs" />
     <Compile Include="PacketConvert.cs" />
     <Compile Include="PacketConvert.Raw.cs" />
@@ -76,8 +77,7 @@
     <Compile Include="PacketRawReader.cs" />
     <Compile Include="PacketRawWriter.cs" />
     <Compile Include="_Caches.ThreadStatic.cs" />
-    <Compile Include="_Caches.Nested.cs" />
-    <Compile Include="_ConvertBase.cs" />
+    <Compile Include="_Caches.Internal.cs" />
     <Compile Include="_DynamicReader.cs" />
     <Compile Include="_DynamicWriter.cs" />
     <Compile Include="_Caches.cs" />
@@ -87,7 +87,6 @@
     <Compile Include="_Extension.cs" />
     <Compile Include="PacketError.cs" />
     <Compile Include="PacketException.cs" />
-    <Compile Include="_Extension.Functions.cs" />
     <Compile Include="PacketReader.cs" />
     <Compile Include="PacketWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

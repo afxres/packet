@@ -27,6 +27,7 @@ namespace Mikodev.Network
         private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_arr = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
         private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_lst = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
 
+        private static readonly ConditionalWeakTable<Type, _DetailInfo> s_detail = new ConditionalWeakTable<Type, _DetailInfo>();
         private static readonly ConditionalWeakTable<Type, Func<IPacketConverter, IEnumerable, byte[]>> s_itr_bin = new ConditionalWeakTable<Type, Func<IPacketConverter, IEnumerable, byte[]>>();
 
         private static IPacketConverter _BuildConverter(Type type)
@@ -37,6 +38,40 @@ namespace Mikodev.Network
             if (s_dic.TryGetValue(und, out var res))
                 return res;
             return null;
+        }
+
+        internal static _DetailInfo GetDetail(Type type)
+        {
+            if (s_detail.TryGetValue(type, out var res))
+                return res;
+            var inf = new _DetailInfo();
+            var arr = type.IsArray && type.GetArrayRank() == 1;
+            inf.is_arr = arr;
+            inf.arg_of_arr = arr ? type.GetElementType() : null;
+
+            var gen = type.IsGenericType;
+            var def = gen ? type.GetGenericTypeDefinition() : null;
+            var arg = gen ? type.GetGenericArguments() : null;
+            var one = gen ? arg.Length == 1 : false;
+            var lst = one && (def == typeof(List<>) || def == typeof(IList<>));
+            var itr = one && (def == typeof(IEnumerable<>));
+            inf.is_lst = lst;
+            inf.is_itr = itr;
+            inf.arg_of_lst = lst ? arg[0] : null;
+            inf.arg_of_itr = itr ? arg[0] : null;
+
+            var imp = default(Type);
+            foreach (var i in type.GetInterfaces())
+            {
+                var det = GetDetail(i);
+                if (det.is_itr == false)
+                    continue;
+                imp = det.arg_of_itr;
+            }
+            inf.is_itr_imp = (imp != null);
+            inf.arg_of_itr_imp = imp;
+
+            return s_detail.GetValue(type, _Wrap(inf).Value);
         }
 
         internal static object GetList(PacketReader reader, Type type)

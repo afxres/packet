@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using static System.BitConverter;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
@@ -14,68 +13,11 @@ namespace Mikodev.Network
 
         internal static readonly char[] s_separators = new[] { '/', '\\' };
 
-        internal static bool _IsEnumerable(this Type type, out Type inner)
-        {
-            if (type.IsGenericType == false || type.GetGenericTypeDefinition() != typeof(IEnumerable<>))
-                goto fail;
-            var som = type.GetGenericArguments();
-            if (som.Length != 1)
-                goto fail;
-            inner = som[0];
-            return true;
-
-            fail:
-            inner = null;
-            return false;
-        }
-
-        internal static bool _IsImplOfEnumerable(this Type type, out Type inner)
-        {
-            foreach (var i in type.GetInterfaces())
-                if (i._IsEnumerable(out inner))
-                    return true;
-            inner = null;
-            return false;
-        }
-
-        internal static bool _IsArray(this Type type, out Type inner)
-        {
-            if (type.IsArray == false || type.GetArrayRank() != 1)
-                goto fail;
-            inner = type.GetElementType();
-            return true;
-
-            fail:
-            inner = null;
-            return false;
-        }
-
-        /// <summary>
-        /// Is <see cref="List{T}"/> or <see cref="IList{T}"/>
-        /// </summary>
-        internal static bool _IsList(this Type type, out Type inner)
-        {
-            if (type.IsGenericType == false)
-                goto fail;
-            var def = type.GetGenericTypeDefinition();
-            if (def != typeof(List<>) && def != typeof(IList<>))
-                goto fail;
-            var som = type.GetGenericArguments();
-            if (som.Length != 1)
-                goto fail;
-            inner = som[0];
-            return true;
-
-            fail:
-            inner = null;
-            return false;
-        }
-
-        internal static bool _CanRead(this byte[] buffer, int higher, ref int offset, out int length)
+        internal static bool _HasNext(this byte[] buffer, int higher, ref int offset, out int length)
         {
             if (offset < 0 || higher - offset < sizeof(int))
                 goto fail;
-            length = ToInt32(buffer, offset);
+            length = BitConverter.ToInt32(buffer, offset);
             offset += sizeof(int);
             if (length < 0 || higher - offset < length)
                 goto fail;
@@ -90,21 +32,21 @@ namespace Mikodev.Network
 
         internal static void _WriteLen(this Stream str, int val)
         {
-            var len = GetBytes(val);
+            var len = BitConverter.GetBytes(val);
             str.Write(len, 0, len.Length);
         }
 
         internal static void _WriteKey(this Stream str, string key)
         {
             var buf = Encoding.UTF8.GetBytes(key);
-            var len = GetBytes(buf.Length);
+            var len = BitConverter.GetBytes(buf.Length);
             str.Write(len, 0, len.Length);
             str.Write(buf, 0, buf.Length);
         }
 
         internal static void _WriteExt(this Stream str, byte[] buf)
         {
-            var len = GetBytes(buf.Length);
+            var len = BitConverter.GetBytes(buf.Length);
             str.Write(len, 0, len.Length);
             str.Write(buf, 0, buf.Length);
         }
@@ -114,7 +56,7 @@ namespace Mikodev.Network
             var len = mst.Length;
             if (len > int.MaxValue)
                 throw new PacketException(PacketError.Overflow);
-            var buf = GetBytes((int)len);
+            var buf = BitConverter.GetBytes((int)len);
             str.Write(buf, 0, buf.Length);
             mst.WriteTo(str);
         }
@@ -146,11 +88,10 @@ namespace Mikodev.Network
             if (len > int.MaxValue)
                 throw new PacketException(PacketError.Overflow);
             str.Position = src;
-            var buf = GetBytes((int)len);
+            var buf = BitConverter.GetBytes((int)len);
             str.Write(buf, 0, buf.Length);
             str.Position = dst;
         }
-
 
         internal static void _WriteValue(this Stream str, ConverterDictionary cvt, object itm, Type type)
         {
@@ -209,6 +150,28 @@ namespace Mikodev.Network
                 foreach (var i in itr)
                     str._WriteExt(con._GetBytesWrapError(i));
             return;
+        }
+
+        internal static byte[] _ToBytes(this ICollection<byte> buffer)
+        {
+            var len = buffer?.Count ?? 0;
+            if (len == 0)
+                return s_empty_bytes;
+            var buf = new byte[len];
+            buffer.CopyTo(buf, 0);
+            return buf;
+        }
+
+        internal static byte[] _ToBytes(this ICollection<sbyte> buffer)
+        {
+            var len = buffer?.Count ?? 0;
+            if (len == 0)
+                return s_empty_bytes;
+            var buf = new byte[len];
+            var tmp = new sbyte[len];
+            buffer.CopyTo(tmp, 0);
+            Buffer.BlockCopy(tmp, 0, buf, 0, len);
+            return buf;
         }
     }
 }
