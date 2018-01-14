@@ -12,6 +12,8 @@ namespace Mikodev.Network
 {
     public sealed partial class PacketWriter : IDynamicMetaObjectProvider
     {
+        internal const int _Length = 256;
+
         internal readonly ConverterDictionary _cvt = null;
         internal object _itm = null;
 
@@ -35,7 +37,7 @@ namespace Mikodev.Network
             else if (_itm is PacketRawWriter raw)
                 return raw._str.ToArray();
             var dic = (WriterDirectory)_itm;
-            var mst = _Caches.GetStream();
+            var mst = new MemoryStream(_Length);
             _GetBytes(mst, dic, 0);
             var res = mst.ToArray();
             return res;

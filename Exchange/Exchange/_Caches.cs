@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -11,14 +12,14 @@ namespace Mikodev.Network
 {
     internal static partial class _Caches
     {
-        internal const int _Length = 64;
+        internal const int _Length = 256;
         internal const int _Depth = 64;
 
         private static readonly MethodInfo s_get_lst = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly MethodInfo s_get_arr = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly MethodInfo s_get_itr_bin = typeof(_Caches).GetMethod(nameof(GetBytesEnumerableAuto), BindingFlags.Static | BindingFlags.NonPublic);
 
-        private static readonly ConditionalWeakTable<Type, IPacketConverter> s_cvt = new ConditionalWeakTable<Type, IPacketConverter>();
+        private static readonly ConditionalWeakTable<Type, _DetailInfo> s_detail = new ConditionalWeakTable<Type, _DetailInfo>();
         private static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_itr = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
 
         private static readonly ConditionalWeakTable<Type, SolveInfo> s_slv = new ConditionalWeakTable<Type, SolveInfo>();
@@ -27,24 +28,20 @@ namespace Mikodev.Network
         private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_arr = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
         private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_lst = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
 
-        private static readonly ConditionalWeakTable<Type, _DetailInfo> s_detail = new ConditionalWeakTable<Type, _DetailInfo>();
         private static readonly ConditionalWeakTable<Type, Func<IPacketConverter, IEnumerable, byte[]>> s_itr_bin = new ConditionalWeakTable<Type, Func<IPacketConverter, IEnumerable, byte[]>>();
-
-        private static IPacketConverter _BuildConverter(Type type)
-        {
-            if (type.IsEnum == false)
-                return null;
-            var und = Enum.GetUnderlyingType(type);
-            if (s_dic.TryGetValue(und, out var res))
-                return res;
-            return null;
-        }
 
         internal static _DetailInfo GetDetail(Type type)
         {
             if (s_detail.TryGetValue(type, out var res))
                 return res;
             var inf = new _DetailInfo();
+
+            var tag = type.IsEnum;
+            inf.is_enum = tag;
+            inf.arg_enum = tag ? Enum.GetUnderlyingType(type) : null;
+            if (tag == true)
+                return s_detail.GetValue(type, _Wrap(inf).Value);
+
             var arr = type.IsArray && type.GetArrayRank() == 1;
             inf.is_arr = arr;
             inf.arg_of_arr = arr ? type.GetElementType() : null;
@@ -289,13 +286,10 @@ namespace Mikodev.Network
                 else return val;
             if (s_dic.TryGetValue(type, out val))
                 return val;
-            if (s_cvt.TryGetValue(type, out val))
-                return val;
 
-            var res = _BuildConverter(type);
-            if (res == null)
-                goto fail;
-            else return s_cvt.GetValue(type, _Wrap(res).Value);
+            var det = GetDetail(type);
+            if (det.is_enum && s_dic.TryGetValue(det.arg_enum, out val))
+                return val;
 
             fail:
             if (nothrow == true)
@@ -321,7 +315,7 @@ namespace Mikodev.Network
         internal static byte[] GetBytesEnumerable(ConverterDictionary dic, IEnumerable itr, Type type)
         {
             var con = GetConverter(dic, type, false);
-            var mst = GetStream();
+            var mst = new MemoryStream(_Length);
             mst._WriteEnumerable(con, itr);
             return mst.ToArray();
         }
@@ -329,7 +323,7 @@ namespace Mikodev.Network
         internal static byte[] GetBytesEnumerableGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
         {
             var con = GetConverter<T>(dic, false);
-            var mst = GetStream();
+            var mst = new MemoryStream(_Length);
             mst._WriteEnumerableGeneric(con, itr);
             return mst.ToArray();
         }
@@ -349,7 +343,7 @@ namespace Mikodev.Network
 
         internal static byte[] GetBytesEnumerableAuto<T>(IPacketConverter con, IEnumerable itr)
         {
-            var mst = GetStream();
+            var mst = new MemoryStream(_Length);
             if (con is IPacketConverter<T> gen && itr is IEnumerable<T> col)
                 mst._WriteEnumerableGeneric(gen, col);
             else

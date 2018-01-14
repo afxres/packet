@@ -40,7 +40,7 @@ namespace Mikodev.Test
             // release mode
             for (int idx = 0; idx < loop; idx++)
             {
-                using (new TraceWatch("BitConverter")) // 8.30 ms
+                using (new TraceWatch("BitConverter")) // 8.01 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -48,35 +48,8 @@ namespace Mikodev.Test
                         var res = BitConverter.ToInt32(buf, 0);
                     }
                 }
-
-                using (new TraceWatch("PacketWriter")) // 150.62 ms, avg
-                {
-                    for (int i = 0; i < max; i++)
-                    {
-                        var buf = PacketWriter.Serialize(i).GetBytes();
-                        var res = new PacketReader(buf).GetValue<int>();
-                    }
-                }
-
-                using (new TraceWatch("PacketRawWriter<>")) // 189.93 ms, avg
-                {
-                    for (int i = 0; i < max; i++)
-                    {
-                        var buf = new PacketRawWriter().SetValue(i).GetBytes();
-                        var res = new PacketRawReader(buf).GetValue<int>();
-                    }
-                }
-
-                using (new TraceWatch("PacketWriter<>")) // 684.76 ms, avg
-                {
-                    for (int i = 0; i < max; i++)
-                    {
-                        var buf = new PacketWriter().SetValue("some", i).GetBytes();
-                        var res = new PacketReader(buf)["some"].GetValue<int>();
-                    }
-                }
-
-                using (new TraceWatch("PacketWriter<> Set")) // 2361.77 ms, avg
+                
+                using (new TraceWatch("PacketWriter<> Set")) // 2213.68 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -91,7 +64,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Serialize (anonymous)")) // 3811.01 ms, avg
+                using (new TraceWatch("Serialize (anonymous)")) // 3492.56 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -99,7 +72,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Deserialize (anonymous)")) // 2805.59 ms, avg
+                using (new TraceWatch("Deserialize (anonymous)")) // 2550.30 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
