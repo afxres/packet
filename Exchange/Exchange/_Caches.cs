@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -17,7 +16,7 @@ namespace Mikodev.Network
 
         private static readonly MethodInfo s_get_lst = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly MethodInfo s_get_arr = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_get_itr_bin = typeof(_Caches).GetMethod(nameof(GetBytesEnumerableAuto), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_get_seq = typeof(_Sequence).GetMethod(nameof(_Sequence._InternalCreate), BindingFlags.Static | BindingFlags.NonPublic);
 
         private static readonly ConditionalWeakTable<Type, _DetailInfo> s_detail = new ConditionalWeakTable<Type, _DetailInfo>();
         private static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_itr = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
@@ -28,7 +27,7 @@ namespace Mikodev.Network
         private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_arr = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
         private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_lst = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
 
-        private static readonly ConditionalWeakTable<Type, Func<IPacketConverter, IEnumerable, byte[]>> s_itr_bin = new ConditionalWeakTable<Type, Func<IPacketConverter, IEnumerable, byte[]>>();
+        private static readonly ConditionalWeakTable<Type, Func<IPacketConverter, IEnumerable, _Sequence>> s_seq = new ConditionalWeakTable<Type, Func<IPacketConverter, IEnumerable, _Sequence>>();
 
         internal static _DetailInfo GetDetail(Type type)
         {
@@ -245,19 +244,6 @@ namespace Mikodev.Network
             return s_dis.GetValue(type, _Wrap(res).Value);
         }
 
-        internal static Func<IPacketConverter, IEnumerable, byte[]> _EnumerableFunction(Type type)
-        {
-            if (s_itr_bin.TryGetValue(type, out var res))
-                return res;
-            var inf = s_get_itr_bin.MakeGenericMethod(type);
-            var cvt = Expression.Parameter(typeof(IPacketConverter), "converter");
-            var itr = Expression.Parameter(typeof(IEnumerable), "enumerable");
-            var cal = Expression.Call(inf, cvt, itr);
-            var fun = Expression.Lambda<Func<IPacketConverter, IEnumerable, byte[]>>(cal, cvt, itr);
-            var com = fun.Compile();
-            return s_itr_bin.GetValue(type, _Wrap(com).Value);
-        }
-
         internal static DissoInfo GetSetMethods(Type type)
         {
             if (s_dis.TryGetValue(type, out var val))
@@ -312,43 +298,26 @@ namespace Mikodev.Network
             return con._GetBytesWrapError(value);
         }
 
-        internal static byte[] GetBytesEnumerable(ConverterDictionary dic, IEnumerable itr, Type type)
-        {
-            var con = GetConverter(dic, type, false);
-            var mst = new MemoryStream(_Length);
-            mst._WriteEnumerable(con, itr);
-            return mst.ToArray();
-        }
-
-        internal static byte[] GetBytesEnumerableGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
-        {
-            var con = GetConverter<T>(dic, false);
-            var mst = new MemoryStream(_Length);
-            mst._WriteEnumerableGeneric(con, itr);
-            return mst.ToArray();
-        }
-
         /// <summary>
         /// Return null if type invalid
         /// </summary>
-        internal static byte[] GetBytesEnumerableReflection(ConverterDictionary dic, IEnumerable itr, Type type)
+        internal static _Sequence GetSequence(ConverterDictionary dic, IEnumerable itr, Type type)
         {
             var con = GetConverter(dic, type, true);
             if (con == null)
                 return null;
-            var fun = _EnumerableFunction(type);
-            var res = fun.Invoke(con, itr);
-            return res;
-        }
-
-        internal static byte[] GetBytesEnumerableAuto<T>(IPacketConverter con, IEnumerable itr)
-        {
-            var mst = new MemoryStream(_Length);
-            if (con is IPacketConverter<T> gen && itr is IEnumerable<T> col)
-                mst._WriteEnumerableGeneric(gen, col);
-            else
-                mst._WriteEnumerable(con, itr);
-            return mst.ToArray();
+            if (s_seq.TryGetValue(type, out var val) == false)
+            {
+                var inf = s_get_seq.MakeGenericMethod(type);
+                var cvt = Expression.Parameter(typeof(IPacketConverter), "converter");
+                var enu = Expression.Parameter(typeof(IEnumerable), "enumerable");
+                var cal = Expression.Call(inf, cvt, enu);
+                var fun = Expression.Lambda<Func<IPacketConverter, IEnumerable, _Sequence>>(cal, cvt, enu);
+                var com = fun.Compile();
+                val = s_seq.GetValue(type, _Wrap(com).Value);
+            }
+            var seq = val.Invoke(con, itr);
+            return seq;
         }
     }
 }

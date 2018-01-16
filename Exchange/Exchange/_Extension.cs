@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -50,17 +49,7 @@ namespace Mikodev.Network
             str.Write(len, 0, len.Length);
             str.Write(buf, 0, buf.Length);
         }
-
-        internal static void _WriteExt(this Stream str, MemoryStream mst)
-        {
-            var len = mst.Length;
-            if (len > int.MaxValue)
-                throw new PacketException(PacketError.Overflow);
-            var buf = BitConverter.GetBytes((int)len);
-            str.Write(buf, 0, buf.Length);
-            mst.WriteTo(str);
-        }
-
+        
         internal static byte[] _Span(byte[] buffer, int offset, int length)
         {
             if (offset == 0 && length == buffer.Length)
@@ -119,39 +108,7 @@ namespace Mikodev.Network
                 str._WriteExt(con._GetBytesWrapError(itm));
             return;
         }
-
-        internal static void _WriteEnumerable(this Stream str, IPacketConverter con, IEnumerable itr)
-        {
-            var len = con.Length > 0;
-            if (len)
-                foreach (var i in itr)
-                    str._Write(con._GetBytesWrapError(i));
-            else
-                foreach (var i in itr)
-                    str._WriteExt(con._GetBytesWrapError(i));
-            return;
-        }
-
-        internal static void _WriteEnumerableGeneric<T>(this Stream str, IPacketConverter con, IEnumerable<T> itr)
-        {
-            var len = con.Length > 0;
-            var res = con as IPacketConverter<T>;
-
-            if (len && res != null)
-                foreach (var i in itr)
-                    str._Write(res._GetBytesWrapErrorGeneric(i));
-            else if (len)
-                foreach (var i in itr)
-                    str._Write(con._GetBytesWrapError(i));
-            else if (res != null)
-                foreach (var i in itr)
-                    str._WriteExt(res._GetBytesWrapErrorGeneric(i));
-            else
-                foreach (var i in itr)
-                    str._WriteExt(con._GetBytesWrapError(i));
-            return;
-        }
-
+        
         internal static byte[] _ToBytes(this ICollection<byte> buffer)
         {
             var len = buffer?.Count ?? 0;

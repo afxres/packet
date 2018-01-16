@@ -30,13 +30,16 @@ namespace Mikodev.Network
 
         public byte[] GetBytes()
         {
-            if (_itm == null)
+            var obj = _itm;
+            if (obj == null)
                 return _Extension.s_empty_bytes;
-            else if (_itm is byte[] buf)
+            else if (obj is byte[] buf)
                 return buf;
-            else if (_itm is PacketRawWriter raw)
+            else if (obj is _Sequence seq)
+                return seq.GetBytes();
+            else if (obj is PacketRawWriter raw)
                 return raw._str.ToArray();
-            var dic = (WriterDirectory)_itm;
+            var dic = (WriterDirectory)obj;
             var mst = new MemoryStream(_Length);
             _GetBytes(mst, dic, 0);
             var res = mst.ToArray();
@@ -45,14 +48,19 @@ namespace Mikodev.Network
 
         public override string ToString()
         {
+            var obj = _itm;
             var stb = new StringBuilder(nameof(PacketWriter));
             stb.Append(" with ");
-            if (_itm is null)
+            if (obj is null)
                 stb.Append("none");
-            else if (_itm is byte[] buf)
+            else if (obj is byte[] buf)
                 stb.AppendFormat("{0} byte(s)", buf.Length);
+            else if (obj is _Sequence seq)
+                stb.AppendFormat("{0} element(s)", seq.Count);
+            else if (obj is PacketRawWriter raw)
+                stb.AppendFormat("{0} and {1} byte(s)", nameof(PacketRawWriter), raw._str.Length);
             else
-                stb.AppendFormat("{0} node(s)", ((WriterDirectory)_itm).Count);
+                stb.AppendFormat("{0} node(s)", ((WriterDirectory)obj).Count);
             return stb.ToString();
         }
 
@@ -70,28 +78,44 @@ namespace Mikodev.Network
                 var obj = i.Value._itm;
                 str._WriteKey(key);
 
-                if (obj == null)
-                    str._WriteLen(0);
-                else if (obj is byte[] buf)
-                    str._WriteExt(buf);
-                else if (obj is PacketRawWriter raw)
-                    str._WriteExt(raw._str);
-                else
+                switch (obj)
                 {
-                    var sub = (WriterDirectory)obj;
-                    str._BeginInternal(out var src);
-                    _GetBytes(str, sub, lev);
-                    str._EndInternal(src);
+                    case null:
+                        str._WriteLen(0);
+                        break;
+
+                    case byte[] buf:
+                        str._WriteExt(buf);
+                        break;
+
+                    case _Sequence seq:
+                        str._BeginInternal(out var src);
+                        seq.GetBytes(str);
+                        str._EndInternal(src);
+                        break;
+
+                    case PacketRawWriter raw:
+                        str._BeginInternal(out src);
+                        raw._str.WriteTo(str);
+                        str._EndInternal(src);
+                        break;
+
+                    default:
+                        var sub = (WriterDirectory)obj;
+                        str._BeginInternal(out src);
+                        _GetBytes(str, sub, lev);
+                        str._EndInternal(src);
+                        break;
                 }
             }
         }
 
         internal static bool _GetWriter(object itm, ConverterDictionary cvt, out PacketWriter val)
         {
+            var typ = default(Type);
             var obj = default(object);
             var con = default(IPacketConverter);
-            var typ = default(Type);
-            var buf = default(byte[]);
+            var seq = default(_Sequence);
             var det = default(_DetailInfo);
 
             if ((typ = itm?.GetType()) == null)
@@ -108,8 +132,8 @@ namespace Mikodev.Network
                 obj = byt._ToBytes();
             else if (det.arg_of_itr_imp == typeof(sbyte) && itm is ICollection<sbyte> sby)
                 obj = sby._ToBytes();
-            else if ((buf = _Caches.GetBytesEnumerableReflection(cvt, (IEnumerable)itm, det.arg_of_itr_imp)) != null)
-                obj = buf;
+            else if ((seq = _Caches.GetSequence(cvt, (IEnumerable)itm, det.arg_of_itr_imp)) != null)
+                obj = seq;
             else goto fail;
 
             val = new PacketWriter(cvt) { _itm = obj };
