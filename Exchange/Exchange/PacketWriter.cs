@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
@@ -78,34 +77,20 @@ namespace Mikodev.Network
                 var obj = i.Value._itm;
                 str._WriteKey(key);
 
-                switch (obj)
+                if (obj == null)
+                    str._WriteLen(0);
+                else if (obj is byte[] buf)
+                    str._WriteExt(buf);
+                else
                 {
-                    case null:
-                        str._WriteLen(0);
-                        break;
-
-                    case byte[] buf:
-                        str._WriteExt(buf);
-                        break;
-
-                    case _Sequence seq:
-                        str._BeginInternal(out var src);
+                    str._BeginInternal(out var src);
+                    if (obj is _Sequence seq)
                         seq.GetBytes(str);
-                        str._EndInternal(src);
-                        break;
-
-                    case PacketRawWriter raw:
-                        str._BeginInternal(out src);
+                    else if (obj is PacketRawWriter raw)
                         raw._str.WriteTo(str);
-                        str._EndInternal(src);
-                        break;
-
-                    default:
-                        var sub = (WriterDirectory)obj;
-                        str._BeginInternal(out src);
-                        _GetBytes(str, sub, lev);
-                        str._EndInternal(src);
-                        break;
+                    else
+                        _GetBytes(str, (WriterDirectory)obj, lev);
+                    str._EndInternal(src);
                 }
             }
         }
@@ -132,7 +117,7 @@ namespace Mikodev.Network
                 obj = byt._ToBytes();
             else if (det.arg_of_itr_imp == typeof(sbyte) && itm is ICollection<sbyte> sby)
                 obj = sby._ToBytes();
-            else if ((seq = _Caches.GetSequence(cvt, (IEnumerable)itm, det.arg_of_itr_imp)) != null)
+            else if ((seq = _Caches.GetSequence(cvt, itm, det.arg_of_itr_imp)) != null)
                 obj = seq;
             else goto fail;
 

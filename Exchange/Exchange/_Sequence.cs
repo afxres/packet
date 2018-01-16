@@ -49,22 +49,15 @@ namespace Mikodev.Network
         internal static _Sequence CreateGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
         {
             var con = _Caches.GetConverter<T>(dic, false);
-            var lst = new List<byte[]>();
-            if (con is IPacketConverter<T> res)
-                foreach (var i in itr)
-                    lst.Add(res._GetBytesWrapErrorGeneric(i));
-            else
-                foreach (var i in itr)
-                    lst.Add(con._GetBytesWrapError(i));
-            var seq = new _Sequence { _len = con.Length, _lst = lst };
+            var seq = CreateInternalGeneric(con, itr);
             return seq;
         }
 
-        internal static _Sequence _InternalCreate<T>(IPacketConverter con, IEnumerable itr)
+        internal static _Sequence CreateInternalGeneric<T>(IPacketConverter con, IEnumerable<T> itr)
         {
             var lst = new List<byte[]>();
-            if (con is IPacketConverter<T> res && itr is IEnumerable<T> col)
-                foreach (var i in col)
+            if (con is IPacketConverter<T> res)
+                foreach (var i in itr)
                     lst.Add(res._GetBytesWrapErrorGeneric(i));
             else
                 foreach (var i in itr)

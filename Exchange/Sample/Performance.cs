@@ -49,7 +49,7 @@ namespace Mikodev.Test
                     }
                 }
                 
-                using (new TraceWatch("PacketWriter<> Set")) // 2398.72 ms, avg
+                using (new TraceWatch("PacketWriter<> Set")) // 2373.41 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -64,7 +64,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Serialize (anonymous)")) // 3725.10 ms, avg
+                using (new TraceWatch("Serialize (anonymous)")) // 3688.05 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {

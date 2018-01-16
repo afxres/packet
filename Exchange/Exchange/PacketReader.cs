@@ -5,13 +5,14 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ReaderDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketReader>;
 
 namespace Mikodev.Network
 {
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
         internal readonly ConverterDictionary _cvt = null;
-        internal Dictionary<string, PacketReader> _itm = null;
+        internal ReaderDictionary _itm = null;
         internal _Element _spa;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
@@ -26,31 +27,32 @@ namespace Mikodev.Network
             _cvt = converters;
         }
 
-        internal bool _Init()
+        internal ReaderDictionary _GetItems()
         {
-            if (_itm != null)
-                return true;
+            var obj = _itm;
+            if (obj != null)
+                return obj;
             if (_spa._idx != _spa._off)
-                return false;
-            var dic = new Dictionary<string, PacketReader>();
+                return null;
+            var dic = new ReaderDictionary();
             var len = 0;
 
             while (_spa._idx < _spa._max)
             {
                 if (_spa._buf._HasNext(_spa._max, ref _spa._idx, out len) == false)
-                    return false;
+                    return null;
                 var key = Encoding.UTF8.GetString(_spa._buf, _spa._idx, len);
                 if (dic.ContainsKey(key))
-                    return false;
+                    return null;
                 _spa._idx += len;
                 if (_spa._buf._HasNext(_spa._max, ref _spa._idx, out len) == false)
-                    return false;
+                    return null;
                 dic.Add(key, new PacketReader(_spa._buf, _spa._idx, len, _cvt));
                 _spa._idx += len;
             }
 
             _itm = dic;
-            return true;
+            return dic;
         }
 
         /// <summary>
@@ -58,12 +60,12 @@ namespace Mikodev.Network
         /// </summary>
         internal PacketReader _GetItem(string key, bool nothrow)
         {
-            var res = _Init();
-            if (res == true && _itm.TryGetValue(key, out var val))
+            var dic = _GetItems();
+            if (dic != null && dic.TryGetValue(key, out var val))
                 return val;
             if (nothrow)
                 return null;
-            throw new PacketException(res ? PacketError.PathError : PacketError.Overflow);
+            throw new PacketException(dic == null ? PacketError.Overflow : PacketError.PathError);
         }
 
         /// <summary>
@@ -78,9 +80,9 @@ namespace Mikodev.Network
             return rdr;
         }
 
-        public int Count => _Init() ? _itm.Count : 0;
+        public int Count => _GetItems()?.Count ?? 0;
 
-        public IEnumerable<string> Keys => _Init() ? _itm.Keys : Enumerable.Empty<string>();
+        public IEnumerable<string> Keys => _GetItems()?.Keys ?? Enumerable.Empty<string>();
 
         public PacketReader this[string path, bool nothrow = false]
         {
@@ -98,8 +100,9 @@ namespace Mikodev.Network
         {
             var stb = new StringBuilder(nameof(PacketReader));
             stb.Append(" with ");
-            if (_Init())
-                stb.AppendFormat("{0} node(s), ", _itm.Count);
+            var dic = _GetItems();
+            if (dic != null)
+                stb.AppendFormat("{0} node(s), ", dic.Count);
             stb.AppendFormat("{0} byte(s)", _spa._len);
             return stb.ToString();
         }

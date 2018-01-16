@@ -29,8 +29,9 @@ namespace Mikodev.Network
         public override IEnumerable<string> GetDynamicMemberNames()
         {
             var rea = (PacketReader)Value;
-            if (rea._Init())
-                return rea._itm.Keys;
+            var dic = rea._GetItems();
+            if (dic != null)
+                return dic.Keys;
             return base.GetDynamicMemberNames();
         }
     }

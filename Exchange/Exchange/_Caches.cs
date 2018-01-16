@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -16,7 +15,7 @@ namespace Mikodev.Network
 
         private static readonly MethodInfo s_get_lst = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly MethodInfo s_get_arr = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_get_seq = typeof(_Sequence).GetMethod(nameof(_Sequence._InternalCreate), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_get_seq = typeof(_Sequence).GetMethod(nameof(_Sequence.CreateInternalGeneric), BindingFlags.Static | BindingFlags.NonPublic);
 
         private static readonly ConditionalWeakTable<Type, _DetailInfo> s_detail = new ConditionalWeakTable<Type, _DetailInfo>();
         private static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_itr = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
@@ -27,7 +26,7 @@ namespace Mikodev.Network
         private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_arr = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
         private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_lst = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
 
-        private static readonly ConditionalWeakTable<Type, Func<IPacketConverter, IEnumerable, _Sequence>> s_seq = new ConditionalWeakTable<Type, Func<IPacketConverter, IEnumerable, _Sequence>>();
+        private static readonly ConditionalWeakTable<Type, Func<IPacketConverter, object, _Sequence>> s_seq = new ConditionalWeakTable<Type, Func<IPacketConverter, object, _Sequence>>();
 
         internal static _DetailInfo GetDetail(Type type)
         {
@@ -301,7 +300,7 @@ namespace Mikodev.Network
         /// <summary>
         /// Return null if type invalid
         /// </summary>
-        internal static _Sequence GetSequence(ConverterDictionary dic, IEnumerable itr, Type type)
+        internal static _Sequence GetSequence(ConverterDictionary dic, object itr, Type type)
         {
             var con = GetConverter(dic, type, true);
             if (con == null)
@@ -310,9 +309,10 @@ namespace Mikodev.Network
             {
                 var inf = s_get_seq.MakeGenericMethod(type);
                 var cvt = Expression.Parameter(typeof(IPacketConverter), "converter");
-                var enu = Expression.Parameter(typeof(IEnumerable), "enumerable");
-                var cal = Expression.Call(inf, cvt, enu);
-                var fun = Expression.Lambda<Func<IPacketConverter, IEnumerable, _Sequence>>(cal, cvt, enu);
+                var enu = Expression.Parameter(typeof(object), "enumerable");
+                var cst = Expression.TypeAs(enu, typeof(IEnumerable<>).MakeGenericType(type));
+                var cal = Expression.Call(inf, cvt, cst);
+                var fun = Expression.Lambda<Func<IPacketConverter, object, _Sequence>>(cal, cvt, enu);
                 var com = fun.Compile();
                 val = s_seq.GetValue(type, _Wrap(com).Value);
             }
