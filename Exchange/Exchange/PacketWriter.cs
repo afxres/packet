@@ -85,7 +85,7 @@ namespace Mikodev.Network
                 {
                     str._BeginInternal(out var src);
                     if (obj is _Sequence seq)
-                        seq.GetBytes(str);
+                        seq.WriteTo(str);
                     else if (obj is PacketRawWriter raw)
                         raw._str.WriteTo(str);
                     else

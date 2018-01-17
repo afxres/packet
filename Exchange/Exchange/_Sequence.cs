@@ -20,11 +20,11 @@ namespace Mikodev.Network
             if (_lst.Count < 1)
                 return _Extension.s_empty_bytes;
             var mst = new MemoryStream(_Length);
-            GetBytes(mst);
+            WriteTo(mst);
             return mst.ToArray();
         }
 
-        internal void GetBytes(Stream stream)
+        internal void WriteTo(Stream stream)
         {
             if (_len > 0)
                 foreach (var i in _lst)

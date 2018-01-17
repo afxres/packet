@@ -11,9 +11,10 @@ namespace Mikodev.Network
 {
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
-        internal readonly ConverterDictionary _cvt = null;
+        internal readonly ConverterDictionary _cvt;
         internal ReaderDictionary _itm = null;
         internal _Element _spa;
+        internal bool _init = false;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
@@ -32,23 +33,28 @@ namespace Mikodev.Network
             var obj = _itm;
             if (obj != null)
                 return obj;
-            if (_spa._idx != _spa._off)
+            if (_init == true)
                 return null;
+            _init = true;
+
             var dic = new ReaderDictionary();
+            var buf = _spa._buf;
+            var max = _spa._max;
+            var idx = _spa._off;
             var len = 0;
 
-            while (_spa._idx < _spa._max)
+            while (idx < max)
             {
-                if (_spa._buf._HasNext(_spa._max, ref _spa._idx, out len) == false)
+                if (buf._HasNext(max, ref idx, out len) == false)
                     return null;
-                var key = Encoding.UTF8.GetString(_spa._buf, _spa._idx, len);
+                var key = Encoding.UTF8.GetString(buf, idx, len);
                 if (dic.ContainsKey(key))
                     return null;
-                _spa._idx += len;
-                if (_spa._buf._HasNext(_spa._max, ref _spa._idx, out len) == false)
+                idx += len;
+                if (buf._HasNext(max, ref idx, out len) == false)
                     return null;
-                dic.Add(key, new PacketReader(_spa._buf, _spa._idx, len, _cvt));
-                _spa._idx += len;
+                dic.Add(key, new PacketReader(buf, idx, len, _cvt));
+                idx += len;
             }
 
             _itm = dic;
@@ -120,7 +126,7 @@ namespace Mikodev.Network
             else if (type == typeof(PacketRawReader))
                 val = new PacketRawReader(this);
             else if ((con = _Caches.GetConverter(_cvt, type, true)) != null)
-                val = con._GetValueWrapError(_spa._buf, _spa._off, _spa._len, true);
+                val = con._GetValueWrapError(_spa, true);
             else if ((det = _Caches.GetDetail(type)).is_arr)
                 val = _Caches.GetArray(this, det.arg_of_arr);
             else if (det.is_itr)

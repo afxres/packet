@@ -33,9 +33,9 @@ namespace Mikodev.Network
 
         internal static Exception _ConvertError(Exception ex) => new PacketException(PacketError.ConvertError, ex);
 
-        internal static object _GetValueWrapError(this IPacketConverter con, _Element element, bool check)
+        internal static object _GetValueWrapError(this IPacketConverter con, _Element ele, bool check)
         {
-            return _GetValueWrapError(con, element._buf, element._off, element._len, check);
+            return _GetValueWrapError(con, ele._buf, ele._off, ele._len, check);
         }
 
         internal static object _GetValueWrapError(this IPacketConverter con, byte[] buf, int off, int len, bool check)

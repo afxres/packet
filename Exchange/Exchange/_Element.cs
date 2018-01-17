@@ -15,8 +15,11 @@ namespace Mikodev.Network
 
         internal _Element(_Element ele)
         {
-            this = ele;
+            _buf = ele._buf;
+            _off = ele._off;
             _idx = ele._off;
+            _len = ele._len;
+            _max = ele._max;
         }
 
         internal _Element(byte[] buffer)
