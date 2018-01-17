@@ -31,8 +31,7 @@ namespace Mikodev.Network
                     stream._Write(i);
             else
                 foreach (var i in _lst)
-                    if (i != null)
-                        stream._WriteExt(i);
+                    stream._WriteExt(i);
             return;
         }
 

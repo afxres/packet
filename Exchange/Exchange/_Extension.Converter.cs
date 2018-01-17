@@ -92,10 +92,10 @@ namespace Mikodev.Network
             try
             {
                 var buf = con.GetBytes(val);
-#if DEBUG
-                if (con.Length > 0 && (buf == null || con.Length != buf.Length))
+                if (buf == null)
+                    buf = s_empty_bytes;
+                if (con.Length > 0 && con.Length != buf.Length)
                     throw _Overflow();
-#endif
                 return buf;
             }
             catch (Exception ex) when (_WrapError(ex))
@@ -109,10 +109,10 @@ namespace Mikodev.Network
             try
             {
                 var buf = con.GetBytes(val);
-#if DEBUG
-                if (con.Length > 0 && (buf == null || con.Length != buf.Length))
+                if (buf == null)
+                    buf = s_empty_bytes;
+                if (con.Length > 0 && con.Length != buf.Length)
                     throw _Overflow();
-#endif
                 return buf;
             }
             catch (Exception ex) when (_WrapError(ex))
