@@ -31,6 +31,8 @@ namespace Mikodev.Network
 
         public PacketException(PacketError code) : base(_GetMessage(code)) => _code = code;
 
+        public PacketException(PacketError code, string message) : base(message) => _code = code;
+
         public PacketException(PacketError code, Exception except) : base(_GetMessage(code), except) => _code = code;
 
         internal PacketException(SerializationInfo info, StreamingContext context) : base(info, context)

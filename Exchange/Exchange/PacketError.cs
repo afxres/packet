@@ -6,6 +6,8 @@
 
         ConvertError,
 
+        ConvertMismatch,
+
         Overflow,
 
         PathError,

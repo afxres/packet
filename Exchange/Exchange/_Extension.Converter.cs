@@ -29,9 +29,12 @@ namespace Mikodev.Network
 
         internal static bool _WrapError(Exception ex) => (ex is PacketException || ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException) == false;
 
-        internal static Exception _Overflow() => new PacketException(PacketError.Overflow);
+        internal static PacketException _Overflow() => new PacketException(PacketError.Overflow);
 
-        internal static Exception _ConvertError(Exception ex) => new PacketException(PacketError.ConvertError, ex);
+        internal static PacketException _ConvertError(Exception ex) => new PacketException(PacketError.ConvertError, ex);
+
+        internal static PacketException _Mismatch(int len) => new PacketException(PacketError.ConvertMismatch, $"Converter should return a byte array of length {len}");
+
 
         internal static object _GetValueWrapError(this IPacketConverter con, _Element ele, bool check)
         {
@@ -94,8 +97,9 @@ namespace Mikodev.Network
                 var buf = con.GetBytes(val);
                 if (buf == null)
                     buf = s_empty_bytes;
-                if (con.Length > 0 && con.Length != buf.Length)
-                    throw _Overflow();
+                var len = con.Length;
+                if (len > 0 && len != buf.Length)
+                    throw _Mismatch(len);
                 return buf;
             }
             catch (Exception ex) when (_WrapError(ex))
@@ -111,8 +115,9 @@ namespace Mikodev.Network
                 var buf = con.GetBytes(val);
                 if (buf == null)
                     buf = s_empty_bytes;
-                if (con.Length > 0 && con.Length != buf.Length)
-                    throw _Overflow();
+                var len = con.Length;
+                if (len > 0 && len != buf.Length)
+                    throw _Mismatch(len);
                 return buf;
             }
             catch (Exception ex) when (_WrapError(ex))

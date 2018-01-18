@@ -22,6 +22,21 @@ namespace Mikodev.Testing
         object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => throw new OutOfMemoryException(_ValueErr);
     }
 
+    internal class _BadConverter : IPacketConverter
+    {
+        int IPacketConverter.Length => 4;
+
+        byte[] IPacketConverter.GetBytes(object value)
+        {
+            return null;
+        }
+
+        object IPacketConverter.GetValue(byte[] buffer, int offset, int length)
+        {
+            return new byte[1];
+        }
+    }
+
     internal class _Empty { }
 
     internal class _Person
@@ -50,7 +65,7 @@ namespace Mikodev.Testing
 
         public string Value { set { } }
     }
-    
+
     internal struct _Value
     {
         public int One { get; set; }
@@ -223,6 +238,22 @@ namespace Mikodev.Testing
 
             Assert.AreEqual(obj.One, 1);
             Assert.AreEqual(obj.Two, "Two");
+        }
+
+        [TestMethod]
+        public void ConvertMismatch()
+        {
+            var cvt = new Dictionary<Type, IPacketConverter>() { [typeof(_Ref)] = new _BadConverter() };
+
+            try
+            {
+                var buf = PacketConvert.Serialize(new _Ref(), cvt);
+                Assert.Fail();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.ConvertMismatch)
+            {
+                // ignore
+            }
         }
     }
 }

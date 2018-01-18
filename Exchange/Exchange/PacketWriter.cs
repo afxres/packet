@@ -133,13 +133,12 @@ namespace Mikodev.Network
         {
             if (lev > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
-            if (_GetWriter(itm, cvt, out var sub))
-                return sub;
             lev += 1;
 
+            if (_GetWriter(itm, cvt, out var sub))
+                return sub;
             var wtr = new PacketWriter(cvt);
             var lst = wtr._GetItems();
-
             if (itm is IDictionary<string, object> dic)
                 foreach (var i in dic)
                     lst[i.Key] = _Serialize(cvt, i.Value, lev);
