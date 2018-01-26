@@ -30,18 +30,7 @@ namespace Mikodev.Network
         }
 
         internal static void _Write(this Stream str, byte[] buf) => str.Write(buf, 0, buf.Length);
-
-        internal static void _WriteLen(this Stream str, int val)
-        {
-            var len = BitConverter.GetBytes(val);
-            str.Write(len, 0, len.Length);
-        }
-
-        internal static void _WriteZero(this Stream str)
-        {
-            str.Write(s_zero_bytes, 0, sizeof(int));
-        }
-
+        
         internal static void _WriteKey(this Stream str, string key)
         {
             var buf = Encoding.UTF8.GetBytes(key);
@@ -56,7 +45,15 @@ namespace Mikodev.Network
             str.Write(len, 0, len.Length);
             str.Write(buf, 0, buf.Length);
         }
-        
+
+        internal static void _WriteExt(this Stream str, MemoryStream mst)
+        {
+            var len = (int)mst.Length;
+            var buf = BitConverter.GetBytes(len);
+            str.Write(buf, 0, sizeof(int));
+            mst.WriteTo(str);
+        }
+
         internal static byte[] _Span(byte[] buffer, int offset, int length)
         {
             if (offset == 0 && length == buffer.Length)
@@ -115,7 +112,7 @@ namespace Mikodev.Network
                 str._WriteExt(con._GetBytesWrapError(itm));
             return;
         }
-        
+
         internal static byte[] _ToBytes(this ICollection<byte> buffer)
         {
             var len = buffer?.Count ?? 0;

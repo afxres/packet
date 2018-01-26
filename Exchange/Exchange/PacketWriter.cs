@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq.Expressions;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
-using WriterDirectory = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
+using PacketWriterDirectory = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
 
 namespace Mikodev.Network
 {
@@ -18,11 +18,11 @@ namespace Mikodev.Network
 
         public PacketWriter(ConverterDictionary converters = null) => _cvt = converters;
 
-        internal WriterDirectory _GetItems()
+        internal PacketWriterDirectory _GetItems()
         {
-            if (_itm is WriterDirectory dic)
+            if (_itm is PacketWriterDirectory dic)
                 return dic;
-            var val = new WriterDirectory();
+            var val = new PacketWriterDirectory();
             _itm = val;
             return val;
         }
@@ -34,11 +34,9 @@ namespace Mikodev.Network
                 return _Extension.s_empty_bytes;
             else if (obj is byte[] buf)
                 return buf;
-            else if (obj is _Sequence seq)
-                return seq.GetBytes();
             else if (obj is MemoryStream raw)
                 return raw.ToArray();
-            var dic = obj as WriterDirectory;
+            var dic = obj as PacketWriterDirectory;
             if (dic == null)
                 throw new ApplicationException();
             var mst = new MemoryStream(_Length);
@@ -52,15 +50,13 @@ namespace Mikodev.Network
             var obj = _itm;
             var stb = new StringBuilder(nameof(PacketWriter));
             stb.Append(" with ");
-            if (obj is null)
+            if (obj == null)
                 stb.Append("none");
             else if (obj is byte[] buf)
                 stb.AppendFormat("{0} byte(s)", buf.Length);
             else if (obj is MemoryStream mst)
                 stb.AppendFormat("{0} byte(s)", mst.Length);
-            else if (obj is _Sequence seq)
-                stb.AppendFormat("{0} element(s), {1} byte(s)", seq.list.Count, seq.total);
-            else if (obj is WriterDirectory dic)
+            else if (obj is PacketWriterDirectory dic)
                 stb.AppendFormat("{0} node(s)", dic.Count);
             else
                 throw new ApplicationException();
@@ -69,7 +65,7 @@ namespace Mikodev.Network
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
 
-        internal static void _GetBytes(Stream str, WriterDirectory dic, int lev)
+        internal static void _GetBytes(Stream str, PacketWriterDirectory dic, int lev)
         {
             if (lev > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
@@ -82,29 +78,16 @@ namespace Mikodev.Network
                 str._WriteKey(key);
 
                 if (obj == null)
-                {
-                    str._WriteZero();
-                }
+                    str.Write(_Extension.s_zero_bytes, 0, sizeof(int));
                 else if (obj is byte[] buf)
-                {
                     str._WriteExt(buf);
-                }
-                else if (obj is _Sequence seq)
-                {
-                    var len = seq.total;
-                    var pre = (len == 0) ? _Extension.s_zero_bytes : BitConverter.GetBytes(len);
-                    str.Write(pre, 0, sizeof(int));
-                    foreach (var x in seq.list)
-                        str.Write(x, 0, x.Length);
-                    continue;
-                }
+                else if (obj is MemoryStream raw)
+                    str._WriteExt(raw);
                 else
                 {
                     str._BeginInternal(out var src);
-                    if (obj is WriterDirectory sub)
+                    if (obj is PacketWriterDirectory sub)
                         _GetBytes(str, sub, lev);
-                    else if (obj is MemoryStream raw)
-                        raw.WriteTo(str);
                     else
                         throw new ApplicationException();
                     str._EndInternal(src);
@@ -117,7 +100,7 @@ namespace Mikodev.Network
             var typ = default(Type);
             var obj = default(object);
             var con = default(IPacketConverter);
-            var seq = default(_Sequence);
+            var mst = default(MemoryStream);
             var det = default(_DetailInfo);
 
             if ((typ = itm?.GetType()) == null)
@@ -134,8 +117,8 @@ namespace Mikodev.Network
                 obj = byt._ToBytes();
             else if (det.arg_of_itr_imp == typeof(sbyte) && itm is ICollection<sbyte> sby)
                 obj = sby._ToBytes();
-            else if ((seq = _Caches.GetSequence(cvt, itm, det.arg_of_itr_imp)) != null)
-                obj = seq;
+            else if ((mst = _Caches.GetSequenceReflection(cvt, itm, det.arg_of_itr_imp)) != null)
+                obj = mst;
             else goto fail;
 
             val = new PacketWriter(cvt) { _itm = obj };
@@ -164,7 +147,7 @@ namespace Mikodev.Network
             return wtr;
         }
 
-        internal static void _SerializeProperties(WriterDirectory dst, ConverterDictionary cvt, object itm, int lev)
+        internal static void _SerializeProperties(PacketWriterDirectory dst, ConverterDictionary cvt, object itm, int lev)
         {
             var typ = itm.GetType();
             var inf = _Caches.GetGetMethods(typ);

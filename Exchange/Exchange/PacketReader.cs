@@ -5,14 +5,14 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
-using ReaderDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketReader>;
+using PacketReaderDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketReader>;
 
 namespace Mikodev.Network
 {
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
         internal readonly ConverterDictionary _cvt;
-        internal ReaderDictionary _itm = null;
+        internal PacketReaderDictionary _itm = null;
         internal _Element _spa;
         internal bool _init = false;
 
@@ -28,7 +28,7 @@ namespace Mikodev.Network
             _cvt = converters;
         }
 
-        internal ReaderDictionary _GetItems()
+        internal PacketReaderDictionary _GetItems()
         {
             var obj = _itm;
             if (obj != null)
@@ -37,7 +37,7 @@ namespace Mikodev.Network
                 return null;
             _init = true;
 
-            var dic = new ReaderDictionary();
+            var dic = new PacketReaderDictionary();
             var buf = _spa._buf;
             var max = _spa._max;
             var idx = _spa._off;

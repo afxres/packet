@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -15,7 +17,7 @@ namespace Mikodev.Network
 
         private static readonly MethodInfo s_get_lst = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly MethodInfo s_get_arr = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_get_seq = typeof(_Sequence).GetMethod(nameof(_Sequence.CreateInternalAuto), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_get_seq = typeof(_Caches).GetMethod(nameof(_GetSequenceAuto), BindingFlags.Static | BindingFlags.NonPublic);
 
         private static readonly ConditionalWeakTable<Type, _DetailInfo> s_detail = new ConditionalWeakTable<Type, _DetailInfo>();
         private static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_itr = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
@@ -26,7 +28,7 @@ namespace Mikodev.Network
         private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_arr = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
         private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_lst = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
 
-        private static readonly ConditionalWeakTable<Type, Func<IPacketConverter, object, _Sequence>> s_seq = new ConditionalWeakTable<Type, Func<IPacketConverter, object, _Sequence>>();
+        private static readonly ConditionalWeakTable<Type, Func<IPacketConverter, object, MemoryStream>> s_seq = new ConditionalWeakTable<Type, Func<IPacketConverter, object, MemoryStream>>();
 
         internal static _DetailInfo GetDetail(Type type)
         {
@@ -297,10 +299,88 @@ namespace Mikodev.Network
             return con._GetBytesWrapError(value);
         }
 
+        private static MemoryStream _GetSequence(IPacketConverter con, IEnumerable itr)
+        {
+            var mst = new MemoryStream(_Length);
+            var def = con.Length;
+            if (def > 0)
+            {
+                foreach (var i in itr)
+                {
+                    var buf = con._GetBytesWrapError(i);
+                    mst.Write(buf, 0, def);
+                }
+            }
+            else
+            {
+                foreach (var i in itr)
+                {
+                    var buf = con._GetBytesWrapError(i);
+                    var len = buf.Length;
+                    var pre = (len == 0)
+                        ? s_zero_bytes
+                        : BitConverter.GetBytes(len);
+                    mst.Write(pre, 0, sizeof(int));
+                    mst.Write(buf, 0, len);
+                }
+            }
+            return mst;
+        }
+
+        private static MemoryStream _GetSequenceGeneric<T>(IPacketConverter<T> con, IEnumerable<T> itr)
+        {
+            var mst = new MemoryStream(_Length);
+            var def = con.Length;
+            if (def > 0)
+            {
+                foreach (var i in itr)
+                {
+                    var buf = con._GetBytesWrapErrorGeneric(i);
+                    mst.Write(buf, 0, def);
+                }
+            }
+            else
+            {
+                foreach (var i in itr)
+                {
+                    var buf = con._GetBytesWrapErrorGeneric(i);
+                    var len = buf.Length;
+                    var pre = (len == 0)
+                        ? s_zero_bytes
+                        : BitConverter.GetBytes(len);
+                    mst.Write(pre, 0, sizeof(int));
+                    mst.Write(buf, 0, len);
+                }
+            }
+            return mst;
+        }
+
+        private static MemoryStream _GetSequenceAuto<T>(IPacketConverter con, IEnumerable<T> itr)
+        {
+            if (con is IPacketConverter<T> gen)
+                return _GetSequenceGeneric(gen, itr);
+            return _GetSequence(con, itr);
+        }
+
+        internal static MemoryStream GetSequenceGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
+        {
+            var con = _Caches.GetConverter<T>(dic, false);
+            if (con is IPacketConverter<T> gen)
+                return _GetSequenceGeneric(gen, itr);
+            return _GetSequence(con, itr);
+        }
+
+        internal static MemoryStream GetSequence(ConverterDictionary dic, IEnumerable itr, Type type)
+        {
+            var con = _Caches.GetConverter(dic, type, false);
+            var mst = _GetSequence(con, itr);
+            return mst;
+        }
+
         /// <summary>
         /// Return null if type invalid
         /// </summary>
-        internal static _Sequence GetSequence(ConverterDictionary dic, object itr, Type type)
+        internal static MemoryStream GetSequenceReflection(ConverterDictionary dic, object itr, Type type)
         {
             var con = GetConverter(dic, type, true);
             if (con == null)
@@ -312,7 +392,7 @@ namespace Mikodev.Network
                 var enu = Expression.Parameter(typeof(object), "enumerable");
                 var cst = Expression.TypeAs(enu, typeof(IEnumerable<>).MakeGenericType(type));
                 var cal = Expression.Call(inf, cvt, cst);
-                var fun = Expression.Lambda<Func<IPacketConverter, object, _Sequence>>(cal, cvt, enu);
+                var fun = Expression.Lambda<Func<IPacketConverter, object, MemoryStream>>(cal, cvt, enu);
                 var com = fun.Compile();
                 val = s_seq.GetValue(type, _Wrap(com).Value);
             }

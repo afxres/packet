@@ -91,7 +91,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="_EnumeratorGeneric.cs" />
     <Compile Include="_Element.cs" />
-    <Compile Include="_Sequence.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
