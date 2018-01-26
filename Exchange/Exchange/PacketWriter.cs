@@ -36,9 +36,11 @@ namespace Mikodev.Network
                 return buf;
             else if (obj is _Sequence seq)
                 return seq.GetBytes();
-            else if (obj is PacketRawWriter raw)
-                return raw._str.ToArray();
-            var dic = (WriterDirectory)obj;
+            else if (obj is MemoryStream raw)
+                return raw.ToArray();
+            var dic = obj as WriterDirectory;
+            if (dic == null)
+                throw new ApplicationException();
             var mst = new MemoryStream(_Length);
             _GetBytes(mst, dic, 0);
             var res = mst.ToArray();
@@ -54,12 +56,14 @@ namespace Mikodev.Network
                 stb.Append("none");
             else if (obj is byte[] buf)
                 stb.AppendFormat("{0} byte(s)", buf.Length);
+            else if (obj is MemoryStream mst)
+                stb.AppendFormat("{0} byte(s)", mst.Length);
             else if (obj is _Sequence seq)
-                stb.AppendFormat("{0} element(s)", seq.Count);
-            else if (obj is PacketRawWriter raw)
-                stb.AppendFormat("{0} and {1} byte(s)", nameof(PacketRawWriter), raw._str.Length);
+                stb.AppendFormat("{0} element(s), {1} byte(s)", seq.list.Count, seq.total);
+            else if (obj is WriterDirectory dic)
+                stb.AppendFormat("{0} node(s)", dic.Count);
             else
-                stb.AppendFormat("{0} node(s)", ((WriterDirectory)obj).Count);
+                throw new ApplicationException();
             return stb.ToString();
         }
 
@@ -78,18 +82,31 @@ namespace Mikodev.Network
                 str._WriteKey(key);
 
                 if (obj == null)
-                    str._WriteLen(0);
+                {
+                    str._WriteZero();
+                }
                 else if (obj is byte[] buf)
+                {
                     str._WriteExt(buf);
+                }
+                else if (obj is _Sequence seq)
+                {
+                    var len = seq.total;
+                    var pre = (len == 0) ? _Extension.s_zero_bytes : BitConverter.GetBytes(len);
+                    str.Write(pre, 0, sizeof(int));
+                    foreach (var x in seq.list)
+                        str.Write(x, 0, x.Length);
+                    continue;
+                }
                 else
                 {
                     str._BeginInternal(out var src);
-                    if (obj is _Sequence seq)
-                        seq.WriteTo(str);
-                    else if (obj is PacketRawWriter raw)
-                        raw._str.WriteTo(str);
+                    if (obj is WriterDirectory sub)
+                        _GetBytes(str, sub, lev);
+                    else if (obj is MemoryStream raw)
+                        raw.WriteTo(str);
                     else
-                        _GetBytes(str, (WriterDirectory)obj, lev);
+                        throw new ApplicationException();
                     str._EndInternal(src);
                 }
             }
@@ -108,7 +125,7 @@ namespace Mikodev.Network
             else if (itm is PacketWriter wri)
                 obj = wri._itm;
             else if (itm is PacketRawWriter raw)
-                obj = raw;
+                obj = raw._str;
             else if ((con = _Caches.GetConverter(cvt, typ, true)) != null)
                 obj = con._GetBytesWrapError(itm);
             else if ((det = _Caches.GetDetail(typ)).is_itr_imp == false)

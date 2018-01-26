@@ -94,7 +94,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = raw };
+            itm[key] = new PacketWriter(writer._cvt) { _itm = raw._str };
             return writer;
         }
     }

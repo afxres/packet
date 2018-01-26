@@ -8,6 +8,8 @@ namespace Mikodev.Network
 {
     internal static partial class _Extension
     {
+        internal static readonly byte[] s_zero_bytes = new byte[sizeof(int)];
+
         internal static readonly byte[] s_empty_bytes = new byte[0];
 
         internal static readonly char[] s_separators = new[] { '/', '\\' };
@@ -33,6 +35,11 @@ namespace Mikodev.Network
         {
             var len = BitConverter.GetBytes(val);
             str.Write(len, 0, len.Length);
+        }
+
+        internal static void _WriteZero(this Stream str)
+        {
+            str.Write(s_zero_bytes, 0, sizeof(int));
         }
 
         internal static void _WriteKey(this Stream str, string key)

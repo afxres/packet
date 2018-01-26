@@ -15,7 +15,7 @@ namespace Mikodev.Network
 
         private static readonly MethodInfo s_get_lst = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly MethodInfo s_get_arr = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_get_seq = typeof(_Sequence).GetMethod(nameof(_Sequence.CreateInternalGeneric), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_get_seq = typeof(_Sequence).GetMethod(nameof(_Sequence.CreateInternalAuto), BindingFlags.Static | BindingFlags.NonPublic);
 
         private static readonly ConditionalWeakTable<Type, _DetailInfo> s_detail = new ConditionalWeakTable<Type, _DetailInfo>();
         private static readonly ConditionalWeakTable<Type, Func<PacketReader, object>> s_itr = new ConditionalWeakTable<Type, Func<PacketReader, object>>();
