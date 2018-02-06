@@ -68,7 +68,6 @@
     <Compile Include="Converters\UInt32Converter.cs" />
     <Compile Include="Converters\UInt64Converter.cs" />
     <Compile Include="Converters\_ConverterAttribute.cs" />
-    <Compile Include="_DetailInfo.cs" />
     <Compile Include="IPacketConverter.cs" />
     <Compile Include="PacketConvert.cs" />
     <Compile Include="PacketConvert.Raw.cs" />

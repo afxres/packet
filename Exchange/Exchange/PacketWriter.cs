@@ -101,7 +101,7 @@ namespace Mikodev.Network
             var obj = default(object);
             var con = default(IPacketConverter);
             var mst = default(MemoryStream);
-            var det = default(_DetailInfo);
+            var det = default(_Caches.DetailInfo);
 
             if ((typ = itm?.GetType()) == null)
                 obj = null;

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using static Mikodev.Network._Extension;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
@@ -15,29 +15,22 @@ namespace Mikodev.Network
         internal const int _Length = 256;
         internal const int _Depth = 64;
 
-        private static readonly MethodInfo s_get_lst = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly MethodInfo s_get_arr = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_get_lst = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly MethodInfo s_get_seq = typeof(_Caches).GetMethod(nameof(_GetSequenceAuto), BindingFlags.Static | BindingFlags.NonPublic);
 
-        private static readonly ConditionalWeakTable<Type, _DetailInfo> s_detail = new ConditionalWeakTable<Type, _DetailInfo>();
-        private static readonly ConditionalWeakTable<Type, Func<PacketReader, IPacketConverter, object>> s_itr = new ConditionalWeakTable<Type, Func<PacketReader, IPacketConverter, object>>();
+        private static readonly ConcurrentDictionary<Type, GetterInfo> s_getter = new ConcurrentDictionary<Type, GetterInfo>();
+        private static readonly ConcurrentDictionary<Type, SetterInfo> s_setter = new ConcurrentDictionary<Type, SetterInfo>();
+        private static readonly ConcurrentDictionary<Type, DetailInfo> s_detail = new ConcurrentDictionary<Type, DetailInfo>();
 
-        private static readonly ConditionalWeakTable<Type, GetterInfo> s_slv = new ConditionalWeakTable<Type, GetterInfo>();
-        private static readonly ConditionalWeakTable<Type, SetterInfo> s_dis = new ConditionalWeakTable<Type, SetterInfo>();
+        private static readonly ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>> s_arr = new ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>>();
+        private static readonly ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>> s_lst = new ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>>();
+        private static readonly ConcurrentDictionary<Type, Func<PacketReader, IPacketConverter, object>> s_itr = new ConcurrentDictionary<Type, Func<PacketReader, IPacketConverter, object>>();
+        private static readonly ConcurrentDictionary<Type, Func<IPacketConverter, object, MemoryStream>> s_seq = new ConcurrentDictionary<Type, Func<IPacketConverter, object, MemoryStream>>();
 
-        private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_arr = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
-        private static readonly ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>> s_lst = new ConditionalWeakTable<Type, Func<_Element, IPacketConverter, object>>();
-
-        private static readonly ConditionalWeakTable<Type, Func<IPacketConverter, object, MemoryStream>> s_seq = new ConditionalWeakTable<Type, Func<IPacketConverter, object, MemoryStream>>();
-
-        internal static _DetailInfo GetDetailInfo(Type type)
+        private static DetailInfo _CreateDetailInfo(Type type)
         {
-            return s_detail.GetValue(type, _CreateDetailInfo);
-        }
-
-        private static _DetailInfo _CreateDetailInfo(Type type)
-        {
-            var inf = new _DetailInfo();
+            var inf = new DetailInfo();
             var tag = type.IsEnum;
             inf.is_enum = tag;
             inf.base_of_enum = tag ? Enum.GetUnderlyingType(type) : null;
@@ -70,6 +63,11 @@ namespace Mikodev.Network
             inf.is_itr_imp = (imp != null);
             inf.arg_of_itr_imp = imp;
             return inf;
+        }
+
+        internal static DetailInfo GetDetailInfo(Type type)
+        {
+            return s_detail.GetOrAdd(type, _CreateDetailInfo);
         }
 
         private static Func<_Element, IPacketConverter, object> _CreateListFunction(Type type)
@@ -109,7 +107,7 @@ namespace Mikodev.Network
         internal static object GetList(PacketReader reader, Type type)
         {
             var con = GetConverter(reader._cvt, type, false);
-            var fun = s_lst.GetValue(type, _CreateListFunction);
+            var fun = s_lst.GetOrAdd(type, _CreateListFunction);
             var res = fun.Invoke(reader._spa, con);
             return res;
         }
@@ -117,7 +115,7 @@ namespace Mikodev.Network
         internal static object GetArray(PacketReader reader, Type type)
         {
             var con = GetConverter(reader._cvt, type, false);
-            var fun = s_arr.GetValue(type, _CreateArrayFunction);
+            var fun = s_arr.GetOrAdd(type, _CreateArrayFunction);
             var res = fun.Invoke(reader._spa, con);
             return res;
         }
@@ -125,14 +123,9 @@ namespace Mikodev.Network
         internal static object GetEnumerable(PacketReader reader, Type type)
         {
             var con = GetConverter(reader._cvt, type, false);
-            var fun = s_itr.GetValue(type, _CreateEnumerableFunction);
+            var fun = s_itr.GetOrAdd(type, _CreateEnumerableFunction);
             var res = fun.Invoke(reader, con);
             return res;
-        }
-
-        internal static GetterInfo GetGetterInfo(Type type)
-        {
-            return s_slv.GetValue(type, _CreateGetterInfo);
         }
 
         private static GetterInfo _CreateGetterInfo(Type type)
@@ -267,9 +260,14 @@ namespace Mikodev.Network
             return _CreateSetterInfoForAnonymousType(type);
         }
 
+        internal static GetterInfo GetGetterInfo(Type type)
+        {
+            return s_getter.GetOrAdd(type, _CreateGetterInfo);
+        }
+
         internal static SetterInfo GetSetterInfo(Type type)
         {
-            return s_dis.GetValue(type, _CreateSetterInfo);
+            return s_setter.GetOrAdd(type, _CreateSetterInfo);
         }
 
         internal static IPacketConverter GetConverter<T>(ConverterDictionary dic, bool nothrow)
@@ -399,7 +397,7 @@ namespace Mikodev.Network
             var con = GetConverter(dic, type, true);
             if (con == null)
                 return null;
-            var val = s_seq.GetValue(type, _CreateSequenceFunction);
+            var val = s_seq.GetOrAdd(type, _CreateSequenceFunction);
             var seq = val.Invoke(con, itr);
             return seq;
         }
@@ -414,6 +412,18 @@ namespace Mikodev.Network
             var exp = Expression.Lambda<Func<IPacketConverter, object, MemoryStream>>(cal, cvt, enu);
             var fun = exp.Compile();
             return fun;
+        }
+
+        internal static void _ClearCache()
+        {
+            s_detail.Clear();
+            s_getter.Clear();
+            s_setter.Clear();
+
+            s_arr.Clear();
+            s_lst.Clear();
+            s_itr.Clear();
+            s_seq.Clear();
         }
     }
 }

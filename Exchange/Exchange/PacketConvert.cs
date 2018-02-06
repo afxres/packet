@@ -154,5 +154,10 @@ namespace Mikodev.Network
         {
             return Serialize((object)dictionary, converters);
         }
+
+        public static void ClearReflectionCache()
+        {
+            _Caches._ClearCache();
+        }
     }
 }

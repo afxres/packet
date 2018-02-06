@@ -119,7 +119,7 @@ namespace Mikodev.Network
         {
             var val = default(object);
             var con = default(IPacketConverter);
-            var det = default(_DetailInfo);
+            var det = default(_Caches.DetailInfo);
 
             if (type == typeof(PacketReader))
                 val = this;
