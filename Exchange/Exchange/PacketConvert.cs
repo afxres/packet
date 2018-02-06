@@ -102,7 +102,7 @@ namespace Mikodev.Network
         {
             return _Caches.GetBytesAuto(null, value);
         }
-        
+
         public static object Deserialize(byte[] buffer, Type type, ConverterDictionary converters = null)
         {
             ThrowIfArgumentError(type);
@@ -118,7 +118,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer, offset, length);
 
-            var rea = new PacketReader(buffer, converters);
+            var rea = new PacketReader(buffer, offset, length, converters);
             var val = PacketReader._Deserialize(rea, type);
             return val;
         }

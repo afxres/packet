@@ -13,6 +13,6 @@ namespace Mikodev.Network
         internal Type arg_of_lst;
         internal Type arg_of_itr;
         internal Type arg_of_itr_imp;
-        internal Type arg_enum;
+        internal Type base_of_enum;
     }
 }

@@ -111,7 +111,7 @@ namespace Mikodev.Network
                 obj = raw._str;
             else if ((con = _Caches.GetConverter(cvt, typ, true)) != null)
                 obj = con._GetBytesWrapError(itm);
-            else if ((det = _Caches.GetDetail(typ)).is_itr_imp == false)
+            else if ((det = _Caches.GetDetailInfo(typ)).is_itr_imp == false)
                 goto fail;
             else if (det.arg_of_itr_imp == typeof(byte) && itm is ICollection<byte> byt)
                 obj = byt._ToBytes();
@@ -150,7 +150,7 @@ namespace Mikodev.Network
         internal static void _SerializeProperties(PacketWriterDirectory dst, ConverterDictionary cvt, object itm, int lev)
         {
             var typ = itm.GetType();
-            var inf = _Caches.GetGetMethods(typ);
+            var inf = _Caches.GetGetterInfo(typ);
             var fun = inf.func;
             var arg = inf.args;
             var res = new object[arg.Length];

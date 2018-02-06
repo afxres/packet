@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 
 namespace Mikodev.Network
@@ -9,10 +8,10 @@ namespace Mikodev.Network
         internal readonly PacketReader _src = null;
         internal readonly IPacketConverter _con = null;
 
-        internal _Enumerable(PacketReader source, Type type)
+        internal _Enumerable(PacketReader source, IPacketConverter converter)
         {
             _src = source;
-            _con = _Caches.GetConverter(source._cvt, type, false);
+            _con = converter;
         }
 
         IEnumerator IEnumerable.GetEnumerator() => new _Enumerator(_src, _con);
@@ -20,7 +19,7 @@ namespace Mikodev.Network
 
     internal sealed class _Enumerable<T> : _Enumerable, IEnumerable<T>
     {
-        internal _Enumerable(PacketReader reader) : base(reader, typeof(T)) { }
+        internal _Enumerable(PacketReader source, IPacketConverter converter) : base(source, converter) { }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
