@@ -67,7 +67,9 @@ namespace Mikodev.Network
 
         internal static DetailInfo GetDetailInfo(Type type)
         {
-            return s_detail.GetOrAdd(type, _CreateDetailInfo);
+            if (s_detail.TryGetValue(type, out var inf))
+                return inf;
+            return s_detail.GetOrAdd(type, _CreateDetailInfo(type));
         }
 
         private static Func<_Element, IPacketConverter, object> _CreateListFunction(Type type)
@@ -107,7 +109,8 @@ namespace Mikodev.Network
         internal static object GetList(PacketReader reader, Type type)
         {
             var con = GetConverter(reader._cvt, type, false);
-            var fun = s_lst.GetOrAdd(type, _CreateListFunction);
+            if (s_lst.TryGetValue(type, out var fun) == false)
+                fun = s_lst.GetOrAdd(type, _CreateListFunction(type));
             var res = fun.Invoke(reader._spa, con);
             return res;
         }
@@ -115,7 +118,8 @@ namespace Mikodev.Network
         internal static object GetArray(PacketReader reader, Type type)
         {
             var con = GetConverter(reader._cvt, type, false);
-            var fun = s_arr.GetOrAdd(type, _CreateArrayFunction);
+            if (s_arr.TryGetValue(type, out var fun) == false)
+                fun = s_arr.GetOrAdd(type, _CreateArrayFunction(type));
             var res = fun.Invoke(reader._spa, con);
             return res;
         }
@@ -123,7 +127,8 @@ namespace Mikodev.Network
         internal static object GetEnumerable(PacketReader reader, Type type)
         {
             var con = GetConverter(reader._cvt, type, false);
-            var fun = s_itr.GetOrAdd(type, _CreateEnumerableFunction);
+            if (s_itr.TryGetValue(type, out var fun) == false)
+                fun = s_itr.GetOrAdd(type, _CreateEnumerableFunction(type));
             var res = fun.Invoke(reader, con);
             return res;
         }
@@ -262,12 +267,16 @@ namespace Mikodev.Network
 
         internal static GetterInfo GetGetterInfo(Type type)
         {
-            return s_getter.GetOrAdd(type, _CreateGetterInfo);
+            if (s_getter.TryGetValue(type, out var inf))
+                return inf;
+            return s_getter.GetOrAdd(type, _CreateGetterInfo(type));
         }
 
         internal static SetterInfo GetSetterInfo(Type type)
         {
-            return s_setter.GetOrAdd(type, _CreateSetterInfo);
+            if (s_setter.TryGetValue(type, out var inf))
+                return inf;
+            return s_setter.GetOrAdd(type, _CreateSetterInfo(type));
         }
 
         internal static IPacketConverter GetConverter<T>(ConverterDictionary dic, bool nothrow)
@@ -376,7 +385,7 @@ namespace Mikodev.Network
 
         internal static MemoryStream GetSequenceGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
         {
-            var con = _Caches.GetConverter<T>(dic, false);
+            var con = GetConverter<T>(dic, false);
             if (con is IPacketConverter<T> gen)
                 return _GetSequenceGeneric(gen, itr);
             return _GetSequence(con, itr);
@@ -397,8 +406,9 @@ namespace Mikodev.Network
             var con = GetConverter(dic, type, true);
             if (con == null)
                 return null;
-            var val = s_seq.GetOrAdd(type, _CreateSequenceFunction);
-            var seq = val.Invoke(con, itr);
+            if (s_seq.TryGetValue(type, out var fun) == false)
+                fun = s_seq.GetOrAdd(type, _CreateSequenceFunction(type));
+            var seq = fun.Invoke(con, itr);
             return seq;
         }
 
