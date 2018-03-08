@@ -119,7 +119,8 @@ namespace Mikodev.Network
         {
             var val = default(object);
             var con = default(IPacketConverter);
-            var det = default(_Caches.DetailInfo);
+            var det = default(_Inf);
+            var tag = 0;
 
             if (type == typeof(PacketReader))
                 val = this;
@@ -127,12 +128,12 @@ namespace Mikodev.Network
                 val = new PacketRawReader(this);
             else if ((con = _Caches.GetConverter(_cvt, type, true)) != null)
                 val = con._GetValueWrapError(_spa, true);
-            else if ((det = _Caches.GetDetailInfo(type)).is_arr)
-                val = _Caches.GetArray(this, det.arg_of_arr);
-            else if (det.is_itr)
-                val = _Caches.GetEnumerable(this, det.arg_of_itr);
-            else if (det.is_lst)
-                val = _Caches.GetList(this, det.arg_of_lst);
+            else if (((tag = (det = _Caches.GetInfo(type)).Flags) & _Inf.Array) != 0)
+                val = _Caches.GetArray(this, det.ElementType);
+            else if ((tag & _Inf.Enumerable) != 0)
+                val = _Caches.GetEnumerable(this, det.ElementType);
+            else if ((tag & _Inf.List) != 0)
+                val = _Caches.GetList(this, det.ElementType);
             else goto fail;
 
             value = val;
@@ -162,14 +163,14 @@ namespace Mikodev.Network
                 return ret;
 
             var res = _Caches.GetSetterInfo(type);
-            if (res == null)
+            var arr = res.Arguments;
+            var fun = res.Function;
+            if (arr == null || fun == null)
                 throw new PacketException(PacketError.InvalidType);
-            var arr = res.args;
-            var fun = res.func;
             var obj = new object[arr.Length];
 
             for (int i = 0; i < arr.Length; i++)
-                obj[i] = _Deserialize(reader._GetItem(arr[i].name, false), arr[i].type);
+                obj[i] = _Deserialize(reader._GetItem(arr[i].Name, false), arr[i].Type);
             var val = fun.Invoke(obj);
             return val;
         }

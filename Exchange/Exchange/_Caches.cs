@@ -21,77 +21,62 @@ namespace Mikodev.Network
 
         private static readonly ConcurrentDictionary<Type, GetterInfo> s_getter = new ConcurrentDictionary<Type, GetterInfo>();
         private static readonly ConcurrentDictionary<Type, SetterInfo> s_setter = new ConcurrentDictionary<Type, SetterInfo>();
-        private static readonly ConcurrentDictionary<Type, DetailInfo> s_detail = new ConcurrentDictionary<Type, DetailInfo>();
+        private static readonly ConcurrentDictionary<Type, _Inf> s_detail = new ConcurrentDictionary<Type, _Inf>();
 
         private static readonly ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>> s_arr = new ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>>();
         private static readonly ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>> s_lst = new ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>>();
         private static readonly ConcurrentDictionary<Type, Func<PacketReader, IPacketConverter, object>> s_itr = new ConcurrentDictionary<Type, Func<PacketReader, IPacketConverter, object>>();
         private static readonly ConcurrentDictionary<Type, Func<IPacketConverter, object, MemoryStream>> s_seq = new ConcurrentDictionary<Type, Func<IPacketConverter, object, MemoryStream>>();
 
-        private static DetailInfo _CreateDetailInfo(Type type)
+        private static _Inf _CreateInfo(Type type)
         {
-            var inf = new DetailInfo();
-            var tag = type.IsEnum;
-            inf.is_enum = tag;
-            inf.base_of_enum = tag ? Enum.GetUnderlyingType(type) : null;
-            if (tag == true)
-                return inf;
+            var inf = new _Inf();
+            var tag = 0;
+            if (type.IsEnum)
+            {
+                tag |= _Inf.Enum;
+                inf.ElementType = Enum.GetUnderlyingType(type);
+            }
 
-            var arr = type.IsArray && type.GetArrayRank() == 1;
-            inf.is_arr = arr;
-            inf.arg_of_arr = arr ? type.GetElementType() : null;
+            if (type.IsArray && type.GetArrayRank() == 1)
+            {
+                tag |= _Inf.Array;
+                inf.ElementType = type.GetElementType();
+            }
 
-            var gen = type.IsGenericType;
-            var def = gen ? type.GetGenericTypeDefinition() : null;
-            var arg = gen ? type.GetGenericArguments() : null;
-            var one = gen ? arg.Length == 1 : false;
-            var lst = one && (def == typeof(List<>) || def == typeof(IList<>));
-            var itr = one && (def == typeof(IEnumerable<>));
-            inf.is_lst = lst;
-            inf.is_itr = itr;
-            inf.arg_of_lst = lst ? arg[0] : null;
-            inf.arg_of_itr = itr ? arg[0] : null;
+            if (type.IsGenericType)
+            {
+                var def = type.GetGenericTypeDefinition();
+                var arg = type.GetGenericArguments();
+                if (arg.Length == 1)
+                {
+                    if (def == typeof(IEnumerable<>))
+                        tag |= _Inf.Enumerable;
+                    else if (def == typeof(List<>) || def == typeof(IList<>))
+                        tag |= _Inf.List;
+                    inf.ElementType = arg[0];
+                }
+            }
 
-            var imp = default(Type);
             foreach (var i in type.GetInterfaces())
             {
-                var det = GetDetailInfo(i);
-                if (det.is_itr == false)
+                var det = GetInfo(i);
+                if ((det.Flags & _Inf.Enumerable) == 0)
                     continue;
-                imp = det.arg_of_itr;
+                tag |= _Inf.EnumerableImpl;
+                inf.EnumerableElementType = det.ElementType;
+                break;
             }
-            inf.is_itr_imp = (imp != null);
-            inf.arg_of_itr_imp = imp;
+
+            inf.Flags = tag;
             return inf;
         }
 
-        internal static DetailInfo GetDetailInfo(Type type)
+        internal static _Inf GetInfo(Type type)
         {
             if (s_detail.TryGetValue(type, out var inf))
                 return inf;
-            return s_detail.GetOrAdd(type, _CreateDetailInfo(type));
-        }
-
-        private static Func<_Element, IPacketConverter, object> _CreateListFunction(Type type)
-        {
-            var met = s_get_lst.MakeGenericMethod(type);
-            var ele = Expression.Parameter(typeof(_Element), "element");
-            var arg = Expression.Parameter(typeof(IPacketConverter), "converter");
-            var inv = Expression.Call(ele, met, arg);
-            var exp = Expression.Lambda<Func<_Element, IPacketConverter, object>>(inv, ele, arg);
-            var fun = exp.Compile();
-            return fun;
-        }
-
-        private static Func<_Element, IPacketConverter, object> _CreateArrayFunction(Type type)
-        {
-            var met = s_get_arr.MakeGenericMethod(type);
-            var ele = Expression.Parameter(typeof(_Element), "element");
-            var arg = Expression.Parameter(typeof(IPacketConverter), "converter");
-            var inv = Expression.Call(ele, met, arg);
-            var exp = Expression.Lambda<Func<_Element, IPacketConverter, object>>(inv, ele, arg);
-            var fun = exp.Compile();
-            return fun;
+            return s_detail.GetOrAdd(type, _CreateInfo(type));
         }
 
         private static Func<PacketReader, IPacketConverter, object> _CreateEnumerableFunction(Type type)
@@ -106,11 +91,22 @@ namespace Mikodev.Network
             return fun;
         }
 
+        private static Func<_Element, IPacketConverter, object> _CreateFunction(MethodInfo method, Type type)
+        {
+            var met = method.MakeGenericMethod(type);
+            var ele = Expression.Parameter(typeof(_Element), "element");
+            var arg = Expression.Parameter(typeof(IPacketConverter), "converter");
+            var inv = Expression.Call(ele, met, arg);
+            var exp = Expression.Lambda<Func<_Element, IPacketConverter, object>>(inv, ele, arg);
+            var fun = exp.Compile();
+            return fun;
+        }
+
         internal static object GetList(PacketReader reader, Type type)
         {
             var con = GetConverter(reader._cvt, type, false);
             if (s_lst.TryGetValue(type, out var fun) == false)
-                fun = s_lst.GetOrAdd(type, _CreateListFunction(type));
+                fun = s_lst.GetOrAdd(type, _CreateFunction(s_get_lst, type));
             var res = fun.Invoke(reader._spa, con);
             return res;
         }
@@ -119,7 +115,7 @@ namespace Mikodev.Network
         {
             var con = GetConverter(reader._cvt, type, false);
             if (s_arr.TryGetValue(type, out var fun) == false)
-                fun = s_arr.GetOrAdd(type, _CreateArrayFunction(type));
+                fun = s_arr.GetOrAdd(type, _CreateFunction(s_get_arr, type));
             var res = fun.Invoke(reader._spa, con);
             return res;
         }
@@ -148,7 +144,7 @@ namespace Mikodev.Network
                 // Length != 0 -> indexer
                 if (arg == null || arg.Length != 0)
                     continue;
-                inf.Add(new AccessorInfo { name = cur.Name, type = cur.PropertyType });
+                inf.Add(new AccessorInfo { Name = cur.Name, Type = cur.PropertyType });
                 met.Add(get);
             }
 
@@ -171,25 +167,26 @@ namespace Mikodev.Network
             var blk = Expression.Block(new[] { val }, exp);
             var del = Expression.Lambda<Action<object, object[]>>(blk, ipt, arr);
 
-            var res = new GetterInfo { func = del.Compile(), args = inf.ToArray() };
+            var res = new GetterInfo { Function = del.Compile(), Arguments = inf.ToArray() };
             return res;
         }
 
         private static SetterInfo _CreateSetterInfoForAnonymousType(Type type)
         {
+            var res = new SetterInfo();
             var cts = type.GetConstructors();
             if (cts.Length != 1)
-                return null;
+                return res;
 
             var con = cts[0];
             var arg = con.GetParameters();
             var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             if (pro.Length != arg.Length)
-                return null;
+                return res;
 
             for (int i = 0; i < pro.Length; i++)
                 if (pro[i].Name != arg[i].Name || pro[i].PropertyType != arg[i].ParameterType)
-                    return null;
+                    return res;
 
             var ipt = Expression.Parameter(typeof(object[]), "parameters");
             var arr = new Expression[arg.Length];
@@ -200,13 +197,14 @@ namespace Mikodev.Network
                 var idx = Expression.ArrayIndex(ipt, Expression.Constant(i));
                 var cvt = Expression.Convert(idx, cur.ParameterType);
                 arr[i] = cvt;
-                inf[i] = new AccessorInfo { name = cur.Name, type = cur.ParameterType };
+                inf[i] = new AccessorInfo { Name = cur.Name, Type = cur.ParameterType };
             }
 
             // Reference type
             var ins = Expression.New(con, arr);
             var del = Expression.Lambda<Func<object[], object>>(ins, ipt);
-            var res = new SetterInfo { func = del.Compile(), args = inf };
+            res.Function = del.Compile();
+            res.Arguments = inf;
             return res;
         }
 
@@ -227,7 +225,7 @@ namespace Mikodev.Network
                 var arg = set.GetParameters();
                 if (arg == null || arg.Length != 1)
                     continue;
-                inf.Add(new AccessorInfo { name = cur.Name, type = cur.PropertyType });
+                inf.Add(new AccessorInfo { Name = cur.Name, Type = cur.PropertyType });
                 met.Add(set);
             }
 
@@ -240,7 +238,7 @@ namespace Mikodev.Network
             for (int i = 0; i < inf.Count; i++)
             {
                 var idx = Expression.ArrayIndex(ipt, Expression.Constant(i));
-                var cvt = Expression.Convert(idx, inf[i].type);
+                var cvt = Expression.Convert(idx, inf[i].Type);
                 var set = Expression.Call(val, met[i], cvt);
                 exp.Add(set);
             }
@@ -251,7 +249,7 @@ namespace Mikodev.Network
             var blk = Expression.Block(new[] { val }, exp);
             var del = Expression.Lambda<Func<object[], object>>(blk, ipt);
 
-            var res = new SetterInfo { func = del.Compile(), args = inf.ToArray() };
+            var res = new SetterInfo { Function = del.Compile(), Arguments = inf.ToArray() };
             return res;
         }
 
@@ -295,8 +293,8 @@ namespace Mikodev.Network
             if (s_dic.TryGetValue(type, out val))
                 return val;
 
-            var det = GetDetailInfo(type);
-            if (det.is_enum && s_dic.TryGetValue(det.base_of_enum, out val))
+            var det = GetInfo(type);
+            if ((det.Flags & _Inf.Enum) != 0 && s_dic.TryGetValue(det.ElementType, out val))
                 return val;
 
             fail:

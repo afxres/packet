@@ -6,34 +6,23 @@ namespace Mikodev.Network
     {
         internal struct AccessorInfo
         {
-            internal string name;
-            internal Type type;
+            internal string Name { get; set; }
+
+            internal Type Type { get; set; }
         }
 
-        internal sealed class GetterInfo
+        internal struct GetterInfo
         {
-            internal Action<object, object[]> func;
-            internal AccessorInfo[] args;
+            internal Action<object, object[]> Function { get; set; }
+
+            internal AccessorInfo[] Arguments { get; set; }
         }
 
-        internal sealed class SetterInfo
+        internal struct SetterInfo
         {
-            internal Func<object[], object> func;
-            internal AccessorInfo[] args;
-        }
+            internal Func<object[], object> Function { get; set; }
 
-        internal sealed class DetailInfo
-        {
-            internal bool is_arr;
-            internal bool is_lst;
-            internal bool is_itr;
-            internal bool is_itr_imp;
-            internal bool is_enum;
-            internal Type arg_of_arr;
-            internal Type arg_of_lst;
-            internal Type arg_of_itr;
-            internal Type arg_of_itr_imp;
-            internal Type base_of_enum;
+            internal AccessorInfo[] Arguments { get; set; }
         }
     }
 }

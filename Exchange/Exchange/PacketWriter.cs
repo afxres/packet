@@ -101,7 +101,7 @@ namespace Mikodev.Network
             var obj = default(object);
             var con = default(IPacketConverter);
             var mst = default(MemoryStream);
-            var det = default(_Caches.DetailInfo);
+            var det = default(_Inf);
 
             if ((typ = itm?.GetType()) == null)
                 obj = null;
@@ -111,13 +111,13 @@ namespace Mikodev.Network
                 obj = raw._str;
             else if ((con = _Caches.GetConverter(cvt, typ, true)) != null)
                 obj = con._GetBytesWrapError(itm);
-            else if ((det = _Caches.GetDetailInfo(typ)).is_itr_imp == false)
+            else if (((det = _Caches.GetInfo(typ)).Flags & _Inf.EnumerableImpl) == 0)
                 goto fail;
-            else if (det.arg_of_itr_imp == typeof(byte) && itm is ICollection<byte> byt)
+            else if (det.ElementType == typeof(byte) && itm is ICollection<byte> byt)
                 obj = byt._ToBytes();
-            else if (det.arg_of_itr_imp == typeof(sbyte) && itm is ICollection<sbyte> sby)
+            else if (det.ElementType == typeof(sbyte) && itm is ICollection<sbyte> sby)
                 obj = sby._ToBytes();
-            else if ((mst = _Caches.GetSequenceReflection(cvt, itm, det.arg_of_itr_imp)) != null)
+            else if ((mst = _Caches.GetSequenceReflection(cvt, itm, det.EnumerableElementType)) != null)
                 obj = mst;
             else goto fail;
 
@@ -151,12 +151,12 @@ namespace Mikodev.Network
         {
             var typ = itm.GetType();
             var inf = _Caches.GetGetterInfo(typ);
-            var fun = inf.func;
-            var arg = inf.args;
+            var fun = inf.Function;
+            var arg = inf.Arguments;
             var res = new object[arg.Length];
             fun.Invoke(itm, res);
             for (int i = 0; i < arg.Length; i++)
-                dst[arg[i].name] = _Serialize(cvt, res[i], lev);
+                dst[arg[i].Name] = _Serialize(cvt, res[i], lev);
             return;
         }
 
