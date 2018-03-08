@@ -255,5 +255,17 @@ namespace Mikodev.Testing
                 // ignore
             }
         }
+
+        [TestMethod]
+        public void ISet()
+        {
+            var set = new HashSet<int>() { 1, 2, 3, 4 };
+            var buf = PacketConvert.Serialize(set);
+            var res = PacketConvert.Deserialize<HashSet<int>>(buf);
+            var val = set.SetEquals(res);
+            Assert.AreEqual(set.Count, res.Count);
+            Assert.AreEqual(val, true);
+            return;
+        }
     }
 }

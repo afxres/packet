@@ -25,6 +25,18 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void EmptyCollection()
+        {
+            var obj = new { array = new int[0], list = new List<string>() };
+            var buf = PacketConvert.Serialize(obj);
+            var res = PacketConvert.Deserialize(buf, obj);
+
+            ThrowIfNotSequenceEqual(obj.array, res.array);
+            ThrowIfNotSequenceEqual(obj.list, res.list);
+            return;
+        }
+
+        [TestMethod]
         public void Basic()
         {
             var a = IPAddress.Loopback;

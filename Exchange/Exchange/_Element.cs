@@ -10,7 +10,6 @@ namespace Mikodev.Network
         internal readonly byte[] _buf;
         internal readonly int _off;
         internal readonly int _len;
-        internal readonly int _max;
         internal int _idx;
 
         internal _Element(_Element ele)
@@ -19,7 +18,6 @@ namespace Mikodev.Network
             _off = ele._off;
             _idx = ele._off;
             _len = ele._len;
-            _max = ele._max;
         }
 
         internal _Element(byte[] buffer)
@@ -28,7 +26,6 @@ namespace Mikodev.Network
             _off = 0;
             _idx = 0;
             _len = buffer.Length;
-            _max = buffer.Length;
         }
 
         internal _Element(byte[] buffer, int offset, int length)
@@ -39,19 +36,19 @@ namespace Mikodev.Network
             _off = offset;
             _idx = offset;
             _len = length;
-            _max = offset + length;
         }
 
-        internal bool End() => _idx >= _max;
+        internal bool End() => _idx >= (_off + _len);
 
-        internal bool Any() => _idx < _max;
+        internal bool Any() => _idx < (_off + _len);
 
         internal void Reset() => _idx = _off;
 
         internal void _EnsureNext(int def, out int pos, out int len)
         {
             var idx = _idx;
-            if ((def > 0 && idx + def > _max) || (def < 1 && _buf._HasNext(_max, ref idx, out def) == false))
+            var max = _off + _len;
+            if ((def > 0 && idx + def > max) || (def < 1 && _buf._HasNext(max, ref idx, out def) == false))
                 throw _Overflow();
             pos = idx;
             len = def;
@@ -83,9 +80,10 @@ namespace Mikodev.Network
 
         internal bool _EnsureBuild(ref int idx, out int pos, out int len)
         {
-            if (idx == _max)
+            var max = _off + _len;
+            if (idx == max)
                 goto fail;
-            if (_buf._HasNext(_max, ref idx, out var tmp) == false)
+            if (_buf._HasNext(max, ref idx, out var tmp) == false)
                 throw _Overflow();
             pos = idx;
             len = tmp;
@@ -98,7 +96,7 @@ namespace Mikodev.Network
             return false;
         }
 
-        internal object _BuildVariable<T>(IPacketConverter con)
+        internal IEnumerable<T> _BuildVariable<T>(IPacketConverter con)
         {
             var idx = _off;
             var lst = new List<T>();
@@ -122,11 +120,10 @@ namespace Mikodev.Network
             return lst;
         }
 
-        internal object _BuildCollection<T>(IPacketConverter con)
+        internal object Collection<T>(IPacketConverter con)
         {
             if (_len < 1)
-                return null;
-
+                return new T[0];
             if (typeof(T) == typeof(byte))
                 return ByteArrayConverter.ToByteArray(_buf, _off, _len);
             else if (typeof(T) == typeof(sbyte))
@@ -160,9 +157,7 @@ namespace Mikodev.Network
 
         internal List<T> List<T>(IPacketConverter con)
         {
-            var res = _BuildCollection<T>(con);
-            if (res == null)
-                return new List<T>();
+            var res = Collection<T>(con);
             if (res is T[] arr)
                 return new List<T>(arr);
             if (res is List<T> lst)
@@ -172,9 +167,7 @@ namespace Mikodev.Network
 
         internal T[] Array<T>(IPacketConverter con)
         {
-            var res = _BuildCollection<T>(con);
-            if (res == null)
-                return new T[0];
+            var res = Collection<T>(con);
             if (res is T[] arr)
                 return arr;
             if (res is List<T> lst)

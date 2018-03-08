@@ -17,6 +17,7 @@ namespace Mikodev.Network
 
         private static readonly MethodInfo s_get_arr = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly MethodInfo s_get_lst = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_get_col = typeof(_Caches).GetMethod(nameof(_GetCollection), BindingFlags.Static | BindingFlags.NonPublic);
         private static readonly MethodInfo s_get_seq = typeof(_Caches).GetMethod(nameof(_GetSequenceAuto), BindingFlags.Static | BindingFlags.NonPublic);
 
         private static readonly ConcurrentDictionary<Type, GetterInfo> s_getter = new ConcurrentDictionary<Type, GetterInfo>();
@@ -50,11 +51,15 @@ namespace Mikodev.Network
                 var arg = type.GetGenericArguments();
                 if (arg.Length == 1)
                 {
+                    var fun = default(Func<PacketReader, object>);
                     if (def == typeof(IEnumerable<>))
                         tag |= _Inf.Enumerable;
                     else if (def == typeof(List<>) || def == typeof(IList<>))
                         tag |= _Inf.List;
+                    else if ((fun = _CreateCollectionFunction(arg[0], type)) != null)
+                        tag |= _Inf.Collection;
                     inf.ElementType = arg[0];
+                    inf.CollectionFunction = fun;
                 }
             }
 
@@ -102,6 +107,20 @@ namespace Mikodev.Network
             return fun;
         }
 
+        private static Func<PacketReader, object> _CreateCollectionFunction(Type element, Type type)
+        {
+            var itr = typeof(IEnumerable<>).MakeGenericType(element);
+            var cto = type.GetConstructor(new[] { itr });
+            if (cto == null)
+                return null;
+            var rea = Expression.Parameter(typeof(PacketReader), "reader");
+            var cal = Expression.Call(s_get_col.MakeGenericMethod(element), rea);
+            var inv = Expression.New(cto, cal);
+            var exp = Expression.Lambda<Func<PacketReader, object>>(inv, rea);
+            var fun = exp.Compile();
+            return fun;
+        }
+
         internal static object GetList(PacketReader reader, Type type)
         {
             var con = GetConverter(reader._cvt, type, false);
@@ -127,6 +146,13 @@ namespace Mikodev.Network
                 fun = s_itr.GetOrAdd(type, _CreateEnumerableFunction(type));
             var res = fun.Invoke(reader, con);
             return res;
+        }
+
+        internal static IEnumerable<T> _GetCollection<T>(PacketReader reader)
+        {
+            var con = GetConverter(reader._cvt, typeof(T), false);
+            var val = reader._spa.Collection<T>(con);
+            return (IEnumerable<T>)val;
         }
 
         private static GetterInfo _CreateGetterInfo(Type type)

@@ -14,7 +14,6 @@ namespace Mikodev.Network
         internal readonly ConverterDictionary _cvt;
         internal PacketReaderDictionary _itm = null;
         internal _Element _spa;
-        internal bool _init = false;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
@@ -33,13 +32,13 @@ namespace Mikodev.Network
             var obj = _itm;
             if (obj != null)
                 return obj;
-            if (_init == true)
+            if (_spa._idx < 0)
                 return null;
-            _init = true;
+            _spa._idx = -1;
 
             var dic = new PacketReaderDictionary();
             var buf = _spa._buf;
-            var max = _spa._max;
+            var max = _spa._off + _spa._len;
             var idx = _spa._off;
             var len = 0;
 
@@ -119,7 +118,7 @@ namespace Mikodev.Network
         {
             var val = default(object);
             var con = default(IPacketConverter);
-            var det = default(_Inf);
+            var inf = default(_Inf);
             var tag = 0;
 
             if (type == typeof(PacketReader))
@@ -128,12 +127,14 @@ namespace Mikodev.Network
                 val = new PacketRawReader(this);
             else if ((con = _Caches.GetConverter(_cvt, type, true)) != null)
                 val = con._GetValueWrapError(_spa, true);
-            else if (((tag = (det = _Caches.GetInfo(type)).Flags) & _Inf.Array) != 0)
-                val = _Caches.GetArray(this, det.ElementType);
+            else if (((tag = (inf = _Caches.GetInfo(type)).Flags) & _Inf.Array) != 0)
+                val = _Caches.GetArray(this, inf.ElementType);
             else if ((tag & _Inf.Enumerable) != 0)
-                val = _Caches.GetEnumerable(this, det.ElementType);
+                val = _Caches.GetEnumerable(this, inf.ElementType);
             else if ((tag & _Inf.List) != 0)
-                val = _Caches.GetList(this, det.ElementType);
+                val = _Caches.GetList(this, inf.ElementType);
+            else if ((tag & _Inf.Collection) != 0)
+                val = inf.CollectionFunction.Invoke(this);
             else goto fail;
 
             value = val;
