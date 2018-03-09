@@ -27,15 +27,33 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Dictionary()
         {
-            var raw = new PacketRawWriter()
-                .SetValue("one")
-                .SetValue((sbyte)1)
-                .SetValue("number")
-                .SetValue((sbyte)-1);
-            var buf = raw.GetBytes();
-            var rea = new PacketReader(buf);
-            var res = rea.GetDictionary<string, sbyte>();
-            var des = PacketConvert.Deserialize<Dictionary<string, sbyte>>(buf);
+            var a = new Dictionary<string, sbyte> { ["a"] = 1, ["beta"] = -1, ["other"] = 127 };
+            var b = new Dictionary<byte, string> { [1] = "one", [128] = "many", [255] = "max", [0] = "zero" };
+            var c = new Dictionary<string, IPAddress> { ["loopback"] = IPAddress.Loopback, ["ipv6 loopback"] = IPAddress.IPv6Loopback };
+
+            var obj = new { a, b, c };
+            var ta = PacketConvert.Serialize(obj);
+            var va = PacketConvert.Deserialize(ta, obj);
+
+            var wtr = new PacketWriter()
+                .SetDictionary("a", a)
+                .SetDictionary("b", b)
+                .SetDictionary("c", c);
+            var tb = wtr.GetBytes();
+            var rea = new PacketReader(tb);
+            var ra = rea["a"].GetDictionary<string, sbyte>();
+            var rb = rea["b"].GetDictionary<byte, string>();
+            var rc = rea["c"].GetDictionary<string, IPAddress>();
+
+            Assert.AreEqual(ta.Length, tb.Length);
+
+            ThrowIfNotEqual(a, ra);
+            ThrowIfNotEqual(b, rb);
+            ThrowIfNotEqual(c, rc);
+
+            ThrowIfNotEqual(a, va.a);
+            ThrowIfNotEqual(b, va.b);
+            ThrowIfNotEqual(c, va.c);
             return;
         }
 

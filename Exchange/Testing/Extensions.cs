@@ -12,5 +12,18 @@ namespace Mikodev.Testing
                 return;
             throw new ApplicationException();
         }
+
+        public static void ThrowIfNotEqual<TK, TV>(IDictionary<TK, TV> a, IDictionary<TK, TV> b)
+        {
+            if (a.Count != b.Count)
+                throw new ApplicationException();
+            var cmp = EqualityComparer<TV>.Default;
+            foreach (var i in a)
+            {
+                if (b.TryGetValue(i.Key, out var val) && cmp.Equals(val, i.Value))
+                    continue;
+                else throw new ApplicationException();
+            }
+        }
     }
 }

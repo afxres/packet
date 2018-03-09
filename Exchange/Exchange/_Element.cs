@@ -132,7 +132,7 @@ namespace Mikodev.Network
             return dic;
         }
 
-        internal object _BuildVariable<T>(IPacketConverter con)
+        internal IEnumerable<T> _BuildVariable<T>(IPacketConverter con)
         {
             var lst = new List<T>();
             var gen = con as IPacketConverter<T>;
@@ -158,14 +158,14 @@ namespace Mikodev.Network
             return lst;
         }
 
-        internal object Collection<T>(IPacketConverter con)
+        internal IEnumerable<T> Collection<T>(IPacketConverter con)
         {
             if (_length < 1)
                 return new T[0];
             if (typeof(T) == typeof(byte))
-                return ByteArrayConverter.ToByteArray(_buffer, _offset, _length);
+                return (IEnumerable<T>)(object)ByteArrayConverter.ToByteArray(_buffer, _offset, _length);
             else if (typeof(T) == typeof(sbyte))
-                return SByteArrayConverter.ToSbyteArray(_buffer, _offset, _length);
+                return (IEnumerable<T>)(object)SByteArrayConverter.ToSbyteArray(_buffer, _offset, _length);
 
             var len = con.Length;
             if (len < 1)

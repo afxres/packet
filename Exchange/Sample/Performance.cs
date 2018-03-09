@@ -72,7 +72,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Deserialize (anonymous)")) // 2384.76 ms, avg
+                using (new TraceWatch("Deserialize (anonymous)")) // 2266.53 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {

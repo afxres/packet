@@ -12,7 +12,7 @@ namespace Mikodev.Network
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
         internal readonly ConverterDictionary _converters;
-        internal PacketReaderDictionary _items = null;
+        internal PacketReaderDictionary _readers = null;
         internal _Element _element;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
@@ -29,7 +29,7 @@ namespace Mikodev.Network
 
         internal PacketReaderDictionary _GetItems()
         {
-            var obj = _items;
+            var obj = _readers;
             if (obj != null)
                 return obj;
             if (_element._index < 0)
@@ -56,7 +56,7 @@ namespace Mikodev.Network
                 idx += len;
             }
 
-            _items = dic;
+            _readers = dic;
             return dic;
         }
 
@@ -128,15 +128,15 @@ namespace Mikodev.Network
             else if ((con = _Caches.GetConverter(_converters, type, true)) != null)
                 val = con._GetValueWrapError(_element, true);
             else if (((tag = (inf = _Caches.GetInfo(type)).Flags) & _Inf.Array) != 0)
-                val = _Caches.GetArray(this, inf.ElementType);
+                val = inf.ToArray(this);
             else if ((tag & _Inf.Enumerable) != 0)
-                val = _Caches.GetEnumerable(this, inf.ElementType);
+                val = inf.ToEnumerable(this);
             else if ((tag & _Inf.List) != 0)
-                val = _Caches.GetList(this, inf.ElementType);
+                val = inf.ToList(this);
             else if ((tag & _Inf.Collection) != 0)
-                val = inf.CollectionFunction.Invoke(this);
+                val = inf.ToCollection(this);
             else if ((tag & _Inf.Dictionary) != 0)
-                val = inf.DictionaryFunction.Invoke(this);
+                val = inf.ToDictionary(this);
             else goto fail;
 
             value = val;

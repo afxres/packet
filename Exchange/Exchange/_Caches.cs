@@ -15,26 +15,23 @@ namespace Mikodev.Network
         internal const int _Length = 256;
         internal const int _Depth = 64;
 
-        private static readonly MethodInfo s_inf_array = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_inf_list = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_inf_collection = typeof(_Caches).GetMethod(nameof(_GetCollection), BindingFlags.Static | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_inf_dictionary = typeof(_Caches).GetMethod(nameof(_GetDictionary), BindingFlags.Static | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_inf_sequence = typeof(_Caches).GetMethod(nameof(_GetSequenceAuto), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_to_array = typeof(_Caches).GetMethod(nameof(_ToArray), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_to_list = typeof(_Caches).GetMethod(nameof(_ToList), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_to_enumerable = typeof(_Caches).GetMethod(nameof(_ToEnumerable), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_to_collection = typeof(_Caches).GetMethod(nameof(_ToCollection), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_to_dictionary = typeof(_Caches).GetMethod(nameof(_ToDictionary), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_from_enumerable = typeof(_Caches).GetMethod(nameof(_FromEnumerable), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_from_enumerable_key_value_pair = typeof(_Caches).GetMethod(nameof(_FromEnumerableKeyValuePair), BindingFlags.Static | BindingFlags.NonPublic);
 
+        private static readonly ConcurrentDictionary<Type, _Inf> s_info = new ConcurrentDictionary<Type, _Inf>();
         private static readonly ConcurrentDictionary<Type, GetterInfo> s_getter = new ConcurrentDictionary<Type, GetterInfo>();
         private static readonly ConcurrentDictionary<Type, SetterInfo> s_setter = new ConcurrentDictionary<Type, SetterInfo>();
-        private static readonly ConcurrentDictionary<Type, _Inf> s_info = new ConcurrentDictionary<Type, _Inf>();
-
-        private static readonly ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>> s_array = new ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>>();
-        private static readonly ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>> s_list = new ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>>();
-        private static readonly ConcurrentDictionary<Type, Func<PacketReader, IPacketConverter, object>> s_enumerable = new ConcurrentDictionary<Type, Func<PacketReader, IPacketConverter, object>>();
-        private static readonly ConcurrentDictionary<Type, Func<IPacketConverter, object, MemoryStream>> s_bytes = new ConcurrentDictionary<Type, Func<IPacketConverter, object, MemoryStream>>();
 
         private static _Inf _CreateInfo(Type type)
         {
             var inf = new _Inf();
             var tag = 0;
-            var one = false;
+            var one = default(Type);
 
             if (type.IsEnum)
             {
@@ -44,9 +41,10 @@ namespace Mikodev.Network
 
             if (type.IsArray && type.GetArrayRank() == 1)
             {
-                one = true;
                 tag |= _Inf.Array;
-                inf.ElementType = type.GetElementType();
+                one = type.GetElementType();
+                inf.ElementType = one;
+                inf.ToArray = _CreateToFunction(s_to_array, one);
             }
 
             if (type.IsGenericType)
@@ -55,34 +53,58 @@ namespace Mikodev.Network
                 var arg = type.GetGenericArguments();
                 if (arg.Length == 1)
                 {
+                    one = arg[0];
                     var fun = default(Func<PacketReader, object>);
                     if (def == typeof(IEnumerable<>))
+                    {
                         tag |= _Inf.Enumerable;
+                        inf.ToEnumerable = _CreateToFunction(s_to_enumerable, one);
+                    }
                     else if (def == typeof(List<>) || def == typeof(IList<>))
+                    {
                         tag |= _Inf.List;
-                    else if ((fun = _CreateCollectionFunction(arg[0], type)) != null)
+                        inf.ToList = _CreateToFunction(s_to_list, one);
+                    }
+                    else if ((fun = _CreateToCollectionFunction(one, type)) != null)
+                    {
                         tag |= _Inf.Collection;
-                    one = true;
-                    inf.ElementType = arg[0];
-                    inf.CollectionFunction = fun;
+                    }
+                    inf.ElementType = one;
+                    inf.ToCollection = fun;
                 }
-                else if (arg.Length == 2 && (def == typeof(Dictionary<,>) || def == typeof(IDictionary<,>)))
+                else if (arg.Length == 2)
                 {
-                    tag |= _Inf.Dictionary;
-                    inf.IndexType = arg[0];
-                    inf.ElementType = arg[1];
-                    inf.DictionaryFunction = _CreateDictionaryFunction(arg[0], arg[1]);
+                    if (def == typeof(Dictionary<,>) || def == typeof(IDictionary<,>))
+                    {
+                        tag |= _Inf.Dictionary;
+                        inf.IndexType = arg[0];
+                        inf.ElementType = arg[1];
+                        inf.ToDictionary = _CreateToDictionaryFunction(arg[0], arg[1]);
+                    }
+
+                    var itr = typeof(KeyValuePair<,>).MakeGenericType(arg);
+                    foreach (var i in type.GetInterfaces())
+                    {
+                        var det = GetInfo(i);
+                        if ((det.Flags & _Inf.Enumerable) != 0 && det.ElementType == itr)
+                        {
+                            tag |= _Inf.EnumerableKeyValuePair;
+                            inf.FromEnumerableKeyValuePair = _CreateFromEnumerableKeyValuePairFunction(arg[0], arg[1]);
+                            break;
+                        }
+                    }
                 }
             }
 
-            if (one == true)
+            if (one != null)
             {
                 foreach (var i in type.GetInterfaces())
                 {
                     var det = GetInfo(i);
-                    if ((det.Flags & _Inf.Enumerable) != 0 && det.ElementType == inf.ElementType)
+                    if ((det.Flags & _Inf.Enumerable) != 0 && det.ElementType == one)
                     {
                         tag |= _Inf.EnumerableImpl;
+                        inf.FromEnumerable = _CreateFromEnumerableFunction(one);
                         break;
                     }
                 }
@@ -99,81 +121,85 @@ namespace Mikodev.Network
             return s_info.GetOrAdd(type, _CreateInfo(type));
         }
 
-        private static Func<PacketReader, IPacketConverter, object> _CreateEnumerableFunction(Type type)
-        {
-            var typ = typeof(_Enumerable<>).MakeGenericType(type);
-            var cts = typ.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic);
-            var src = Expression.Parameter(typeof(PacketReader), "reader");
-            var con = Expression.Parameter(typeof(IPacketConverter), "converter");
-            var inv = Expression.New(cts[0], src, con);
-            var exp = Expression.Lambda<Func<PacketReader, IPacketConverter, object>>(inv, src, con);
-            var fun = exp.Compile();
-            return fun;
-        }
-
-        private static Func<_Element, IPacketConverter, object> _CreateFunction(MethodInfo method, Type type)
-        {
-            var met = method.MakeGenericMethod(type);
-            var ele = Expression.Parameter(typeof(_Element), "element");
-            var arg = Expression.Parameter(typeof(IPacketConverter), "converter");
-            var inv = Expression.Call(ele, met, arg);
-            var exp = Expression.Lambda<Func<_Element, IPacketConverter, object>>(inv, ele, arg);
-            var fun = exp.Compile();
-            return fun;
-        }
-
-        private static Func<PacketReader, object> _CreateCollectionFunction(Type element, Type type)
-        {
-            var itr = typeof(IEnumerable<>).MakeGenericType(element);
-            var cto = type.GetConstructor(new[] { itr });
-            if (cto == null)
-                return null;
-            var rea = Expression.Parameter(typeof(PacketReader), "reader");
-            var cal = Expression.Call(s_inf_collection.MakeGenericMethod(element), rea);
-            var inv = Expression.New(cto, cal);
-            var exp = Expression.Lambda<Func<PacketReader, object>>(inv, rea);
-            var fun = exp.Compile();
-            return fun;
-        }
-
-        private static Func<PacketReader, object> _CreateDictionaryFunction(Type index, Type element)
+        private static Func<PacketReader, object> _CreateToFunction(MethodInfo info, Type element)
         {
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
-            var met = s_inf_dictionary.MakeGenericMethod(index, element);
+            var met = info.MakeGenericMethod(element);
             var cal = Expression.Call(met, rea);
             var exp = Expression.Lambda<Func<PacketReader, object>>(cal, rea);
             var fun = exp.Compile();
             return fun;
         }
 
-        internal static object GetList(PacketReader reader, Type type)
+        private static Func<PacketReader, object> _CreateToCollectionFunction(Type element, Type type)
         {
-            var con = GetConverter(reader._converters, type, false);
-            if (s_list.TryGetValue(type, out var fun) == false)
-                fun = s_list.GetOrAdd(type, _CreateFunction(s_inf_list, type));
-            var res = fun.Invoke(reader._element, con);
-            return res;
+            var itr = typeof(IEnumerable<>).MakeGenericType(element);
+            var cto = type.GetConstructor(new[] { itr });
+            if (cto == null)
+                return null;
+            var rea = Expression.Parameter(typeof(PacketReader), "reader");
+            var cal = Expression.Call(s_to_collection.MakeGenericMethod(element), rea);
+            var inv = Expression.New(cto, cal);
+            var exp = Expression.Lambda<Func<PacketReader, object>>(inv, rea);
+            var fun = exp.Compile();
+            return fun;
         }
 
-        internal static object GetArray(PacketReader reader, Type type)
+        private static Func<PacketReader, object> _CreateToDictionaryFunction(Type index, Type element)
         {
-            var con = GetConverter(reader._converters, type, false);
-            if (s_array.TryGetValue(type, out var fun) == false)
-                fun = s_array.GetOrAdd(type, _CreateFunction(s_inf_array, type));
-            var res = fun.Invoke(reader._element, con);
-            return res;
+            var rea = Expression.Parameter(typeof(PacketReader), "reader");
+            var met = s_to_dictionary.MakeGenericMethod(index, element);
+            var cal = Expression.Call(met, rea);
+            var exp = Expression.Lambda<Func<PacketReader, object>>(cal, rea);
+            var fun = exp.Compile();
+            return fun;
         }
 
-        internal static object GetEnumerable(PacketReader reader, Type type)
+        private static Func<IPacketConverter, object, MemoryStream> _CreateFromEnumerableFunction(Type element)
         {
-            var con = GetConverter(reader._converters, type, false);
-            if (s_enumerable.TryGetValue(type, out var fun) == false)
-                fun = s_enumerable.GetOrAdd(type, _CreateEnumerableFunction(type));
-            var res = fun.Invoke(reader, con);
-            return res;
+            var con = Expression.Parameter(typeof(IPacketConverter), "converter");
+            var obj = Expression.Parameter(typeof(object), "object");
+            var met = s_from_enumerable.MakeGenericMethod(element);
+            var cal = Expression.Call(met, con, obj);
+            var exp = Expression.Lambda<Func<IPacketConverter, object, MemoryStream>>(cal, con, obj);
+            var fun = exp.Compile();
+            return fun;
         }
 
-        internal static Dictionary<TK, TV> _GetDictionary<TK, TV>(PacketReader reader)
+        private static Func<IPacketConverter, IPacketConverter, object, MemoryStream> _CreateFromEnumerableKeyValuePairFunction(Type index, Type element)
+        {
+            var key = Expression.Parameter(typeof(IPacketConverter), "index");
+            var val = Expression.Parameter(typeof(IPacketConverter), "element");
+            var obj = Expression.Parameter(typeof(object), "object");
+            var met = s_from_enumerable_key_value_pair.MakeGenericMethod(index, element);
+            var cal = Expression.Call(met, key, val, obj);
+            var exp = Expression.Lambda<Func<IPacketConverter, IPacketConverter, object, MemoryStream>>(cal, key, val, obj);
+            var fun = exp.Compile();
+            return fun;
+        }
+
+        internal static T[] _ToArray<T>(PacketReader reader)
+        {
+            var con = GetConverter(reader._converters, typeof(T), false);
+            var arr = reader._element.Array<T>(con);
+            return arr;
+        }
+
+        internal static List<T> _ToList<T>(PacketReader reader)
+        {
+            var con = GetConverter(reader._converters, typeof(T), false);
+            var lst = reader._element.List<T>(con);
+            return lst;
+        }
+
+        internal static IEnumerable<T> _ToEnumerable<T>(PacketReader reader)
+        {
+            var con = GetConverter(reader._converters, typeof(T), false);
+            var itr = new _Enumerable<T>(reader, con);
+            return itr;
+        }
+
+        internal static Dictionary<TK, TV> _ToDictionary<TK, TV>(PacketReader reader)
         {
             var key = GetConverter(reader._converters, typeof(TK), false);
             var val = GetConverter(reader._converters, typeof(TV), false);
@@ -181,12 +207,25 @@ namespace Mikodev.Network
             return dic;
         }
 
-        internal static IEnumerable<T> _GetCollection<T>(PacketReader reader)
+        internal static IEnumerable<T> _ToCollection<T>(PacketReader reader)
         {
             var con = GetConverter(reader._converters, typeof(T), false);
             var val = reader._element.Collection<T>(con);
-            return (IEnumerable<T>)val;
+            return val;
         }
+
+        internal static MemoryStream _FromEnumerable<T>(IPacketConverter converter, object @object)
+        {
+            if (converter is IPacketConverter<T> gen)
+                return _StreamFromEnumerableGeneric(gen, (IEnumerable<T>)@object);
+            else return _StreamFromEnumerable(converter, (IEnumerable)@object);
+        }
+
+        internal static MemoryStream _FromEnumerableKeyValuePair<TK, TV>(IPacketConverter key, IPacketConverter value, object @object)
+        {
+            return _GetStreamGeneric(key, value, (IEnumerable<KeyValuePair<TK, TV>>)@object);
+        }
+
 
         private static GetterInfo _CreateGetterInfo(Type type)
         {
@@ -377,7 +416,7 @@ namespace Mikodev.Network
             return con._GetBytesWrapError(value);
         }
 
-        private static MemoryStream _GetSequence(IPacketConverter con, IEnumerable itr)
+        private static MemoryStream _StreamFromEnumerable(IPacketConverter con, IEnumerable itr)
         {
             var mst = new MemoryStream(_Length);
             var def = con.Length;
@@ -402,7 +441,7 @@ namespace Mikodev.Network
             return mst;
         }
 
-        private static MemoryStream _GetSequenceGeneric<T>(IPacketConverter<T> con, IEnumerable<T> itr)
+        private static MemoryStream _StreamFromEnumerableGeneric<T>(IPacketConverter<T> con, IEnumerable<T> itr)
         {
             var mst = new MemoryStream(_Length);
             var def = con.Length;
@@ -427,52 +466,69 @@ namespace Mikodev.Network
             return mst;
         }
 
-        private static MemoryStream _GetSequenceAuto<T>(IPacketConverter con, IEnumerable<T> itr)
+        private static MemoryStream _GetStreamGeneric<TK, TV>(IPacketConverter keycon, IPacketConverter valcon, IEnumerable<KeyValuePair<TK, TV>> enumerable)
         {
-            if (con is IPacketConverter<T> gen)
-                return _GetSequenceGeneric(gen, itr);
-            return _GetSequence(con, itr);
-        }
+            var mst = new MemoryStream(_Length);
+            var keygen = keycon as IPacketConverter<TK>;
+            var valgen = valcon as IPacketConverter<TV>;
+            var keylen = keycon.Length;
+            var vallen = valcon.Length;
 
-        internal static MemoryStream GetSequenceGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
-        {
-            var con = GetConverter<T>(dic, false);
-            if (con is IPacketConverter<T> gen)
-                return _GetSequenceGeneric(gen, itr);
-            return _GetSequence(con, itr);
-        }
+            foreach (var i in enumerable)
+            {
+                var key = i.Key;
+                var keybuf = (keygen != null ? keygen._GetBytesWrapErrorGeneric(key) : keycon._GetBytesWrapError(key));
+                if (keylen > 0)
+                {
+                    mst.Write(keybuf, 0, keylen);
+                }
+                else
+                {
+                    var len = keybuf.Length;
+                    var pre = (len == 0 ? s_zero_bytes : BitConverter.GetBytes(len));
+                    mst.Write(pre, 0, sizeof(int));
+                    mst.Write(keybuf, 0, len);
+                }
 
-        internal static MemoryStream GetSequence(ConverterDictionary dic, IEnumerable itr, Type type)
-        {
-            var con = GetConverter(dic, type, false);
-            var mst = _GetSequence(con, itr);
+                var val = i.Value;
+                var valbuf = (valgen != null ? valgen._GetBytesWrapErrorGeneric(val) : valcon._GetBytesWrapError(val));
+                if (vallen > 0)
+                {
+                    mst.Write(valbuf, 0, vallen);
+                }
+                else
+                {
+                    var len = valbuf.Length;
+                    var pre = (len == 0 ? s_zero_bytes : BitConverter.GetBytes(len));
+                    mst.Write(pre, 0, sizeof(int));
+                    mst.Write(valbuf, 0, len);
+                }
+            }
+
             return mst;
         }
 
-        /// <summary>
-        /// Return null if type invalid
-        /// </summary>
-        internal static MemoryStream GetSequenceReflection(ConverterDictionary dic, object itr, Type type)
+        internal static MemoryStream GetStream(ConverterDictionary dic, IEnumerable itr, Type type)
         {
-            var con = GetConverter(dic, type, true);
-            if (con == null)
-                return null;
-            if (s_bytes.TryGetValue(type, out var fun) == false)
-                fun = s_bytes.GetOrAdd(type, _CreateSequenceFunction(type));
-            var seq = fun.Invoke(con, itr);
-            return seq;
+            var con = GetConverter(dic, type, false);
+            var mst = _StreamFromEnumerable(con, itr);
+            return mst;
         }
 
-        private static Func<IPacketConverter, object, MemoryStream> _CreateSequenceFunction(Type type)
+        internal static MemoryStream GetStreamGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
         {
-            var inf = s_inf_sequence.MakeGenericMethod(type);
-            var cvt = Expression.Parameter(typeof(IPacketConverter), "converter");
-            var enu = Expression.Parameter(typeof(object), "enumerable");
-            var cst = Expression.TypeAs(enu, typeof(IEnumerable<>).MakeGenericType(type));
-            var cal = Expression.Call(inf, cvt, cst);
-            var exp = Expression.Lambda<Func<IPacketConverter, object, MemoryStream>>(cal, cvt, enu);
-            var fun = exp.Compile();
-            return fun;
+            var con = GetConverter<T>(dic, false);
+            if (con is IPacketConverter<T> gen)
+                return _StreamFromEnumerableGeneric(gen, itr);
+            return _StreamFromEnumerable(con, itr);
+        }
+
+        internal static MemoryStream GetStreamGeneric<TK, TV>(ConverterDictionary dic, IEnumerable<KeyValuePair<TK, TV>> itr)
+        {
+            var key = GetConverter<TK>(dic, false);
+            var val = GetConverter<TV>(dic, false);
+            var mst = _GetStreamGeneric(key, val, itr);
+            return mst;
         }
 
         internal static void _ClearCache()
@@ -480,11 +536,6 @@ namespace Mikodev.Network
             s_info.Clear();
             s_getter.Clear();
             s_setter.Clear();
-
-            s_array.Clear();
-            s_list.Clear();
-            s_enumerable.Clear();
-            s_bytes.Clear();
         }
     }
 }

@@ -42,7 +42,7 @@ namespace Mikodev.Network
         public override IEnumerable<string> GetDynamicMemberNames()
         {
             var wtr = (PacketWriter)Value;
-            if (wtr._items is PacketWriterDirectory dic)
+            if (wtr._item is PacketWriterDirectory dic)
                 return dic.Keys;
             return base.GetDynamicMemberNames();
         }

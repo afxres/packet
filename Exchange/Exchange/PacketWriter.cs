@@ -14,22 +14,22 @@ namespace Mikodev.Network
         internal const int _Length = 256;
 
         internal readonly ConverterDictionary _converters = null;
-        internal object _items = null;
+        internal object _item = null;
 
         public PacketWriter(ConverterDictionary converters = null) => _converters = converters;
 
         internal PacketWriterDirectory _GetItems()
         {
-            if (_items is PacketWriterDirectory dic)
+            if (_item is PacketWriterDirectory dic)
                 return dic;
             var val = new PacketWriterDirectory();
-            _items = val;
+            _item = val;
             return val;
         }
 
         public byte[] GetBytes()
         {
-            var obj = _items;
+            var obj = _item;
             if (obj == null)
                 return _Extension.s_empty_bytes;
             else if (obj is byte[] buf)
@@ -47,7 +47,7 @@ namespace Mikodev.Network
 
         public override string ToString()
         {
-            var obj = _items;
+            var obj = _item;
             var stb = new StringBuilder(nameof(PacketWriter));
             stb.Append(" with ");
             if (obj == null)
@@ -74,7 +74,7 @@ namespace Mikodev.Network
             foreach (var i in dic)
             {
                 var key = i.Key;
-                var obj = i.Value._items;
+                var obj = i.Value._item;
                 str._WriteKey(key);
 
                 if (obj == null)
@@ -99,29 +99,34 @@ namespace Mikodev.Network
         {
             var typ = default(Type);
             var obj = default(object);
-            var con = default(IPacketConverter);
-            var mst = default(MemoryStream);
-            var det = default(_Inf);
+            var ele = default(IPacketConverter);
+            var key = default(IPacketConverter);
+            var inf = default(_Inf);
+            var tag = 0;
 
             if ((typ = itm?.GetType()) == null)
                 obj = null;
             else if (itm is PacketWriter wri)
-                obj = wri._items;
+                obj = wri._item;
             else if (itm is PacketRawWriter raw)
                 obj = raw._stream;
-            else if ((con = _Caches.GetConverter(cvt, typ, true)) != null)
-                obj = con._GetBytesWrapError(itm);
-            else if (((det = _Caches.GetInfo(typ)).Flags & _Inf.EnumerableImpl) == 0)
-                goto fail;
-            else if (det.ElementType == typeof(byte) && itm is ICollection<byte> byt)
+            else if ((ele = _Caches.GetConverter(cvt, typ, true)) != null)
+                obj = ele._GetBytesWrapError(itm);
+            else if (((tag = (inf = _Caches.GetInfo(typ)).Flags) & _Inf.EnumerableImpl) == 0)
+                if ((tag & _Inf.EnumerableKeyValuePair) != 0
+                    && (key = _Caches.GetConverter(cvt, inf.IndexType, true)) != null
+                    && (ele = _Caches.GetConverter(cvt, inf.ElementType, true)) != null)
+                    obj = inf.FromEnumerableKeyValuePair(key, ele, itm);
+                else goto fail;
+            else if (inf.ElementType == typeof(byte) && itm is ICollection<byte> byt)
                 obj = byt._ToBytes();
-            else if (det.ElementType == typeof(sbyte) && itm is ICollection<sbyte> sby)
+            else if (inf.ElementType == typeof(sbyte) && itm is ICollection<sbyte> sby)
                 obj = sby._ToBytes();
-            else if ((mst = _Caches.GetSequenceReflection(cvt, itm, det.ElementType)) != null)
-                obj = mst;
+            else if ((ele = _Caches.GetConverter(cvt, inf.ElementType, true)) != null)
+                obj = inf.FromEnumerable(ele, itm);
             else goto fail;
 
-            val = new PacketWriter(cvt) { _items = obj };
+            val = new PacketWriter(cvt) { _item = obj };
             return true;
 
             fail:
