@@ -14,7 +14,7 @@ namespace Mikodev.Network
             var lst = wtr._GetItems();
             if (lst.TryGetValue(key, out var res) && res is PacketWriter pkt)
                 return pkt;
-            var sub = new PacketWriter(wtr._cvt);
+            var sub = new PacketWriter(wtr._converters);
             lst[key] = sub;
             return sub;
         }
@@ -31,7 +31,7 @@ namespace Mikodev.Network
             var wtr = (PacketWriter)Value;
             var key = binder.Name;
             var val = value.Value;
-            if (PacketWriter._GetWriter(val, wtr._cvt, out var sub) == false)
+            if (PacketWriter._GetWriter(val, wtr._converters, out var sub) == false)
                 throw new PacketException(PacketError.InvalidType);
             var lst = wtr._GetItems();
             lst[key] = sub;
@@ -42,7 +42,7 @@ namespace Mikodev.Network
         public override IEnumerable<string> GetDynamicMemberNames()
         {
             var wtr = (PacketWriter)Value;
-            if (wtr._itm is PacketWriterDirectory dic)
+            if (wtr._items is PacketWriterDirectory dic)
                 return dic.Keys;
             return base.GetDynamicMemberNames();
         }

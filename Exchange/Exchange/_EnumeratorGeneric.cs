@@ -5,32 +5,32 @@ namespace Mikodev.Network
 {
     internal sealed class _EnumeratorGeneric<T> : IEnumerator, IEnumerator<T>
     {
-        internal _Element _spa;
-        internal T _cur = default(T);
-        internal readonly IPacketConverter<T> _con = null;
+        internal _Element _element;
+        internal T _current = default(T);
+        internal readonly IPacketConverter<T> _converter = null;
 
         internal _EnumeratorGeneric(PacketReader source, IPacketConverter<T> converter)
         {
-            _spa = new _Element(source._spa);
-            _con = converter;
+            _element = new _Element(source._element);
+            _converter = converter;
         }
 
-        object IEnumerator.Current => _cur;
+        object IEnumerator.Current => _current;
 
-        T IEnumerator<T>.Current => _cur;
+        T IEnumerator<T>.Current => _current;
 
         public bool MoveNext()
         {
-            if (_spa.End())
+            if (_element.End())
                 return false;
-            _cur = _spa.NextGeneric(_con);
+            _current = _element.NextGeneric(_converter);
             return true;
         }
 
         public void Reset()
         {
-            _spa._idx = _spa._off;
-            _cur = default(T);
+            _element._index = _element._offset;
+            _current = default(T);
         }
 
         public void Dispose() { }

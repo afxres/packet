@@ -5,30 +5,30 @@ namespace Mikodev.Network
 {
     internal class _Enumerator : IEnumerator
     {
-        internal _Element _spa;
-        internal object _cur = null;
-        internal readonly IPacketConverter _con = null;
-        
+        internal _Element _element;
+        internal object _current = null;
+        internal readonly IPacketConverter _converter = null;
+
         internal _Enumerator(PacketReader source, IPacketConverter converter)
         {
-            _spa = new _Element(source._spa);
-            _con = converter;
+            _element = new _Element(source._element);
+            _converter = converter;
         }
 
-        object IEnumerator.Current => _cur;
+        object IEnumerator.Current => _current;
 
         public bool MoveNext()
         {
-            if (_spa.End())
+            if (_element.End())
                 return false;
-            _cur = _spa.Next(_con);
+            _current = _element.Next(_converter);
             return true;
         }
 
         public void Reset()
         {
-            _spa._idx = _spa._off;
-            _cur = null;
+            _element._index = _element._offset;
+            _current = null;
         }
     }
 
@@ -36,7 +36,7 @@ namespace Mikodev.Network
     {
         internal _Enumerator(PacketReader reader, IPacketConverter converter) : base(reader, converter) { }
 
-        T IEnumerator<T>.Current => (_cur != null) ? (T)_cur : default(T);
+        T IEnumerator<T>.Current => (_current != null) ? (T)_current : default(T);
 
         public void Dispose() { }
     }

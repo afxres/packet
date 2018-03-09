@@ -7,7 +7,7 @@ namespace Mikodev.Network
 {
     partial class _Extension
     {
-        internal static readonly ConverterDictionary s_dic = null;
+        internal static readonly ConverterDictionary s_converters = null;
 
         static _Extension()
         {
@@ -24,21 +24,17 @@ namespace Mikodev.Network
                 var ins = (IPacketConverter)Activator.CreateInstance(t);
                 dic.Add(typ, ins);
             }
-            s_dic = dic;
+            s_converters = dic;
         }
 
         internal static bool _WrapError(Exception ex) => (ex is PacketException || ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException) == false;
-
-        internal static PacketException _Overflow() => new PacketException(PacketError.Overflow);
-
-        internal static PacketException _ConvertError(Exception ex) => new PacketException(PacketError.ConvertError, ex);
 
         internal static PacketException _Mismatch(int len) => new PacketException(PacketError.ConvertMismatch, $"Converter should return a byte array of length {len}");
 
 
         internal static object _GetValueWrapError(this IPacketConverter con, _Element ele, bool check)
         {
-            return _GetValueWrapError(con, ele._buf, ele._off, ele._len, check);
+            return _GetValueWrapError(con, ele._buffer, ele._offset, ele._length, check);
         }
 
         internal static object _GetValueWrapError(this IPacketConverter con, byte[] buf, int off, int len, bool check)
@@ -46,18 +42,18 @@ namespace Mikodev.Network
             try
             {
                 if (check && con.Length > len)
-                    throw _Overflow();
+                    throw PacketException.ThrowOverflow();
                 return con.GetValue(buf, off, len);
             }
             catch (Exception ex) when (_WrapError(ex))
             {
-                throw _ConvertError(ex);
+                throw PacketException.ThrowConvertError(ex);
             }
         }
 
         internal static T _GetValueWrapErrorAuto<T>(this IPacketConverter con, _Element element, bool check)
         {
-            return _GetValueWrapErrorAuto<T>(con, element._buf, element._off, element._len, check);
+            return _GetValueWrapErrorAuto<T>(con, element._buffer, element._offset, element._length, check);
         }
 
         internal static T _GetValueWrapErrorAuto<T>(this IPacketConverter con, byte[] buf, int off, int len, bool check)
@@ -65,14 +61,14 @@ namespace Mikodev.Network
             try
             {
                 if (check && con.Length > len)
-                    throw _Overflow();
+                    throw PacketException.ThrowOverflow();
                 if (con is IPacketConverter<T> res)
                     return res.GetValue(buf, off, len);
                 return (T)con.GetValue(buf, off, len);
             }
             catch (Exception ex) when (_WrapError(ex))
             {
-                throw _ConvertError(ex);
+                throw PacketException.ThrowConvertError(ex);
             }
         }
 
@@ -81,12 +77,12 @@ namespace Mikodev.Network
             try
             {
                 if (check && con.Length > len)
-                    throw _Overflow();
+                    throw PacketException.ThrowOverflow();
                 return con.GetValue(buf, off, len);
             }
             catch (Exception ex) when (_WrapError(ex))
             {
-                throw _ConvertError(ex);
+                throw PacketException.ThrowConvertError(ex);
             }
         }
 
@@ -104,7 +100,7 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (_WrapError(ex))
             {
-                throw _ConvertError(ex);
+                throw PacketException.ThrowConvertError(ex);
             }
         }
 
@@ -122,7 +118,7 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (_WrapError(ex))
             {
-                throw _ConvertError(ex);
+                throw PacketException.ThrowConvertError(ex);
             }
         }
     }

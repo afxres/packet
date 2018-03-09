@@ -10,16 +10,16 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter(reader._cvt, type, false);
-            var val = con._GetValueWrapError(reader._spa, true);
+            var con = _Caches.GetConverter(reader._converters, type, false);
+            var val = con._GetValueWrapError(reader._element, true);
             return val;
         }
 
         public static T GetValue<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter<T>(reader._cvt, false);
-            var val = con._GetValueWrapErrorAuto<T>(reader._spa, true);
+            var con = _Caches.GetConverter<T>(reader._converters, false);
+            var val = con._GetValueWrapErrorAuto<T>(reader._element, true);
             return val;
         }
 
@@ -27,31 +27,40 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter(reader._cvt, type, false);
+            var con = _Caches.GetConverter(reader._converters, type, false);
             return new _Enumerable(reader, con);
         }
 
         public static IEnumerable<T> GetEnumerable<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter<T>(reader._cvt, false);
+            var con = _Caches.GetConverter<T>(reader._converters, false);
             return new _Enumerable<T>(reader, con);
         }
 
         public static T[] GetArray<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter<T>(reader._cvt, false);
-            var val = reader._spa.Array<T>(con);
+            var con = _Caches.GetConverter<T>(reader._converters, false);
+            var val = reader._element.Array<T>(con);
             return val;
         }
 
         public static List<T> GetList<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter<T>(reader._cvt, false);
-            var val = reader._spa.List<T>(con);
+            var con = _Caches.GetConverter<T>(reader._converters, false);
+            var val = reader._element.List<T>(con);
             return val;
+        }
+
+        public static Dictionary<TK, TV> GetDictionary<TK, TV>(this PacketReader reader)
+        {
+            ThrowIfArgumentError(reader);
+            var key = _Caches.GetConverter<TK>(reader._converters, false);
+            var val = _Caches.GetConverter<TV>(reader._converters, false);
+            var res = reader._element.Dictionary<TK, TV>(key, val);
+            return res;
         }
 
         public static PacketReader GetItem(this PacketReader reader, string key, bool nothrow = false)

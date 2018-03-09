@@ -25,6 +25,21 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void Dictionary()
+        {
+            var raw = new PacketRawWriter()
+                .SetValue("one")
+                .SetValue((sbyte)1)
+                .SetValue("number")
+                .SetValue((sbyte)-1);
+            var buf = raw.GetBytes();
+            var rea = new PacketReader(buf);
+            var res = rea.GetDictionary<string, sbyte>();
+            var des = PacketConvert.Deserialize<Dictionary<string, sbyte>>(buf);
+            return;
+        }
+
+        [TestMethod]
         public void EmptyCollection()
         {
             var obj = new { array = new int[0], list = new List<string>() };

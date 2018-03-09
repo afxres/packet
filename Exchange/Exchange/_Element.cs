@@ -7,49 +7,49 @@ namespace Mikodev.Network
 {
     internal struct _Element
     {
-        internal readonly byte[] _buf;
-        internal readonly int _off;
-        internal readonly int _len;
-        internal int _idx;
+        internal readonly byte[] _buffer;
+        internal readonly int _offset;
+        internal readonly int _length;
+        internal int _index;
 
         internal _Element(_Element ele)
         {
-            _buf = ele._buf;
-            _off = ele._off;
-            _idx = ele._off;
-            _len = ele._len;
+            _buffer = ele._buffer;
+            _offset = ele._offset;
+            _index = ele._offset;
+            _length = ele._length;
         }
 
         internal _Element(byte[] buffer)
         {
-            _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
-            _off = 0;
-            _idx = 0;
-            _len = buffer.Length;
+            _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            _offset = 0;
+            _index = 0;
+            _length = buffer.Length;
         }
 
         internal _Element(byte[] buffer, int offset, int length)
         {
-            _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
             if (offset < 0 || length < 0 || buffer.Length - offset < length)
                 throw new ArgumentOutOfRangeException();
-            _off = offset;
-            _idx = offset;
-            _len = length;
+            _offset = offset;
+            _index = offset;
+            _length = length;
         }
 
-        internal bool End() => _idx >= (_off + _len);
+        internal bool End() => _index >= (_offset + _length);
 
-        internal bool Any() => _idx < (_off + _len);
+        internal bool Any() => _index < (_offset + _length);
 
-        internal void Reset() => _idx = _off;
+        internal void Reset() => _index = _offset;
 
         internal void _EnsureNext(int def, out int pos, out int len)
         {
-            var idx = _idx;
-            var max = _off + _len;
-            if ((def > 0 && idx + def > max) || (def < 1 && _buf._HasNext(max, ref idx, out def) == false))
-                throw _Overflow();
+            var idx = _index;
+            var max = _offset + _length;
+            if ((def > 0 && idx + def > max) || (def < 1 && _buffer._HasNext(max, ref idx, out def) == false))
+                throw PacketException.ThrowOverflow();
             pos = idx;
             len = def;
         }
@@ -57,85 +57,123 @@ namespace Mikodev.Network
         internal object Next(IPacketConverter con)
         {
             _EnsureNext(con.Length, out var pos, out var len);
-            var res = con._GetValueWrapError(_buf, pos, len, false);
-            _idx = pos + len;
+            var res = con._GetValueWrapError(_buffer, pos, len, false);
+            _index = pos + len;
             return res;
         }
 
         internal T NextGeneric<T>(IPacketConverter<T> con)
         {
             _EnsureNext(con.Length, out var pos, out var len);
-            var res = con._GetValueWrapErrorGeneric(_buf, pos, len, false);
-            _idx = pos + len;
+            var res = con._GetValueWrapErrorGeneric(_buffer, pos, len, false);
+            _index = pos + len;
             return res;
         }
 
         internal T NextAuto<T>(IPacketConverter con)
         {
             _EnsureNext(con.Length, out var pos, out var len);
-            var res = con._GetValueWrapErrorAuto<T>(_buf, pos, len, false);
-            _idx = pos + len;
+            var res = con._GetValueWrapErrorAuto<T>(_buffer, pos, len, false);
+            _index = pos + len;
             return res;
         }
 
-        internal bool _EnsureBuild(ref int idx, out int pos, out int len)
+        internal Dictionary<TK, TV> Dictionary<TK, TV>(IPacketConverter keycon, IPacketConverter valcon)
         {
-            var max = _off + _len;
-            if (idx == max)
-                goto fail;
-            if (_buf._HasNext(max, ref idx, out var tmp) == false)
-                throw _Overflow();
-            pos = idx;
-            len = tmp;
-            idx = pos + tmp;
-            return true;
+            var dic = new Dictionary<TK, TV>();
+            if (_length == 0)
+                return dic;
+            var keygen = keycon as IPacketConverter<TK>;
+            var valgen = valcon as IPacketConverter<TV>;
+            var keylen = keycon.Length;
+            var vallen = valcon.Length;
+            var max = _offset + _length;
+            var idx = _offset;
+            var len = 0;
 
-            fail:
-            pos = 0;
-            len = 0;
-            return false;
+            try
+            {
+                while (true)
+                {
+                    var sub = max - idx;
+                    if (sub == 0)
+                        break;
+
+                    if (keylen > 0)
+                        if (sub < keylen)
+                            throw PacketException.ThrowOverflow();
+                        else
+                            len = keylen;
+                    else if (_buffer._HasNext(max, ref idx, out len) == false)
+                        throw PacketException.ThrowOverflow();
+
+                    var key = (keygen != null ? keygen.GetValue(_buffer, idx, len) : (TK)keycon.GetValue(_buffer, idx, len));
+                    idx += len;
+                    sub = max - idx;
+
+                    if (vallen > 0)
+                        if (sub < vallen)
+                            throw PacketException.ThrowOverflow();
+                        else
+                            len = vallen;
+                    else if (_buffer._HasNext(max, ref idx, out len) == false)
+                        throw PacketException.ThrowOverflow();
+
+                    var val = (valgen != null ? valgen.GetValue(_buffer, idx, len) : (TV)valcon.GetValue(_buffer, idx, len));
+                    idx += len;
+                    dic.Add(key, val);
+                }
+            }
+            catch (Exception ex) when (_WrapError(ex))
+            {
+                throw PacketException.ThrowConvertError(ex);
+            }
+
+            return dic;
         }
 
-        internal IEnumerable<T> _BuildVariable<T>(IPacketConverter con)
+        internal object _BuildVariable<T>(IPacketConverter con)
         {
-            var idx = _off;
             var lst = new List<T>();
             var gen = con as IPacketConverter<T>;
-            var pos = default(int);
+            var max = _offset + _length;
+            var idx = _offset;
             var len = default(int);
 
             try
             {
-                if (gen != null)
-                    while (_EnsureBuild(ref idx, out pos, out len))
-                        lst.Add(gen.GetValue(_buf, pos, len));
-                else
-                    while (_EnsureBuild(ref idx, out pos, out len))
-                        lst.Add((T)con.GetValue(_buf, pos, len));
+                while (idx != max)
+                {
+                    if (_buffer._HasNext(max, ref idx, out len) == false)
+                        throw PacketException.ThrowOverflow();
+                    var buf = (gen != null ? gen.GetValue(_buffer, idx, len) : (T)con.GetValue(_buffer, idx, len));
+                    lst.Add(buf);
+                    idx += len;
+                }
             }
             catch (Exception ex) when (_WrapError(ex))
             {
-                throw _ConvertError(ex);
+                throw PacketException.ThrowConvertError(ex);
             }
             return lst;
         }
 
         internal object Collection<T>(IPacketConverter con)
         {
-            if (_len < 1)
+            if (_length < 1)
                 return new T[0];
             if (typeof(T) == typeof(byte))
-                return ByteArrayConverter.ToByteArray(_buf, _off, _len);
+                return ByteArrayConverter.ToByteArray(_buffer, _offset, _length);
             else if (typeof(T) == typeof(sbyte))
-                return SByteArrayConverter.ToSbyteArray(_buf, _off, _len);
+                return SByteArrayConverter.ToSbyteArray(_buffer, _offset, _length);
 
             var len = con.Length;
             if (len < 1)
                 return _BuildVariable<T>(con);
 
-            var sum = Math.DivRem(_len, len, out var rem);
+            var sum = Math.DivRem(_length, len, out var rem);
             if (rem != 0)
-                throw _Overflow();
+                throw PacketException.ThrowOverflow();
             var arr = new T[sum];
             var gen = con as IPacketConverter<T>;
 
@@ -143,14 +181,14 @@ namespace Mikodev.Network
             {
                 if (gen != null)
                     for (int i = 0; i < sum; i++)
-                        arr[i] = gen.GetValue(_buf, _off + i * len, len);
+                        arr[i] = gen.GetValue(_buffer, _offset + i * len, len);
                 else
                     for (int i = 0; i < sum; i++)
-                        arr[i] = (T)con.GetValue(_buf, _off + i * len, len);
+                        arr[i] = (T)con.GetValue(_buffer, _offset + i * len, len);
             }
             catch (Exception ex) when (_WrapError(ex))
             {
-                throw _ConvertError(ex);
+                throw PacketException.ThrowConvertError(ex);
             }
             return arr;
         }

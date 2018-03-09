@@ -12,9 +12,9 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(writer);
 
-            var val = _Caches.GetBytes(type, writer._cvt, value);
+            var val = _Caches.GetBytes(type, writer._converters, value);
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
+            itm[key] = new PacketWriter(writer._converters) { _items = val };
             return writer;
         }
 
@@ -23,9 +23,9 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var val = _Caches.GetBytesAuto(writer._cvt, value);
+            var val = _Caches.GetBytesAuto(writer._converters, value);
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
+            itm[key] = new PacketWriter(writer._converters) { _items = val };
             return writer;
         }
 
@@ -36,7 +36,7 @@ namespace Mikodev.Network
 
             var val = value._ToBytes();
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
+            itm[key] = new PacketWriter(writer._converters) { _items = val };
             return writer;
         }
 
@@ -47,7 +47,7 @@ namespace Mikodev.Network
 
             var val = value._ToBytes();
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
+            itm[key] = new PacketWriter(writer._converters) { _items = val };
             return writer;
         }
 
@@ -57,9 +57,9 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(writer);
 
-            var sub = new PacketWriter(writer._cvt);
+            var sub = new PacketWriter(writer._converters);
             if (value != null)
-                sub._itm = _Caches.GetSequence(writer._cvt, value, type);
+                sub._items = _Caches.GetSequence(writer._converters, value, type);
             var itm = writer._GetItems();
             itm[key] = sub;
             return writer;
@@ -70,9 +70,9 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var sub = new PacketWriter(writer._cvt);
+            var sub = new PacketWriter(writer._converters);
             if (value != null)
-                sub._itm = _Caches.GetSequenceGeneric(writer._cvt, value);
+                sub._items = _Caches.GetSequenceGeneric(writer._converters, value);
             var itm = writer._GetItems();
             itm[key] = sub;
             return writer;
@@ -84,7 +84,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = another?._itm };
+            itm[key] = new PacketWriter(writer._converters) { _items = another?._items };
             return writer;
         }
 
@@ -94,7 +94,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer._GetItems();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = raw._str };
+            itm[key] = new PacketWriter(writer._converters) { _items = raw._stream };
             return writer;
         }
     }

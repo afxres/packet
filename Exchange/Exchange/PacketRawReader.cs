@@ -4,31 +4,31 @@ namespace Mikodev.Network
 {
     public sealed class PacketRawReader
     {
-        internal readonly ConverterDictionary _cvt;
-        internal _Element _spa;
+        internal readonly ConverterDictionary _converters;
+        internal _Element _element;
 
         public PacketRawReader(PacketReader source)
         {
-            _spa = new _Element(source._spa);
-            _cvt = source._cvt;
+            _element = new _Element(source._element);
+            _converters = source._converters;
         }
 
         public PacketRawReader(byte[] buffer, ConverterDictionary converters = null)
         {
-            _spa = new _Element(buffer);
-            _cvt = converters;
+            _element = new _Element(buffer);
+            _converters = converters;
         }
 
         public PacketRawReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
-            _spa = new _Element(buffer, offset, length);
-            _cvt = converters;
+            _element = new _Element(buffer, offset, length);
+            _converters = converters;
         }
 
-        public bool Any => _spa.Any();
+        public bool Any => _element.Any();
 
-        public void Reset() => _spa.Reset();
+        public void Reset() => _element.Reset();
 
-        public override string ToString() => $"{nameof(PacketRawReader)} with {_spa._len} byte(s)";
+        public override string ToString() => $"{nameof(PacketRawReader)} with {_element._length} byte(s)";
     }
 }

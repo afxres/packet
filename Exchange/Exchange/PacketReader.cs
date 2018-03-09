@@ -11,35 +11,35 @@ namespace Mikodev.Network
 {
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
-        internal readonly ConverterDictionary _cvt;
-        internal PacketReaderDictionary _itm = null;
-        internal _Element _spa;
+        internal readonly ConverterDictionary _converters;
+        internal PacketReaderDictionary _items = null;
+        internal _Element _element;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
-            _spa = new _Element(buffer);
-            _cvt = converters;
+            _element = new _Element(buffer);
+            _converters = converters;
         }
 
         public PacketReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
-            _spa = new _Element(buffer, offset, length);
-            _cvt = converters;
+            _element = new _Element(buffer, offset, length);
+            _converters = converters;
         }
 
         internal PacketReaderDictionary _GetItems()
         {
-            var obj = _itm;
+            var obj = _items;
             if (obj != null)
                 return obj;
-            if (_spa._idx < 0)
+            if (_element._index < 0)
                 return null;
-            _spa._idx = -1;
+            _element._index = -1;
 
             var dic = new PacketReaderDictionary();
-            var buf = _spa._buf;
-            var max = _spa._off + _spa._len;
-            var idx = _spa._off;
+            var buf = _element._buffer;
+            var max = _element._offset + _element._length;
+            var idx = _element._offset;
             var len = 0;
 
             while (idx < max)
@@ -52,11 +52,11 @@ namespace Mikodev.Network
                 idx += len;
                 if (buf._HasNext(max, ref idx, out len) == false)
                     return null;
-                dic.Add(key, new PacketReader(buf, idx, len, _cvt));
+                dic.Add(key, new PacketReader(buf, idx, len, _converters));
                 idx += len;
             }
 
-            _itm = dic;
+            _items = dic;
             return dic;
         }
 
@@ -108,7 +108,7 @@ namespace Mikodev.Network
             var dic = _GetItems();
             if (dic != null)
                 stb.AppendFormat("{0} node(s), ", dic.Count);
-            stb.AppendFormat("{0} byte(s)", _spa._len);
+            stb.AppendFormat("{0} byte(s)", _element._length);
             return stb.ToString();
         }
 
@@ -125,8 +125,8 @@ namespace Mikodev.Network
                 val = this;
             else if (type == typeof(PacketRawReader))
                 val = new PacketRawReader(this);
-            else if ((con = _Caches.GetConverter(_cvt, type, true)) != null)
-                val = con._GetValueWrapError(_spa, true);
+            else if ((con = _Caches.GetConverter(_converters, type, true)) != null)
+                val = con._GetValueWrapError(_element, true);
             else if (((tag = (inf = _Caches.GetInfo(type)).Flags) & _Inf.Array) != 0)
                 val = _Caches.GetArray(this, inf.ElementType);
             else if ((tag & _Inf.Enumerable) != 0)
@@ -135,6 +135,8 @@ namespace Mikodev.Network
                 val = _Caches.GetList(this, inf.ElementType);
             else if ((tag & _Inf.Collection) != 0)
                 val = inf.CollectionFunction.Invoke(this);
+            else if ((tag & _Inf.Dictionary) != 0)
+                val = inf.DictionaryFunction.Invoke(this);
             else goto fail;
 
             value = val;

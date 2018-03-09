@@ -49,5 +49,15 @@ namespace Mikodev.Network
             info.AddValue(nameof(PacketError), _code);
             base.GetObjectData(info, context);
         }
+
+        internal static PacketException ThrowOverflow()
+        {
+            throw new PacketException(PacketError.Overflow);
+        }
+
+        internal static PacketException ThrowConvertError(Exception ex)
+        {
+            throw new PacketException(PacketError.ConvertError, ex);
+        }
     }
 }

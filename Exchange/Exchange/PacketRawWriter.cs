@@ -7,13 +7,13 @@ namespace Mikodev.Network
     {
         internal const int _Length = 256;
 
-        internal readonly ConverterDictionary _cvt;
-        internal readonly MemoryStream _str = new MemoryStream(_Length);
+        internal readonly ConverterDictionary _converters;
+        internal readonly MemoryStream _stream = new MemoryStream(_Length);
 
-        public PacketRawWriter(ConverterDictionary converters = null) => _cvt = converters;
+        public PacketRawWriter(ConverterDictionary converters = null) => _converters = converters;
 
-        public byte[] GetBytes() => _str.ToArray();
+        public byte[] GetBytes() => _stream.ToArray();
 
-        public override string ToString() => $"{nameof(PacketRawWriter)} with {_str.Length} byte(s)";
+        public override string ToString() => $"{nameof(PacketRawWriter)} with {_stream.Length} byte(s)";
     }
 }

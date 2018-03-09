@@ -15,24 +15,27 @@ namespace Mikodev.Network
         internal const int _Length = 256;
         internal const int _Depth = 64;
 
-        private static readonly MethodInfo s_get_arr = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_get_lst = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_get_col = typeof(_Caches).GetMethod(nameof(_GetCollection), BindingFlags.Static | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_get_seq = typeof(_Caches).GetMethod(nameof(_GetSequenceAuto), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_inf_array = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_inf_list = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_inf_collection = typeof(_Caches).GetMethod(nameof(_GetCollection), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_inf_dictionary = typeof(_Caches).GetMethod(nameof(_GetDictionary), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_inf_sequence = typeof(_Caches).GetMethod(nameof(_GetSequenceAuto), BindingFlags.Static | BindingFlags.NonPublic);
 
         private static readonly ConcurrentDictionary<Type, GetterInfo> s_getter = new ConcurrentDictionary<Type, GetterInfo>();
         private static readonly ConcurrentDictionary<Type, SetterInfo> s_setter = new ConcurrentDictionary<Type, SetterInfo>();
-        private static readonly ConcurrentDictionary<Type, _Inf> s_detail = new ConcurrentDictionary<Type, _Inf>();
+        private static readonly ConcurrentDictionary<Type, _Inf> s_info = new ConcurrentDictionary<Type, _Inf>();
 
-        private static readonly ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>> s_arr = new ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>>();
-        private static readonly ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>> s_lst = new ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>>();
-        private static readonly ConcurrentDictionary<Type, Func<PacketReader, IPacketConverter, object>> s_itr = new ConcurrentDictionary<Type, Func<PacketReader, IPacketConverter, object>>();
-        private static readonly ConcurrentDictionary<Type, Func<IPacketConverter, object, MemoryStream>> s_seq = new ConcurrentDictionary<Type, Func<IPacketConverter, object, MemoryStream>>();
+        private static readonly ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>> s_array = new ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>>();
+        private static readonly ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>> s_list = new ConcurrentDictionary<Type, Func<_Element, IPacketConverter, object>>();
+        private static readonly ConcurrentDictionary<Type, Func<PacketReader, IPacketConverter, object>> s_enumerable = new ConcurrentDictionary<Type, Func<PacketReader, IPacketConverter, object>>();
+        private static readonly ConcurrentDictionary<Type, Func<IPacketConverter, object, MemoryStream>> s_bytes = new ConcurrentDictionary<Type, Func<IPacketConverter, object, MemoryStream>>();
 
         private static _Inf _CreateInfo(Type type)
         {
             var inf = new _Inf();
             var tag = 0;
+            var one = false;
+
             if (type.IsEnum)
             {
                 tag |= _Inf.Enum;
@@ -41,6 +44,7 @@ namespace Mikodev.Network
 
             if (type.IsArray && type.GetArrayRank() == 1)
             {
+                one = true;
                 tag |= _Inf.Array;
                 inf.ElementType = type.GetElementType();
             }
@@ -58,19 +62,30 @@ namespace Mikodev.Network
                         tag |= _Inf.List;
                     else if ((fun = _CreateCollectionFunction(arg[0], type)) != null)
                         tag |= _Inf.Collection;
+                    one = true;
                     inf.ElementType = arg[0];
                     inf.CollectionFunction = fun;
                 }
+                else if (arg.Length == 2 && (def == typeof(Dictionary<,>) || def == typeof(IDictionary<,>)))
+                {
+                    tag |= _Inf.Dictionary;
+                    inf.IndexType = arg[0];
+                    inf.ElementType = arg[1];
+                    inf.DictionaryFunction = _CreateDictionaryFunction(arg[0], arg[1]);
+                }
             }
 
-            foreach (var i in type.GetInterfaces())
+            if (one == true)
             {
-                var det = GetInfo(i);
-                if ((det.Flags & _Inf.Enumerable) == 0)
-                    continue;
-                tag |= _Inf.EnumerableImpl;
-                inf.EnumerableElementType = det.ElementType;
-                break;
+                foreach (var i in type.GetInterfaces())
+                {
+                    var det = GetInfo(i);
+                    if ((det.Flags & _Inf.Enumerable) != 0 && det.ElementType == inf.ElementType)
+                    {
+                        tag |= _Inf.EnumerableImpl;
+                        break;
+                    }
+                }
             }
 
             inf.Flags = tag;
@@ -79,9 +94,9 @@ namespace Mikodev.Network
 
         internal static _Inf GetInfo(Type type)
         {
-            if (s_detail.TryGetValue(type, out var inf))
+            if (s_info.TryGetValue(type, out var inf))
                 return inf;
-            return s_detail.GetOrAdd(type, _CreateInfo(type));
+            return s_info.GetOrAdd(type, _CreateInfo(type));
         }
 
         private static Func<PacketReader, IPacketConverter, object> _CreateEnumerableFunction(Type type)
@@ -114,44 +129,62 @@ namespace Mikodev.Network
             if (cto == null)
                 return null;
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
-            var cal = Expression.Call(s_get_col.MakeGenericMethod(element), rea);
+            var cal = Expression.Call(s_inf_collection.MakeGenericMethod(element), rea);
             var inv = Expression.New(cto, cal);
             var exp = Expression.Lambda<Func<PacketReader, object>>(inv, rea);
             var fun = exp.Compile();
             return fun;
         }
 
+        private static Func<PacketReader, object> _CreateDictionaryFunction(Type index, Type element)
+        {
+            var rea = Expression.Parameter(typeof(PacketReader), "reader");
+            var met = s_inf_dictionary.MakeGenericMethod(index, element);
+            var cal = Expression.Call(met, rea);
+            var exp = Expression.Lambda<Func<PacketReader, object>>(cal, rea);
+            var fun = exp.Compile();
+            return fun;
+        }
+
         internal static object GetList(PacketReader reader, Type type)
         {
-            var con = GetConverter(reader._cvt, type, false);
-            if (s_lst.TryGetValue(type, out var fun) == false)
-                fun = s_lst.GetOrAdd(type, _CreateFunction(s_get_lst, type));
-            var res = fun.Invoke(reader._spa, con);
+            var con = GetConverter(reader._converters, type, false);
+            if (s_list.TryGetValue(type, out var fun) == false)
+                fun = s_list.GetOrAdd(type, _CreateFunction(s_inf_list, type));
+            var res = fun.Invoke(reader._element, con);
             return res;
         }
 
         internal static object GetArray(PacketReader reader, Type type)
         {
-            var con = GetConverter(reader._cvt, type, false);
-            if (s_arr.TryGetValue(type, out var fun) == false)
-                fun = s_arr.GetOrAdd(type, _CreateFunction(s_get_arr, type));
-            var res = fun.Invoke(reader._spa, con);
+            var con = GetConverter(reader._converters, type, false);
+            if (s_array.TryGetValue(type, out var fun) == false)
+                fun = s_array.GetOrAdd(type, _CreateFunction(s_inf_array, type));
+            var res = fun.Invoke(reader._element, con);
             return res;
         }
 
         internal static object GetEnumerable(PacketReader reader, Type type)
         {
-            var con = GetConverter(reader._cvt, type, false);
-            if (s_itr.TryGetValue(type, out var fun) == false)
-                fun = s_itr.GetOrAdd(type, _CreateEnumerableFunction(type));
+            var con = GetConverter(reader._converters, type, false);
+            if (s_enumerable.TryGetValue(type, out var fun) == false)
+                fun = s_enumerable.GetOrAdd(type, _CreateEnumerableFunction(type));
             var res = fun.Invoke(reader, con);
             return res;
         }
 
+        internal static Dictionary<TK, TV> _GetDictionary<TK, TV>(PacketReader reader)
+        {
+            var key = GetConverter(reader._converters, typeof(TK), false);
+            var val = GetConverter(reader._converters, typeof(TV), false);
+            var dic = reader._element.Dictionary<TK, TV>(key, val);
+            return dic;
+        }
+
         internal static IEnumerable<T> _GetCollection<T>(PacketReader reader)
         {
-            var con = GetConverter(reader._cvt, typeof(T), false);
-            var val = reader._spa.Collection<T>(con);
+            var con = GetConverter(reader._converters, typeof(T), false);
+            var val = reader._element.Collection<T>(con);
             return (IEnumerable<T>)val;
         }
 
@@ -316,11 +349,11 @@ namespace Mikodev.Network
                 if (val == null)
                     goto fail;
                 else return val;
-            if (s_dic.TryGetValue(type, out val))
+            if (s_converters.TryGetValue(type, out val))
                 return val;
 
             var det = GetInfo(type);
-            if ((det.Flags & _Inf.Enum) != 0 && s_dic.TryGetValue(det.ElementType, out val))
+            if ((det.Flags & _Inf.Enum) != 0 && s_converters.TryGetValue(det.ElementType, out val))
                 return val;
 
             fail:
@@ -352,8 +385,7 @@ namespace Mikodev.Network
             {
                 foreach (var i in itr)
                 {
-                    var buf = con._GetBytesWrapError(i);
-                    mst.Write(buf, 0, def);
+                    mst.Write(con._GetBytesWrapError(i), 0, def);
                 }
             }
             else
@@ -362,9 +394,7 @@ namespace Mikodev.Network
                 {
                     var buf = con._GetBytesWrapError(i);
                     var len = buf.Length;
-                    var pre = (len == 0)
-                        ? s_zero_bytes
-                        : BitConverter.GetBytes(len);
+                    var pre = (len == 0 ? s_zero_bytes : BitConverter.GetBytes(len));
                     mst.Write(pre, 0, sizeof(int));
                     mst.Write(buf, 0, len);
                 }
@@ -380,8 +410,7 @@ namespace Mikodev.Network
             {
                 foreach (var i in itr)
                 {
-                    var buf = con._GetBytesWrapErrorGeneric(i);
-                    mst.Write(buf, 0, def);
+                    mst.Write(con._GetBytesWrapErrorGeneric(i), 0, def);
                 }
             }
             else
@@ -390,9 +419,7 @@ namespace Mikodev.Network
                 {
                     var buf = con._GetBytesWrapErrorGeneric(i);
                     var len = buf.Length;
-                    var pre = (len == 0)
-                        ? s_zero_bytes
-                        : BitConverter.GetBytes(len);
+                    var pre = (len == 0 ? s_zero_bytes : BitConverter.GetBytes(len));
                     mst.Write(pre, 0, sizeof(int));
                     mst.Write(buf, 0, len);
                 }
@@ -430,15 +457,15 @@ namespace Mikodev.Network
             var con = GetConverter(dic, type, true);
             if (con == null)
                 return null;
-            if (s_seq.TryGetValue(type, out var fun) == false)
-                fun = s_seq.GetOrAdd(type, _CreateSequenceFunction(type));
+            if (s_bytes.TryGetValue(type, out var fun) == false)
+                fun = s_bytes.GetOrAdd(type, _CreateSequenceFunction(type));
             var seq = fun.Invoke(con, itr);
             return seq;
         }
 
         private static Func<IPacketConverter, object, MemoryStream> _CreateSequenceFunction(Type type)
         {
-            var inf = s_get_seq.MakeGenericMethod(type);
+            var inf = s_inf_sequence.MakeGenericMethod(type);
             var cvt = Expression.Parameter(typeof(IPacketConverter), "converter");
             var enu = Expression.Parameter(typeof(object), "enumerable");
             var cst = Expression.TypeAs(enu, typeof(IEnumerable<>).MakeGenericType(type));
@@ -450,14 +477,14 @@ namespace Mikodev.Network
 
         internal static void _ClearCache()
         {
-            s_detail.Clear();
+            s_info.Clear();
             s_getter.Clear();
             s_setter.Clear();
 
-            s_arr.Clear();
-            s_lst.Clear();
-            s_itr.Clear();
-            s_seq.Clear();
+            s_array.Clear();
+            s_list.Clear();
+            s_enumerable.Clear();
+            s_bytes.Clear();
         }
     }
 }

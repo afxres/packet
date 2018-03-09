@@ -13,23 +13,23 @@ namespace Mikodev.Network
     {
         internal const int _Length = 256;
 
-        internal readonly ConverterDictionary _cvt = null;
-        internal object _itm = null;
+        internal readonly ConverterDictionary _converters = null;
+        internal object _items = null;
 
-        public PacketWriter(ConverterDictionary converters = null) => _cvt = converters;
+        public PacketWriter(ConverterDictionary converters = null) => _converters = converters;
 
         internal PacketWriterDirectory _GetItems()
         {
-            if (_itm is PacketWriterDirectory dic)
+            if (_items is PacketWriterDirectory dic)
                 return dic;
             var val = new PacketWriterDirectory();
-            _itm = val;
+            _items = val;
             return val;
         }
 
         public byte[] GetBytes()
         {
-            var obj = _itm;
+            var obj = _items;
             if (obj == null)
                 return _Extension.s_empty_bytes;
             else if (obj is byte[] buf)
@@ -47,7 +47,7 @@ namespace Mikodev.Network
 
         public override string ToString()
         {
-            var obj = _itm;
+            var obj = _items;
             var stb = new StringBuilder(nameof(PacketWriter));
             stb.Append(" with ");
             if (obj == null)
@@ -74,7 +74,7 @@ namespace Mikodev.Network
             foreach (var i in dic)
             {
                 var key = i.Key;
-                var obj = i.Value._itm;
+                var obj = i.Value._items;
                 str._WriteKey(key);
 
                 if (obj == null)
@@ -106,9 +106,9 @@ namespace Mikodev.Network
             if ((typ = itm?.GetType()) == null)
                 obj = null;
             else if (itm is PacketWriter wri)
-                obj = wri._itm;
+                obj = wri._items;
             else if (itm is PacketRawWriter raw)
-                obj = raw._str;
+                obj = raw._stream;
             else if ((con = _Caches.GetConverter(cvt, typ, true)) != null)
                 obj = con._GetBytesWrapError(itm);
             else if (((det = _Caches.GetInfo(typ)).Flags & _Inf.EnumerableImpl) == 0)
@@ -117,11 +117,11 @@ namespace Mikodev.Network
                 obj = byt._ToBytes();
             else if (det.ElementType == typeof(sbyte) && itm is ICollection<sbyte> sby)
                 obj = sby._ToBytes();
-            else if ((mst = _Caches.GetSequenceReflection(cvt, itm, det.EnumerableElementType)) != null)
+            else if ((mst = _Caches.GetSequenceReflection(cvt, itm, det.ElementType)) != null)
                 obj = mst;
             else goto fail;
 
-            val = new PacketWriter(cvt) { _itm = obj };
+            val = new PacketWriter(cvt) { _items = obj };
             return true;
 
             fail:
