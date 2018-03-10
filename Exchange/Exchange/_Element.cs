@@ -132,7 +132,7 @@ namespace Mikodev.Network
             return dic;
         }
 
-        internal IEnumerable<T> _BuildVariable<T>(IPacketConverter con)
+        internal IEnumerable<T> _List<T>(IPacketConverter con)
         {
             var lst = new List<T>();
             var gen = con as IPacketConverter<T>;
@@ -169,7 +169,7 @@ namespace Mikodev.Network
 
             var len = con.Length;
             if (len < 1)
-                return _BuildVariable<T>(con);
+                return _List<T>(con);
 
             var sum = Math.DivRem(_length, len, out var rem);
             if (rem != 0)

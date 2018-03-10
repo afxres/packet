@@ -25,5 +25,17 @@ namespace Mikodev.Testing
                 else throw new ApplicationException();
             }
         }
+
+        public static void ThrowIfNotEqual<T>(ISet<T> a, ISet<T> b)
+        {
+            if (a.Count != b.Count)
+                throw new ApplicationException();
+            foreach (var i in a)
+            {
+                if (b.Contains(i))
+                    continue;
+                throw new ApplicationException();
+            }
+        }
     }
 }

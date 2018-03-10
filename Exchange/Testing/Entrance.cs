@@ -33,7 +33,7 @@ namespace Mikodev.Testing
 
             var obj = new { a, b, c };
             var ta = PacketConvert.Serialize(obj);
-            var va = PacketConvert.Deserialize(ta, obj);
+            var va = PacketConvert.Deserialize(ta, new { a = default(Dictionary<string, sbyte>), b = default(IDictionary<byte, string>), c = default(IDictionary<string, IPAddress>) });
 
             var wtr = new PacketWriter()
                 .SetDictionary("a", a)
@@ -54,6 +54,24 @@ namespace Mikodev.Testing
             ThrowIfNotEqual(a, va.a);
             ThrowIfNotEqual(b, va.b);
             ThrowIfNotEqual(c, va.c);
+            return;
+        }
+
+        [TestMethod]
+        public void HashSet()
+        {
+            var a = new HashSet<byte>() { 1, 128, 255 };
+            var b = new HashSet<string>() { "a", "beta", "candy", "dave" };
+
+            var ta = PacketConvert.Serialize(a);
+            var tb = new PacketWriter().SetEnumerable("b", b).GetBytes();
+
+            var ra = PacketConvert.Deserialize<HashSet<byte>>(ta);
+            var rea = new PacketReader(tb);
+            var rb = rea["b"].GetHashSet<string>();
+
+            ThrowIfNotEqual(a, ra);
+            ThrowIfNotEqual(b, rb);
             return;
         }
 
@@ -219,8 +237,8 @@ namespace Mikodev.Testing
             var rea = new PacketReader(buf);
             var ra = rea["a"].GetArray<byte>();
             var rb = rea["b"].GetArray<byte>();
-            var rc = rea["c"].GetArray<sbyte>();
-            var rd = rea["d"].GetArray<sbyte>();
+            var rc = rea["c"].GetList<sbyte>();
+            var rd = rea["d"].GetList<sbyte>();
 
             ThrowIfNotSequenceEqual(a, ra);
             ThrowIfNotSequenceEqual(b, rb);

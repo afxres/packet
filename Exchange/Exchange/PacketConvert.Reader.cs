@@ -63,6 +63,15 @@ namespace Mikodev.Network
             return res;
         }
 
+        public static HashSet<T> GetHashSet<T>(this PacketReader reader)
+        {
+            ThrowIfArgumentError(reader);
+            var con = _Caches.GetConverter<T>(reader._converters, false);
+            var col = reader._element.Collection<T>(con);
+            var res = new HashSet<T>(col);
+            return res;
+        }
+
         public static PacketReader GetItem(this PacketReader reader, string key, bool nothrow = false)
         {
             ThrowIfArgumentError(key);

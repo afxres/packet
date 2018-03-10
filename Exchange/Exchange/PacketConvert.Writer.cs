@@ -78,7 +78,7 @@ namespace Mikodev.Network
             return writer;
         }
 
-        public static PacketWriter SetDictionary<TK, TV>(this PacketWriter writer, string key, IEnumerable<KeyValuePair<TK, TV>> value)
+        public static PacketWriter SetDictionary<TK, TV>(this PacketWriter writer, string key, IDictionary<TK, TV> value)
         {
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
