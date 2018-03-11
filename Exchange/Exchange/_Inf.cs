@@ -19,15 +19,23 @@ namespace Mikodev.Network
 
         internal Type IndexType { get; set; }
 
-        internal Func<PacketReader, object> ToArray { get; set; }
+        internal Func<_Element, IPacketConverter, object> GetArray { get; set; }
 
-        internal Func<PacketReader, object> ToList { get; set; }
+        internal Func<_Element, IPacketConverter, object> GetList { get; set; }
 
-        internal Func<PacketReader, object> ToEnumerable { get; set; }
+        internal Func<_Element, IPacketConverter, object> GetCollection { get; set; }
 
-        internal Func<PacketReader, object> ToCollection { get; set; }
+        internal Func<_Element, IPacketConverter, object> GetEnumerable { get; set; }
 
-        internal Func<PacketReader, object> ToDictionary { get; set; }
+        internal Func<_Element, IPacketConverter, IPacketConverter, object> GetDictionary { get; set; }
+
+        internal Func<object[], object> CastToArray { get; set; }
+
+        internal Func<object[], object> CastToList { get; set; }
+
+        internal Func<object[], object> CastToCollection { get; set; }
+
+        internal Func<IEnumerable<KeyValuePair<object, object>>, object> CastToDictionary { get; set; }
 
         internal Func<IPacketConverter, object, MemoryStream> FromEnumerable { get; set; }
 

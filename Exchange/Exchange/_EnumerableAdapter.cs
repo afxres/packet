@@ -3,12 +3,12 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal sealed class _Adapter<TK, TV> : IEnumerable<KeyValuePair<byte[], object>>
+    internal sealed class _EnumerableAdapter<TK, TV> : IEnumerable<KeyValuePair<byte[], object>>
     {
         internal readonly IPacketConverter _key;
         internal readonly IEnumerable<KeyValuePair<TK, TV>> _pairs;
 
-        internal _Adapter(IPacketConverter key, IEnumerable<KeyValuePair<TK, TV>> pairs)
+        internal _EnumerableAdapter(IPacketConverter key, IEnumerable<KeyValuePair<TK, TV>> pairs)
         {
             _key = key;
             _pairs = pairs;

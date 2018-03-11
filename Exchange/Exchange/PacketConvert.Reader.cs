@@ -28,14 +28,14 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(reader);
             var con = _Caches.GetConverter(reader._converters, type, false);
-            return new _Enumerable(reader, con);
+            return new _Enumerable(reader._element, con);
         }
 
         public static IEnumerable<T> GetEnumerable<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
             var con = _Caches.GetConverter<T>(reader._converters, false);
-            return new _Enumerable<T>(reader, con);
+            return new _Enumerable<T>(reader._element, con);
         }
 
         public static T[] GetArray<T>(this PacketReader reader)

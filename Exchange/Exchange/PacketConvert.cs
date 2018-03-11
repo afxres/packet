@@ -109,7 +109,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(buffer);
 
             var rea = new PacketReader(buffer, converters);
-            var val = PacketReader._Deserialize(rea, type);
+            var val = rea._GetValueEx(type, 0);
             return val;
         }
 
@@ -119,7 +119,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(buffer, offset, length);
 
             var rea = new PacketReader(buffer, offset, length, converters);
-            var val = PacketReader._Deserialize(rea, type);
+            var val = rea._GetValueEx(type, 0);
             return val;
         }
 

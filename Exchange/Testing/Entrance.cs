@@ -58,6 +58,22 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void DeserializePartial()
+        {
+            const int margin = 10;
+            var obj = new { alpha = 1, beta = "two" };
+            var buf = PacketConvert.Serialize(obj);
+            var tmp = new byte[buf.Length + margin * 2];
+            Buffer.BlockCopy(buf, 0, tmp, margin, buf.Length);
+
+            var res = PacketConvert.Deserialize(tmp, margin, buf.Length, new { alpha = 0, beta = string.Empty });
+
+            Assert.AreEqual(obj.alpha, res.alpha);
+            Assert.AreEqual(obj.beta, res.beta);
+            return;
+        }
+
+        [TestMethod]
         public void HashSet()
         {
             var a = new HashSet<byte>() { 1, 128, 255 };
@@ -703,13 +719,22 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Nest()
         {
-            var wtr = PacketWriter.Serialize(new List<List<int>> { new List<int> { 1, 2 }, new List<int> { 3, 4, 5 } });
-            var buf = wtr.GetBytes();
-            var ano = PacketWriter.Serialize(Enumerable.Range(128, 1).Select(r => new { id = r, text = r.ToString() }));
-            var tmp = ano.GetBytes();
+            var a = new List<List<int>> { new List<int> { 1, 2 }, new List<int> { 3, 4, 5 } };
+            var wtr = PacketWriter.Serialize(a);
+            var ta = wtr.GetBytes();
 
-            var rea = new PacketReader(buf);
-            var lst = rea.Deserialize<List<List<int>>>();
+            var b = Enumerable.Range(128, 1).Select(r => new { id = r, text = r.ToString() });
+            var ano = PacketWriter.Serialize(b);
+            var tb = ano.GetBytes();
+
+            var rea = new PacketReader(ta);
+            var ra = rea.Deserialize<IEnumerable<List<int>>>();
+            var rb = PacketConvert.Deserialize(tb, new[] { new { id = 0, text = string.Empty } }.ToHashSet());
+
+            var c = Enumerable.Range(128, 2).ToDictionary(r => r, r => new { id = r, text = r.ToString() });
+            var dic = PacketWriter.Serialize(c);
+            var tc = dic.GetBytes();
+            var rc = PacketConvert.Deserialize(tc, new[] { new { id = 0, text = string.Empty } }.ToDictionary(r => r.id));
 
             return;
         }

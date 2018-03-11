@@ -38,9 +38,11 @@ namespace Mikodev.Network
             _length = length;
         }
 
+        internal bool Any() => _index < (_offset + _length);
+
         internal bool End() => _index >= (_offset + _length);
 
-        internal bool Any() => _index < (_offset + _length);
+        internal int Max() => _offset + _length;
 
         internal void Reset() => _index = _offset;
 
@@ -211,6 +213,11 @@ namespace Mikodev.Network
             if (res is List<T> lst)
                 return lst.ToArray();
             throw new InvalidOperationException();
+        }
+
+        internal IEnumerable<T> Enumerable<T>(IPacketConverter converter)
+        {
+            return new _Enumerable<T>(this, converter);
         }
     }
 }

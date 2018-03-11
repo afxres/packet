@@ -13,6 +13,7 @@ namespace Mikodev.Network
     {
         internal readonly ConverterDictionary _converters;
         internal PacketReaderDictionary _readers = null;
+        internal List<PacketReader> _elements = null;
         internal _Element _element;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
@@ -38,7 +39,7 @@ namespace Mikodev.Network
 
             var dic = new PacketReaderDictionary();
             var buf = _element._buffer;
-            var max = _element._offset + _element._length;
+            var max = _element.Max();
             var idx = _element._offset;
             var len = 0;
 
@@ -114,68 +115,170 @@ namespace Mikodev.Network
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
 
-        internal bool _Convert(Type type, out object value)
+        internal object _GetValueEx(Type type, int level)
         {
-            var val = default(object);
-            var con = default(IPacketConverter);
-            var inf = default(_Inf);
-            var tag = 0;
+            if (level > _Caches._Depth)
+                throw new PacketException(PacketError.RecursiveError);
+            level += 1;
 
-            if (type == typeof(PacketReader))
-                val = this;
-            else if (type == typeof(PacketRawReader))
-                val = new PacketRawReader(this);
-            else if ((con = _Caches.GetConverter(_converters, type, true)) != null)
-                val = con._GetValueWrapError(_element, true);
-            else if (((tag = (inf = _Caches.GetInfo(type)).Flags) & _Inf.Array) != 0)
-                val = inf.ToArray(this);
-            else if ((tag & _Inf.Enumerable) != 0)
-                val = inf.ToEnumerable(this);
-            else if ((tag & _Inf.List) != 0)
-                val = inf.ToList(this);
+            if (type == typeof(object) || type == typeof(PacketReader))
+                return this;
+            if (type == typeof(PacketRawReader))
+                return new PacketRawReader(this);
+
+            var convert = _Caches.GetConverter(_converters, type, true);
+            if (convert != null)
+                return convert._GetValueWrapError(_element, true);
+
+            var info = _Caches.GetInfo(type);
+            var tag = info.Flags;
+            var element = info.ElementType;
+            if (element != null)
+                convert = _Caches.GetConverter(_converters, element, true);
+
+            if ((tag & _Inf.Array) != 0)
+            {
+                if (convert != null)
+                    return info.GetArray(_element, convert);
+                var values = _GetValues(element, level);
+                var result = info.CastToArray(values);
+                return result;
+            }
+            if ((tag & _Inf.List) != 0)
+            {
+                if (convert != null)
+                    return info.GetList(_element, convert);
+                var values = _GetValues(element, level);
+                var result = info.CastToList(values);
+                return result;
+            }
+            if ((tag & _Inf.Enumerable) != 0)
+            {
+                if (convert != null)
+                    return info.GetEnumerable(_element, convert);
+                // To be modified
+                var values = _GetValues(element, level);
+                var result = info.CastToArray(values);
+                return result;
+            }
             else if ((tag & _Inf.Collection) != 0)
-                val = inf.ToCollection(this);
+            {
+                if (convert != null)
+                    return info.GetCollection(_element, convert);
+                var values = _GetValues(element, level);
+                var result = info.CastToCollection(values);
+                return result;
+            }
             else if ((tag & _Inf.Dictionary) != 0)
-                val = inf.ToDictionary(this);
-            else goto fail;
+            {
+                var keycon = _Caches.GetConverter(_converters, info.IndexType, true);
+                if (keycon == null)
+                    throw new PacketException(PacketError.InvalidKeyType);
+                if (convert != null)
+                    return info.GetDictionary(_element, keycon, convert);
 
-            value = val;
-            return true;
+                var max = _element.Max();
+                var idx = _element._offset;
+                var buf = _element._buffer;
+                var keylen = keycon.Length;
+                var len = 0;
 
-            fail:
-            value = null;
-            return false;
+                var lst = new List<KeyValuePair<object, object>>();
+                while (true)
+                {
+                    var sub = max - idx;
+                    if (sub == 0)
+                        break;
+                    if (keylen > 0)
+                        if (sub < keylen)
+                            throw PacketException.ThrowOverflow();
+                        else
+                            len = keylen;
+                    else if (buf._HasNext(max, ref idx, out len) == false)
+                        throw PacketException.ThrowOverflow();
+                    // Wrap error non-check
+                    var key = keycon._GetValueWrapError(buf, idx, len, false);
+                    idx += len;
+
+                    if (buf._HasNext(max, ref idx, out len) == false)
+                        throw PacketException.ThrowOverflow();
+                    var rea = new PacketReader(buf, idx, len, _converters);
+                    var val = rea._GetValueEx(element, level);
+                    var par = new KeyValuePair<object, object>(key, val);
+
+                    idx += len;
+                    lst.Add(par);
+                }
+                return info.CastToDictionary(lst);
+            }
+            else
+            {
+                var setter = _Caches.GetSetterInfo(type);
+                var arguments = setter.Arguments;
+                var function = setter.Function;
+                if (arguments == null || function == null)
+                    throw new PacketException(PacketError.InvalidType);
+
+                var values = new object[arguments.Length];
+                for (int i = 0; i < arguments.Length; i++)
+                {
+                    var reader = _GetItem(arguments[i].Name, false);
+                    var value = reader._GetValueEx(arguments[i].Type, level);
+                    values[i] = value;
+                }
+
+                var result = function.Invoke(values);
+                return result;
+            }
         }
 
-        public T Deserialize<T>(T anonymous) => (T)_Deserialize(this, typeof(T));
+        internal object[] _GetValues(Type element, int level)
+        {
+            if (level > _Caches._Depth)
+                throw new PacketException(PacketError.RecursiveError);
+            level += 1;
 
-        public T Deserialize<T>() => (T)_Deserialize(this, typeof(T));
+            var readers = _GetReaders();
+            var array = new object[readers.Count];
+            for (int i = 0; i < readers.Count; i++)
+            {
+                var reader = readers[i];
+                var value = reader._GetValueEx(element, level);
+                array[i] = value;
+            }
+            return array;
+        }
+
+        internal List<PacketReader> _GetReaders()
+        {
+            var list = _elements;
+            if (list != null)
+                return list;
+            list = new List<PacketReader>();
+            var max = _element.Max();
+            var index = _element._offset;
+            var buffer = _element._buffer;
+            while (index != max)
+            {
+                if (buffer._HasNext(max, ref index, out var length) == false)
+                    throw PacketException.ThrowOverflow();
+                var reader = new PacketReader(buffer, index, length, _converters);
+                list.Add(reader);
+                index += length;
+            }
+            _elements = list;
+            return list;
+        }
+
+        public T Deserialize<T>(T anonymous) => (T)_GetValueEx(typeof(T), 0);
+
+        public T Deserialize<T>() => (T)_GetValueEx(typeof(T), 0);
 
         public object Deserialize(Type type)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
-            return _Deserialize(this, type);
-        }
-
-        internal static object _Deserialize(PacketReader reader, Type type)
-        {
-            if (type == typeof(object))
-                return reader;
-            if (reader._Convert(type, out var ret))
-                return ret;
-
-            var res = _Caches.GetSetterInfo(type);
-            var arr = res.Arguments;
-            var fun = res.Function;
-            if (arr == null || fun == null)
-                throw new PacketException(PacketError.InvalidType);
-            var obj = new object[arr.Length];
-
-            for (int i = 0; i < arr.Length; i++)
-                obj[i] = _Deserialize(reader._GetItem(arr[i].Name, false), arr[i].Type);
-            var val = fun.Invoke(obj);
-            return val;
+            return _GetValueEx(type, 0);
         }
     }
 }

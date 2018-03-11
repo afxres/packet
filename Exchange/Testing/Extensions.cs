@@ -37,5 +37,7 @@ namespace Mikodev.Testing
                 throw new ApplicationException();
             }
         }
+
+        public static HashSet<T> ToHashSet<T>(this IEnumerable<T> values) => new HashSet<T>(values);
     }
 }

@@ -9,9 +9,9 @@ namespace Mikodev.Network
         internal T _current = default(T);
         internal readonly IPacketConverter<T> _converter = null;
 
-        internal _EnumeratorGeneric(PacketReader source, IPacketConverter<T> converter)
+        internal _EnumeratorGeneric(_Element element, IPacketConverter<T> converter)
         {
-            _element = new _Element(source._element);
+            _element = new _Element(element);
             _converter = converter;
         }
 

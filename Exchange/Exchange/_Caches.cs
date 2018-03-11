@@ -15,13 +15,18 @@ namespace Mikodev.Network
         internal const int _Length = 256;
         internal const int _Depth = 64;
 
-        private static readonly MethodInfo s_to_array = typeof(_Caches).GetMethod(nameof(_ToArray), BindingFlags.Static | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_to_list = typeof(_Caches).GetMethod(nameof(_ToList), BindingFlags.Static | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_to_enumerable = typeof(_Caches).GetMethod(nameof(_ToEnumerable), BindingFlags.Static | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_to_collection = typeof(_Caches).GetMethod(nameof(_ToCollection), BindingFlags.Static | BindingFlags.NonPublic);
-        private static readonly MethodInfo s_to_dictionary = typeof(_Caches).GetMethod(nameof(_ToDictionary), BindingFlags.Static | BindingFlags.NonPublic);
         private static readonly MethodInfo s_from_enumerable = typeof(_Caches).GetMethod(nameof(_FromEnumerable), BindingFlags.Static | BindingFlags.NonPublic);
         private static readonly MethodInfo s_from_enumerable_key_value_pair = typeof(_Caches).GetMethod(nameof(_FromEnumerableKeyValuePair), BindingFlags.Static | BindingFlags.NonPublic);
+
+        private static readonly MethodInfo s_cast_array = typeof(_Caches).GetMethod(nameof(CastToArray), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_cast_list = typeof(_Caches).GetMethod(nameof(CastToList), BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_cast_dictionary = typeof(_Caches).GetMethod(nameof(CastToDictionary), BindingFlags.Static | BindingFlags.NonPublic);
+
+        private static readonly MethodInfo s_get_array = typeof(_Element).GetMethod(nameof(_Element.Array), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_get_list = typeof(_Element).GetMethod(nameof(_Element.List), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_get_collection = typeof(_Element).GetMethod(nameof(_Element.Collection), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_get_enumerable = typeof(_Element).GetMethod(nameof(_Element.Enumerable), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo s_get_dictionary = typeof(_Element).GetMethod(nameof(_Element.Dictionary), BindingFlags.Instance | BindingFlags.NonPublic);
 
         private static readonly ConcurrentDictionary<Type, _Inf> s_info = new ConcurrentDictionary<Type, _Inf>();
         private static readonly ConcurrentDictionary<Type, GetterInfo> s_getter = new ConcurrentDictionary<Type, GetterInfo>();
@@ -45,7 +50,8 @@ namespace Mikodev.Network
                 tag |= _Inf.Array;
                 one = type.GetElementType();
                 inf.ElementType = one;
-                inf.ToArray = _CreateToFunction(s_to_array, one);
+                inf.GetArray = _CreateGetFunction(s_get_array, one);
+                inf.CastToArray = _CreateCastFunction(s_cast_array, one);
             }
 
             if (type.IsGenericType)
@@ -55,23 +61,26 @@ namespace Mikodev.Network
                 if (arg.Length == 1)
                 {
                     one = arg[0];
-                    var fun = default(Func<PacketReader, object>);
+                    var fun = default(Func<_Element, IPacketConverter, object>);
                     if (def == typeof(IEnumerable<>))
                     {
                         tag |= _Inf.Enumerable;
-                        inf.ToEnumerable = _CreateToFunction(s_to_enumerable, one);
+                        inf.GetEnumerable = _CreateGetFunction(s_get_enumerable, one);
                     }
                     else if (def == typeof(List<>) || def == typeof(IList<>))
                     {
                         tag |= _Inf.List;
-                        inf.ToList = _CreateToFunction(s_to_list, one);
+                        inf.GetList = _CreateGetFunction(s_get_list, one);
+                        inf.CastToList = _CreateCastFunction(s_cast_list, one);
                     }
-                    else if ((fun = _CreateToCollectionFunction(one, type)) != null)
+                    else if ((fun = _CreateGetCollectionFunction(type, one, out var info)) != null)
                     {
                         tag |= _Inf.Collection;
+                        inf.GetCollection = fun;
+                        inf.CastToCollection = _CreateCastToCollectionFunction(one, info);
                     }
                     inf.ElementType = one;
-                    inf.ToCollection = fun;
+                    inf.CastToArray = _CreateCastFunction(s_cast_array, one);
                 }
                 else if (arg.Length == 2)
                 {
@@ -80,7 +89,8 @@ namespace Mikodev.Network
                         tag |= _Inf.Dictionary;
                         inf.IndexType = arg[0];
                         inf.ElementType = arg[1];
-                        inf.ToDictionary = _CreateToDictionaryFunction(arg[0], arg[1]);
+                        inf.GetDictionary = _CreateGetDictionaryFunction(arg[0], arg[1]);
+                        inf.CastToDictionary = _CreateCastToDictionaryFunction(arg[0], arg[1]);
                     }
 
                     var itr = typeof(KeyValuePair<,>).MakeGenericType(arg);
@@ -142,36 +152,77 @@ namespace Mikodev.Network
             return s_info.GetOrAdd(type, _CreateInfo(type));
         }
 
-        private static Func<PacketReader, object> _CreateToFunction(MethodInfo info, Type element)
+        private static Func<_Element, IPacketConverter, object> _CreateGetFunction(MethodInfo info, Type element)
         {
-            var rea = Expression.Parameter(typeof(PacketReader), "reader");
+            var con = Expression.Parameter(typeof(IPacketConverter), "converter");
+            var ele = Expression.Parameter(typeof(_Element), "element");
             var met = info.MakeGenericMethod(element);
-            var cal = Expression.Call(met, rea);
-            var exp = Expression.Lambda<Func<PacketReader, object>>(cal, rea);
+            var cal = Expression.Call(ele, met, con);
+            var exp = Expression.Lambda<Func<_Element, IPacketConverter, object>>(cal, ele, con);
             var fun = exp.Compile();
             return fun;
         }
 
-        private static Func<PacketReader, object> _CreateToCollectionFunction(Type element, Type type)
+        private static Func<_Element, IPacketConverter, object> _CreateGetCollectionFunction(Type type, Type element, out ConstructorInfo info)
         {
             var itr = typeof(IEnumerable<>).MakeGenericType(element);
             var cto = type.GetConstructor(new[] { itr });
+            info = cto;
             if (cto == null)
                 return null;
-            var rea = Expression.Parameter(typeof(PacketReader), "reader");
-            var cal = Expression.Call(s_to_collection.MakeGenericMethod(element), rea);
-            var inv = Expression.New(cto, cal);
-            var exp = Expression.Lambda<Func<PacketReader, object>>(inv, rea);
+            var con = Expression.Parameter(typeof(IPacketConverter), "converter");
+            var ele = Expression.Parameter(typeof(_Element), "element");
+            var met = s_get_collection.MakeGenericMethod(element);
+            var cal = Expression.Call(ele, met, con);
+            var cst = Expression.Convert(cal, itr);
+            var inv = Expression.New(cto, cst);
+            var box = Expression.Convert(inv, typeof(object));
+            var exp = Expression.Lambda<Func<_Element, IPacketConverter, object>>(box, ele, con);
             var fun = exp.Compile();
             return fun;
         }
 
-        private static Func<PacketReader, object> _CreateToDictionaryFunction(Type index, Type element)
+        private static Func<_Element, IPacketConverter, IPacketConverter, object> _CreateGetDictionaryFunction(Type index, Type element)
         {
-            var rea = Expression.Parameter(typeof(PacketReader), "reader");
-            var met = s_to_dictionary.MakeGenericMethod(index, element);
-            var cal = Expression.Call(met, rea);
-            var exp = Expression.Lambda<Func<PacketReader, object>>(cal, rea);
+            var ele = Expression.Parameter(typeof(_Element), "element");
+            var key = Expression.Parameter(typeof(IPacketConverter), "key");
+            var val = Expression.Parameter(typeof(IPacketConverter), "value");
+            var met = s_get_dictionary.MakeGenericMethod(index, element);
+            var cal = Expression.Call(ele, met, key, val);
+            var exp = Expression.Lambda<Func<_Element, IPacketConverter, IPacketConverter, object>>(cal, ele, key, val);
+            var fun = exp.Compile();
+            return fun;
+        }
+
+        private static Func<object[], object> _CreateCastFunction(MethodInfo info, Type element)
+        {
+            var arr = Expression.Parameter(typeof(object[]), "array");
+            var met = info.MakeGenericMethod(element);
+            var cal = Expression.Call(met, arr);
+            var exp = Expression.Lambda<Func<object[], object>>(cal, arr);
+            var fun = exp.Compile();
+            return fun;
+        }
+
+        private static Func<object[], object> _CreateCastToCollectionFunction(Type element, ConstructorInfo info)
+        {
+            var itr = typeof(IEnumerable<>).MakeGenericType(element);
+            var arr = Expression.Parameter(typeof(object[]), "array");
+            var cal = Expression.Call(s_cast_array.MakeGenericMethod(element), arr);
+            var cst = Expression.Convert(cal, itr);
+            var inv = Expression.New(info, cst);
+            var box = Expression.Convert(inv, typeof(object));
+            var exp = Expression.Lambda<Func<object[], object>>(box, arr);
+            var fun = exp.Compile();
+            return fun;
+        }
+
+        private static Func<IEnumerable<KeyValuePair<object, object>>, object> _CreateCastToDictionaryFunction(Type index, Type element)
+        {
+            var arr = Expression.Parameter(typeof(IEnumerable<KeyValuePair<object, object>>), "pairs");
+            var met = s_cast_dictionary.MakeGenericMethod(index, element);
+            var cal = Expression.Call(met, arr);
+            var exp = Expression.Lambda<Func<IEnumerable<KeyValuePair<object, object>>, object>>(cal, arr);
             var fun = exp.Compile();
             return fun;
         }
@@ -202,7 +253,7 @@ namespace Mikodev.Network
         private static Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> _CreateGetAdapterFunction(Type index, Type element)
         {
             var itr = typeof(IEnumerable<>).MakeGenericType(typeof(KeyValuePair<,>).MakeGenericType(index, element));
-            var cto = typeof(_Adapter<,>).MakeGenericType(index, element).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
+            var cto = typeof(_EnumerableAdapter<,>).MakeGenericType(index, element).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
             var key = Expression.Parameter(typeof(IPacketConverter), "index");
             var obj = Expression.Parameter(typeof(object), "object");
             var cvt = Expression.Convert(obj, itr);
@@ -210,42 +261,6 @@ namespace Mikodev.Network
             var exp = Expression.Lambda<Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>>>(inv, key, obj);
             var fun = exp.Compile();
             return fun;
-        }
-
-        internal static T[] _ToArray<T>(PacketReader reader)
-        {
-            var con = GetConverter(reader._converters, typeof(T), false);
-            var arr = reader._element.Array<T>(con);
-            return arr;
-        }
-
-        internal static List<T> _ToList<T>(PacketReader reader)
-        {
-            var con = GetConverter(reader._converters, typeof(T), false);
-            var lst = reader._element.List<T>(con);
-            return lst;
-        }
-
-        internal static IEnumerable<T> _ToEnumerable<T>(PacketReader reader)
-        {
-            var con = GetConverter(reader._converters, typeof(T), false);
-            var itr = new _Enumerable<T>(reader, con);
-            return itr;
-        }
-
-        internal static Dictionary<TK, TV> _ToDictionary<TK, TV>(PacketReader reader)
-        {
-            var key = GetConverter(reader._converters, typeof(TK), false);
-            var val = GetConverter(reader._converters, typeof(TV), false);
-            var dic = reader._element.Dictionary<TK, TV>(key, val);
-            return dic;
-        }
-
-        internal static IEnumerable<T> _ToCollection<T>(PacketReader reader)
-        {
-            var con = GetConverter(reader._converters, typeof(T), false);
-            var val = reader._element.Collection<T>(con);
-            return val;
         }
 
         internal static MemoryStream _FromEnumerable<T>(IPacketConverter converter, object @object)
@@ -259,7 +274,6 @@ namespace Mikodev.Network
         {
             return _GetStreamGeneric(key, value, (IEnumerable<KeyValuePair<TK, TV>>)@object);
         }
-
 
         private static GetterInfo _CreateGetterInfo(Type type)
         {
@@ -563,6 +577,29 @@ namespace Mikodev.Network
             var val = GetConverter<TV>(dic, false);
             var mst = _GetStreamGeneric(key, val, itr);
             return mst;
+        }
+
+        internal static T[] CastToArray<T>(object[] array)
+        {
+            var length = array.Length;
+            var result = new T[length];
+            Array.Copy(array, result, length);
+            return result;
+        }
+
+        internal static List<T> CastToList<T>(object[] array)
+        {
+            var values = CastToArray<T>(array);
+            var result = new List<T>(values);
+            return result;
+        }
+
+        internal static Dictionary<TK, TV> CastToDictionary<TK, TV>(IEnumerable<KeyValuePair<object, object>> values)
+        {
+            var dictionary = new Dictionary<TK, TV>();
+            foreach (var i in values)
+                dictionary.Add((TK)i.Key, (TV)i.Value);
+            return dictionary;
         }
 
         internal static void _ClearCache()

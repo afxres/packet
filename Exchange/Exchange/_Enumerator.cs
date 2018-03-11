@@ -9,9 +9,9 @@ namespace Mikodev.Network
         internal object _current = null;
         internal readonly IPacketConverter _converter = null;
 
-        internal _Enumerator(PacketReader source, IPacketConverter converter)
+        internal _Enumerator(_Element element, IPacketConverter converter)
         {
-            _element = new _Element(source._element);
+            _element = new _Element(element);
             _converter = converter;
         }
 
@@ -34,7 +34,7 @@ namespace Mikodev.Network
 
     internal sealed class _Enumerator<T> : _Enumerator, IEnumerator<T>
     {
-        internal _Enumerator(PacketReader reader, IPacketConverter converter) : base(reader, converter) { }
+        internal _Enumerator(_Element element, IPacketConverter converter) : base(element, converter) { }
 
         T IEnumerator<T>.Current => (_current != null) ? (T)_current : default(T);
 
