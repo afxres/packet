@@ -145,7 +145,7 @@ namespace Mikodev.Network
 
         public static byte[] Serialize(object value, ConverterDictionary converters = null)
         {
-            var wtr = PacketWriter._Serialize(converters, value, 0);
+            var wtr = PacketWriter._GetWriterEx(converters, value, 0);
             var buf = wtr.GetBytes();
             return buf;
         }

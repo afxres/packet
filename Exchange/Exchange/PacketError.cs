@@ -14,6 +14,8 @@
 
         RecursiveError,
 
+        InvalidKeyType,
+
         InvalidType,
     }
 }

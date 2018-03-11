@@ -75,6 +75,7 @@
     <Compile Include="PacketConvert.Writer.cs" />
     <Compile Include="PacketRawReader.cs" />
     <Compile Include="PacketRawWriter.cs" />
+    <Compile Include="_Adapter.cs" />
     <Compile Include="_Caches.Internal.cs" />
     <Compile Include="_DynamicReader.cs" />
     <Compile Include="_DynamicWriter.cs" />

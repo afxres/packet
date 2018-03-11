@@ -13,16 +13,32 @@ namespace Mikodev.Network
 
         internal struct GetterInfo
         {
-            internal Action<object, object[]> Function { get; set; }
+            private readonly AccessorInfo[] _infos;
+            private readonly Action<object, object[]> _action;
 
-            internal AccessorInfo[] Arguments { get; set; }
+            internal GetterInfo(AccessorInfo[] infos, Action<object, object[]> action)
+            {
+                _infos = infos;
+                _action = action;
+            }
+
+            internal AccessorInfo[] Arguments => _infos;
+
+            internal Action<object, object[]> Function => _action;
+
+            internal object[] GetValues(object value)
+            {
+                var result = new object[_infos.Length];
+                _action.Invoke(value, result);
+                return result;
+            }
         }
 
         internal struct SetterInfo
         {
-            internal Func<object[], object> Function { get; set; }
-
             internal AccessorInfo[] Arguments { get; set; }
+
+            internal Func<object[], object> Function { get; set; }
         }
     }
 }

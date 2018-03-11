@@ -22,6 +22,8 @@ namespace Mikodev.Network
                     return "Recursion limit has been reached";
                 case PacketError.InvalidType:
                     return "Invalid type";
+                case PacketError.InvalidKeyType:
+                    return "Invalid dictionary key type.";
                 default:
                     return "Undefined error";
             }
@@ -58,6 +60,11 @@ namespace Mikodev.Network
         internal static PacketException ThrowConvertError(Exception ex)
         {
             throw new PacketException(PacketError.ConvertError, ex);
+        }
+
+        internal static PacketException ThrowConvertMismatch(int length)
+        {
+            throw new PacketException(PacketError.ConvertMismatch, $"Converter should return a byte array of length {length}");
         }
     }
 }

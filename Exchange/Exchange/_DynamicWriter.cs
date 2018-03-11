@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Expressions;
-using PacketWriterDirectory = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
+using PacketWriterDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
 
 namespace Mikodev.Network
 {
@@ -31,8 +31,7 @@ namespace Mikodev.Network
             var wtr = (PacketWriter)Value;
             var key = binder.Name;
             var val = value.Value;
-            if (PacketWriter._GetWriter(val, wtr._converters, out var sub) == false)
-                throw new PacketException(PacketError.InvalidType);
+            var sub = PacketWriter._GetWriterEx(wtr._converters, val, 0);
             var lst = wtr._GetItems();
             lst[key] = sub;
             var exp = Expression.Constant(val, typeof(object));
@@ -42,7 +41,7 @@ namespace Mikodev.Network
         public override IEnumerable<string> GetDynamicMemberNames()
         {
             var wtr = (PacketWriter)Value;
-            if (wtr._item is PacketWriterDirectory dic)
+            if (wtr._item is PacketWriterDictionary dic)
                 return dic.Keys;
             return base.GetDynamicMemberNames();
         }

@@ -32,6 +32,7 @@ namespace Mikodev.Network
             var inf = new _Inf();
             var tag = 0;
             var one = default(Type);
+            var itf = type.GetInterfaces();
 
             if (type.IsEnum)
             {
@@ -83,13 +84,14 @@ namespace Mikodev.Network
                     }
 
                     var itr = typeof(KeyValuePair<,>).MakeGenericType(arg);
-                    foreach (var i in type.GetInterfaces())
+                    foreach (var i in itf)
                     {
                         var det = GetInfo(i);
                         if ((det.Flags & _Inf.Enumerable) != 0 && det.ElementType == itr)
                         {
                             tag |= _Inf.EnumerableKeyValuePair;
                             inf.FromEnumerableKeyValuePair = _CreateFromEnumerableKeyValuePairFunction(arg[0], arg[1]);
+                            inf.GetAdapter = _CreateGetAdapterFunction(arg[0], arg[1]);
                             break;
                         }
                     }
@@ -98,7 +100,7 @@ namespace Mikodev.Network
 
             if (one != null)
             {
-                foreach (var i in type.GetInterfaces())
+                foreach (var i in itf)
                 {
                     var det = GetInfo(i);
                     if ((det.Flags & _Inf.Enumerable) != 0 && det.ElementType == one)
@@ -107,6 +109,25 @@ namespace Mikodev.Network
                         inf.FromEnumerable = _CreateFromEnumerableFunction(one);
                         break;
                     }
+                }
+            }
+            else if (inf.ElementType == null)
+            {
+                var lst = new List<_Inf>();
+                foreach (var i in itf)
+                {
+                    var det = GetInfo(i);
+                    if ((det.Flags & _Inf.Enumerable) != 0)
+                    {
+                        lst.Add(det);
+                    }
+                }
+                if (lst.Count == 1)
+                {
+                    var det = lst[0];
+                    tag |= _Inf.EnumerableImpl;
+                    inf.ElementType = det.ElementType;
+                    inf.FromEnumerable = _CreateFromEnumerableFunction(det.ElementType);
                 }
             }
 
@@ -174,6 +195,19 @@ namespace Mikodev.Network
             var met = s_from_enumerable_key_value_pair.MakeGenericMethod(index, element);
             var cal = Expression.Call(met, key, val, obj);
             var exp = Expression.Lambda<Func<IPacketConverter, IPacketConverter, object, MemoryStream>>(cal, key, val, obj);
+            var fun = exp.Compile();
+            return fun;
+        }
+
+        private static Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> _CreateGetAdapterFunction(Type index, Type element)
+        {
+            var itr = typeof(IEnumerable<>).MakeGenericType(typeof(KeyValuePair<,>).MakeGenericType(index, element));
+            var cto = typeof(_Adapter<,>).MakeGenericType(index, element).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
+            var key = Expression.Parameter(typeof(IPacketConverter), "index");
+            var obj = Expression.Parameter(typeof(object), "object");
+            var cvt = Expression.Convert(obj, itr);
+            var inv = Expression.New(cto, key, cvt);
+            var exp = Expression.Lambda<Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>>>(inv, key, obj);
             var fun = exp.Compile();
             return fun;
         }
@@ -265,7 +299,7 @@ namespace Mikodev.Network
             var blk = Expression.Block(new[] { val }, exp);
             var del = Expression.Lambda<Action<object, object[]>>(blk, ipt, arr);
 
-            var res = new GetterInfo { Function = del.Compile(), Arguments = inf.ToArray() };
+            var res = new GetterInfo(inf.ToArray(), del.Compile());
             return res;
         }
 

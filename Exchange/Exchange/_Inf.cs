@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Mikodev.Network
@@ -31,6 +32,8 @@ namespace Mikodev.Network
         internal Func<IPacketConverter, object, MemoryStream> FromEnumerable { get; set; }
 
         internal Func<IPacketConverter, IPacketConverter, object, MemoryStream> FromEnumerableKeyValuePair { get; set; }
+
+        internal Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> GetAdapter { get; set; }
 
         internal int Flags { get; set; }
     }

@@ -699,5 +699,19 @@ namespace Mikodev.Testing
             Assert.AreEqual(rcb, b);
             Assert.AreEqual(false, rc.Any);
         }
+
+        [TestMethod]
+        public void Nest()
+        {
+            var wtr = PacketWriter.Serialize(new List<List<int>> { new List<int> { 1, 2 }, new List<int> { 3, 4, 5 } });
+            var buf = wtr.GetBytes();
+            var ano = PacketWriter.Serialize(Enumerable.Range(128, 1).Select(r => new { id = r, text = r.ToString() }));
+            var tmp = ano.GetBytes();
+
+            var rea = new PacketReader(buf);
+            var lst = rea.Deserialize<List<List<int>>>();
+
+            return;
+        }
     }
 }
