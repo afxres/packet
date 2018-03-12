@@ -1,7 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mikodev.Network;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using static Mikodev.Testing.Extensions;
 
@@ -34,6 +36,39 @@ namespace Mikodev.Testing
         object IPacketConverter.GetValue(byte[] buffer, int offset, int length)
         {
             return new byte[1];
+        }
+    }
+
+    internal class _Two
+    {
+        public int One { get; set; }
+
+        public int Two { get; set; }
+    }
+
+    internal class _TwoConverter : IPacketConverter
+    {
+        public int Length => sizeof(int) * 2;
+
+        public byte[] GetBytes(object value)
+        {
+            var two = (_Two)value;
+            var buf = new byte[sizeof(int) * 2];
+            var a = BitConverter.GetBytes(two.One);
+            var b = BitConverter.GetBytes(two.Two);
+            Buffer.BlockCopy(a, 0, buf, 0, sizeof(int));
+            Buffer.BlockCopy(b, 0, buf, sizeof(int), sizeof(int));
+            return buf;
+        }
+
+        public object GetValue(byte[] buffer, int offset, int length)
+        {
+            if (length < (sizeof(int) * 2))
+                throw new ArgumentOutOfRangeException(nameof(length));
+            var a = BitConverter.ToInt32(buffer, offset);
+            var b = BitConverter.ToInt32(buffer, offset + sizeof(int));
+            var two = new _Two { One = a, Two = b };
+            return two;
         }
     }
 
@@ -71,6 +106,19 @@ namespace Mikodev.Testing
         public int One { get; set; }
 
         public string Two { get; set; }
+    }
+
+    internal class _Tuple : IEnumerable<KeyValuePair<int, string>>
+    {
+        public IEnumerator<KeyValuePair<int, string>> GetEnumerator()
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                yield return new KeyValuePair<int, string>(i, i.ToString());
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
     [TestClass]
@@ -265,6 +313,36 @@ namespace Mikodev.Testing
             var val = set.SetEquals(res);
             Assert.AreEqual(set.Count, res.Count);
             Assert.AreEqual(val, true);
+            return;
+        }
+
+
+        [TestMethod]
+        public void LegacyConverter()
+        {
+            var con = new Dictionary<Type, IPacketConverter>()
+            {
+                [typeof(_Two)] = new _TwoConverter(),
+            };
+            var obj = new
+            {
+                a = Enumerable.Range(0, 4).Select(r => new _Two { One = r, Two = r * 2 }),
+                b = Enumerable.Range(0, 8).ToDictionary(r => r.ToString(), r => new _Two { One = r * 2, Two = r * 4 }),
+            };
+            var buf = PacketConvert.Serialize(obj, con);
+            var rea = new PacketReader(buf, con);
+            var itr = rea["a"].GetEnumerable<_Two>();
+
+            var oc = new _Tuple();
+            var c = oc.ToDictionary(r => r.Key, r => r.Value);
+            var kvp = PacketWriter.Serialize(oc);
+            var tc = kvp.GetBytes();
+
+            var ra = itr.ToList();
+            var rb = rea["b"].GetDictionary<string, _Two>();
+            var rc = PacketConvert.Deserialize<IDictionary<int, string>>(tc);
+
+            ThrowIfNotEqual(c, rc);
             return;
         }
     }

@@ -11,10 +11,14 @@ namespace Mikodev.Network
 {
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
-        internal readonly ConverterDictionary _converters;
-        internal PacketReaderDictionary _readers = null;
-        internal List<PacketReader> _elements = null;
+        internal const int _Init = 1;
+        internal const int _InitList = 2;
+
+        internal int _flags = 0;
         internal _Element _element;
+        internal List<PacketReader> _list = null;
+        internal PacketReaderDictionary _dictionary = null;
+        internal readonly ConverterDictionary _converters;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
@@ -28,14 +32,14 @@ namespace Mikodev.Network
             _converters = converters;
         }
 
-        internal PacketReaderDictionary _GetItems()
+        internal PacketReaderDictionary _GetItemDictionary()
         {
-            var obj = _readers;
+            var obj = _dictionary;
             if (obj != null)
                 return obj;
-            if (_element._index < 0)
+            if ((_flags & _Init) != 0)
                 return null;
-            _element._index = -1;
+            _flags |= _Init;
 
             var dic = new PacketReaderDictionary();
             var buf = _element._buffer;
@@ -57,8 +61,33 @@ namespace Mikodev.Network
                 idx += len;
             }
 
-            _readers = dic;
+            _dictionary = dic;
             return dic;
+        }
+
+        internal List<PacketReader> _GetItemList()
+        {
+            var lst = _list;
+            if (lst != null)
+                return lst;
+            if ((_flags & _InitList) != 0)
+                throw PacketException.ThrowOverflow();
+            _flags |= _InitList;
+
+            lst = new List<PacketReader>();
+            var max = _element.Max();
+            var idx = _element._offset;
+            var buf = _element._buffer;
+            while (idx != max)
+            {
+                if (buf._HasNext(max, ref idx, out var length) == false)
+                    throw PacketException.ThrowOverflow();
+                var rea = new PacketReader(buf, idx, length, _converters);
+                lst.Add(rea);
+                idx += length;
+            }
+            _list = lst;
+            return lst;
         }
 
         /// <summary>
@@ -66,7 +95,7 @@ namespace Mikodev.Network
         /// </summary>
         internal PacketReader _GetItem(string key, bool nothrow)
         {
-            var dic = _GetItems();
+            var dic = _GetItemDictionary();
             if (dic != null && dic.TryGetValue(key, out var val))
                 return val;
             if (nothrow)
@@ -86,9 +115,9 @@ namespace Mikodev.Network
             return rdr;
         }
 
-        public int Count => _GetItems()?.Count ?? 0;
+        public int Count => _GetItemDictionary()?.Count ?? 0;
 
-        public IEnumerable<string> Keys => _GetItems()?.Keys ?? Enumerable.Empty<string>();
+        public IEnumerable<string> Keys => _GetItemDictionary()?.Keys ?? Enumerable.Empty<string>();
 
         public PacketReader this[string path, bool nothrow = false]
         {
@@ -106,7 +135,7 @@ namespace Mikodev.Network
         {
             var stb = new StringBuilder(nameof(PacketReader));
             stb.Append(" with ");
-            var dic = _GetItems();
+            var dic = _GetItemDictionary();
             if (dic != null)
                 stb.AppendFormat("{0} node(s), ", dic.Count);
             stb.AppendFormat("{0} byte(s)", _element._length);
@@ -115,7 +144,7 @@ namespace Mikodev.Network
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
 
-        internal object _GetValueEx(Type type, int level)
+        internal object _GetValue(Type type, int level)
         {
             if (level > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
@@ -140,7 +169,7 @@ namespace Mikodev.Network
             {
                 if (convert != null)
                     return info.GetArray(_element, convert);
-                var values = _GetValues(element, level);
+                var values = _GetValueArray(element, level);
                 var result = info.CastToArray(values);
                 return result;
             }
@@ -148,7 +177,7 @@ namespace Mikodev.Network
             {
                 if (convert != null)
                     return info.GetList(_element, convert);
-                var values = _GetValues(element, level);
+                var values = _GetValueArray(element, level);
                 var result = info.CastToList(values);
                 return result;
             }
@@ -157,7 +186,7 @@ namespace Mikodev.Network
                 if (convert != null)
                     return info.GetEnumerable(_element, convert);
                 // To be modified
-                var values = _GetValues(element, level);
+                var values = _GetValueArray(element, level);
                 var result = info.CastToArray(values);
                 return result;
             }
@@ -165,7 +194,7 @@ namespace Mikodev.Network
             {
                 if (convert != null)
                     return info.GetCollection(_element, convert);
-                var values = _GetValues(element, level);
+                var values = _GetValueArray(element, level);
                 var result = info.CastToCollection(values);
                 return result;
             }
@@ -203,7 +232,7 @@ namespace Mikodev.Network
                     if (buf._HasNext(max, ref idx, out len) == false)
                         throw PacketException.ThrowOverflow();
                     var rea = new PacketReader(buf, idx, len, _converters);
-                    var val = rea._GetValueEx(element, level);
+                    var val = rea._GetValue(element, level);
                     var par = new KeyValuePair<object, object>(key, val);
 
                     idx += len;
@@ -223,7 +252,7 @@ namespace Mikodev.Network
                 for (int i = 0; i < arguments.Length; i++)
                 {
                     var reader = _GetItem(arguments[i].Name, false);
-                    var value = reader._GetValueEx(arguments[i].Type, level);
+                    var value = reader._GetValue(arguments[i].Type, level);
                     values[i] = value;
                 }
 
@@ -232,53 +261,28 @@ namespace Mikodev.Network
             }
         }
 
-        internal object[] _GetValues(Type element, int level)
+        internal object[] _GetValueArray(Type element, int level)
         {
             if (level > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
             level += 1;
 
-            var readers = _GetReaders();
-            var array = new object[readers.Count];
-            for (int i = 0; i < readers.Count; i++)
-            {
-                var reader = readers[i];
-                var value = reader._GetValueEx(element, level);
-                array[i] = value;
-            }
-            return array;
+            var lst = _GetItemList();
+            var arr = new object[lst.Count];
+            for (int i = 0; i < lst.Count; i++)
+                arr[i] = lst[i]._GetValue(element, level);
+            return arr;
         }
 
-        internal List<PacketReader> _GetReaders()
-        {
-            var list = _elements;
-            if (list != null)
-                return list;
-            list = new List<PacketReader>();
-            var max = _element.Max();
-            var index = _element._offset;
-            var buffer = _element._buffer;
-            while (index != max)
-            {
-                if (buffer._HasNext(max, ref index, out var length) == false)
-                    throw PacketException.ThrowOverflow();
-                var reader = new PacketReader(buffer, index, length, _converters);
-                list.Add(reader);
-                index += length;
-            }
-            _elements = list;
-            return list;
-        }
+        public T Deserialize<T>(T anonymous) => (T)_GetValue(typeof(T), 0);
 
-        public T Deserialize<T>(T anonymous) => (T)_GetValueEx(typeof(T), 0);
-
-        public T Deserialize<T>() => (T)_GetValueEx(typeof(T), 0);
+        public T Deserialize<T>() => (T)_GetValue(typeof(T), 0);
 
         public object Deserialize(Type type)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
-            return _GetValueEx(type, 0);
+            return _GetValue(type, 0);
         }
     }
 }

@@ -10,11 +10,18 @@ namespace Mikodev.Network
 
         internal _Enumerable(_Element element, IPacketConverter converter)
         {
-            _element = element;
+            _element = new _Element(element);
             _converter = converter;
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => new _Enumerator(_element, _converter);
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            var con = _converter;
+            var ele = new _Element(_element);
+            while (ele.Any())
+                yield return ele.Next(con);
+            yield break;
+        }
     }
 
     internal sealed class _Enumerable<T> : _Enumerable, IEnumerable<T>
@@ -23,9 +30,15 @@ namespace Mikodev.Network
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            if (_converter is IPacketConverter<T> con)
-                return new _EnumeratorGeneric<T>(_element, con);
-            return new _Enumerator<T>(_element, _converter);
+            var con = _converter;
+            var ele = new _Element(_element);
+            if (con is IPacketConverter<T> gen)
+                while (ele.Any())
+                    yield return ele.NextGeneric(gen);
+            else
+                while (ele.Any())
+                    yield return (T)ele.Next(con);
+            yield break;
         }
     }
 }

@@ -20,8 +20,8 @@ namespace Mikodev.Network
 
         internal const int _Length = 256;
 
-        internal readonly ConverterDictionary _converters = null;
         internal object _item = null;
+        internal readonly ConverterDictionary _converters = null;
 
         internal PacketWriter(ConverterDictionary converters, object item)
         {
@@ -31,7 +31,7 @@ namespace Mikodev.Network
 
         public PacketWriter(ConverterDictionary converters = null) => _converters = converters;
 
-        internal PacketWriterDictionary _GetItems()
+        internal PacketWriterDictionary _GetItemDictionary()
         {
             if (_item is PacketWriterDictionary dic)
                 return dic;
@@ -197,7 +197,7 @@ namespace Mikodev.Network
                 else if (item is IDictionary<string, object> dictionary)
                 {
                     var target = new PacketWriter(converters);
-                    var items = target._GetItems();
+                    var items = target._GetItemDictionary();
                     foreach (var i in dictionary)
                         items[i.Key] = _GetWriterEx(converters, i.Value, level);
                     return target;
@@ -205,7 +205,7 @@ namespace Mikodev.Network
                 else
                 {
                     var list = new List<KeyValuePair<byte[], PacketWriter>>();
-                    var adapter = info.GetAdapter(key, item);
+                    var adapter = info.GetEnumerableKeyValuePairAdapter(key, item);
                     foreach (var i in adapter)
                     {
                         var value = _GetWriterEx(converters, i.Value, level);
@@ -220,7 +220,7 @@ namespace Mikodev.Network
             else
             {
                 var result = new PacketWriter(converters);
-                var items = result._GetItems();
+                var items = result._GetItemDictionary();
                 var getter = _Caches.GetGetterInfo(type);
                 var values = getter.GetValues(item);
                 var arguments = getter.Arguments;

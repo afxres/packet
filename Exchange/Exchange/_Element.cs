@@ -40,13 +40,11 @@ namespace Mikodev.Network
 
         internal bool Any() => _index < (_offset + _length);
 
-        internal bool End() => _index >= (_offset + _length);
-
         internal int Max() => _offset + _length;
 
         internal void Reset() => _index = _offset;
 
-        internal void _EnsureNext(int def, out int pos, out int len)
+        internal void _MoveNext(int def, out int pos, out int len)
         {
             var idx = _index;
             var max = _offset + _length;
@@ -58,7 +56,7 @@ namespace Mikodev.Network
 
         internal object Next(IPacketConverter con)
         {
-            _EnsureNext(con.Length, out var pos, out var len);
+            _MoveNext(con.Length, out var pos, out var len);
             var res = con._GetValueWrapError(_buffer, pos, len, false);
             _index = pos + len;
             return res;
@@ -66,7 +64,7 @@ namespace Mikodev.Network
 
         internal T NextGeneric<T>(IPacketConverter<T> con)
         {
-            _EnsureNext(con.Length, out var pos, out var len);
+            _MoveNext(con.Length, out var pos, out var len);
             var res = con._GetValueWrapErrorGeneric(_buffer, pos, len, false);
             _index = pos + len;
             return res;
@@ -74,7 +72,7 @@ namespace Mikodev.Network
 
         internal T NextAuto<T>(IPacketConverter con)
         {
-            _EnsureNext(con.Length, out var pos, out var len);
+            _MoveNext(con.Length, out var pos, out var len);
             var res = con._GetValueWrapErrorAuto<T>(_buffer, pos, len, false);
             _index = pos + len;
             return res;

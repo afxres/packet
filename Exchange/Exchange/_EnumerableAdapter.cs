@@ -16,24 +16,15 @@ namespace Mikodev.Network
 
         public IEnumerator<KeyValuePair<byte[], object>> GetEnumerator()
         {
-            if (_key is IPacketConverter<TK> gen)
-            {
-                foreach (var i in _pairs)
-                {
-                    var key = gen._GetBytesWrapErrorGeneric(i.Key);
-                    var pair = new KeyValuePair<byte[], object>(key, i.Value);
-                    yield return pair;
-                }
-            }
+            var con = _key;
+            var itr = _pairs;
+            if (con is IPacketConverter<TK> gen)
+                foreach (var i in itr)
+                    yield return new KeyValuePair<byte[], object>(gen._GetBytesWrapErrorGeneric(i.Key), i.Value);
             else
-            {
-                foreach (var i in _pairs)
-                {
-                    var key = _key._GetBytesWrapError(i.Key);
-                    var pair = new KeyValuePair<byte[], object>(key, i.Value);
-                    yield return pair;
-                }
-            }
+                foreach (var i in itr)
+                    yield return new KeyValuePair<byte[], object>(con._GetBytesWrapError(i.Key), i.Value);
+            yield break;
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

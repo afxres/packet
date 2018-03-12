@@ -14,6 +14,7 @@ namespace Mikodev.Network
         internal const int Collection = 32;
         internal const int Dictionary = 64;
         internal const int EnumerableKeyValuePair = 128;
+        internal const int KeyValuePair = 256;
 
         internal Type ElementType { get; set; }
 
@@ -41,7 +42,7 @@ namespace Mikodev.Network
 
         internal Func<IPacketConverter, IPacketConverter, object, MemoryStream> FromEnumerableKeyValuePair { get; set; }
 
-        internal Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> GetAdapter { get; set; }
+        internal Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> GetEnumerableKeyValuePairAdapter { get; set; }
 
         internal int Flags { get; set; }
     }

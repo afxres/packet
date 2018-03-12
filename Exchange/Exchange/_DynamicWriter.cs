@@ -11,7 +11,7 @@ namespace Mikodev.Network
 
         internal PacketWriter _GetItem(PacketWriter wtr, string key)
         {
-            var lst = wtr._GetItems();
+            var lst = wtr._GetItemDictionary();
             if (lst.TryGetValue(key, out var res) && res is PacketWriter pkt)
                 return pkt;
             var sub = new PacketWriter(wtr._converters);
@@ -32,7 +32,7 @@ namespace Mikodev.Network
             var key = binder.Name;
             var val = value.Value;
             var sub = PacketWriter._GetWriterEx(wtr._converters, val, 0);
-            var lst = wtr._GetItems();
+            var lst = wtr._GetItemDictionary();
             lst[key] = sub;
             var exp = Expression.Constant(val, typeof(object));
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
