@@ -35,16 +35,23 @@ namespace Mikodev.Network
 
         private static _Inf _CreateInfo(Type type)
         {
+            var one = default(Type);
             var inf = new _Inf();
+
             if (type.IsEnum)
             {
                 inf.Flags |= _Inf.Enum;
                 inf.ElementType = Enum.GetUnderlyingType(type);
                 return inf;
             }
-
-            var one = default(Type);
-            var itf = type.GetInterfaces();
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+            {
+                var arg = type.GetGenericArguments();
+                inf.Flags |= _Inf.KeyValuePair;
+                inf.IndexType = arg[0];
+                inf.ElementType = arg[1];
+                return inf;
+            }
 
             void _SetEnumerableKeyValuePair(Type index, Type element, _Inf enumerable)
             {
@@ -55,16 +62,18 @@ namespace Mikodev.Network
                 inf.GetEnumerableKeyValuePairAdapter = enumerable.GetEnumerableKeyValuePairAdapter;
             }
 
-            if (type.IsArray && type.GetArrayRank() == 1)
+            if (type.IsArray)
             {
-                inf.Flags |= _Inf.Array;
+                if (type.GetArrayRank() != 1)
+                    throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
                 one = type.GetElementType();
                 inf.ElementType = one;
+
+                inf.Flags |= _Inf.Array;
                 inf.GetArray = _CreateGetFunction(s_get_array, one);
                 inf.CastToArray = _CreateCastFunction(s_cast_array, one);
             }
-
-            if (type.IsGenericType)
+            else if (type.IsGenericType)
             {
                 var def = type.GetGenericTypeDefinition();
                 var arg = type.GetGenericArguments();
@@ -76,18 +85,18 @@ namespace Mikodev.Network
 
                     if (def == typeof(IEnumerable<>))
                     {
+                        inf.Flags |= _Inf.Enumerable;
+                        inf.GetEnumerable = _CreateGetFunction(s_get_enumerable, one);
+                        inf.CastToArray = _CreateCastFunction(s_cast_array, one);
+
                         // Create from ... function
                         var kvp = GetInfo(one);
-                        inf.FromEnumerable = _CreateFromEnumerableFunction(one);
                         if ((kvp.Flags & _Inf.KeyValuePair) != 0)
                         {
                             inf.FromEnumerableKeyValuePair = _CreateFromEnumerableKeyValuePairFunction(kvp.IndexType, kvp.ElementType);
                             inf.GetEnumerableKeyValuePairAdapter = _CreateGetAdapterFunction(kvp.IndexType, kvp.ElementType);
                         }
-
-                        inf.Flags |= _Inf.Enumerable;
-                        inf.GetEnumerable = _CreateGetFunction(s_get_enumerable, one);
-                        inf.CastToArray = _CreateCastFunction(s_cast_array, one);
+                        inf.FromEnumerable = _CreateFromEnumerableFunction(one);
                     }
                     else if (def == typeof(List<>) || def == typeof(IList<>))
                     {
@@ -104,68 +113,44 @@ namespace Mikodev.Network
                 }
                 else if (arg.Length == 2)
                 {
-                    if (def == typeof(KeyValuePair<,>))
-                    {
-                        inf.Flags |= _Inf.KeyValuePair;
-                        inf.IndexType = arg[0];
-                        inf.ElementType = arg[1];
-                    }
-                    else
-                    {
-                        var lst = itf
-                            .Select(r => GetInfo(r))
-                            .Where(r => (r.Flags & _Inf.Enumerable) != 0)
-                            .Select(r => new { enumerable = r, info = GetInfo(r.ElementType) })
-                            .Where(r => (r.info.Flags & _Inf.KeyValuePair) != 0 && r.info.IndexType == arg[0] && r.info.ElementType == arg[1])
-                            .ToList();
+                    var kvp = typeof(KeyValuePair<,>).MakeGenericType(arg);
+                    var itr = type.GetInterfaces()
+                        .Select(r => GetInfo(r))
+                        .Where(r => (r.Flags & _Inf.Enumerable) != 0 && r.ElementType == kvp)
+                        .FirstOrDefault();
 
-                        if (lst.Count == 1)
-                            _SetEnumerableKeyValuePair(arg[0], arg[1], lst[0].enumerable);
+                    if (itr != null)
+                        _SetEnumerableKeyValuePair(arg[0], arg[1], itr);
 
-                        if (def == typeof(Dictionary<,>) || def == typeof(IDictionary<,>))
-                        {
-                            inf.Flags |= _Inf.Dictionary;
-                            inf.GetDictionary = _CreateGetDictionaryFunction(arg[0], arg[1]);
-                            inf.CastToDictionary = _CreateCastToDictionaryFunction(arg[0], arg[1]);
-                        }
+                    if (def == typeof(Dictionary<,>) || def == typeof(IDictionary<,>))
+                    {
+                        inf.Flags |= _Inf.Dictionary;
+                        inf.GetDictionary = _CreateGetDictionaryFunction(arg[0], arg[1]);
+                        inf.CastToDictionary = _CreateCastToDictionaryFunction(arg[0], arg[1]);
                     }
                 }
             }
 
+            var obj = type.GetInterfaces()
+                .Select(r => GetInfo(r))
+                .Where(r => (r.Flags & _Inf.Enumerable) != 0);
             if (one != null)
-            {
-                var lst = itf
-                    .Select(r => GetInfo(r))
-                    .Where(r => (r.Flags & _Inf.Enumerable) != 0 && r.ElementType == one)
-                    .ToList();
+                obj = obj.Where(r => r.ElementType == one);
+            var lst = obj.ToList();
 
-                if (lst.Count == 1)
+            if (lst.Count == 1)
+            {
+                var itr = lst[0];
+                var kvp = GetInfo(itr.ElementType);
+                if ((kvp.Flags & _Inf.KeyValuePair) == 0)
                 {
                     inf.Flags |= _Inf.EnumerableImpl;
-                    inf.FromEnumerable = lst[0].FromEnumerable;
+                    inf.ElementType = itr.ElementType;
+                    inf.FromEnumerable = itr.FromEnumerable;
                 }
-            }
-            else
-            {
-                var lst = itf
-                    .Select(r => GetInfo(r))
-                    .Where(r => (r.Flags & _Inf.Enumerable) != 0)
-                    .ToList();
-
-                if (lst.Count == 1)
+                else if ((inf.Flags & _Inf.EnumerableKeyValuePair) == 0)
                 {
-                    var det = lst[0];
-                    var kvp = GetInfo(det.ElementType);
-                    if ((kvp.Flags & _Inf.KeyValuePair) == 0)
-                    {
-                        inf.Flags |= _Inf.EnumerableImpl;
-                        inf.ElementType = det.ElementType;
-                        inf.FromEnumerable = _CreateFromEnumerableFunction(det.ElementType);
-                    }
-                    else if ((inf.Flags & _Inf.EnumerableKeyValuePair) == 0)
-                    {
-                        _SetEnumerableKeyValuePair(kvp.IndexType, kvp.ElementType, lst[0]);
-                    }
+                    _SetEnumerableKeyValuePair(kvp.IndexType, kvp.ElementType, lst[0]);
                 }
             }
 

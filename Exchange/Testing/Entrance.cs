@@ -620,20 +620,14 @@ namespace Mikodev.Testing
                 var ta = rea["invalid"];
                 Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.Overflow)
-            {
-                // ignore
-            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.Overflow) { /* ignore */ }
 
             try
             {
                 var ta = rea.GetItem("invalid");
                 Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.Overflow)
-            {
-                // ignore
-            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.Overflow) { /* ignore */ }
         }
 
         [TestMethod]
@@ -714,6 +708,19 @@ namespace Mikodev.Testing
             Assert.AreEqual(rca, a);
             Assert.AreEqual(rcb, b);
             Assert.AreEqual(false, rc.Any);
+        }
+
+        [TestMethod]
+        public void NotSupported()
+        {
+            var arr = new int[2, 3];
+
+            try
+            {
+                var _ = PacketConvert.Serialize(arr);
+                Assert.Fail();
+            }
+            catch (NotSupportedException) { /* ignore */ }
         }
 
         [TestMethod]
