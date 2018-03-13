@@ -87,7 +87,7 @@ namespace Mikodev.Network
                     {
                         inf.Flags |= _Inf.Enumerable;
                         inf.GetEnumerable = _CreateGetFunction(s_get_enumerable, one);
-                        inf.CastToArray = _CreateCastFunction(s_cast_array, one);
+                        inf.GetEnumerableReader = _CreateGetEnumerableReaderFunction(one);
 
                         // Create from ... function
                         var kvp = GetInfo(one);
@@ -202,6 +202,17 @@ namespace Mikodev.Network
             var met = s_get_dictionary.MakeGenericMethod(index, element);
             var cal = Expression.Call(ele, met, key, val);
             var exp = Expression.Lambda<Func<_Element, IPacketConverter, IPacketConverter, object>>(cal, ele, key, val);
+            var fun = exp.Compile();
+            return fun;
+        }
+
+        private static Func<PacketReader, int, object> _CreateGetEnumerableReaderFunction(Type element)
+        {
+            var rea = Expression.Parameter(typeof(PacketReader), "reader");
+            var lev = Expression.Parameter(typeof(int), "level");
+            var cto = typeof(_EnumerableReader<>).MakeGenericType(element).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
+            var inv = Expression.New(cto, rea, lev);
+            var exp = Expression.Lambda<Func<PacketReader, int, object>>(inv, rea, lev);
             var fun = exp.Compile();
             return fun;
         }

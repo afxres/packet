@@ -6,7 +6,7 @@ namespace Mikodev.Network
     internal class _Enumerable : IEnumerable
     {
         internal readonly _Element _element;
-        internal readonly IPacketConverter _converter = null;
+        internal readonly IPacketConverter _converter;
 
         internal _Enumerable(_Element element, IPacketConverter converter)
         {

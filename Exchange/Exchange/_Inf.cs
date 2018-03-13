@@ -28,6 +28,8 @@ namespace Mikodev.Network
 
         internal Func<_Element, IPacketConverter, object> GetEnumerable { get; set; }
 
+        internal Func<PacketReader, int, object> GetEnumerableReader { get; set; }
+
         internal Func<_Element, IPacketConverter, IPacketConverter, object> GetDictionary { get; set; }
 
         internal Func<object[], object> CastToArray { get; set; }

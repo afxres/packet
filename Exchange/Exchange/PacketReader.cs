@@ -185,10 +185,7 @@ namespace Mikodev.Network
             {
                 if (convert != null)
                     return info.GetEnumerable(_element, convert);
-                // To be modified
-                var values = _GetValueArray(element, level);
-                var result = info.CastToArray(values);
-                return result;
+                return info.GetEnumerableReader(this, level);
             }
             else if ((tag & _Inf.Collection) != 0)
             {

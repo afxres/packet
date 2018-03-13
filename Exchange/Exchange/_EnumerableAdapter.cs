@@ -14,7 +14,7 @@ namespace Mikodev.Network
             _pairs = pairs;
         }
 
-        public IEnumerator<KeyValuePair<byte[], object>> GetEnumerator()
+        internal IEnumerator<KeyValuePair<byte[], object>> GetEnumerator()
         {
             var con = _key;
             var itr = _pairs;
@@ -28,5 +28,7 @@ namespace Mikodev.Network
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        IEnumerator<KeyValuePair<byte[], object>> IEnumerable<KeyValuePair<byte[], object>>.GetEnumerator() => GetEnumerator();
     }
 }

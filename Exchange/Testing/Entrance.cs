@@ -735,13 +735,20 @@ namespace Mikodev.Testing
             var tb = ano.GetBytes();
 
             var rea = new PacketReader(ta);
-            var ra = rea.Deserialize<IEnumerable<List<int>>>();
+            var ra = rea.Deserialize<IEnumerable<List<int>>>().ToList();
             var rb = PacketConvert.Deserialize(tb, new[] { new { id = 0, text = string.Empty } }.ToHashSet());
 
             var c = Enumerable.Range(128, 2).ToDictionary(r => r, r => new { id = r, text = r.ToString() });
             var dic = PacketWriter.Serialize(c);
             var tc = dic.GetBytes();
             var rc = PacketConvert.Deserialize(tc, new[] { new { id = 0, text = string.Empty } }.ToDictionary(r => r.id));
+
+            Assert.AreEqual(a.Count, ra.Count);
+
+            for (int i = 0; i < ra.Count; i++)
+                ThrowIfNotSequenceEqual(a[i], ra[i]);
+            ThrowIfNotEqual(b.ToHashSet(), rb);
+            ThrowIfNotEqual(c, rc);
 
             return;
         }
