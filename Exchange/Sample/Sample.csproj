@@ -51,7 +51,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\exchange\Exchange.csproj">
+    <ProjectReference Include="..\Exchange\Exchange.csproj">
       <Project>{540afed8-390e-49d7-9f54-10a8a8cb8f4a}</Project>
       <Name>Exchange</Name>
     </ProjectReference>

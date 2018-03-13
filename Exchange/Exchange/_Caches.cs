@@ -33,6 +33,15 @@ namespace Mikodev.Network
         private static readonly ConcurrentDictionary<Type, GetterInfo> s_getter = new ConcurrentDictionary<Type, GetterInfo>();
         private static readonly ConcurrentDictionary<Type, SetterInfo> s_setter = new ConcurrentDictionary<Type, SetterInfo>();
 
+        private static void _CreateInfoSetKeyValuePair(_Inf inf, _Inf enumerable, Type index, Type element)
+        {
+            inf.Flags |= _Inf.EnumerableKeyValuePair;
+            inf.IndexType = index;
+            inf.ElementType = element;
+            inf.FromEnumerableKeyValuePair = enumerable.FromEnumerableKeyValuePair;
+            inf.GetEnumerableKeyValuePairAdapter = enumerable.GetEnumerableKeyValuePairAdapter;
+        }
+
         private static _Inf _CreateInfo(Type type)
         {
             var one = default(Type);
@@ -51,15 +60,6 @@ namespace Mikodev.Network
                 inf.IndexType = arg[0];
                 inf.ElementType = arg[1];
                 return inf;
-            }
-
-            void _SetEnumerableKeyValuePair(Type index, Type element, _Inf enumerable)
-            {
-                inf.Flags |= _Inf.EnumerableKeyValuePair;
-                inf.IndexType = index;
-                inf.ElementType = element;
-                inf.FromEnumerableKeyValuePair = enumerable.FromEnumerableKeyValuePair;
-                inf.GetEnumerableKeyValuePairAdapter = enumerable.GetEnumerableKeyValuePairAdapter;
             }
 
             if (type.IsArray)
@@ -120,7 +120,7 @@ namespace Mikodev.Network
                         .FirstOrDefault();
 
                     if (itr != null)
-                        _SetEnumerableKeyValuePair(arg[0], arg[1], itr);
+                        _CreateInfoSetKeyValuePair(inf, itr, arg[0], arg[1]);
 
                     if (def == typeof(Dictionary<,>) || def == typeof(IDictionary<,>))
                     {
@@ -150,7 +150,7 @@ namespace Mikodev.Network
                 }
                 else if ((inf.Flags & _Inf.EnumerableKeyValuePair) == 0)
                 {
-                    _SetEnumerableKeyValuePair(kvp.IndexType, kvp.ElementType, lst[0]);
+                    _CreateInfoSetKeyValuePair(inf, lst[0], kvp.IndexType, kvp.ElementType);
                 }
             }
 

@@ -60,7 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Exchange\Exchange.csproj">
-      <Project>{540AFED8-390E-49D7-9F54-10A8A8CB8F4A}</Project>
+      <Project>{540afed8-390e-49d7-9f54-10a8a8cb8f4a}</Project>
       <Name>Exchange</Name>
     </ProjectReference>
   </ItemGroup>
