@@ -10,16 +10,16 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter(reader._converters, type, false);
-            var val = con._GetValueWrapError(reader._element, true);
+            var con = _Caches.GetConverter(reader._cvt, type, false);
+            var val = con.GetValueWrap(reader._ele, true);
             return val;
         }
 
         public static T GetValue<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter<T>(reader._converters, false);
-            var val = con._GetValueWrapErrorAuto<T>(reader._element, true);
+            var con = _Caches.GetConverter<T>(reader._cvt, false);
+            var val = con.GetValueWrapAuto<T>(reader._ele, true);
             return val;
         }
 
@@ -27,47 +27,47 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter(reader._converters, type, false);
-            return new _Enumerable(reader._element, con);
+            var con = _Caches.GetConverter(reader._cvt, type, false);
+            return new _Enumerable(reader, con);
         }
 
         public static IEnumerable<T> GetEnumerable<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter<T>(reader._converters, false);
-            return new _Enumerable<T>(reader._element, con);
+            var con = _Caches.GetConverter<T>(reader._cvt, false);
+            return new _Enumerable<T>(reader, con);
         }
 
         public static T[] GetArray<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter<T>(reader._converters, false);
-            var val = reader._element.Array<T>(con);
+            var con = _Caches.GetConverter<T>(reader._cvt, false);
+            var val = _Convert.GetArray<T>(reader, con);
             return val;
         }
 
         public static List<T> GetList<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter<T>(reader._converters, false);
-            var val = reader._element.List<T>(con);
+            var con = _Caches.GetConverter<T>(reader._cvt, false);
+            var val = _Convert.GetList<T>(reader, con);
             return val;
         }
 
         public static Dictionary<TK, TV> GetDictionary<TK, TV>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var key = _Caches.GetConverter<TK>(reader._converters, false);
-            var val = _Caches.GetConverter<TV>(reader._converters, false);
-            var res = reader._element.Dictionary<TK, TV>(key, val);
+            var key = _Caches.GetConverter<TK>(reader._cvt, false);
+            var val = _Caches.GetConverter<TV>(reader._cvt, false);
+            var res = reader._ele.Dictionary<TK, TV>(key, val);
             return res;
         }
 
         public static HashSet<T> GetHashSet<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = _Caches.GetConverter<T>(reader._converters, false);
-            var col = reader._element.Collection<T>(con);
+            var con = _Caches.GetConverter<T>(reader._cvt, false);
+            var col = _Convert.GetCollection<T>(reader, con);
             var res = new HashSet<T>(col);
             return res;
         }
@@ -76,7 +76,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(reader);
-            return reader._GetItem(key, nothrow);
+            return reader.GetItem(key, nothrow);
         }
 
         public static PacketReader GetItem(this PacketReader reader, IEnumerable<string> keys, bool nothrow = false)
@@ -84,7 +84,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(reader);
             if (keys == null)
                 throw new ArgumentNullException(nameof(keys));
-            return reader._GetItem(keys, nothrow);
+            return reader.GetItem(keys, nothrow);
         }
     }
 }

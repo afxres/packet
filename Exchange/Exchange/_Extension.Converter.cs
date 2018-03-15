@@ -1,6 +1,5 @@
 ﻿using Mikodev.Network.Converters;
 using System;
-using System.Threading;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
@@ -16,10 +15,10 @@ namespace Mikodev.Network
 
             foreach (var t in ass.GetTypes())
             {
-                var ats = t.GetCustomAttributes(typeof(_ConverterAttribute), false);
+                var ats = t.GetCustomAttributes(typeof(PacketConverterAttribute), false);
                 if (ats.Length != 1)
                     continue;
-                var att = (_ConverterAttribute)ats[0];
+                var att = (PacketConverterAttribute)ats[0];
                 var typ = att.Type;
                 var ins = (IPacketConverter)Activator.CreateInstance(t);
                 dic.Add(typ, ins);
@@ -27,14 +26,12 @@ namespace Mikodev.Network
             s_converters = dic;
         }
 
-        internal static bool _WrapError(Exception ex) => (ex is PacketException || ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException) == false;
-
-        internal static object _GetValueWrapError(this IPacketConverter con, _Element ele, bool check)
+        internal static object GetValueWrap(this IPacketConverter con, _Element ele, bool check = false)
         {
-            return _GetValueWrapError(con, ele._buffer, ele._offset, ele._length, check);
+            return GetValueWrap(con, ele._buf, ele._off, ele._len, check);
         }
 
-        internal static object _GetValueWrapError(this IPacketConverter con, byte[] buf, int off, int len, bool check)
+        internal static object GetValueWrap(this IPacketConverter con, byte[] buf, int off, int len, bool check = false)
         {
             try
             {
@@ -42,18 +39,18 @@ namespace Mikodev.Network
                     throw PacketException.ThrowOverflow();
                 return con.GetValue(buf, off, len);
             }
-            catch (Exception ex) when (_WrapError(ex))
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
                 throw PacketException.ThrowConvertError(ex);
             }
         }
 
-        internal static T _GetValueWrapErrorAuto<T>(this IPacketConverter con, _Element element, bool check)
+        internal static T GetValueWrapAuto<T>(this IPacketConverter con, _Element element, bool check = false)
         {
-            return _GetValueWrapErrorAuto<T>(con, element._buffer, element._offset, element._length, check);
+            return GetValueWrapAuto<T>(con, element._buf, element._off, element._len, check);
         }
 
-        internal static T _GetValueWrapErrorAuto<T>(this IPacketConverter con, byte[] buf, int off, int len, bool check)
+        internal static T GetValueWrapAuto<T>(this IPacketConverter con, byte[] buf, int off, int len, bool check = false)
         {
             try
             {
@@ -63,27 +60,47 @@ namespace Mikodev.Network
                     return res.GetValue(buf, off, len);
                 return (T)con.GetValue(buf, off, len);
             }
-            catch (Exception ex) when (_WrapError(ex))
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
                 throw PacketException.ThrowConvertError(ex);
             }
         }
 
-        internal static T _GetValueWrapErrorGeneric<T>(this IPacketConverter<T> con, byte[] buf, int off, int len, bool check)
+        internal static T GetValue<T>(this IPacketConverter<T> con, _Element ele)
+        {
+            return con.GetValue(ele._buf, ele._off, ele._len);
+        }
+
+        internal static object GetValue(this IPacketConverter con, _Element ele)
+        {
+            return con.GetValue(ele._buf, ele._off, ele._len);
+        }
+
+        internal static T GetValueWrap<T>(this IPacketConverter<T> con, byte[] buf, int off, int len)
         {
             try
             {
-                if (check && con.Length > len)
-                    throw PacketException.ThrowOverflow();
                 return con.GetValue(buf, off, len);
             }
-            catch (Exception ex) when (_WrapError(ex))
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
                 throw PacketException.ThrowConvertError(ex);
             }
         }
 
-        internal static byte[] _GetBytesWrapError(this IPacketConverter con, object val)
+        internal static T GetValueWrap<T>(this IPacketConverter<T> con, _Element ele)
+        {
+            try
+            {
+                return con.GetValue(ele._buf, ele._off, ele._len);
+            }
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            {
+                throw PacketException.ThrowConvertError(ex);
+            }
+        }
+
+        internal static byte[] GetBytesWrap(this IPacketConverter con, object val)
         {
             try
             {
@@ -95,13 +112,13 @@ namespace Mikodev.Network
                     throw PacketException.ThrowConvertMismatch(len);
                 return buf;
             }
-            catch (Exception ex) when (_WrapError(ex))
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
                 throw PacketException.ThrowConvertError(ex);
             }
         }
 
-        internal static byte[] _GetBytesWrapErrorGeneric<T>(this IPacketConverter<T> con, T val)
+        internal static byte[] GetBytesWrap<T>(this IPacketConverter<T> con, T val)
         {
             try
             {
@@ -113,7 +130,7 @@ namespace Mikodev.Network
                     throw PacketException.ThrowConvertMismatch(len);
                 return buf;
             }
-            catch (Exception ex) when (_WrapError(ex))
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
                 throw PacketException.ThrowConvertError(ex);
             }

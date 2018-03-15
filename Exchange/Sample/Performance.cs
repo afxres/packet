@@ -40,6 +40,7 @@ namespace Mikodev.Test
             // release mode
             for (int idx = 0; idx < loop; idx++)
             {
+                GC.Collect();
                 using (new TraceWatch("BitConverter")) // 8.00 ms
                 {
                     for (int i = 0; i < max; i++)
@@ -48,8 +49,9 @@ namespace Mikodev.Test
                         var res = BitConverter.ToInt32(buf, 0);
                     }
                 }
-                
-                using (new TraceWatch("PacketWriter<> Set")) // 2193.88 ms, avg
+
+                GC.Collect();
+                using (new TraceWatch("PacketWriter<> Set")) // 2182.06 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -64,7 +66,8 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Serialize (anonymous)")) // 3248.80 ms, avg
+                GC.Collect();
+                using (new TraceWatch("Serialize (anonymous)")) // 3050.42 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -72,7 +75,8 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Deserialize (anonymous)")) // 2266.53 ms, avg
+                GC.Collect();
+                using (new TraceWatch("Deserialize (anonymous)")) // 2307.57 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {

@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using System.Threading;
 
 namespace Mikodev.Network
 {
     [Serializable]
     public sealed class PacketException : Exception
     {
-        internal readonly PacketError _code = PacketError.None;
+        private readonly PacketError _err = PacketError.None;
 
-        internal static string _GetMessage(PacketError code)
+        private static string _GetMessage(PacketError code)
         {
             switch (code)
             {
@@ -29,26 +30,26 @@ namespace Mikodev.Network
             }
         }
 
-        public PacketError ErrorCode => _code;
+        public PacketError ErrorCode => _err;
 
-        public PacketException(PacketError code) : base(_GetMessage(code)) => _code = code;
+        public PacketException(PacketError code) : base(_GetMessage(code)) => _err = code;
 
-        public PacketException(PacketError code, string message) : base(message) => _code = code;
+        public PacketException(PacketError code, string message) : base(message) => _err = code;
 
-        public PacketException(PacketError code, Exception except) : base(_GetMessage(code), except) => _code = code;
+        public PacketException(PacketError code, Exception except) : base(_GetMessage(code), except) => _err = code;
 
         internal PacketException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));
-            _code = (PacketError)info.GetValue(nameof(PacketError), typeof(PacketError));
+            _err = (PacketError)info.GetValue(nameof(PacketError), typeof(PacketError));
         }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));
-            info.AddValue(nameof(PacketError), _code);
+            info.AddValue(nameof(PacketError), _err);
             base.GetObjectData(info, context);
         }
 
@@ -65,6 +66,13 @@ namespace Mikodev.Network
         internal static PacketException ThrowConvertMismatch(int length)
         {
             throw new PacketException(PacketError.ConvertMismatch, $"Converter should return a byte array of length {length}");
+        }
+
+        internal static bool WrapFilter(Exception ex)
+        {
+            if (ex is PacketException || ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException)
+                return false;
+            return true;
         }
     }
 }

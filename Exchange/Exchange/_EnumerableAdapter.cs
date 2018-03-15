@@ -5,30 +5,28 @@ namespace Mikodev.Network
 {
     internal sealed class _EnumerableAdapter<TK, TV> : IEnumerable<KeyValuePair<byte[], object>>
     {
-        internal readonly IPacketConverter _key;
-        internal readonly IEnumerable<KeyValuePair<TK, TV>> _pairs;
+        private readonly IPacketConverter _con;
+        private readonly IEnumerable<KeyValuePair<TK, TV>> _kvp;
 
         internal _EnumerableAdapter(IPacketConverter key, IEnumerable<KeyValuePair<TK, TV>> pairs)
         {
-            _key = key;
-            _pairs = pairs;
+            _con = key;
+            _kvp = pairs;
         }
 
-        internal IEnumerator<KeyValuePair<byte[], object>> GetEnumerator()
+        private static IEnumerator<KeyValuePair<byte[], object>> _Enumerator(IEnumerable<KeyValuePair<TK, TV>> itr, IPacketConverter con)
         {
-            var con = _key;
-            var itr = _pairs;
             if (con is IPacketConverter<TK> gen)
                 foreach (var i in itr)
-                    yield return new KeyValuePair<byte[], object>(gen._GetBytesWrapErrorGeneric(i.Key), i.Value);
+                    yield return new KeyValuePair<byte[], object>(gen.GetBytesWrap(i.Key), i.Value);
             else
                 foreach (var i in itr)
-                    yield return new KeyValuePair<byte[], object>(con._GetBytesWrapError(i.Key), i.Value);
+                    yield return new KeyValuePair<byte[], object>(con.GetBytesWrap(i.Key), i.Value);
             yield break;
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _Enumerator(_kvp, _con);
 
-        IEnumerator<KeyValuePair<byte[], object>> IEnumerable<KeyValuePair<byte[], object>>.GetEnumerator() => GetEnumerator();
+        IEnumerator<KeyValuePair<byte[], object>> IEnumerable<KeyValuePair<byte[], object>>.GetEnumerator() => _Enumerator(_kvp, _con);
     }
 }

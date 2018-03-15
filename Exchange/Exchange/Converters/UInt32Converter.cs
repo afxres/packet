@@ -2,7 +2,7 @@
 
 namespace Mikodev.Network.Converters
 {
-    [_Converter(typeof(UInt32))]
+    [PacketConverter(typeof(UInt32))]
     internal sealed class UInt32Converter : IPacketConverter, IPacketConverter<UInt32>
     {
         public int Length => sizeof(UInt32);

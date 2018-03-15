@@ -2,7 +2,7 @@
 
 namespace Mikodev.Network.Converters
 {
-    [_Converter(typeof(string))]
+    [PacketConverter(typeof(string))]
     internal sealed class StringConverter : IPacketConverter, IPacketConverter<string>
     {
         public int Length => 0;

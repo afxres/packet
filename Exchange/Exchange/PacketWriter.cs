@@ -20,29 +20,29 @@ namespace Mikodev.Network
 
         internal const int _Length = 256;
 
-        internal object _item = null;
-        internal readonly ConverterDictionary _converters = null;
+        internal readonly ConverterDictionary _cvt = null;
+        internal object _itm = null;
 
         internal PacketWriter(ConverterDictionary converters, object item)
         {
-            _converters = converters;
-            _item = item;
+            _cvt = converters;
+            _itm = item;
         }
 
-        public PacketWriter(ConverterDictionary converters = null) => _converters = converters;
+        public PacketWriter(ConverterDictionary converters = null) => _cvt = converters;
 
-        internal PacketWriterDictionary _GetItemDictionary()
+        internal PacketWriterDictionary GetDictionary()
         {
-            if (_item is PacketWriterDictionary dic)
+            if (_itm is PacketWriterDictionary dic)
                 return dic;
             var val = new PacketWriterDictionary();
-            _item = val;
+            _itm = val;
             return val;
         }
 
         public byte[] GetBytes()
         {
-            var obj = _item;
+            var obj = _itm;
             if (obj == null)
                 return _Extension.s_empty_bytes;
             else if (obj is byte[] buf)
@@ -50,14 +50,14 @@ namespace Mikodev.Network
             else if (obj is MemoryStream raw)
                 return raw.ToArray();
             var mst = new MemoryStream(_Length);
-            _GetBytes(mst, obj, 0);
+            GetBytes(mst, obj, 0);
             var res = mst.ToArray();
             return res;
         }
 
         public override string ToString()
         {
-            var obj = _item;
+            var obj = _itm;
             var stb = new StringBuilder(nameof(PacketWriter));
             stb.Append(" with ");
             if (obj == null)
@@ -79,158 +79,154 @@ namespace Mikodev.Network
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
 
-        internal static void _GetBytes(Stream stream, object item, int level)
+        internal static void GetBytes(Stream str, object itm, int lev)
         {
-            if (level > _Caches._Depth)
+            if (lev > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
-            level += 1;
+            lev += 1;
 
-            if (item is PacketWriterDictionary dictionary)
+            if (itm is PacketWriterDictionary dictionary)
             {
                 foreach (var i in dictionary)
                 {
-                    stream._WriteKey(i.Key);
-                    _GetBytes(stream, i.Value, level);
+                    str.WriteKey(i.Key);
+                    GetBytes(str, i.Value, lev);
                 }
             }
-            else if (item is List<PacketWriter> list)
+            else if (itm is List<PacketWriter> list)
             {
                 foreach (var i in list)
                 {
-                    //stream._BeginInternal(out var sourceEx);
-                    _GetBytes(stream, i, level);
-                    //stream._EndInternal(sourceEx);
+                    GetBytes(str, i, lev);
                 }
             }
-            else if (item is Entry entry)
+            else if (itm is Entry entry)
             {
                 var length = entry.Length;
                 var pairs = entry.KeyValuePairs;
                 foreach (var i in pairs)
                 {
                     if (length > 0)
-                        stream.Write(i.Key, 0, length);
+                        str.Write(i.Key, 0, length);
                     else
-                        stream._WriteExt(i.Key);
-                    //stream._BeginInternal(out var sourceEx);
-                    _GetBytes(stream, i.Value, level);
-                    //stream._EndInternal(sourceEx);
+                        str.WriteExt(i.Key);
+                    GetBytes(str, i.Value, lev);
                 }
             }
             else throw new ApplicationException();
         }
 
-        internal static void _GetBytes(Stream stream, PacketWriter writer, int level)
+        internal static void GetBytes(Stream str, PacketWriter wtr, int lev)
         {
-            if (level > _Caches._Depth)
+            if (lev > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
-            level += 1;
+            lev += 1;
 
-            var item = writer._item;
+            var item = wtr._itm;
             if (item == null)
             {
-                stream.Write(_Extension.s_zero_bytes, 0, sizeof(int));
+                str.Write(_Extension.s_zero_bytes, 0, sizeof(int));
                 return;
             }
             if (item is byte[] bytes)
             {
-                stream._WriteExt(bytes);
+                str.WriteExt(bytes);
                 return;
             }
             if (item is MemoryStream memory)
             {
-                stream._WriteExt(memory);
+                str.WriteExt(memory);
                 return;
             }
 
-            stream._BeginInternal(out var source);
-            _GetBytes(stream, item, level);
-            stream._EndInternal(source);
+            str.BeginInternal(out var src);
+            GetBytes(str, item, lev);
+            str.FinshInternal(src);
         }
 
-        internal static PacketWriter _GetWriterEx(ConverterDictionary converters, object item, int level)
+        internal static PacketWriter GetWriter(ConverterDictionary cvt, object itm, int lev)
         {
-            if (level > _Caches._Depth)
+            if (lev > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
-            level += 1;
+            lev += 1;
 
             var convert = default(IPacketConverter);
-            if (item == null)
-                return new PacketWriter(converters);
-            if (item is PacketWriter writer)
-                return new PacketWriter(converters, writer._item);
-            if (item is PacketRawWriter raw)
-                return new PacketWriter(converters, raw._stream);
+            if (itm == null)
+                return new PacketWriter(cvt);
+            if (itm is PacketWriter writer)
+                return new PacketWriter(cvt, writer._itm);
+            if (itm is PacketRawWriter raw)
+                return new PacketWriter(cvt, raw._str);
 
-            var type = item.GetType();
-            if ((convert = _Caches.GetConverter(converters, type, true)) != null)
-                return new PacketWriter(converters, convert._GetBytesWrapError(item));
+            var type = itm.GetType();
+            if ((convert = _Caches.GetConverter(cvt, type, true)) != null)
+                return new PacketWriter(cvt, convert.GetBytesWrap(itm));
 
             var info = _Caches.GetInfo(type);
             var tag = info.Flags;
             if ((tag & _Inf.EnumerableImpl) != 0)
             {
-                if (info.ElementType == typeof(byte) && item is ICollection<byte> bytes)
-                    return new PacketWriter(converters, bytes._ToBytes());
-                if (info.ElementType == typeof(sbyte) && item is ICollection<sbyte> sbytes)
-                    return new PacketWriter(converters, sbytes._ToBytes());
+                if (info.ElementType == typeof(byte) && itm is ICollection<byte> bytes)
+                    return new PacketWriter(cvt, bytes.ToBytes());
+                if (info.ElementType == typeof(sbyte) && itm is ICollection<sbyte> sbytes)
+                    return new PacketWriter(cvt, sbytes.ToBytes());
 
-                if ((convert = _Caches.GetConverter(converters, info.ElementType, true)) != null)
-                    return new PacketWriter(converters, info.FromEnumerable(convert, item));
+                if ((convert = _Caches.GetConverter(cvt, info.ElementType, true)) != null)
+                    return new PacketWriter(cvt, info.FromEnumerable(convert, itm));
 
                 var list = new List<PacketWriter>();
-                foreach (var i in (item as IEnumerable))
-                    list.Add(_GetWriterEx(converters, i, level));
-                return new PacketWriter(converters, list);
+                foreach (var i in (itm as IEnumerable))
+                    list.Add(GetWriter(cvt, i, lev));
+                return new PacketWriter(cvt, list);
             }
             else if ((tag & _Inf.EnumerableKeyValuePair) != 0)
             {
-                var key = _Caches.GetConverter(converters, info.IndexType, true);
+                var key = _Caches.GetConverter(cvt, info.IndexType, true);
                 if (key == null)
                     throw new PacketException(PacketError.InvalidKeyType);
-                if ((convert = _Caches.GetConverter(converters, info.ElementType, true)) != null)
+                if ((convert = _Caches.GetConverter(cvt, info.ElementType, true)) != null)
                 {
-                    var value = info.FromEnumerableKeyValuePair(key, convert, item);
-                    var result = new PacketWriter(converters, value);
+                    var value = info.FromEnumerableKeyValuePair(key, convert, itm);
+                    var result = new PacketWriter(cvt, value);
                     return result;
                 }
-                else if (item is IDictionary<string, object> dictionary)
+                else if (itm is IDictionary<string, object> dictionary)
                 {
-                    var target = new PacketWriter(converters);
-                    var items = target._GetItemDictionary();
+                    var target = new PacketWriter(cvt);
+                    var items = target.GetDictionary();
                     foreach (var i in dictionary)
-                        items[i.Key] = _GetWriterEx(converters, i.Value, level);
+                        items[i.Key] = GetWriter(cvt, i.Value, lev);
                     return target;
                 }
                 else
                 {
                     var list = new List<KeyValuePair<byte[], PacketWriter>>();
-                    var adapter = info.GetEnumerableKeyValuePairAdapter(key, item);
+                    var adapter = info.GetEnumerableKeyValuePairAdapter(key, itm);
                     foreach (var i in adapter)
                     {
-                        var value = _GetWriterEx(converters, i.Value, level);
+                        var value = GetWriter(cvt, i.Value, lev);
                         var pair = new KeyValuePair<byte[], PacketWriter>(i.Key, value);
                         list.Add(pair);
                     }
                     var entry = new Entry { KeyValuePairs = list, Length = key.Length };
-                    var result = new PacketWriter(converters, entry);
+                    var result = new PacketWriter(cvt, entry);
                     return result;
                 }
             }
             else
             {
-                var result = new PacketWriter(converters);
-                var items = result._GetItemDictionary();
+                var result = new PacketWriter(cvt);
+                var items = result.GetDictionary();
                 var getter = _Caches.GetGetterInfo(type);
-                var values = getter.GetValues(item);
+                var values = getter.GetValues(itm);
                 var arguments = getter.Arguments;
                 for (int i = 0; i < arguments.Length; i++)
-                    items[arguments[i].Name] = _GetWriterEx(converters, values[i], level);
+                    items[arguments[i].Name] = GetWriter(cvt, values[i], lev);
                 return result;
             }
         }
 
-        public static PacketWriter Serialize(object value, ConverterDictionary converters = null) => _GetWriterEx(converters, value, 0);
+        public static PacketWriter Serialize(object value, ConverterDictionary converters = null) => GetWriter(converters, value, 0);
 
         public static PacketWriter Serialize(IDictionary<string, object> dictionary, ConverterDictionary converters = null) => Serialize((object)dictionary, converters);
     }

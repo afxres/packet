@@ -1,44 +1,79 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
     internal class _Enumerable : IEnumerable
     {
-        internal readonly _Element _element;
-        internal readonly IPacketConverter _converter;
+        protected readonly PacketReader _rea;
+        protected readonly IPacketConverter _con;
 
-        internal _Enumerable(_Element element, IPacketConverter converter)
+        internal _Enumerable(PacketReader rea, IPacketConverter con)
         {
-            _element = new _Element(element);
-            _converter = converter;
+            _rea = rea;
+            _con = con;
+        }
+
+        private static IEnumerator _Enumerator(byte[] buf, int off, int sum, int def, IPacketConverter con)
+        {
+            for (int idx = 0; idx < sum; idx++)
+                yield return con.GetValueWrap(buf, off + def * idx, def);
+        }
+
+        private static IEnumerator _Enumerator(PacketReader[] arr, IPacketConverter con)
+        {
+            for (int idx = 0; idx < arr.Length; idx++)
+                yield return con.GetValueWrap(arr[idx]._ele);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            var con = _converter;
-            var ele = new _Element(_element);
-            while (ele.Any())
-                yield return ele.Next(con);
-            yield break;
+            var def = _con.Length;
+            if (def < 1)
+                return _Enumerator(_rea.GetArray(), _con);
+            var ele = _rea._ele;
+            var sum = Math.DivRem(ele._len, def, out var rem);
+            if (rem != 0)
+                throw PacketException.ThrowOverflow();
+            return _Enumerator(ele._buf, ele._off, sum, def, _con);
         }
     }
 
     internal sealed class _Enumerable<T> : _Enumerable, IEnumerable<T>
     {
-        internal _Enumerable(_Element element, IPacketConverter converter) : base(element, converter) { }
+        internal _Enumerable(PacketReader rea, IPacketConverter con) : base(rea, con) { }
+
+        private static IEnumerator<T> _Enumerator(byte[] buf, int off, int sum, int def, IPacketConverter con)
+        {
+            if (con is IPacketConverter<T> gen)
+                for (int idx = 0; idx < sum; idx++)
+                    yield return gen.GetValueWrap(buf, off + def * idx, def);
+            else
+                for (int idx = 0; idx < sum; idx++)
+                    yield return (T)con.GetValueWrap(buf, off + def * idx, def);
+        }
+
+        private static IEnumerator<T> _Enumerator(PacketReader[] arr, IPacketConverter con)
+        {
+            if (con is IPacketConverter<T> gen)
+                for (int idx = 0; idx < arr.Length; idx++)
+                    yield return gen.GetValueWrap(arr[idx]._ele);
+            else
+                for (int idx = 0; idx < arr.Length; idx++)
+                    yield return (T)con.GetValueWrap(arr[idx]._ele);
+        }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            var con = _converter;
-            var ele = new _Element(_element);
-            if (con is IPacketConverter<T> gen)
-                while (ele.Any())
-                    yield return ele.NextGeneric(gen);
-            else
-                while (ele.Any())
-                    yield return (T)ele.Next(con);
-            yield break;
+            var def = _con.Length;
+            if (def < 1)
+                return _Enumerator(_rea.GetArray(), _con);
+            var ele = _rea._ele;
+            var sum = Math.DivRem(ele._len, def, out var rem);
+            if (rem != 0)
+                throw PacketException.ThrowOverflow();
+            else return _Enumerator(ele._buf, ele._off, sum, def, _con);
         }
     }
 }

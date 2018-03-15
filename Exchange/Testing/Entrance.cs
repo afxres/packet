@@ -749,7 +749,6 @@ namespace Mikodev.Testing
                 ThrowIfNotSequenceEqual(a[i], ra[i]);
             ThrowIfNotEqual(b.ToHashSet(), rb);
             ThrowIfNotEqual(c, rc);
-
             return;
         }
     }

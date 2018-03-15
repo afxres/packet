@@ -14,20 +14,14 @@ namespace Mikodev.Network
             _level = level;
         }
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        private static IEnumerator<T> _Enumerable(PacketReader[] arr, int lvl)
         {
-            var lst = _reader._GetItemList();
-            foreach (var i in lst)
-                yield return (T)i._GetValue(typeof(T), _level);
-            yield break;
+            for (int i = 0; i < arr.Length; i++)
+                yield return (T)arr[i].GetValue(typeof(T), lvl);
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            var lst = _reader._GetItemList();
-            foreach (var i in lst)
-                yield return i._GetValue(typeof(T), _level);
-            yield break;
-        }
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() => _Enumerable(_reader.GetArray(), _level);
+
+        IEnumerator IEnumerable.GetEnumerator() => _Enumerable(_reader.GetArray(), _level);
     }
 }

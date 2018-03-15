@@ -70,26 +70,26 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer);
-            return _Caches.GetConverter(null, type, false)._GetValueWrapError(buffer, 0, buffer.Length, true);
+            return _Caches.GetConverter(null, type, false).GetValueWrap(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue(byte[] buffer, int offset, int length, Type type)
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer, offset, length);
-            return _Caches.GetConverter(null, type, false)._GetValueWrapError(buffer, offset, length, true);
+            return _Caches.GetConverter(null, type, false).GetValueWrap(buffer, offset, length, true);
         }
 
         public static object GetValue<T>(byte[] buffer)
         {
             ThrowIfArgumentError(buffer);
-            return _Caches.GetConverter<T>(null, false)._GetValueWrapErrorAuto<T>(buffer, 0, buffer.Length, true);
+            return _Caches.GetConverter<T>(null, false).GetValueWrapAuto<T>(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue<T>(byte[] buffer, int offset, int length)
         {
             ThrowIfArgumentError(buffer, offset, length);
-            return _Caches.GetConverter<T>(null, false)._GetValueWrapError(buffer, offset, length, true);
+            return _Caches.GetConverter<T>(null, false).GetValueWrap(buffer, offset, length, true);
         }
 
         public static byte[] GetBytes(object value, Type type)
@@ -109,7 +109,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(buffer);
 
             var rea = new PacketReader(buffer, converters);
-            var val = rea._GetValue(type, 0);
+            var val = rea.GetValue(type, 0);
             return val;
         }
 
@@ -119,7 +119,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(buffer, offset, length);
 
             var rea = new PacketReader(buffer, offset, length, converters);
-            var val = rea._GetValue(type, 0);
+            var val = rea.GetValue(type, 0);
             return val;
         }
 
@@ -145,7 +145,7 @@ namespace Mikodev.Network
 
         public static byte[] Serialize(object value, ConverterDictionary converters = null)
         {
-            var wtr = PacketWriter._GetWriterEx(converters, value, 0);
+            var wtr = PacketWriter.GetWriter(converters, value, 0);
             var buf = wtr.GetBytes();
             return buf;
         }
@@ -157,7 +157,7 @@ namespace Mikodev.Network
 
         public static void ClearReflectionCache()
         {
-            _Caches._ClearCache();
+            _Caches.ClearCache();
         }
     }
 }

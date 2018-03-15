@@ -2,7 +2,7 @@
 
 namespace Mikodev.Network.Converters
 {
-    [_Converter(typeof(byte[]))]
+    [PacketConverter(typeof(byte[]))]
     internal sealed class ByteArrayConverter : IPacketConverter, IPacketConverter<byte[]>
     {
         public static byte[] ToBytes(byte[] buffer) => buffer ?? _Extension.s_empty_bytes;

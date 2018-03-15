@@ -16,21 +16,23 @@ namespace Mikodev.Network
         internal const int EnumerableKeyValuePair = 128;
         internal const int KeyValuePair = 256;
 
+        internal int Flags { get; set; }
+
         internal Type ElementType { get; set; }
 
         internal Type IndexType { get; set; }
 
-        internal Func<_Element, IPacketConverter, object> GetArray { get; set; }
+        internal Func<PacketReader, IPacketConverter, object> GetArray { get; set; }
 
-        internal Func<_Element, IPacketConverter, object> GetList { get; set; }
+        internal Func<PacketReader, IPacketConverter, object> GetList { get; set; }
 
-        internal Func<_Element, IPacketConverter, object> GetCollection { get; set; }
+        internal Func<PacketReader, IPacketConverter, object> GetCollection { get; set; }
 
-        internal Func<_Element, IPacketConverter, object> GetEnumerable { get; set; }
+        internal Func<PacketReader, IPacketConverter, object> GetEnumerable { get; set; }
 
         internal Func<PacketReader, int, object> GetEnumerableReader { get; set; }
 
-        internal Func<_Element, IPacketConverter, IPacketConverter, object> GetDictionary { get; set; }
+        internal Func<PacketReader, IPacketConverter, IPacketConverter, object> GetDictionary { get; set; }
 
         internal Func<object[], object> CastToArray { get; set; }
 
@@ -45,7 +47,5 @@ namespace Mikodev.Network
         internal Func<IPacketConverter, IPacketConverter, object, MemoryStream> FromEnumerableKeyValuePair { get; set; }
 
         internal Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> GetEnumerableKeyValuePairAdapter { get; set; }
-
-        internal int Flags { get; set; }
     }
 }

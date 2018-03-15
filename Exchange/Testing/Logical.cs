@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using static Mikodev.Testing.Extensions;
 
@@ -69,6 +70,38 @@ namespace Mikodev.Testing
             var b = BitConverter.ToInt32(buffer, offset + sizeof(int));
             var two = new _Two { One = a, Two = b };
             return two;
+        }
+    }
+
+    internal class _Box
+    {
+        public string Name { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is _Box box)
+                return Name.Equals(box.Name);
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return Name?.GetHashCode() ?? 0;
+        }
+    }
+
+    internal class _BoxConverter : IPacketConverter
+    {
+        public int Length => 0;
+
+        public byte[] GetBytes(object value)
+        {
+            return Encoding.UTF8.GetBytes(((_Box)value).Name);
+        }
+
+        public object GetValue(byte[] buffer, int offset, int length)
+        {
+            return new _Box { Name = Encoding.UTF8.GetString(buffer, offset, length) };
         }
     }
 
@@ -323,6 +356,7 @@ namespace Mikodev.Testing
             var con = new Dictionary<Type, IPacketConverter>()
             {
                 [typeof(_Two)] = new _TwoConverter(),
+                [typeof(_Box)] = new _BoxConverter(),
             };
             var obj = new
             {
@@ -342,7 +376,12 @@ namespace Mikodev.Testing
             var rb = rea["b"].GetDictionary<string, _Two>();
             var rc = PacketConvert.Deserialize<IDictionary<int, string>>(tc);
 
+            var od = new[] { new _Box { Name = "one" }, new _Box { Name = "Loooooooooooooong name!" } };
+            var td = PacketConvert.Serialize(od, con);
+            var rd = PacketConvert.Deserialize<IEnumerable<_Box>>(td, con);
+
             ThrowIfNotEqual(c, rc);
+            ThrowIfNotSequenceEqual(od, rd);
             return;
         }
     }

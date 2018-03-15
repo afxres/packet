@@ -1,94 +1,70 @@
 ﻿using Mikodev.Network.Converters;
 using System;
 using System.Collections.Generic;
-using static Mikodev.Network._Extension;
 
 namespace Mikodev.Network
 {
     internal struct _Element
     {
-        internal readonly byte[] _buffer;
-        internal readonly int _offset;
-        internal readonly int _length;
-        internal int _index;
-
-        internal _Element(_Element ele)
-        {
-            _buffer = ele._buffer;
-            _offset = ele._offset;
-            _index = ele._offset;
-            _length = ele._length;
-        }
+        internal readonly byte[] _buf;
+        internal readonly int _off;
+        internal readonly int _len;
 
         internal _Element(byte[] buffer)
         {
-            _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
-            _offset = 0;
-            _index = 0;
-            _length = buffer.Length;
+            _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            _off = 0;
+            _len = buffer.Length;
         }
 
         internal _Element(byte[] buffer, int offset, int length)
         {
-            _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            _buf = buffer ?? throw new ArgumentNullException(nameof(buffer));
             if (offset < 0 || length < 0 || buffer.Length - offset < length)
                 throw new ArgumentOutOfRangeException();
-            _offset = offset;
-            _index = offset;
-            _length = length;
+            _off = offset;
+            _len = length;
         }
 
-        internal bool Any() => _index < (_offset + _length);
+        internal int Max() => _off + _len;
 
-        internal int Max() => _offset + _length;
-
-        internal void Reset() => _index = _offset;
-
-        internal void _MoveNext(int def, out int pos, out int len)
+        internal void MoveNext(int def, ref int idx, out int len)
         {
-            var idx = _index;
-            var max = _offset + _length;
-            if ((def > 0 && idx + def > max) || (def < 1 && _buffer._HasNext(max, ref idx, out def) == false))
+            var max = _off + _len;
+            if ((def > 0 && idx + def > max) || (def < 1 && _buf.MoveNext(max, ref idx, out def) == false))
                 throw PacketException.ThrowOverflow();
-            pos = idx;
             len = def;
         }
 
-        internal object Next(IPacketConverter con)
+        internal object Next(ref int idx, IPacketConverter con)
         {
-            _MoveNext(con.Length, out var pos, out var len);
-            var res = con._GetValueWrapError(_buffer, pos, len, false);
-            _index = pos + len;
+            var tmp = idx;
+            MoveNext(con.Length, ref tmp, out var len);
+            var res = con.GetValueWrap(_buf, tmp, len);
+            idx = tmp + len;
             return res;
         }
 
-        internal T NextGeneric<T>(IPacketConverter<T> con)
+        internal T NextAuto<T>(ref int idx, IPacketConverter con)
         {
-            _MoveNext(con.Length, out var pos, out var len);
-            var res = con._GetValueWrapErrorGeneric(_buffer, pos, len, false);
-            _index = pos + len;
-            return res;
-        }
-
-        internal T NextAuto<T>(IPacketConverter con)
-        {
-            _MoveNext(con.Length, out var pos, out var len);
-            var res = con._GetValueWrapErrorAuto<T>(_buffer, pos, len, false);
-            _index = pos + len;
+            var tmp = idx;
+            MoveNext(con.Length, ref tmp, out var len);
+            var res = con.GetValueWrapAuto<T>(_buf, tmp, len);
+            idx = tmp + len;
             return res;
         }
 
         internal Dictionary<TK, TV> Dictionary<TK, TV>(IPacketConverter keycon, IPacketConverter valcon)
         {
             var dic = new Dictionary<TK, TV>();
-            if (_length == 0)
+            if (_len == 0)
                 return dic;
             var keygen = keycon as IPacketConverter<TK>;
             var valgen = valcon as IPacketConverter<TV>;
             var keylen = keycon.Length;
             var vallen = valcon.Length;
-            var max = _offset + _length;
-            var idx = _offset;
+            var max = _off + _len;
+            var idx = _off;
             var len = 0;
 
             try
@@ -104,10 +80,10 @@ namespace Mikodev.Network
                             throw PacketException.ThrowOverflow();
                         else
                             len = keylen;
-                    else if (_buffer._HasNext(max, ref idx, out len) == false)
+                    else if (_buf.MoveNext(max, ref idx, out len) == false)
                         throw PacketException.ThrowOverflow();
 
-                    var key = (keygen != null ? keygen.GetValue(_buffer, idx, len) : (TK)keycon.GetValue(_buffer, idx, len));
+                    var key = (keygen != null ? keygen.GetValue(_buf, idx, len) : (TK)keycon.GetValue(_buf, idx, len));
                     idx += len;
                     sub = max - idx;
 
@@ -116,15 +92,15 @@ namespace Mikodev.Network
                             throw PacketException.ThrowOverflow();
                         else
                             len = vallen;
-                    else if (_buffer._HasNext(max, ref idx, out len) == false)
+                    else if (_buf.MoveNext(max, ref idx, out len) == false)
                         throw PacketException.ThrowOverflow();
 
-                    var val = (valgen != null ? valgen.GetValue(_buffer, idx, len) : (TV)valcon.GetValue(_buffer, idx, len));
+                    var val = (valgen != null ? valgen.GetValue(_buf, idx, len) : (TV)valcon.GetValue(_buf, idx, len));
                     idx += len;
                     dic.Add(key, val);
                 }
             }
-            catch (Exception ex) when (_WrapError(ex))
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
                 throw PacketException.ThrowConvertError(ex);
             }
@@ -132,46 +108,16 @@ namespace Mikodev.Network
             return dic;
         }
 
-        internal IEnumerable<T> _List<T>(IPacketConverter con)
+        internal T[] GetArray<T>(IPacketConverter con)
         {
-            var lst = new List<T>();
-            var gen = con as IPacketConverter<T>;
-            var max = _offset + _length;
-            var idx = _offset;
-            var len = default(int);
-
-            try
-            {
-                while (idx != max)
-                {
-                    if (_buffer._HasNext(max, ref idx, out len) == false)
-                        throw PacketException.ThrowOverflow();
-                    var buf = (gen != null ? gen.GetValue(_buffer, idx, len) : (T)con.GetValue(_buffer, idx, len));
-                    lst.Add(buf);
-                    idx += len;
-                }
-            }
-            catch (Exception ex) when (_WrapError(ex))
-            {
-                throw PacketException.ThrowConvertError(ex);
-            }
-            return lst;
-        }
-
-        internal IEnumerable<T> Collection<T>(IPacketConverter con)
-        {
-            if (_length < 1)
+            if (_len < 1)
                 return new T[0];
             if (typeof(T) == typeof(byte))
-                return (IEnumerable<T>)(object)ByteArrayConverter.ToByteArray(_buffer, _offset, _length);
+                return (T[])(object)ByteArrayConverter.ToByteArray(_buf, _off, _len);
             else if (typeof(T) == typeof(sbyte))
-                return (IEnumerable<T>)(object)SByteArrayConverter.ToSbyteArray(_buffer, _offset, _length);
-
-            var len = con.Length;
-            if (len < 1)
-                return _List<T>(con);
-
-            var sum = Math.DivRem(_length, len, out var rem);
+                return (T[])(object)SByteArrayConverter.ToSbyteArray(_buf, _off, _len);
+            var def = con.Length;
+            var sum = Math.DivRem(_len, def, out var rem);
             if (rem != 0)
                 throw PacketException.ThrowOverflow();
             var arr = new T[sum];
@@ -180,42 +126,32 @@ namespace Mikodev.Network
             try
             {
                 if (gen != null)
-                    for (int i = 0; i < sum; i++)
-                        arr[i] = gen.GetValue(_buffer, _offset + i * len, len);
+                    for (int idx = 0; idx < sum; idx++)
+                        arr[idx] = gen.GetValue(_buf, _off + idx * def, def);
                 else
-                    for (int i = 0; i < sum; i++)
-                        arr[i] = (T)con.GetValue(_buffer, _offset + i * len, len);
+                    for (int idx = 0; idx < sum; idx++)
+                        arr[idx] = (T)con.GetValue(_buf, _off + idx * def, def);
             }
-            catch (Exception ex) when (_WrapError(ex))
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
                 throw PacketException.ThrowConvertError(ex);
             }
             return arr;
         }
 
-        internal List<T> List<T>(IPacketConverter con)
+        internal List<_Element> GetElements()
         {
-            var res = Collection<T>(con);
-            if (res is T[] arr)
-                return new List<T>(arr);
-            if (res is List<T> lst)
-                return lst;
-            throw new InvalidOperationException();
-        }
-
-        internal T[] Array<T>(IPacketConverter con)
-        {
-            var res = Collection<T>(con);
-            if (res is T[] arr)
-                return arr;
-            if (res is List<T> lst)
-                return lst.ToArray();
-            throw new InvalidOperationException();
-        }
-
-        internal IEnumerable<T> Enumerable<T>(IPacketConverter converter)
-        {
-            return new _Enumerable<T>(this, converter);
+            var lst = new List<_Element>();
+            var max = Max();
+            var idx = _off;
+            while (idx != max)
+            {
+                if (_buf.MoveNext(max, ref idx, out var len) == false)
+                    throw PacketException.ThrowOverflow();
+                lst.Add(new _Element(_buf, idx, len));
+                idx += len;
+            }
+            return lst;
         }
     }
 }

@@ -14,24 +14,24 @@ namespace Mikodev.Network
 
         internal static readonly char[] s_separators = new[] { '/', '\\' };
 
-        internal static bool _HasNext(this byte[] buffer, int higher, ref int offset, out int length)
+        internal static bool MoveNext(this byte[] buf, int max, ref int idx, out int len)
         {
-            if (offset < 0 || higher - offset < sizeof(int))
+            if (idx < 0 || max - idx < sizeof(int))
                 goto fail;
-            length = BitConverter.ToInt32(buffer, offset);
-            offset += sizeof(int);
-            if (length < 0 || higher - offset < length)
+            len = BitConverter.ToInt32(buf, idx);
+            idx += sizeof(int);
+            if (len < 0 || max - idx < len)
                 goto fail;
             return true;
 
-            fail:
-            length = 0;
+        fail:
+            len = 0;
             return false;
         }
 
-        internal static void _Write(this Stream str, byte[] buf) => str.Write(buf, 0, buf.Length);
-        
-        internal static void _WriteKey(this Stream str, string key)
+        internal static void Write(this Stream str, byte[] buf) => str.Write(buf, 0, buf.Length);
+
+        internal static void WriteKey(this Stream str, string key)
         {
             var buf = Encoding.UTF8.GetBytes(key);
             var len = BitConverter.GetBytes(buf.Length);
@@ -39,14 +39,14 @@ namespace Mikodev.Network
             str.Write(buf, 0, buf.Length);
         }
 
-        internal static void _WriteExt(this Stream str, byte[] buf)
+        internal static void WriteExt(this Stream str, byte[] buf)
         {
             var len = BitConverter.GetBytes(buf.Length);
             str.Write(len, 0, len.Length);
             str.Write(buf, 0, buf.Length);
         }
 
-        internal static void _WriteExt(this Stream str, MemoryStream mst)
+        internal static void WriteExt(this Stream str, MemoryStream mst)
         {
             var len = (int)mst.Length;
             var buf = BitConverter.GetBytes(len);
@@ -54,7 +54,7 @@ namespace Mikodev.Network
             mst.WriteTo(str);
         }
 
-        internal static byte[] _Span(byte[] buffer, int offset, int length)
+        internal static byte[] Span(byte[] buffer, int offset, int length)
         {
             if (offset == 0 && length == buffer.Length)
                 return buffer;
@@ -67,14 +67,14 @@ namespace Mikodev.Network
             return buf;
         }
 
-        internal static void _BeginInternal(this Stream str, out long src)
+        internal static void BeginInternal(this Stream str, out long src)
         {
             var pos = str.Position;
             str.Position += sizeof(int);
             src = pos;
         }
 
-        internal static void _EndInternal(this Stream str, long src)
+        internal static void FinshInternal(this Stream str, long src)
         {
             var dst = str.Position;
             var len = dst - src - sizeof(int);
@@ -86,34 +86,34 @@ namespace Mikodev.Network
             str.Position = dst;
         }
 
-        internal static void _WriteValue(this Stream str, ConverterDictionary cvt, object itm, Type type)
+        internal static void WriteValue(this Stream str, ConverterDictionary cvt, object itm, Type type)
         {
             var con = _Caches.GetConverter(cvt, type, false);
             var len = con.Length > 0;
             if (len)
-                str._Write(con._GetBytesWrapError(itm));
+                str.Write(con.GetBytesWrap(itm));
             else
-                str._WriteExt(con._GetBytesWrapError(itm));
+                str.WriteExt(con.GetBytesWrap(itm));
             return;
         }
 
-        internal static void _WriteValueGeneric<T>(this Stream str, ConverterDictionary cvt, T itm)
+        internal static void WriteValueGeneric<T>(this Stream str, ConverterDictionary cvt, T itm)
         {
             var con = _Caches.GetConverter<T>(cvt, false);
             var len = con.Length > 0;
-            var res = con as IPacketConverter<T>;
-            if (len && res != null)
-                str._Write(res._GetBytesWrapErrorGeneric(itm));
+            var gen = con as IPacketConverter<T>;
+            if (len && gen != null)
+                str.Write(gen.GetBytesWrap(itm));
             else if (len)
-                str._Write(con._GetBytesWrapError(itm));
-            else if (res != null)
-                str._WriteExt(res._GetBytesWrapErrorGeneric(itm));
+                str.Write(con.GetBytesWrap(itm));
+            else if (gen != null)
+                str.WriteExt(gen.GetBytesWrap(itm));
             else
-                str._WriteExt(con._GetBytesWrapError(itm));
+                str.WriteExt(con.GetBytesWrap(itm));
             return;
         }
 
-        internal static byte[] _ToBytes(this ICollection<byte> buffer)
+        internal static byte[] ToBytes(this ICollection<byte> buffer)
         {
             var len = buffer?.Count ?? 0;
             if (len == 0)
@@ -123,7 +123,7 @@ namespace Mikodev.Network
             return buf;
         }
 
-        internal static byte[] _ToBytes(this ICollection<sbyte> buffer)
+        internal static byte[] ToBytes(this ICollection<sbyte> buffer)
         {
             var len = buffer?.Count ?? 0;
             if (len == 0)

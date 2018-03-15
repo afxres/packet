@@ -4,31 +4,38 @@ namespace Mikodev.Network
 {
     public sealed class PacketRawReader
     {
-        internal readonly ConverterDictionary _converters;
-        internal _Element _element;
+        internal readonly ConverterDictionary _cvt;
+        private readonly _Element _ele;
+        private int _idx;
 
         public PacketRawReader(PacketReader source)
         {
-            _element = new _Element(source._element);
-            _converters = source._converters;
+            _cvt = source._cvt;
+            _ele = source._ele;
+            _idx = source._ele._off;
         }
 
         public PacketRawReader(byte[] buffer, ConverterDictionary converters = null)
         {
-            _element = new _Element(buffer);
-            _converters = converters;
+            _cvt = converters;
+            _ele = new _Element(buffer);
+            _idx = 0;
         }
 
         public PacketRawReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
-            _element = new _Element(buffer, offset, length);
-            _converters = converters;
+            _ele = new _Element(buffer, offset, length);
+            _cvt = converters;
         }
 
-        public bool Any => _element.Any();
+        public bool Any => _idx < _ele.Max();
 
-        public void Reset() => _element.Reset();
+        public void Reset() => _idx = _ele._off;
 
-        public override string ToString() => $"{nameof(PacketRawReader)} with {_element._length} byte(s)";
+        public override string ToString() => $"{nameof(PacketRawReader)} with {_ele._len} byte(s)";
+
+        internal object Next(IPacketConverter con) => _ele.Next(ref _idx, con);
+
+        internal T NextAuto<T>(IPacketConverter con) => _ele.NextAuto<T>(ref _idx, con);
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace Mikodev.Network.Converters
 {
-    [_Converter(typeof(sbyte))]
+    [PacketConverter(typeof(sbyte))]
     internal sealed class SByteConverter : IPacketConverter, IPacketConverter<sbyte>
     {
         public int Length => sizeof(sbyte);

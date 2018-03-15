@@ -2,7 +2,7 @@
 
 namespace Mikodev.Network.Converters
 {
-    [_Converter(typeof(Single))]
+    [PacketConverter(typeof(Single))]
     internal sealed class SingleConverter : IPacketConverter, IPacketConverter<Single>
     {
         public int Length => sizeof(Single);

@@ -2,7 +2,7 @@
 
 namespace Mikodev.Network.Converters
 {
-    [_Converter(typeof(Boolean))]
+    [PacketConverter(typeof(Boolean))]
     internal sealed class BooleanConverter : IPacketConverter, IPacketConverter<Boolean>
     {
         public int Length => sizeof(Boolean);

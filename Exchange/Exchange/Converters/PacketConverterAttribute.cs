@@ -3,12 +3,12 @@
 namespace Mikodev.Network.Converters
 {
     [AttributeUsage(AttributeTargets.Class)]
-    internal sealed class _ConverterAttribute : Attribute
+    internal sealed class PacketConverterAttribute : Attribute
     {
         private readonly Type _type;
 
         internal Type Type => _type;
 
-        internal _ConverterAttribute(Type type) => _type = type;
+        internal PacketConverterAttribute(Type type) => _type = type;
     }
 }

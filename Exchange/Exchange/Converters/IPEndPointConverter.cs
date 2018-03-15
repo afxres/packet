@@ -3,7 +3,7 @@ using System.Net;
 
 namespace Mikodev.Network.Converters
 {
-    [_Converter(typeof(IPEndPoint))]
+    [PacketConverter(typeof(IPEndPoint))]
     internal sealed class IPEndPointConverter : IPacketConverter, IPacketConverter<IPEndPoint>
     {
         public static byte[] ToBytes(IPEndPoint value)
@@ -18,7 +18,7 @@ namespace Mikodev.Network.Converters
 
         public static IPEndPoint ToIPEndPoint(byte[] buffer, int offset, int length)
         {
-            var add = new IPAddress(_Extension._Span(buffer, offset, length - sizeof(ushort)));
+            var add = new IPAddress(_Extension.Span(buffer, offset, length - sizeof(ushort)));
             var pot = BitConverter.ToUInt16(buffer, offset + length - sizeof(ushort));
             return new IPEndPoint(add, pot);
         }

@@ -11,7 +11,7 @@ namespace Mikodev.Network
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
             var rea = (PacketReader)Value;
-            var val = rea._GetItem(binder.Name, false);
+            var val = rea.GetItem(binder.Name, false);
             var exp = Expression.Constant(val);
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
@@ -20,7 +20,7 @@ namespace Mikodev.Network
         {
             var rea = (PacketReader)Value;
             var typ = binder.Type;
-            var val = rea._GetValue(typ, 0);
+            var val = rea.GetValue(typ, 0);
             var exp = Expression.Constant(val);
             return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
@@ -28,7 +28,7 @@ namespace Mikodev.Network
         public override IEnumerable<string> GetDynamicMemberNames()
         {
             var rea = (PacketReader)Value;
-            var dic = rea._GetItemDictionary();
+            var dic = rea.GetDictionary();
             if (dic != null)
                 return dic.Keys;
             return base.GetDynamicMemberNames();
