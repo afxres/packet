@@ -13,8 +13,9 @@ namespace Mikodev.Network
         internal const int EnumerableImpl = 16;
         internal const int Collection = 32;
         internal const int Dictionary = 64;
-        internal const int EnumerableKeyValuePair = 128;
-        internal const int KeyValuePair = 256;
+        internal const int KeyValuePair = 128;
+        internal const int EnumerableKeyValuePair = 256;
+        internal const int DictionaryStringObject = 512;
 
         internal int Flags { get; set; }
 

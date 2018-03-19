@@ -8,6 +8,8 @@ namespace Mikodev.Network
 {
     internal static partial class _Extension
     {
+        internal static readonly Encoding s_encoding = Encoding.UTF8;
+
         internal static readonly byte[] s_zero_bytes = new byte[sizeof(int)];
 
         internal static readonly byte[] s_empty_bytes = new byte[0];
@@ -33,7 +35,7 @@ namespace Mikodev.Network
 
         internal static void WriteKey(this Stream str, string key)
         {
-            var buf = Encoding.UTF8.GetBytes(key);
+            var buf = s_encoding.GetBytes(key);
             var len = BitConverter.GetBytes(buf.Length);
             str.Write(len, 0, len.Length);
             str.Write(buf, 0, buf.Length);

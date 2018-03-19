@@ -139,7 +139,7 @@ namespace Mikodev.Network
             return arr;
         }
 
-        internal List<_Element> GetElements()
+        internal List<_Element> GetElementList()
         {
             var lst = new List<_Element>();
             var max = Max();

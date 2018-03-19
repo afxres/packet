@@ -147,6 +147,14 @@ namespace Mikodev.Network
                 }
             }
 
+            var que = type.GetInterfaces()
+                .Select(r => GetInfo(r))
+                .Where(r => (r.Flags & _Inf.Dictionary) != 0)
+                .ToList();
+
+            if (que.Count == 1 && que[0].IndexType == typeof(string) && que[0].ElementType == typeof(object))
+                inf.Flags |= _Inf.DictionaryStringObject;
+
             return inf;
         }
 

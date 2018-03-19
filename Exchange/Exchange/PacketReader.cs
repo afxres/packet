@@ -58,7 +58,7 @@ namespace Mikodev.Network
             {
                 if (buf.MoveNext(max, ref idx, out len) == false)
                     return null;
-                var key = Encoding.UTF8.GetString(buf, idx, len);
+                var key = _Extension.s_encoding.GetString(buf, idx, len);
                 if (dic.ContainsKey(key))
                     return null;
                 idx += len;
@@ -81,7 +81,7 @@ namespace Mikodev.Network
                 throw PacketException.ThrowOverflow();
             _tag |= _InitArray;
 
-            var lst = _ele.GetElements();
+            var lst = _ele.GetElementList();
             var len = lst.Count;
             arr = new PacketReader[len];
             for (int i = 0; i < len; i++)
@@ -146,64 +146,64 @@ namespace Mikodev.Network
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
 
-        internal object GetValue(Type type, int level)
+        internal object GetValue(Type typ, int lev)
         {
-            if (level > _Caches._Depth)
+            if (lev > _Caches._Depth)
                 throw new PacketException(PacketError.RecursiveError);
-            level += 1;
+            lev += 1;
 
-            if (type == typeof(object) || type == typeof(PacketReader))
+            if (typ == typeof(object) || typ == typeof(PacketReader))
                 return this;
-            if (type == typeof(PacketRawReader))
+            if (typ == typeof(PacketRawReader))
                 return new PacketRawReader(this);
 
-            var convert = _Caches.GetConverter(_cvt, type, true);
-            if (convert != null)
-                return convert.GetValueWrap(_ele, true);
+            var con = _Caches.GetConverter(_cvt, typ, true);
+            if (con != null)
+                return con.GetValueWrap(_ele, true);
 
-            var info = _Caches.GetInfo(type);
-            var tag = info.Flags;
-            var element = info.ElementType;
-            if (element != null)
-                convert = _Caches.GetConverter(_cvt, element, true);
+            var inf = _Caches.GetInfo(typ);
+            var tag = inf.Flags;
+            var ele = inf.ElementType;
+            if (ele != null)
+                con = _Caches.GetConverter(_cvt, ele, true);
 
             if ((tag & _Inf.Array) != 0)
             {
-                if (convert != null)
-                    return info.GetArray(this, convert);
-                var values = GetValueArray(element, level);
-                var result = info.CastToArray(values);
-                return result;
+                if (con != null)
+                    return inf.GetArray(this, con);
+                var val = GetValueArray(ele, lev);
+                var res = inf.CastToArray(val);
+                return res;
             }
             if ((tag & _Inf.List) != 0)
             {
-                if (convert != null)
-                    return info.GetList(this, convert);
-                var values = GetValueArray(element, level);
-                var result = info.CastToList(values);
-                return result;
+                if (con != null)
+                    return inf.GetList(this, con);
+                var val = GetValueArray(ele, lev);
+                var res = inf.CastToList(val);
+                return res;
             }
             if ((tag & _Inf.Enumerable) != 0)
             {
-                if (convert != null)
-                    return info.GetEnumerable(this, convert);
-                return info.GetEnumerableReader(this, level);
+                if (con != null)
+                    return inf.GetEnumerable(this, con);
+                return inf.GetEnumerableReader(this, lev);
             }
             else if ((tag & _Inf.Collection) != 0)
             {
-                if (convert != null)
-                    return info.GetCollection(this, convert);
-                var values = GetValueArray(element, level);
-                var result = info.CastToCollection(values);
-                return result;
+                if (con != null)
+                    return inf.GetCollection(this, con);
+                var val = GetValueArray(ele, lev);
+                var res = inf.CastToCollection(val);
+                return res;
             }
             else if ((tag & _Inf.Dictionary) != 0)
             {
-                var keycon = _Caches.GetConverter(_cvt, info.IndexType, true);
+                var keycon = _Caches.GetConverter(_cvt, inf.IndexType, true);
                 if (keycon == null)
                     throw new PacketException(PacketError.InvalidKeyType);
-                if (convert != null)
-                    return info.GetDictionary(this, keycon, convert);
+                if (con != null)
+                    return inf.GetDictionary(this, keycon, con);
 
                 var max = _ele.Max();
                 var idx = _ele._off;
@@ -231,32 +231,32 @@ namespace Mikodev.Network
                     if (buf.MoveNext(max, ref idx, out len) == false)
                         throw PacketException.ThrowOverflow();
                     var rea = new PacketReader(buf, idx, len, _cvt);
-                    var val = rea.GetValue(element, level);
+                    var val = rea.GetValue(ele, lev);
                     var par = new KeyValuePair<object, object>(key, val);
 
                     idx += len;
                     lst.Add(par);
                 }
-                return info.CastToDictionary(lst);
+                return inf.CastToDictionary(lst);
             }
             else
             {
-                var setter = _Caches.GetSetterInfo(type);
-                var arguments = setter.Arguments;
-                var function = setter.Function;
-                if (arguments == null || function == null)
+                var set = _Caches.GetSetterInfo(typ);
+                var arg = set.Arguments;
+                var fun = set.Function;
+                if (arg == null || fun == null)
                     throw new PacketException(PacketError.InvalidType);
 
-                var values = new object[arguments.Length];
-                for (int i = 0; i < arguments.Length; i++)
+                var arr = new object[arg.Length];
+                for (int i = 0; i < arg.Length; i++)
                 {
-                    var reader = GetItem(arguments[i].Name, false);
-                    var value = reader.GetValue(arguments[i].Type, level);
-                    values[i] = value;
+                    var rea = GetItem(arg[i].Name, false);
+                    var val = rea.GetValue(arg[i].Type, lev);
+                    arr[i] = val;
                 }
 
-                var result = function.Invoke(values);
-                return result;
+                var res = fun.Invoke(arr);
+                return res;
             }
         }
 
