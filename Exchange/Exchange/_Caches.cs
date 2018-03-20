@@ -27,50 +27,51 @@ namespace Mikodev.Network
             s_setter.Clear();
         }
 
-        private static void _CreateInfoSetKeyValuePair(_Inf inf, _Inf enumerable, Type index, Type element)
+        private static void _CreateInfoSetKeyValuePair(_Inf inf, _Inf itr, Type idx, Type ele)
         {
             inf.Flags |= _Inf.EnumerableKeyValuePair;
-            inf.IndexType = index;
-            inf.ElementType = element;
-            inf.FromEnumerableKeyValuePair = enumerable.FromEnumerableKeyValuePair;
-            inf.GetEnumerableKeyValuePairAdapter = enumerable.GetEnumerableKeyValuePairAdapter;
+            inf.IndexType = idx;
+            inf.ElementType = ele;
+            inf.FromEnumerableKeyValuePair = itr.FromEnumerableKeyValuePair;
+            inf.GetEnumerableKeyValuePairAdapter = itr.GetEnumerableKeyValuePairAdapter;
         }
 
-        private static _Inf _CreateInfo(Type type)
+        private static _Inf _CreateInfo(Type typ)
         {
             var one = default(Type);
             var inf = new _Inf();
 
-            if (type.IsEnum)
+            if (typ.IsEnum)
             {
                 inf.Flags |= _Inf.Enum;
-                inf.ElementType = Enum.GetUnderlyingType(type);
+                inf.ElementType = Enum.GetUnderlyingType(typ);
                 return inf;
             }
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+            if (typ.IsGenericType && typ.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
             {
-                var arg = type.GetGenericArguments();
+                var arg = typ.GetGenericArguments();
                 inf.Flags |= _Inf.KeyValuePair;
                 inf.IndexType = arg[0];
                 inf.ElementType = arg[1];
                 return inf;
             }
 
-            if (type.IsArray)
+            var que = typ.GetInterfaces().Select(GetInfo);
+            if (typ.IsArray)
             {
-                if (type.GetArrayRank() != 1)
+                if (typ.GetArrayRank() != 1)
                     throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
-                one = type.GetElementType();
+                one = typ.GetElementType();
                 inf.ElementType = one;
 
                 inf.Flags |= _Inf.Array;
                 inf.GetArray = _CreateGetFunction(s_get_array, one);
                 inf.CastToArray = _CreateCastFunction(s_cast_array, one);
             }
-            else if (type.IsGenericType)
+            else if (typ.IsGenericType)
             {
-                var def = type.GetGenericTypeDefinition();
-                var arg = type.GetGenericArguments();
+                var def = typ.GetGenericTypeDefinition();
+                var arg = typ.GetGenericArguments();
                 if (arg.Length == 1)
                 {
                     one = arg[0];
@@ -98,7 +99,7 @@ namespace Mikodev.Network
                         inf.GetList = _CreateGetFunction(s_get_list, one);
                         inf.CastToList = _CreateCastFunction(s_cast_list, one);
                     }
-                    else if ((fun = _CreateGetCollectionFunction(type, one, out var info)) != null)
+                    else if ((fun = _CreateGetCollectionFunction(typ, one, out var info)) != null)
                     {
                         inf.Flags |= _Inf.Collection;
                         inf.GetCollection = fun;
@@ -108,10 +109,7 @@ namespace Mikodev.Network
                 else if (arg.Length == 2)
                 {
                     var kvp = typeof(KeyValuePair<,>).MakeGenericType(arg);
-                    var itr = type.GetInterfaces()
-                        .Select(r => GetInfo(r))
-                        .Where(r => (r.Flags & _Inf.Enumerable) != 0 && r.ElementType == kvp)
-                        .FirstOrDefault();
+                    var itr = que.Where(r => (r.Flags & _Inf.Enumerable) != 0 && r.ElementType == kvp).FirstOrDefault();
                     if (itr != null)
                         _CreateInfoSetKeyValuePair(inf, itr, arg[0], arg[1]);
 
@@ -124,9 +122,7 @@ namespace Mikodev.Network
                 }
             }
 
-            var obj = type.GetInterfaces()
-                .Select(r => GetInfo(r))
-                .Where(r => (r.Flags & _Inf.Enumerable) != 0);
+            var obj = que.Where(r => (r.Flags & _Inf.Enumerable) != 0);
             if (one != null)
                 obj = obj.Where(r => r.ElementType == one);
             var lst = obj.ToList();
@@ -147,12 +143,8 @@ namespace Mikodev.Network
                 }
             }
 
-            var que = type.GetInterfaces()
-                .Select(r => GetInfo(r))
-                .Where(r => (r.Flags & _Inf.Dictionary) != 0)
-                .ToList();
-
-            if (que.Count == 1 && que[0].IndexType == typeof(string) && que[0].ElementType == typeof(object))
+            var dic = que.Where(r => (r.Flags & _Inf.Dictionary) != 0).ToList();
+            if (dic.Count == 1 && dic[0].IndexType == typeof(string) && dic[0].ElementType == typeof(object))
                 inf.Flags |= _Inf.DictionaryStringObject;
 
             return inf;

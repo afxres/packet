@@ -14,8 +14,14 @@ namespace Mikodev.Network
     {
         private sealed class Entry
         {
-            internal List<KeyValuePair<byte[], PacketWriter>> KeyValuePairs;
-            internal int Length;
+            internal readonly List<KeyValuePair<byte[], PacketWriter>> List;
+            internal readonly int Length;
+
+            internal Entry(List<KeyValuePair<byte[], PacketWriter>> list, int length)
+            {
+                List = list;
+                Length = length;
+            }
         }
 
         internal const int _Length = 256;
@@ -71,7 +77,7 @@ namespace Mikodev.Network
             else if (obj is List<PacketWriter> lst)
                 stb.AppendFormat("{0} node(s)", lst.Count);
             else if (obj is Entry ent)
-                stb.AppendFormat("{0} key-value pair(s)", ent.KeyValuePairs.Count);
+                stb.AppendFormat("{0} key-value pair(s)", ent.List.Count);
             else
                 throw new ApplicationException();
             return stb.ToString();
@@ -103,7 +109,7 @@ namespace Mikodev.Network
             else if (itm is Entry entry)
             {
                 var len = entry.Length;
-                var kvp = entry.KeyValuePairs;
+                var kvp = entry.List;
                 foreach (var i in kvp)
                 {
                     if (len > 0)
@@ -209,7 +215,7 @@ namespace Mikodev.Network
                         var tmp = new KeyValuePair<byte[], PacketWriter>(i.Key, val);
                         lst.Add(tmp);
                     }
-                    var ent = new Entry { KeyValuePairs = lst, Length = key.Length };
+                    var ent = new Entry(lst, key.Length);
                     var res = new PacketWriter(cvt, ent);
                     return res;
                 }
