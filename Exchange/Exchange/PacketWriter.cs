@@ -13,11 +13,22 @@ namespace Mikodev.Network
 {
     public sealed partial class PacketWriter : IDynamicMetaObjectProvider
     {
-        internal const int Length = 256;
+        private sealed class Entry
+        {
+            internal readonly KeyValuePairList List;
+            internal readonly int Length;
+
+            internal Entry(KeyValuePairList list, int length)
+            {
+                List = list;
+                Length = length;
+            }
+        }
+
+        internal const int _Length = 256;
 
         internal readonly ConverterDictionary _cvt;
         internal object _itm;
-        internal int _keylen;
 
         internal PacketWriter(ConverterDictionary converters, object item)
         {
@@ -45,7 +56,7 @@ namespace Mikodev.Network
                 return buf;
             else if (obj is MemoryStream raw)
                 return raw.ToArray();
-            var mst = new MemoryStream(Length);
+            var mst = new MemoryStream(_Length);
             GetBytesExtra(this, mst, 0);
             var res = mst.ToArray();
             return res;
@@ -66,8 +77,8 @@ namespace Mikodev.Network
                 stb.AppendFormat("{0} node(s)", dic.Count);
             else if (obj is List<PacketWriter> lst)
                 stb.AppendFormat("{0} node(s)", lst.Count);
-            else if (obj is KeyValuePairList kvp)
-                stb.AppendFormat("{0} key-value pair(s)", kvp.Count);
+            else if (obj is Entry ent)
+                stb.AppendFormat("{0} key-value pair(s)", ent.List.Count);
             else
                 throw new ApplicationException();
             return stb.ToString();
@@ -97,9 +108,10 @@ namespace Mikodev.Network
                     GetBytes(lst[i], str, lev);
                 }
             }
-            else if (itm is KeyValuePairList kvp)
+            else if (itm is Entry ent)
             {
-                var len = wtr._keylen;
+                var len = ent.Length;
+                var kvp = ent.List;
                 for (int i = 0; i < kvp.Count; i++)
                 {
                     var cur = kvp[i];
@@ -205,7 +217,8 @@ namespace Mikodev.Network
                         var tmp = new KeyValuePair<byte[], PacketWriter>(i.Key, val);
                         lst.Add(tmp);
                     }
-                    var res = new PacketWriter(cvt, lst) { _keylen = key.Length };
+                    var ent = new Entry(lst, key.Length);
+                    var res = new PacketWriter(cvt, ent);
                     return res;
                 }
             }
