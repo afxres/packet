@@ -5,13 +5,13 @@ namespace Mikodev.Network.Converters
     [PacketConverter(typeof(Guid))]
     internal sealed class GuidConverter : IPacketConverter, IPacketConverter<Guid>
     {
-        private const int _Length = 16;
+        private const int SizeOf = 16;
 
         public static byte[] ToBytes(Guid value) => value.ToByteArray();
 
-        public static Guid ToGuid(byte[] buffer, int offset) => new Guid(_Extension.Span(buffer, offset, _Length));
+        public static Guid ToGuid(byte[] buffer, int offset) => new Guid(_Extension.Span(buffer, offset, SizeOf));
 
-        public int Length => _Length;
+        public int Length => SizeOf;
 
         public byte[] GetBytes(Guid value) => ToBytes(value);
 

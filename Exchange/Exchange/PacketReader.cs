@@ -11,8 +11,8 @@ namespace Mikodev.Network
 {
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
-        private const int _Init = 1;
-        private const int _InitArray = 2;
+        private const int Init = 1;
+        private const int InitArray = 2;
 
         internal readonly ConverterDictionary _cvt;
         internal readonly _Element _ele;
@@ -44,9 +44,9 @@ namespace Mikodev.Network
             var obj = _dic;
             if (obj != null)
                 return obj;
-            if ((_tag & _Init) != 0)
+            if ((_tag & Init) != 0)
                 return null;
-            _tag |= _Init;
+            _tag |= Init;
 
             var dic = new PacketReaderDictionary();
             var buf = _ele._buf;
@@ -77,9 +77,9 @@ namespace Mikodev.Network
             var arr = _arr;
             if (arr != null)
                 return arr;
-            if ((_tag & _InitArray) != 0)
-                throw PacketException.ThrowOverflow();
-            _tag |= _InitArray;
+            if ((_tag & InitArray) != 0)
+                throw PacketException.Overflow();
+            _tag |= InitArray;
 
             var lst = _ele.GetElementList();
             var len = lst.Count;
@@ -148,7 +148,7 @@ namespace Mikodev.Network
 
         internal object GetValue(Type typ, int lev)
         {
-            if (lev > _Caches._Depth)
+            if (lev > _Caches.Depth)
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
@@ -219,17 +219,17 @@ namespace Mikodev.Network
                         break;
                     if (keylen > 0)
                         if (sub < keylen)
-                            throw PacketException.ThrowOverflow();
+                            throw PacketException.Overflow();
                         else
                             len = keylen;
                     else if (buf.MoveNext(max, ref idx, out len) == false)
-                        throw PacketException.ThrowOverflow();
+                        throw PacketException.Overflow();
                     // Wrap error non-check
                     var key = keycon.GetValueWrap(buf, idx, len);
                     idx += len;
 
                     if (buf.MoveNext(max, ref idx, out len) == false)
-                        throw PacketException.ThrowOverflow();
+                        throw PacketException.Overflow();
                     var rea = new PacketReader(buf, idx, len, _cvt);
                     var val = rea.GetValue(ele, lev);
                     var par = new KeyValuePair<object, object>(key, val);
@@ -262,7 +262,7 @@ namespace Mikodev.Network
 
         internal object[] GetValueArray(Type ele, int lev)
         {
-            if (lev > _Caches._Depth)
+            if (lev > _Caches.Depth)
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 

@@ -13,8 +13,8 @@ namespace Mikodev.Network
 {
     internal static partial class _Caches
     {
-        internal const int _Length = 256;
-        internal const int _Depth = 64;
+        internal const int Length = 256;
+        internal const int Depth = 64;
 
         private static readonly ConcurrentDictionary<Type, _Inf> s_info = new ConcurrentDictionary<Type, _Inf>();
         private static readonly ConcurrentDictionary<Type, GetterInfo> s_getter = new ConcurrentDictionary<Type, GetterInfo>();
@@ -348,7 +348,7 @@ namespace Mikodev.Network
 
         private static MemoryStream _GetStreamFromEnumerable(IPacketConverter con, IEnumerable itr)
         {
-            var mst = new MemoryStream(_Length);
+            var mst = new MemoryStream(Length);
             var def = con.Length;
             if (def > 0)
             {
@@ -373,7 +373,7 @@ namespace Mikodev.Network
 
         private static MemoryStream _GetStreamFromEnumerableGeneric<T>(IPacketConverter<T> con, IEnumerable<T> itr)
         {
-            var mst = new MemoryStream(_Length);
+            var mst = new MemoryStream(Length);
             var def = con.Length;
             if (def > 0)
             {
@@ -398,7 +398,7 @@ namespace Mikodev.Network
 
         private static MemoryStream _GetStreamGeneric<TK, TV>(IPacketConverter keycon, IPacketConverter valcon, IEnumerable<KeyValuePair<TK, TV>> enumerable)
         {
-            var mst = new MemoryStream(_Length);
+            var mst = new MemoryStream(Length);
             var keygen = keycon as IPacketConverter<TK>;
             var valgen = valcon as IPacketConverter<TV>;
             var keylen = keycon.Length;

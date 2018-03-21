@@ -751,5 +751,33 @@ namespace Mikodev.Testing
             ThrowIfNotEqual(c, rc);
             return;
         }
+
+        [TestMethod]
+        public void NestDictionary()
+        {
+            var a = new[] { new { id = 1, text = "alpha" }, new { id = 2, text = "beta" } }.ToDictionary(r => r.id);
+            var b = new[] { new { key = "m", value = 1.1 }, new { key = "n", value = 2.2 } }.ToDictionary(r => r.key);
+            var wa = PacketWriter.Serialize(a);
+            var wb = PacketWriter.Serialize(b);
+            var wtr = new PacketWriter().SetItem("alpha", wa).SetItem("beta", wb);
+            var buf = wtr.GetBytes();
+            var rea = new PacketReader(buf);
+            var obj = rea.Deserialize(new { alpha = a, beta = b });
+
+            ThrowIfNotEqual(a, obj.alpha);
+            ThrowIfNotEqual(b, obj.beta);
+
+            var src = new PacketWriter();
+            var dyn = (dynamic)src;
+            dyn.x = wa;
+            dyn.y = wb;
+            var tmp = src.GetBytes();
+            var res = PacketConvert.Deserialize(tmp, new { x = a, y = b });
+
+            ThrowIfNotEqual(a, res.x);
+            ThrowIfNotEqual(b, res.y);
+
+            return;
+        }
     }
 }

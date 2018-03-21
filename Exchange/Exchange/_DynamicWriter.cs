@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
 using System.Linq.Expressions;
 using PacketWriterDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
 
@@ -41,9 +42,9 @@ namespace Mikodev.Network
         public override IEnumerable<string> GetDynamicMemberNames()
         {
             var wtr = (PacketWriter)Value;
-            if (wtr._itm is PacketWriterDictionary dic)
+            if (wtr.GetObject() is PacketWriterDictionary dic)
                 return dic.Keys;
-            return base.GetDynamicMemberNames();
+            return Enumerable.Empty<string>();
         }
     }
 }

@@ -32,7 +32,7 @@ namespace Mikodev.Network
         {
             var max = _off + _len;
             if ((def > 0 && idx + def > max) || (def < 1 && _buf.MoveNext(max, ref idx, out def) == false))
-                throw PacketException.ThrowOverflow();
+                throw PacketException.Overflow();
             len = def;
         }
 
@@ -77,11 +77,11 @@ namespace Mikodev.Network
 
                     if (keylen > 0)
                         if (sub < keylen)
-                            throw PacketException.ThrowOverflow();
+                            throw PacketException.Overflow();
                         else
                             len = keylen;
                     else if (_buf.MoveNext(max, ref idx, out len) == false)
-                        throw PacketException.ThrowOverflow();
+                        throw PacketException.Overflow();
 
                     var key = (keygen != null ? keygen.GetValue(_buf, idx, len) : (TK)keycon.GetValue(_buf, idx, len));
                     idx += len;
@@ -89,11 +89,11 @@ namespace Mikodev.Network
 
                     if (vallen > 0)
                         if (sub < vallen)
-                            throw PacketException.ThrowOverflow();
+                            throw PacketException.Overflow();
                         else
                             len = vallen;
                     else if (_buf.MoveNext(max, ref idx, out len) == false)
-                        throw PacketException.ThrowOverflow();
+                        throw PacketException.Overflow();
 
                     var val = (valgen != null ? valgen.GetValue(_buf, idx, len) : (TV)valcon.GetValue(_buf, idx, len));
                     idx += len;
@@ -102,7 +102,7 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ThrowConvertError(ex);
+                throw PacketException.ConvertError(ex);
             }
 
             return dic;
@@ -119,7 +119,7 @@ namespace Mikodev.Network
             var def = con.Length;
             var sum = Math.DivRem(_len, def, out var rem);
             if (rem != 0)
-                throw PacketException.ThrowOverflow();
+                throw PacketException.Overflow();
             var arr = new T[sum];
             var gen = con as IPacketConverter<T>;
 
@@ -134,7 +134,7 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ThrowConvertError(ex);
+                throw PacketException.ConvertError(ex);
             }
             return arr;
         }
@@ -147,7 +147,7 @@ namespace Mikodev.Network
             while (idx != max)
             {
                 if (_buf.MoveNext(max, ref idx, out var len) == false)
-                    throw PacketException.ThrowOverflow();
+                    throw PacketException.Overflow();
                 lst.Add(new _Element(_buf, idx, len));
                 idx += len;
             }

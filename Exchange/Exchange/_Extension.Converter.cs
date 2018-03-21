@@ -36,12 +36,12 @@ namespace Mikodev.Network
             try
             {
                 if (check && con.Length > len)
-                    throw PacketException.ThrowOverflow();
+                    throw PacketException.Overflow();
                 return con.GetValue(buf, off, len);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ThrowConvertError(ex);
+                throw PacketException.ConvertError(ex);
             }
         }
 
@@ -55,14 +55,14 @@ namespace Mikodev.Network
             try
             {
                 if (check && con.Length > len)
-                    throw PacketException.ThrowOverflow();
+                    throw PacketException.Overflow();
                 if (con is IPacketConverter<T> res)
                     return res.GetValue(buf, off, len);
                 return (T)con.GetValue(buf, off, len);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ThrowConvertError(ex);
+                throw PacketException.ConvertError(ex);
             }
         }
 
@@ -84,7 +84,7 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ThrowConvertError(ex);
+                throw PacketException.ConvertError(ex);
             }
         }
 
@@ -96,7 +96,7 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ThrowConvertError(ex);
+                throw PacketException.ConvertError(ex);
             }
         }
 
@@ -109,12 +109,12 @@ namespace Mikodev.Network
                     buf = s_empty_bytes;
                 var len = con.Length;
                 if (len > 0 && len != buf.Length)
-                    throw PacketException.ThrowConvertMismatch(len);
+                    throw PacketException.ConvertMismatch(len);
                 return buf;
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ThrowConvertError(ex);
+                throw PacketException.ConvertError(ex);
             }
         }
 
@@ -127,12 +127,12 @@ namespace Mikodev.Network
                     buf = s_empty_bytes;
                 var len = con.Length;
                 if (len > 0 && len != buf.Length)
-                    throw PacketException.ThrowConvertMismatch(len);
+                    throw PacketException.ConvertMismatch(len);
                 return buf;
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ThrowConvertError(ex);
+                throw PacketException.ConvertError(ex);
             }
         }
     }

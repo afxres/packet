@@ -13,30 +13,28 @@ namespace Mikodev.Network
 {
     public sealed partial class PacketWriter : IDynamicMetaObjectProvider
     {
-        private sealed class Entry
-        {
-            internal readonly KeyValuePairList List;
-            internal readonly int Length;
+        internal readonly ConverterDictionary _cvt;
+        private object _itm;
+        private int _keylen;
 
-            internal Entry(KeyValuePairList list, int length)
-            {
-                List = list;
-                Length = length;
-            }
+        internal PacketWriter(object obj, ConverterDictionary cvt)
+        {
+            _cvt = cvt;
+            _itm = obj;
         }
 
-        internal const int _Length = 256;
-
-        internal readonly ConverterDictionary _cvt;
-        internal object _itm;
-
-        internal PacketWriter(ConverterDictionary converters, object item)
+        internal PacketWriter(PacketWriter wtr, ConverterDictionary cvt)
         {
-            _cvt = converters;
-            _itm = item;
+            _cvt = cvt;
+            if (wtr == null)
+                return;
+            _itm = wtr._itm;
+            _keylen = wtr._keylen;
         }
 
         public PacketWriter(ConverterDictionary converters = null) => _cvt = converters;
+
+        internal object GetObject() => _itm;
 
         internal PacketWriterDictionary GetDictionary()
         {
@@ -56,7 +54,7 @@ namespace Mikodev.Network
                 return buf;
             else if (obj is MemoryStream raw)
                 return raw.ToArray();
-            var mst = new MemoryStream(_Length);
+            var mst = new MemoryStream(_Caches.Length);
             GetBytesExtra(this, mst, 0);
             var res = mst.ToArray();
             return res;
@@ -77,8 +75,8 @@ namespace Mikodev.Network
                 stb.AppendFormat("{0} node(s)", dic.Count);
             else if (obj is List<PacketWriter> lst)
                 stb.AppendFormat("{0} node(s)", lst.Count);
-            else if (obj is Entry ent)
-                stb.AppendFormat("{0} key-value pair(s)", ent.List.Count);
+            else if (obj is KeyValuePairList kvp)
+                stb.AppendFormat("{0} key-value pair(s)", kvp.Count);
             else
                 throw new ApplicationException();
             return stb.ToString();
@@ -88,7 +86,7 @@ namespace Mikodev.Network
 
         internal static void GetBytesExtra(PacketWriter wtr, Stream str, int lev)
         {
-            if (lev > _Caches._Depth)
+            if (lev > _Caches.Depth)
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
@@ -108,10 +106,9 @@ namespace Mikodev.Network
                     GetBytes(lst[i], str, lev);
                 }
             }
-            else if (itm is Entry ent)
+            else if (itm is KeyValuePairList kvp)
             {
-                var len = ent.Length;
-                var kvp = ent.List;
+                var len = wtr._keylen;
                 for (int i = 0; i < kvp.Count; i++)
                 {
                     var cur = kvp[i];
@@ -127,7 +124,7 @@ namespace Mikodev.Network
 
         internal static void GetBytes(PacketWriter wtr, Stream str, int lev)
         {
-            if (lev > _Caches._Depth)
+            if (lev > _Caches.Depth)
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
@@ -154,38 +151,38 @@ namespace Mikodev.Network
 
         internal static PacketWriter GetWriter(ConverterDictionary cvt, object itm, int lev)
         {
-            if (lev > _Caches._Depth)
+            if (lev > _Caches.Depth)
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
             var con = default(IPacketConverter);
             if (itm == null)
                 return new PacketWriter(cvt);
-            if (itm is PacketWriter writer)
-                return new PacketWriter(cvt, writer._itm);
+            if (itm is PacketWriter oth)
+                return new PacketWriter(oth, cvt);
             if (itm is PacketRawWriter raw)
-                return new PacketWriter(cvt, raw._str);
+                return new PacketWriter(raw._str, cvt);
 
             var type = itm.GetType();
             if ((con = _Caches.GetConverter(cvt, type, true)) != null)
-                return new PacketWriter(cvt, con.GetBytesWrap(itm));
+                return new PacketWriter(con.GetBytesWrap(itm), cvt);
 
             var inf = _Caches.GetInfo(type);
             var tag = inf.Flags;
             if ((tag & _Inf.EnumerableImpl) != 0)
             {
                 if (inf.ElementType == typeof(byte) && itm is ICollection<byte> bytes)
-                    return new PacketWriter(cvt, bytes.ToBytes());
+                    return new PacketWriter(bytes.ToBytes(), cvt);
                 if (inf.ElementType == typeof(sbyte) && itm is ICollection<sbyte> sbytes)
-                    return new PacketWriter(cvt, sbytes.ToBytes());
+                    return new PacketWriter(sbytes.ToBytes(), cvt);
 
                 if ((con = _Caches.GetConverter(cvt, inf.ElementType, true)) != null)
-                    return new PacketWriter(cvt, inf.FromEnumerable(con, itm));
+                    return new PacketWriter(inf.FromEnumerable(con, itm), cvt);
 
                 var lst = new List<PacketWriter>();
                 foreach (var i in (itm as IEnumerable))
                     lst.Add(GetWriter(cvt, i, lev));
-                return new PacketWriter(cvt, lst);
+                return new PacketWriter(lst, cvt);
             }
             else if ((tag & _Inf.DictionaryStringObject) != 0)
             {
@@ -204,21 +201,20 @@ namespace Mikodev.Network
                 if ((con = _Caches.GetConverter(cvt, inf.ElementType, true)) != null)
                 {
                     var val = inf.FromEnumerableKeyValuePair(key, con, itm);
-                    var res = new PacketWriter(cvt, val);
+                    var res = new PacketWriter(val, cvt);
                     return res;
                 }
                 else
                 {
-                    var lst = new KeyValuePairList();
+                    var val = new KeyValuePairList();
                     var kvp = inf.GetEnumerableKeyValuePairAdapter(key, itm);
                     foreach (var i in kvp)
                     {
-                        var val = GetWriter(cvt, i.Value, lev);
-                        var tmp = new KeyValuePair<byte[], PacketWriter>(i.Key, val);
-                        lst.Add(tmp);
+                        var sub = GetWriter(cvt, i.Value, lev);
+                        var tmp = new KeyValuePair<byte[], PacketWriter>(i.Key, sub);
+                        val.Add(tmp);
                     }
-                    var ent = new Entry(lst, key.Length);
-                    var res = new PacketWriter(cvt, ent);
+                    var res = new PacketWriter(val, cvt) { _keylen = key.Length };
                     return res;
                 }
             }

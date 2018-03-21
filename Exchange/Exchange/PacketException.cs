@@ -53,19 +53,19 @@ namespace Mikodev.Network
             base.GetObjectData(info, context);
         }
 
-        internal static PacketException ThrowOverflow()
+        internal static PacketException Overflow()
         {
-            throw new PacketException(PacketError.Overflow);
+            return new PacketException(PacketError.Overflow);
         }
 
-        internal static PacketException ThrowConvertError(Exception ex)
+        internal static PacketException ConvertError(Exception ex)
         {
-            throw new PacketException(PacketError.ConvertError, ex);
+            return new PacketException(PacketError.ConvertError, ex);
         }
 
-        internal static PacketException ThrowConvertMismatch(int length)
+        internal static PacketException ConvertMismatch(int length)
         {
-            throw new PacketException(PacketError.ConvertMismatch, $"Converter should return a byte array of length {length}");
+            return new PacketException(PacketError.ConvertMismatch, $"Converter should return a byte array of length {length}");
         }
 
         internal static bool WrapFilter(Exception ex)

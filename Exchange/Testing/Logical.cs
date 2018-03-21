@@ -223,7 +223,7 @@ namespace Mikodev.Testing
             }
 
             lst.ForEach(r => r.Start());
-            lst.ForEach(r => r.Wait());
+            Task.WaitAll(lst.ToArray());
         }
 
         [TestMethod]

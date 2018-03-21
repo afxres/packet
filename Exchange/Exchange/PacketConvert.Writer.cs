@@ -14,7 +14,7 @@ namespace Mikodev.Network
 
             var val = _Caches.GetBytes(type, writer._cvt, value);
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
+            itm[key] = new PacketWriter(val, writer._cvt);
             return writer;
         }
 
@@ -25,7 +25,7 @@ namespace Mikodev.Network
 
             var val = _Caches.GetBytesAuto(writer._cvt, value);
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
+            itm[key] = new PacketWriter(val, writer._cvt);
             return writer;
         }
 
@@ -36,7 +36,7 @@ namespace Mikodev.Network
 
             var val = value.ToBytes();
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
+            itm[key] = new PacketWriter(val, writer._cvt);
             return writer;
         }
 
@@ -47,7 +47,7 @@ namespace Mikodev.Network
 
             var val = value.ToBytes();
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = val };
+            itm[key] = new PacketWriter(val, writer._cvt);
             return writer;
         }
 
@@ -57,9 +57,8 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(writer);
 
-            var sub = new PacketWriter(writer._cvt);
-            if (value != null)
-                sub._itm = _Caches.GetStream(writer._cvt, value, type);
+            var val = (value == null ? null : _Caches.GetStream(writer._cvt, value, type));
+            var sub = new PacketWriter(val, writer._cvt);
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
@@ -70,9 +69,8 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var sub = new PacketWriter(writer._cvt);
-            if (value != null)
-                sub._itm = _Caches.GetStreamGeneric(writer._cvt, value);
+            var val = (value == null ? null : _Caches.GetStreamGeneric(writer._cvt, value));
+            var sub = new PacketWriter(val, writer._cvt);
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
@@ -83,9 +81,8 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var sub = new PacketWriter(writer._cvt);
-            if (value != null)
-                sub._itm = _Caches.GetStreamGeneric(writer._cvt, value);
+            var val = (value == null ? null : _Caches.GetStreamGeneric(writer._cvt, value));
+            var sub = new PacketWriter(val, writer._cvt);
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
@@ -97,7 +94,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = another?._itm };
+            itm[key] = new PacketWriter(another, writer._cvt);
             return writer;
         }
 
@@ -107,7 +104,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer._cvt) { _itm = raw._str };
+            itm[key] = new PacketWriter(raw?._str, writer._cvt);
             return writer;
         }
     }

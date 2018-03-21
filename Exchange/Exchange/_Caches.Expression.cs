@@ -8,20 +8,20 @@ namespace Mikodev.Network
 {
     partial class _Caches
     {
-        private const BindingFlags _Flags = BindingFlags.Static | BindingFlags.NonPublic;
+        private const BindingFlags Flags = BindingFlags.Static | BindingFlags.NonPublic;
 
-        private static readonly MethodInfo s_from_enumerable = typeof(_Caches).GetMethod(nameof(_FromEnumerable), _Flags);
-        private static readonly MethodInfo s_from_enumerable_key_value_pair = typeof(_Caches).GetMethod(nameof(_FromEnumerableKeyValuePair), _Flags);
+        private static readonly MethodInfo s_from_enumerable = typeof(_Caches).GetMethod(nameof(_FromEnumerable), Flags);
+        private static readonly MethodInfo s_from_enumerable_key_value_pair = typeof(_Caches).GetMethod(nameof(_FromEnumerableKeyValuePair), Flags);
 
-        private static readonly MethodInfo s_cast_array = typeof(_Convert).GetMethod(nameof(_Convert.CastToArray), _Flags);
-        private static readonly MethodInfo s_cast_list = typeof(_Convert).GetMethod(nameof(_Convert.CastToList), _Flags);
-        private static readonly MethodInfo s_cast_dictionary = typeof(_Convert).GetMethod(nameof(_Convert.CastToDictionary), _Flags);
+        private static readonly MethodInfo s_cast_array = typeof(_Convert).GetMethod(nameof(_Convert.CastToArray), Flags);
+        private static readonly MethodInfo s_cast_list = typeof(_Convert).GetMethod(nameof(_Convert.CastToList), Flags);
+        private static readonly MethodInfo s_cast_dictionary = typeof(_Convert).GetMethod(nameof(_Convert.CastToDictionary), Flags);
 
-        private static readonly MethodInfo s_get_array = typeof(_Convert).GetMethod(nameof(_Convert.GetArray), _Flags);
-        private static readonly MethodInfo s_get_list = typeof(_Convert).GetMethod(nameof(_Convert.GetList), _Flags);
-        private static readonly MethodInfo s_get_collection = typeof(_Convert).GetMethod(nameof(_Convert.GetCollection), _Flags);
-        private static readonly MethodInfo s_get_enumerable = typeof(_Convert).GetMethod(nameof(_Convert.GetEnumerable), _Flags);
-        private static readonly MethodInfo s_get_dictionary = typeof(_Convert).GetMethod(nameof(_Convert.GetDictionary), _Flags);
+        private static readonly MethodInfo s_get_array = typeof(_Convert).GetMethod(nameof(_Convert.GetArray), Flags);
+        private static readonly MethodInfo s_get_list = typeof(_Convert).GetMethod(nameof(_Convert.GetList), Flags);
+        private static readonly MethodInfo s_get_collection = typeof(_Convert).GetMethod(nameof(_Convert.GetCollection), Flags);
+        private static readonly MethodInfo s_get_enumerable = typeof(_Convert).GetMethod(nameof(_Convert.GetEnumerable), Flags);
+        private static readonly MethodInfo s_get_dictionary = typeof(_Convert).GetMethod(nameof(_Convert.GetDictionary), Flags);
 
         private static Func<PacketReader, IPacketConverter, object> _CreateGetFunction(MethodInfo info, Type element)
         {

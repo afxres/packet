@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace Mikodev.Network
@@ -31,7 +32,7 @@ namespace Mikodev.Network
             var dic = rea.GetDictionary();
             if (dic != null)
                 return dic.Keys;
-            return base.GetDynamicMemberNames();
+            return Enumerable.Empty<string>();
         }
     }
 }

@@ -35,7 +35,7 @@ namespace Mikodev.Network
             var ele = _rea._ele;
             var sum = Math.DivRem(ele._len, def, out var rem);
             if (rem != 0)
-                throw PacketException.ThrowOverflow();
+                throw PacketException.Overflow();
             return _Enumerator(ele._buf, ele._off, sum, def, _con);
         }
     }
@@ -72,7 +72,7 @@ namespace Mikodev.Network
             var ele = _rea._ele;
             var sum = Math.DivRem(ele._len, def, out var rem);
             if (rem != 0)
-                throw PacketException.ThrowOverflow();
+                throw PacketException.Overflow();
             else return _Enumerator(ele._buf, ele._off, sum, def, _con);
         }
     }
