@@ -13,23 +13,23 @@ namespace Mikodev.Network
 
         internal struct GetterInfo
         {
-            private readonly AccessorInfo[] _infos;
-            private readonly Action<object, object[]> _action;
+            private readonly AccessorInfo[] _arr;
+            private readonly Action<object, object[]> _act;
 
             internal GetterInfo(AccessorInfo[] infos, Action<object, object[]> action)
             {
-                _infos = infos;
-                _action = action;
+                _arr = infos;
+                _act = action;
             }
 
-            internal AccessorInfo[] Arguments => _infos;
+            internal AccessorInfo[] Arguments => _arr;
 
-            internal Action<object, object[]> Function => _action;
+            internal Action<object, object[]> Function => _act;
 
             internal object[] GetValues(object value)
             {
-                var result = new object[_infos.Length];
-                _action.Invoke(value, result);
+                var result = new object[_arr.Length];
+                _act.Invoke(value, result);
                 return result;
             }
         }
