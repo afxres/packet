@@ -21,12 +21,6 @@ namespace Mikodev.Network
         private PacketReaderDictionary _dic = null;
         private int _tag = 0;
 
-        private PacketReader(_Element ele, ConverterDictionary cvt)
-        {
-            _ele = ele;
-            _cvt = cvt;
-        }
-
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
             _ele = new _Element(buffer);
@@ -81,13 +75,20 @@ namespace Mikodev.Network
                 throw PacketException.Overflow();
             _tag |= InitArray;
 
-            var lst = _ele.GetElementList();
-            var len = lst.Count;
-            arr = new PacketReader[len];
-            for (int i = 0; i < len; i++)
+            var lst = new List<PacketReader>();
+            var max = _ele.Max();
+            var idx = _ele._off;
+            var buf = _ele._buf;
+            var len = 0;
+            while (idx != max)
             {
-                arr[i] = new PacketReader(lst[i], _cvt);
+                if (buf.MoveNext(max, ref idx, out len) == false)
+                    throw PacketException.Overflow();
+                var rea = new PacketReader(buf, idx, len);
+                lst.Add(rea);
+                idx += len;
             }
+            arr = lst.ToArray();
             _arr = arr;
             return arr;
         }

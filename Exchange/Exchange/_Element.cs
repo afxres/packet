@@ -138,20 +138,5 @@ namespace Mikodev.Network
             }
             return arr;
         }
-
-        internal List<_Element> GetElementList()
-        {
-            var lst = new List<_Element>();
-            var max = Max();
-            var idx = _off;
-            while (idx != max)
-            {
-                if (_buf.MoveNext(max, ref idx, out var len) == false)
-                    throw PacketException.Overflow();
-                lst.Add(new _Element(_buf, idx, len));
-                idx += len;
-            }
-            return lst;
-        }
     }
 }

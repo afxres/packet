@@ -67,7 +67,7 @@ namespace Mikodev.Test
                 }
 
                 GC.Collect();
-                using (new TraceWatch("Serialize (anonymous)")) // 3050.42 ms, avg
+                using (new TraceWatch("Serialize (anonymous)")) // 2996.60 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
