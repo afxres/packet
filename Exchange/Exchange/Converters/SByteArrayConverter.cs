@@ -18,7 +18,7 @@ namespace Mikodev.Network.Converters
         {
             var len = buffer?.Length ?? 0;
             if (length < 0 || length > len)
-                throw new PacketException(PacketError.Overflow);
+                throw PacketException.Overflow();
             var buf = new sbyte[length];
             if (length > 0)
                 Buffer.BlockCopy(buffer, offset, buf, 0, length);

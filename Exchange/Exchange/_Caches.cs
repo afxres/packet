@@ -310,25 +310,25 @@ namespace Mikodev.Network
             return GetConverter(dic, typeof(T), nothrow);
         }
 
-        internal static IPacketConverter GetConverter(ConverterDictionary dic, Type type, bool nothrow)
+        internal static IPacketConverter GetConverter(ConverterDictionary dic, Type typ, bool nothrow)
         {
-            if (type == null)
-                throw new ArgumentNullException(nameof(type));
-            if (dic != null && dic.TryGetValue(type, out var val))
+            if (typ == null)
+                throw new ArgumentNullException(nameof(typ));
+            if (dic != null && dic.TryGetValue(typ, out var val))
                 if (val == null)
                     goto fail;
                 else return val;
-            if (s_converters.TryGetValue(type, out val))
+            if (s_converters.TryGetValue(typ, out val))
                 return val;
 
-            var det = GetInfo(type);
+            var det = GetInfo(typ);
             if ((det.Flags & _Inf.Enum) != 0 && s_converters.TryGetValue(det.ElementType, out val))
                 return val;
 
             fail:
             if (nothrow == true)
                 return null;
-            throw PacketException.InvalidType(type);
+            throw PacketException.InvalidType(typ);
         }
 
         internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value)

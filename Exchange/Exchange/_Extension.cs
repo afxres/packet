@@ -61,7 +61,7 @@ namespace Mikodev.Network
             if (offset == 0 && length == buffer.Length)
                 return buffer;
             if (offset < 0 || length < 0 || buffer.Length - offset < length)
-                throw new PacketException(PacketError.Overflow);
+                throw PacketException.Overflow();
             if (length == 0)
                 return s_empty_bytes;
             var buf = new byte[length];
@@ -81,7 +81,7 @@ namespace Mikodev.Network
             var dst = str.Position;
             var len = dst - src - sizeof(int);
             if (len > int.MaxValue)
-                throw new PacketException(PacketError.Overflow);
+                throw PacketException.Overflow();
             str.Position = src;
             var buf = BitConverter.GetBytes((int)len);
             str.Write(buf, 0, buf.Length);

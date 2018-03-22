@@ -246,7 +246,7 @@ namespace Mikodev.Network
                 var arg = set.Arguments;
                 var fun = set.Function;
                 if (arg == null || fun == null)
-                    throw throw PacketException.InvalidType(type);
+                    throw PacketException.InvalidType(typ);
 
                 var arr = new object[arg.Length];
                 for (int i = 0; i < arg.Length; i++)

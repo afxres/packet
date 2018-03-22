@@ -14,7 +14,7 @@ namespace Mikodev.Network
             switch (code)
             {
                 case PacketError.ConvertError:
-                    return "Convert failed, see inner exception for more information";
+                    return "See inner exception for more information";
                 case PacketError.Overflow:
                     return "Data length overflow";
                 case PacketError.PathError:
