@@ -328,7 +328,7 @@ namespace Mikodev.Network
             fail:
             if (nothrow == true)
                 return null;
-            throw new PacketException(PacketError.InvalidType);
+            throw PacketException.InvalidType(type);
         }
 
         internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value)

@@ -197,7 +197,7 @@ namespace Mikodev.Network
             {
                 var key = _Caches.GetConverter(cvt, inf.IndexType, true);
                 if (key == null)
-                    throw new PacketException(PacketError.InvalidKeyType);
+                    throw PacketException.InvalidKeyType(inf.IndexType);
                 if ((con = _Caches.GetConverter(cvt, inf.ElementType, true)) != null)
                 {
                     var val = inf.FromEnumerableKeyValuePair(key, con, itm);

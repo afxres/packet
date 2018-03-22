@@ -202,7 +202,7 @@ namespace Mikodev.Network
             {
                 var keycon = _Caches.GetConverter(_cvt, inf.IndexType, true);
                 if (keycon == null)
-                    throw new PacketException(PacketError.InvalidKeyType);
+                    throw PacketException.InvalidKeyType(typ);
                 if (con != null)
                     return inf.GetDictionary(this, keycon, con);
 
@@ -246,7 +246,7 @@ namespace Mikodev.Network
                 var arg = set.Arguments;
                 var fun = set.Function;
                 if (arg == null || fun == null)
-                    throw new PacketException(PacketError.InvalidType);
+                    throw throw PacketException.InvalidType(type);
 
                 var arr = new object[arg.Length];
                 for (int i = 0; i < arg.Length; i++)

@@ -21,10 +21,6 @@ namespace Mikodev.Network
                     return "Path not exists";
                 case PacketError.RecursiveError:
                     return "Recursion limit has been reached";
-                case PacketError.InvalidType:
-                    return "Invalid type";
-                case PacketError.InvalidKeyType:
-                    return "Invalid dictionary key type.";
                 default:
                     return "Undefined error";
             }
@@ -66,6 +62,16 @@ namespace Mikodev.Network
         internal static PacketException ConvertMismatch(int length)
         {
             return new PacketException(PacketError.ConvertMismatch, $"Converter should return a byte array of length {length}");
+        }
+
+        internal static PacketException InvalidType(Type type)
+        {
+            return new PacketException(PacketError.InvalidType, $"Invalid type: {type}");
+        }
+
+        internal static PacketException InvalidKeyType(Type type)
+        {
+            return new PacketException(PacketError.InvalidKeyType, $"Invalid dictionary key type: {type}");
         }
 
         internal static bool WrapFilter(Exception ex)
