@@ -118,35 +118,6 @@ namespace Mikodev.Network
             return rdr;
         }
 
-        public int Count => GetDictionary()?.Count ?? 0;
-
-        public IEnumerable<string> Keys => GetDictionary()?.Keys ?? Enumerable.Empty<string>();
-
-        public PacketReader this[string path, bool nothrow = false]
-        {
-            get
-            {
-                if (path == null)
-                    throw new ArgumentNullException(nameof(path));
-                var key = path.Split(_Extension.s_separators);
-                var val = GetItem(key, nothrow);
-                return val;
-            }
-        }
-
-        public override string ToString()
-        {
-            var stb = new StringBuilder(nameof(PacketReader));
-            stb.Append(" with ");
-            var dic = GetDictionary();
-            if (dic != null)
-                stb.AppendFormat("{0} node(s), ", dic.Count);
-            stb.AppendFormat("{0} byte(s)", _ele._len);
-            return stb.ToString();
-        }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
-
         internal object GetValue(Type typ, int lev)
         {
             if (lev > _Caches.Depth)
@@ -272,6 +243,35 @@ namespace Mikodev.Network
             for (int i = 0; i < lst.Length; i++)
                 arr[i] = lst[i].GetValue(ele, lev);
             return arr;
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
+
+        public int Count => GetDictionary()?.Count ?? 0;
+
+        public IEnumerable<string> Keys => GetDictionary()?.Keys ?? Enumerable.Empty<string>();
+
+        public PacketReader this[string path, bool nothrow = false]
+        {
+            get
+            {
+                if (path == null)
+                    throw new ArgumentNullException(nameof(path));
+                var key = path.Split(_Extension.s_separators);
+                var val = GetItem(key, nothrow);
+                return val;
+            }
+        }
+
+        public override string ToString()
+        {
+            var stb = new StringBuilder(nameof(PacketReader));
+            stb.Append(" with ");
+            var dic = GetDictionary();
+            if (dic != null)
+                stb.AppendFormat("{0} node(s), ", dic.Count);
+            stb.AppendFormat("{0} byte(s)", _ele._len);
+            return stb.ToString();
         }
 
         public T Deserialize<T>(T anonymous) => (T)GetValue(typeof(T), 0);

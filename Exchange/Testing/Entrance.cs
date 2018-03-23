@@ -711,6 +711,43 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void DirectConvert()
+        {
+            var a = 1.1;
+            var b = "some";
+            var tax = PacketConvert.GetBytes(a);
+            var tay = PacketConvert.GetBytes(a, typeof(double));
+            var tbx = PacketConvert.GetBytes(b);
+            var tby = PacketConvert.GetBytes(b, typeof(string));
+
+            var rax = PacketConvert.GetValue<double>(tax);
+            var ray = PacketConvert.GetValue(tay, typeof(double));
+            var rbx = PacketConvert.GetValue<string>(tbx);
+            var rby = PacketConvert.GetValue(tby, typeof(string));
+
+            Assert.AreEqual(a, rax);
+            Assert.AreEqual(a, ray);
+            Assert.AreEqual(b, rbx);
+            Assert.AreEqual(b, rby);
+
+            var off = new Random().Next(8, 16);
+            var ba = new byte[128];
+            Buffer.BlockCopy(tax, 0, ba, off, tax.Length);
+            var bb = new byte[128];
+            Buffer.BlockCopy(tbx, 0, bb, off, tbx.Length);
+
+            var sax = PacketConvert.GetValue<double>(ba, off, tax.Length);
+            var say = PacketConvert.GetValue(ba, off, tax.Length, typeof(double));
+            var sbx = PacketConvert.GetValue<string>(bb, off, tbx.Length);
+            var sby = PacketConvert.GetValue(bb, off, tbx.Length, typeof(string));
+
+            Assert.AreEqual(a, sax);
+            Assert.AreEqual(a, say);
+            Assert.AreEqual(b, sbx);
+            Assert.AreEqual(b, sby);
+        }
+
+        [TestMethod]
         public void NotSupported()
         {
             var arr = new int[2, 3];

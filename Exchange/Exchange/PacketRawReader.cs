@@ -28,14 +28,14 @@ namespace Mikodev.Network
             _cvt = converters;
         }
 
+        internal object Next(IPacketConverter con) => _ele.Next(ref _idx, con);
+
+        internal T NextAuto<T>(IPacketConverter con) => _ele.NextAuto<T>(ref _idx, con);
+
         public bool Any => _idx < _ele.Max();
 
         public void Reset() => _idx = _ele._off;
 
         public override string ToString() => $"{nameof(PacketRawReader)} with {_ele._len} byte(s)";
-
-        internal object Next(IPacketConverter con) => _ele.Next(ref _idx, con);
-
-        internal T NextAuto<T>(IPacketConverter con) => _ele.NextAuto<T>(ref _idx, con);
     }
 }

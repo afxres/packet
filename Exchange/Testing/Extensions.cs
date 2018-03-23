@@ -39,5 +39,7 @@ namespace Mikodev.Testing
         }
 
         public static HashSet<T> ToHashSet<T>(this IEnumerable<T> values) => new HashSet<T>(values);
+
+        public static T Cast<T>(this object source, T target) => (T)source;
     }
 }

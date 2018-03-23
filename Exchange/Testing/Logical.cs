@@ -265,6 +265,38 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void DeserializeOffset()
+        {
+            var obj = new { id = 1.1, text = "what the" };
+            var ta = PacketConvert.Serialize(obj);
+            var buf = new byte[ta.Length + 128];
+            var off = new Random().Next(8, 32);
+            Buffer.BlockCopy(ta, 0, buf, off, ta.Length);
+
+            var ra = PacketConvert.Deserialize(ta, obj.GetType());
+            var rb = PacketConvert.Deserialize(buf, off, ta.Length, obj.GetType());
+
+            void AreEqual(object a, object b)
+            {
+                var x = a.Cast(obj);
+                var y = b.Cast(obj);
+                if (x.id == y.id && x.text == y.text)
+                    return;
+                throw new ApplicationException();
+            }
+
+            AreEqual(obj, ra);
+            AreEqual(obj, rb);
+
+            var str = "world";
+            var tb = PacketConvert.GetBytes(str);
+            var tc = new byte[tb.Length + 128];
+            Buffer.BlockCopy(tb, 0, tc, off, tb.Length);
+            var rc = PacketConvert.Deserialize<string>(tc, off, tb.Length);
+            Assert.AreEqual(str, rc);
+        }
+
+        [TestMethod]
         public void DeserializeReadOnly()
         {
             var a = new _ReadOnly(10, "read");

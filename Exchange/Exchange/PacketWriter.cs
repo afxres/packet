@@ -45,70 +45,31 @@ namespace Mikodev.Network
             return val;
         }
 
-        public byte[] GetBytes()
-        {
-            var obj = _itm;
-            if (obj == null)
-                return _Extension.s_empty_bytes;
-            else if (obj is byte[] buf)
-                return buf;
-            else if (obj is MemoryStream raw)
-                return raw.ToArray();
-            var mst = new MemoryStream(_Caches.Length);
-            GetBytesExtra(this, mst, 0);
-            var res = mst.ToArray();
-            return res;
-        }
-
-        public override string ToString()
-        {
-            var obj = _itm;
-            var stb = new StringBuilder(nameof(PacketWriter));
-            stb.Append(" with ");
-            if (obj == null)
-                stb.Append("none");
-            else if (obj is byte[] buf)
-                stb.AppendFormat("{0} byte(s)", buf.Length);
-            else if (obj is MemoryStream mst)
-                stb.AppendFormat("{0} byte(s)", mst.Length);
-            else if (obj is PacketWriterDictionary dic)
-                stb.AppendFormat("{0} node(s)", dic.Count);
-            else if (obj is List<PacketWriter> lst)
-                stb.AppendFormat("{0} node(s)", lst.Count);
-            else if (obj is KeyValuePairList kvp)
-                stb.AppendFormat("{0} key-value pair(s)", kvp.Count);
-            else
-                throw new ApplicationException();
-            return stb.ToString();
-        }
-
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
-
-        internal static void GetBytesExtra(PacketWriter wtr, Stream str, int lev)
+        internal void GetBytesExtra(Stream str, int lev)
         {
             if (lev > _Caches.Depth)
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
-            var itm = wtr._itm;
+            var itm = _itm;
             if (itm is PacketWriterDictionary dic)
             {
                 foreach (var i in dic)
                 {
                     str.WriteKey(i.Key);
-                    GetBytes(i.Value, str, lev);
+                    i.Value.GetBytes(str, lev);
                 }
             }
             else if (itm is List<PacketWriter> lst)
             {
                 for (int i = 0; i < lst.Count; i++)
                 {
-                    GetBytes(lst[i], str, lev);
+                    lst[i].GetBytes(str, lev);
                 }
             }
             else if (itm is KeyValuePairList kvp)
             {
-                var len = wtr._keylen;
+                var len = _keylen;
                 for (int i = 0; i < kvp.Count; i++)
                 {
                     var cur = kvp[i];
@@ -116,19 +77,19 @@ namespace Mikodev.Network
                         str.Write(cur.Key, 0, len);
                     else
                         str.WriteExt(cur.Key);
-                    GetBytes(cur.Value, str, lev);
+                    cur.Value.GetBytes(str, lev);
                 }
             }
             else throw new ApplicationException();
         }
 
-        internal static void GetBytes(PacketWriter wtr, Stream str, int lev)
+        internal void GetBytes(Stream str, int lev)
         {
             if (lev > _Caches.Depth)
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
-            var itm = wtr._itm;
+            var itm = _itm;
             if (itm == null)
             {
                 str.Write(_Extension.s_zero_bytes, 0, sizeof(int));
@@ -144,7 +105,7 @@ namespace Mikodev.Network
             else
             {
                 str.BeginInternal(out var src);
-                GetBytesExtra(wtr, str, lev);
+                GetBytesExtra(str, lev);
                 str.FinshInternal(src);
             }
         }
@@ -229,6 +190,45 @@ namespace Mikodev.Network
                     lst[arg[i].Name] = GetWriter(cvt, val[i], lev);
                 return res;
             }
+        }
+
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
+
+        public byte[] GetBytes()
+        {
+            var obj = _itm;
+            if (obj == null)
+                return _Extension.s_empty_bytes;
+            else if (obj is byte[] buf)
+                return buf;
+            else if (obj is MemoryStream raw)
+                return raw.ToArray();
+            var mst = new MemoryStream(_Caches.Length);
+            GetBytesExtra(mst, 0);
+            var res = mst.ToArray();
+            return res;
+        }
+
+        public override string ToString()
+        {
+            var obj = _itm;
+            var stb = new StringBuilder(nameof(PacketWriter));
+            stb.Append(" with ");
+            if (obj == null)
+                stb.Append("none");
+            else if (obj is byte[] buf)
+                stb.AppendFormat("{0} byte(s)", buf.Length);
+            else if (obj is MemoryStream mst)
+                stb.AppendFormat("{0} byte(s)", mst.Length);
+            else if (obj is PacketWriterDictionary dic)
+                stb.AppendFormat("{0} node(s)", dic.Count);
+            else if (obj is List<PacketWriter> lst)
+                stb.AppendFormat("{0} node(s)", lst.Count);
+            else if (obj is KeyValuePairList kvp)
+                stb.AppendFormat("{0} key-value pair(s)", kvp.Count);
+            else
+                throw new ApplicationException();
+            return stb.ToString();
         }
 
         public static PacketWriter Serialize(object value, ConverterDictionary converters = null) => GetWriter(converters, value, 0);
