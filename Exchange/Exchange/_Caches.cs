@@ -27,125 +27,148 @@ namespace Mikodev.Network
             s_setter.Clear();
         }
 
-        private static void _CreateInfoSetKeyValuePair(_Inf inf, _Inf itr, Type idx, Type ele)
+        private static void _GetInfoFromDictionary(_Inf inf, _Inf itr, params Type[] types)
         {
-            inf.Flags |= _Inf.EnumerableKeyValuePair;
-            inf.IndexType = idx;
-            inf.ElementType = ele;
-            inf.FromEnumerableKeyValuePair = itr.FromEnumerableKeyValuePair;
-            inf.GetEnumerableKeyValuePairAdapter = itr.GetEnumerableKeyValuePairAdapter;
+            inf.From = _Inf.Dictionary;
+            inf.IndexerType = types[0];
+            inf.ElementType = types[1];
+            inf.FromDictionary = itr.FromDictionary;
+            inf.FromDictionaryAdapter = itr.FromDictionaryAdapter;
         }
 
-        private static _Inf _CreateInfo(Type typ)
+        private static _Inf _GetInfo(Type typ)
         {
-            var one = default(Type);
             var inf = new _Inf();
-
             if (typ.IsEnum)
             {
-                inf.Flags |= _Inf.Enum;
+                inf.Flag = _Inf.Enum;
                 inf.ElementType = Enum.GetUnderlyingType(typ);
                 return inf;
             }
-            if (typ.IsGenericType && typ.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+
+            var generic = typ.IsGenericType;
+            var genericArgs = generic ? typ.GetGenericArguments() : null;
+            var genericDefinition = generic ? typ.GetGenericTypeDefinition() : null;
+
+            if (generic && typ.IsInterface)
             {
-                var arg = typ.GetGenericArguments();
-                inf.Flags |= _Inf.KeyValuePair;
-                inf.IndexType = arg[0];
-                inf.ElementType = arg[1];
-                return inf;
+                if (genericDefinition == typeof(IEnumerable<>))
+                {
+                    var ele = genericArgs[0];
+                    inf.ElementType = ele;
+                    inf.To = _Inf.Enumerable;
+                    inf.ToEnumerable = _GetToFunction(s_to_enumerable, ele);
+                    inf.ToEnumerableAdapter = _GetToEnumerableAdapter(ele);
+
+                    // From ... function
+                    inf.From = _Inf.Enumerable;
+                    inf.FromEnumerable = _GetFromEnumerableFunction(ele);
+                    if (ele.IsGenericType && ele.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+                    {
+                        var arg = ele.GetGenericArguments();
+                        inf.FromDictionary = _GetFromDictionaryFunction(arg);
+                        inf.FromDictionaryAdapter = _GetFromAdapterFunction(arg);
+                    }
+                    return inf;
+                }
+                if (genericDefinition == typeof(IList<>))
+                {
+                    var ele = genericArgs[0];
+                    inf.ElementType = ele;
+                    inf.To = _Inf.List;
+                    inf.ToCollection = _GetToFunction(s_to_list, ele);
+                    inf.ToCollectionCast = _GetCastFunction(s_cast_list, ele);
+                    return inf;
+                }
+                if (genericDefinition == typeof(IDictionary<,>))
+                {
+                    var kvp = typeof(KeyValuePair<,>).MakeGenericType(genericArgs);
+                    var itr = typeof(IEnumerable<>).MakeGenericType(kvp);
+                    var sub = GetInfo(itr);
+                    _GetInfoFromDictionary(inf, sub, genericArgs);
+                    inf.To = _Inf.Dictionary;
+                    inf.ToDictionary = _GetToDictionaryFunction(genericArgs);
+                    inf.ToDictionaryCast = _GetCastDictionaryFunction(genericArgs[0], genericArgs[1]);
+                    return inf;
+                }
             }
 
-            var que = typ.GetInterfaces().Select(GetInfo);
             if (typ.IsArray)
             {
                 if (typ.GetArrayRank() != 1)
                     throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
-                one = typ.GetElementType();
-                inf.ElementType = one;
+                var ele = typ.GetElementType();
+                genericArgs = new Type[1] { ele };
+                inf.ElementType = ele;
 
-                inf.Flags |= _Inf.Array;
-                inf.GetArray = _CreateGetFunction(s_get_array, one);
-                inf.CastToArray = _CreateCastFunction(s_cast_array, one);
+                inf.To = _Inf.Array;
+                inf.ToCollection = _GetToFunction(s_to_array, ele);
+                inf.ToCollectionCast = _GetCastFunction(s_cast_array, ele);
             }
-            else if (typ.IsGenericType)
+            else if (generic && genericArgs.Length == 1)
             {
-                var def = typ.GetGenericTypeDefinition();
-                var arg = typ.GetGenericArguments();
-                if (arg.Length == 1)
+                var ele = genericArgs[0];
+                if (genericDefinition == typeof(List<>))
                 {
-                    one = arg[0];
-                    inf.ElementType = one;
-                    var fun = default(Func<PacketReader, IPacketConverter, object>);
-
-                    if (def == typeof(IEnumerable<>))
-                    {
-                        inf.Flags |= _Inf.Enumerable;
-                        inf.GetEnumerable = _CreateGetFunction(s_get_enumerable, one);
-                        inf.GetEnumerableReader = _CreateGetEnumerableReaderFunction(one);
-
-                        // Create from ... function
-                        var kvp = GetInfo(one);
-                        if ((kvp.Flags & _Inf.KeyValuePair) != 0)
-                        {
-                            inf.FromEnumerableKeyValuePair = _CreateFromEnumerableKeyValuePairFunction(kvp.IndexType, kvp.ElementType);
-                            inf.GetEnumerableKeyValuePairAdapter = _CreateGetAdapterFunction(kvp.IndexType, kvp.ElementType);
-                        }
-                        inf.FromEnumerable = _CreateFromEnumerableFunction(one);
-                    }
-                    else if (def == typeof(List<>) || def == typeof(IList<>))
-                    {
-                        inf.Flags |= _Inf.List;
-                        inf.GetList = _CreateGetFunction(s_get_list, one);
-                        inf.CastToList = _CreateCastFunction(s_cast_list, one);
-                    }
-                    else if ((fun = _CreateGetCollectionFunction(typ, one, out var info)) != null)
-                    {
-                        inf.Flags |= _Inf.Collection;
-                        inf.GetCollection = fun;
-                        inf.CastToCollection = _CreateCastToCollectionFunction(one, info);
-                    }
+                    var sub = GetInfo(typeof(IList<>).MakeGenericType(ele));
+                    inf.ElementType = ele;
+                    inf.To = _Inf.List;
+                    inf.ToCollection = sub.ToCollection;
+                    inf.ToCollectionCast = sub.ToCollectionCast;
                 }
-                else if (arg.Length == 2)
+                else
                 {
-                    var kvp = typeof(KeyValuePair<,>).MakeGenericType(arg);
-                    var itr = que.Where(r => (r.Flags & _Inf.Enumerable) != 0 && r.ElementType == kvp).FirstOrDefault();
-                    if (itr != null)
-                        _CreateInfoSetKeyValuePair(inf, itr, arg[0], arg[1]);
-
-                    if (def == typeof(Dictionary<,>) || def == typeof(IDictionary<,>))
+                    var fun = _GetToCollectionFunction(typ, ele, out var ctor);
+                    if (fun != null)
                     {
-                        inf.Flags |= _Inf.Dictionary;
-                        inf.GetDictionary = _CreateGetDictionaryFunction(arg[0], arg[1]);
-                        inf.CastToDictionary = _CreateCastToDictionaryFunction(arg[0], arg[1]);
+                        inf.ElementType = ele;
+                        inf.To = _Inf.Collection;
+                        inf.ToCollection = fun;
+                        inf.ToCollectionCast = _GetCastCollectionFunction(ele, ctor);
                     }
                 }
             }
+            else if (generic && genericArgs.Length == 2)
+            {
+                if (genericDefinition == typeof(Dictionary<,>))
+                {
+                    inf.To = _Inf.Dictionary;
+                    inf.ToDictionary = _GetToDictionaryFunction(genericArgs[0], genericArgs[1]);
+                    inf.ToDictionaryCast = _GetCastDictionaryFunction(genericArgs[0], genericArgs[1]);
+                }
+            }
 
-            var obj = que.Where(r => (r.Flags & _Inf.Enumerable) != 0);
-            if (one != null)
-                obj = obj.Where(r => r.ElementType == one);
-            var lst = obj.ToList();
+            var interfaces = typ.GetInterfaces();
+            if (interfaces.Contains(typeof(IDictionary<string, object>)))
+                inf.From = _Inf.Mapping;
+
+            var lst = interfaces
+                .Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                .Select(GetInfo)
+                .ToList();
+            if (lst.Count > 1)
+            {
+                if (genericArgs != null && genericArgs.Length == 1)
+                    lst = lst.Where(r => r.ElementType == genericArgs[0]).ToList();
+                else if (genericArgs != null && genericArgs.Length == 2)
+                    lst = lst.Where(r => r.ElementType == typeof(KeyValuePair<,>).MakeGenericType(genericArgs)).ToList();
+            }
 
             if (lst.Count == 1)
             {
                 var itr = lst[0];
-                var kvp = GetInfo(itr.ElementType);
-                if ((kvp.Flags & _Inf.KeyValuePair) == 0)
+                var ele = itr.ElementType;
+                if (ele.IsGenericType && ele.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
                 {
-                    inf.Flags |= _Inf.EnumerableImpl;
+                    _GetInfoFromDictionary(inf, lst[0], ele.GetGenericArguments());
+                }
+                else
+                {
+                    inf.From = _Inf.Enumerable;
                     inf.ElementType = itr.ElementType;
                     inf.FromEnumerable = itr.FromEnumerable;
                 }
-                else if ((inf.Flags & _Inf.EnumerableKeyValuePair) == 0)
-                {
-                    _CreateInfoSetKeyValuePair(inf, lst[0], kvp.IndexType, kvp.ElementType);
-                }
             }
-
-            var dic = que.Where(r => (r.Flags & _Inf.Dictionary) != 0).ToList();
-            if (dic.Count == 1 && dic[0].IndexType == typeof(string) && dic[0].ElementType == typeof(object))
-                inf.Flags |= _Inf.DictionaryStringObject;
 
             return inf;
         }
@@ -154,10 +177,10 @@ namespace Mikodev.Network
         {
             if (s_info.TryGetValue(type, out var inf))
                 return inf;
-            return s_info.GetOrAdd(type, _CreateInfo(type));
+            return s_info.GetOrAdd(type, _GetInfo(type));
         }
 
-        private static GetterInfo _CreateGetterInfo(Type type)
+        private static GetterInfo _GetGetterInfo(Type type)
         {
             var inf = new List<AccessorInfo>();
             var met = new List<MethodInfo>();
@@ -199,7 +222,7 @@ namespace Mikodev.Network
             return res;
         }
 
-        private static SetterInfo _CreateSetterInfoForAnonymousType(Type type)
+        private static SetterInfo _GetSetterInfoForAnonymousType(Type type)
         {
             var res = new SetterInfo();
             var cts = type.GetConstructors();
@@ -236,7 +259,7 @@ namespace Mikodev.Network
             return res;
         }
 
-        private static SetterInfo _CreateSetterInfo(Type type, ConstructorInfo constructor)
+        private static SetterInfo _GetSetterInfo(Type type, ConstructorInfo constructor)
         {
             var pro = type.GetProperties();
             var ins = (constructor == null) ? Expression.New(type) : Expression.New(constructor);
@@ -281,28 +304,28 @@ namespace Mikodev.Network
             return res;
         }
 
-        private static SetterInfo _CreateSetterInfo(Type type)
+        private static SetterInfo _GetSetterInfo(Type type)
         {
             if (type.IsValueType)
-                return _CreateSetterInfo(type, null);
+                return _GetSetterInfo(type, null);
             var con = type.GetConstructor(Type.EmptyTypes);
             if (con != null)
-                return _CreateSetterInfo(type, con);
-            return _CreateSetterInfoForAnonymousType(type);
+                return _GetSetterInfo(type, con);
+            return _GetSetterInfoForAnonymousType(type);
         }
 
         internal static GetterInfo GetGetterInfo(Type type)
         {
             if (s_getter.TryGetValue(type, out var inf))
                 return inf;
-            return s_getter.GetOrAdd(type, _CreateGetterInfo(type));
+            return s_getter.GetOrAdd(type, _GetGetterInfo(type));
         }
 
         internal static SetterInfo GetSetterInfo(Type type)
         {
             if (s_setter.TryGetValue(type, out var inf))
                 return inf;
-            return s_setter.GetOrAdd(type, _CreateSetterInfo(type));
+            return s_setter.GetOrAdd(type, _GetSetterInfo(type));
         }
 
         internal static IPacketConverter GetConverter<T>(ConverterDictionary dic, bool nothrow)
@@ -321,8 +344,8 @@ namespace Mikodev.Network
             if (s_converters.TryGetValue(typ, out val))
                 return val;
 
-            var det = GetInfo(typ);
-            if ((det.Flags & _Inf.Enum) != 0 && s_converters.TryGetValue(det.ElementType, out val))
+            var inf = GetInfo(typ);
+            if (inf.Flag == _Inf.Enum && s_converters.TryGetValue(inf.ElementType, out val))
                 return val;
 
             fail:
@@ -445,7 +468,7 @@ namespace Mikodev.Network
             else return _GetStreamFromEnumerable(con, (IEnumerable)obj);
         }
 
-        private static MemoryStream _FromEnumerableKeyValuePair<TK, TV>(IPacketConverter key, IPacketConverter val, object obj)
+        private static MemoryStream _FromDictionary<TK, TV>(IPacketConverter key, IPacketConverter val, object obj)
         {
             return _GetStreamGeneric(key, val, (IEnumerable<KeyValuePair<TK, TV>>)obj);
         }

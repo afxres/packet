@@ -7,46 +7,40 @@ namespace Mikodev.Network
     internal sealed class _Inf
     {
         internal const int Enum = 1;
-        internal const int Array = 2;
-        internal const int List = 4;
-        internal const int Enumerable = 8;
-        internal const int EnumerableImpl = 16;
-        internal const int Collection = 32;
-        internal const int Dictionary = 64;
-        internal const int KeyValuePair = 128;
-        internal const int EnumerableKeyValuePair = 256;
-        internal const int DictionaryStringObject = 512;
+        internal const int Mapping = 2; // Dictionary<string, object>
 
-        internal int Flags { get; set; }
+        internal const int Array = 16;
+        internal const int List = 17;
+        internal const int Enumerable = 18;
+        internal const int Collection = 19;
+        internal const int Dictionary = 20;
+
+        internal int Flag { get; set; }
+
+        internal int From { get; set; }
+
+        internal int To { get; set; }
 
         internal Type ElementType { get; set; }
 
-        internal Type IndexType { get; set; }
+        internal Type IndexerType { get; set; }
 
-        internal Func<PacketReader, IPacketConverter, object> GetArray { get; set; }
+        internal Func<PacketReader, IPacketConverter, object> ToCollection { get; set; }
 
-        internal Func<PacketReader, IPacketConverter, object> GetList { get; set; }
+        internal Func<object[], object> ToCollectionCast { get; set; }
 
-        internal Func<PacketReader, IPacketConverter, object> GetCollection { get; set; }
+        internal Func<PacketReader, IPacketConverter, object> ToEnumerable { get; set; }
 
-        internal Func<PacketReader, IPacketConverter, object> GetEnumerable { get; set; }
+        internal Func<PacketReader, int, object> ToEnumerableAdapter { get; set; }
 
-        internal Func<PacketReader, int, object> GetEnumerableReader { get; set; }
+        internal Func<PacketReader, IPacketConverter, IPacketConverter, object> ToDictionary { get; set; }
 
-        internal Func<PacketReader, IPacketConverter, IPacketConverter, object> GetDictionary { get; set; }
-
-        internal Func<object[], object> CastToArray { get; set; }
-
-        internal Func<object[], object> CastToList { get; set; }
-
-        internal Func<object[], object> CastToCollection { get; set; }
-
-        internal Func<IEnumerable<KeyValuePair<object, object>>, object> CastToDictionary { get; set; }
+        internal Func<IEnumerable<KeyValuePair<object, object>>, object> ToDictionaryCast { get; set; }
 
         internal Func<IPacketConverter, object, MemoryStream> FromEnumerable { get; set; }
 
-        internal Func<IPacketConverter, IPacketConverter, object, MemoryStream> FromEnumerableKeyValuePair { get; set; }
+        internal Func<IPacketConverter, IPacketConverter, object, MemoryStream> FromDictionary { get; set; }
 
-        internal Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> GetEnumerableKeyValuePairAdapter { get; set; }
+        internal Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> FromDictionaryAdapter { get; set; }
     }
 }

@@ -54,7 +54,7 @@ namespace Mikodev.Network
             return res;
         }
 
-        internal Dictionary<TK, TV> Dictionary<TK, TV>(IPacketConverter keycon, IPacketConverter valcon)
+        internal Dictionary<TK, TV> ToDictionary<TK, TV>(IPacketConverter keycon, IPacketConverter valcon)
         {
             var dic = new Dictionary<TK, TV>();
             if (_len == 0)
@@ -108,7 +108,7 @@ namespace Mikodev.Network
             return dic;
         }
 
-        internal T[] GetArray<T>(IPacketConverter con)
+        internal T[] ToArray<T>(IPacketConverter con)
         {
             if (_len < 1)
                 return new T[0];

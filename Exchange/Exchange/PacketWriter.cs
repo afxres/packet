@@ -129,8 +129,8 @@ namespace Mikodev.Network
                 return new PacketWriter(con.GetBytesWrap(itm), cvt);
 
             var inf = _Caches.GetInfo(type);
-            var tag = inf.Flags;
-            if ((tag & _Inf.EnumerableImpl) != 0)
+            var tag = inf.From;
+            if (tag == _Inf.Enumerable)
             {
                 if (inf.ElementType == typeof(byte) && itm is ICollection<byte> bytes)
                     return new PacketWriter(bytes.ToBytes(), cvt);
@@ -145,7 +145,7 @@ namespace Mikodev.Network
                     lst.Add(GetWriter(cvt, i, lev));
                 return new PacketWriter(lst, cvt);
             }
-            else if ((tag & _Inf.DictionaryStringObject) != 0)
+            else if (tag == _Inf.Mapping)
             {
                 var dic = (IDictionary<string, object>)itm;
                 var wtr = new PacketWriter(cvt);
@@ -154,21 +154,21 @@ namespace Mikodev.Network
                     lst[i.Key] = GetWriter(cvt, i.Value, lev);
                 return wtr;
             }
-            else if ((tag & _Inf.EnumerableKeyValuePair) != 0)
+            else if (tag == _Inf.Dictionary)
             {
-                var key = _Caches.GetConverter(cvt, inf.IndexType, true);
+                var key = _Caches.GetConverter(cvt, inf.IndexerType, true);
                 if (key == null)
-                    throw PacketException.InvalidKeyType(inf.IndexType);
+                    throw PacketException.InvalidKeyType(inf.IndexerType);
                 if ((con = _Caches.GetConverter(cvt, inf.ElementType, true)) != null)
                 {
-                    var val = inf.FromEnumerableKeyValuePair(key, con, itm);
+                    var val = inf.FromDictionary(key, con, itm);
                     var res = new PacketWriter(val, cvt);
                     return res;
                 }
                 else
                 {
                     var val = new KeyValuePairList();
-                    var kvp = inf.GetEnumerableKeyValuePairAdapter(key, itm);
+                    var kvp = inf.FromDictionaryAdapter(key, itm);
                     foreach (var i in kvp)
                     {
                         var sub = GetWriter(cvt, i.Value, lev);

@@ -55,58 +55,58 @@ namespace Mikodev.Network
             return arr;
         }
 
-        internal static T[] GetArray<T>(PacketReader rea, IPacketConverter con)
+        internal static T[] ToArray<T>(PacketReader rea, IPacketConverter con)
         {
             if (con.Length < 1)
                 return _Array<T>(rea, con);
-            return rea._ele.GetArray<T>(con);
+            return rea._ele.ToArray<T>(con);
         }
 
-        internal static List<T> GetList<T>(PacketReader rea, IPacketConverter con)
+        internal static List<T> ToList<T>(PacketReader rea, IPacketConverter con)
         {
             if (con.Length < 1)
                 return _List<T>(rea, con);
-            return new List<T>(rea._ele.GetArray<T>(con));
+            return new List<T>(rea._ele.ToArray<T>(con));
         }
 
-        internal static IEnumerable<T> GetCollection<T>(PacketReader rea, IPacketConverter con)
+        internal static IEnumerable<T> ToCollection<T>(PacketReader rea, IPacketConverter con)
         {
             if (con.Length < 1)
                 return _Array<T>(rea, con);
-            return rea._ele.GetArray<T>(con);
+            return rea._ele.ToArray<T>(con);
         }
 
-        internal static IEnumerable<T> GetEnumerable<T>(PacketReader rea, IPacketConverter con)
+        internal static IEnumerable<T> ToEnumerable<T>(PacketReader rea, IPacketConverter con)
         {
             return new _Enumerable<T>(rea, con);
         }
 
-        internal static Dictionary<TK, TV> GetDictionary<TK, TV>(PacketReader rea, IPacketConverter idx, IPacketConverter ele)
+        internal static Dictionary<TK, TV> ToDictionary<TK, TV>(PacketReader rea, IPacketConverter idx, IPacketConverter ele)
         {
-            return rea._ele.Dictionary<TK, TV>(idx, ele);
+            return rea._ele.ToDictionary<TK, TV>(idx, ele);
         }
 
-        internal static T[] CastToArray<T>(object[] array)
+        internal static T[] ToArrayCast<T>(object[] arr)
         {
-            var length = array.Length;
-            var result = new T[length];
-            Array.Copy(array, result, length);
-            return result;
+            var len = arr.Length;
+            var res = new T[len];
+            Array.Copy(arr, res, len);
+            return res;
         }
 
-        internal static List<T> CastToList<T>(object[] array)
+        internal static List<T> ToListCast<T>(object[] arr)
         {
-            var values = CastToArray<T>(array);
-            var result = new List<T>(values);
-            return result;
+            var val = ToArrayCast<T>(arr);
+            var res = new List<T>(val);
+            return res;
         }
 
-        internal static Dictionary<TK, TV> CastToDictionary<TK, TV>(IEnumerable<KeyValuePair<object, object>> values)
+        internal static Dictionary<TK, TV> ToDictionaryCast<TK, TV>(IEnumerable<KeyValuePair<object, object>> itr)
         {
-            var dictionary = new Dictionary<TK, TV>();
-            foreach (var i in values)
-                dictionary.Add((TK)i.Key, (TV)i.Value);
-            return dictionary;
+            var dic = new Dictionary<TK, TV>();
+            foreach (var i in itr)
+                dic.Add((TK)i.Key, (TV)i.Value);
+            return dic;
         }
     }
 }

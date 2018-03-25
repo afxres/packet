@@ -814,6 +814,10 @@ namespace Mikodev.Testing
             ThrowIfNotEqual(a, res.x);
             ThrowIfNotEqual(b, res.y);
 
+            var c = new[] { new { x = 1, y = "a" } }.ToList();
+            var tc = PacketConvert.Serialize(c);
+            var ra = PacketConvert.Deserialize(tc, c);
+
             return;
         }
     }

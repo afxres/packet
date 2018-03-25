@@ -42,7 +42,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(reader);
             var con = _Caches.GetConverter<T>(reader._cvt, false);
-            var val = _Convert.GetArray<T>(reader, con);
+            var val = _Convert.ToArray<T>(reader, con);
             return val;
         }
 
@@ -50,7 +50,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(reader);
             var con = _Caches.GetConverter<T>(reader._cvt, false);
-            var val = _Convert.GetList<T>(reader, con);
+            var val = _Convert.ToList<T>(reader, con);
             return val;
         }
 
@@ -59,7 +59,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(reader);
             var key = _Caches.GetConverter<TK>(reader._cvt, false);
             var val = _Caches.GetConverter<TV>(reader._cvt, false);
-            var res = reader._ele.Dictionary<TK, TV>(key, val);
+            var res = reader._ele.ToDictionary<TK, TV>(key, val);
             return res;
         }
 
@@ -67,7 +67,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(reader);
             var con = _Caches.GetConverter<T>(reader._cvt, false);
-            var col = _Convert.GetCollection<T>(reader, con);
+            var col = _Convert.ToCollection<T>(reader, con);
             var res = new HashSet<T>(col);
             return res;
         }

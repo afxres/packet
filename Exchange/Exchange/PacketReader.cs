@@ -134,48 +134,48 @@ namespace Mikodev.Network
                 return con.GetValueWrap(_ele, true);
 
             var inf = _Caches.GetInfo(typ);
-            var tag = inf.Flags;
+            var tag = inf.To;
             var ele = inf.ElementType;
             if (ele != null)
                 con = _Caches.GetConverter(_cvt, ele, true);
 
-            if ((tag & _Inf.Array) != 0)
+            if (tag == _Inf.Array)
             {
                 if (con != null)
-                    return inf.GetArray(this, con);
+                    return inf.ToCollection(this, con);
                 var val = GetValueArray(ele, lev);
-                var res = inf.CastToArray(val);
+                var res = inf.ToCollectionCast(val);
                 return res;
             }
-            if ((tag & _Inf.List) != 0)
+            if (tag == _Inf.List)
             {
                 if (con != null)
-                    return inf.GetList(this, con);
+                    return inf.ToCollection(this, con);
                 var val = GetValueArray(ele, lev);
-                var res = inf.CastToList(val);
+                var res = inf.ToCollectionCast(val);
                 return res;
             }
-            if ((tag & _Inf.Enumerable) != 0)
+            if (tag == _Inf.Enumerable)
             {
                 if (con != null)
-                    return inf.GetEnumerable(this, con);
-                return inf.GetEnumerableReader(this, lev);
+                    return inf.ToEnumerable(this, con);
+                return inf.ToEnumerableAdapter(this, lev);
             }
-            else if ((tag & _Inf.Collection) != 0)
+            else if (tag == _Inf.Collection)
             {
                 if (con != null)
-                    return inf.GetCollection(this, con);
+                    return inf.ToCollection(this, con);
                 var val = GetValueArray(ele, lev);
-                var res = inf.CastToCollection(val);
+                var res = inf.ToCollectionCast(val);
                 return res;
             }
-            else if ((tag & _Inf.Dictionary) != 0)
+            else if (tag == _Inf.Dictionary)
             {
-                var keycon = _Caches.GetConverter(_cvt, inf.IndexType, true);
+                var keycon = _Caches.GetConverter(_cvt, inf.IndexerType, true);
                 if (keycon == null)
                     throw PacketException.InvalidKeyType(typ);
                 if (con != null)
-                    return inf.GetDictionary(this, keycon, con);
+                    return inf.ToDictionary(this, keycon, con);
 
                 var max = _ele.Max();
                 var idx = _ele._off;
@@ -209,7 +209,7 @@ namespace Mikodev.Network
                     idx += len;
                     lst.Add(par);
                 }
-                return inf.CastToDictionary(lst);
+                return inf.ToDictionaryCast(lst);
             }
             else
             {
