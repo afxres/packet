@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -62,7 +61,7 @@ namespace Mikodev.Network
 
                     // From ... function
                     inf.From = _Inf.Enumerable;
-                    inf.FromEnumerable = _GetFromEnumerableFunction(ele);
+                    inf.FromEnumerable = _GetFromEnumerableFunction(s_from_enumerable.MakeGenericMethod(ele), typ);
                     if (ele.IsGenericType && ele.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
                     {
                         var arg = ele.GetGenericArguments();
@@ -88,7 +87,7 @@ namespace Mikodev.Network
                     _GetInfoFromDictionary(inf, sub, genericArgs);
                     inf.To = _Inf.Dictionary;
                     inf.ToDictionary = _GetToDictionaryFunction(genericArgs);
-                    inf.ToDictionaryCast = _GetCastDictionaryFunction(genericArgs[0], genericArgs[1]);
+                    inf.ToDictionaryCast = _GetCastDictionaryFunction(genericArgs);
                     return inf;
                 }
             }
@@ -101,7 +100,9 @@ namespace Mikodev.Network
                 genericArgs = new Type[1] { ele };
                 inf.ElementType = ele;
 
+                inf.From = _Inf.Enumerable;
                 inf.To = _Inf.Array;
+                inf.FromEnumerable = _GetFromEnumerableFunction(s_from_array.MakeGenericMethod(ele), typ);
                 inf.ToCollection = _GetToFunction(s_to_array, ele);
                 inf.ToCollectionCast = _GetCastFunction(s_cast_array, ele);
             }
@@ -112,7 +113,9 @@ namespace Mikodev.Network
                 {
                     var sub = GetInfo(typeof(IList<>).MakeGenericType(ele));
                     inf.ElementType = ele;
+                    inf.From = _Inf.Enumerable;
                     inf.To = _Inf.List;
+                    inf.FromEnumerable = _GetFromEnumerableFunction(s_from_list.MakeGenericMethod(ele), typ);
                     inf.ToCollection = sub.ToCollection;
                     inf.ToCollectionCast = sub.ToCollectionCast;
                 }
@@ -138,38 +141,40 @@ namespace Mikodev.Network
                 }
             }
 
-            var interfaces = typ.GetInterfaces();
-            if (interfaces.Contains(typeof(IDictionary<string, object>)))
-                inf.From = _Inf.Mapping;
-
-            var lst = interfaces
-                .Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                .Select(GetInfo)
-                .ToList();
-            if (lst.Count > 1)
+            if (inf.From == _Inf.None)
             {
-                if (genericArgs != null && genericArgs.Length == 1)
-                    lst = lst.Where(r => r.ElementType == genericArgs[0]).ToList();
-                else if (genericArgs != null && genericArgs.Length == 2)
-                    lst = lst.Where(r => r.ElementType == typeof(KeyValuePair<,>).MakeGenericType(genericArgs)).ToList();
-            }
+                var interfaces = typ.GetInterfaces();
+                if (interfaces.Contains(typeof(IDictionary<string, object>)))
+                    inf.From = _Inf.Mapping;
 
-            if (lst.Count == 1)
-            {
-                var itr = lst[0];
-                var ele = itr.ElementType;
-                if (ele.IsGenericType && ele.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+                var lst = interfaces
+                    .Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                    .Select(GetInfo)
+                    .ToList();
+                if (lst.Count > 1)
                 {
-                    _GetInfoFromDictionary(inf, lst[0], ele.GetGenericArguments());
+                    if (genericArgs != null && genericArgs.Length == 1)
+                        lst = lst.Where(r => r.ElementType == genericArgs[0]).ToList();
+                    else if (genericArgs != null && genericArgs.Length == 2)
+                        lst = lst.Where(r => r.ElementType == typeof(KeyValuePair<,>).MakeGenericType(genericArgs)).ToList();
                 }
-                else
+
+                if (lst.Count == 1)
                 {
-                    inf.From = _Inf.Enumerable;
-                    inf.ElementType = itr.ElementType;
-                    inf.FromEnumerable = itr.FromEnumerable;
+                    var itr = lst[0];
+                    var ele = itr.ElementType;
+                    if (ele.IsGenericType && ele.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+                    {
+                        _GetInfoFromDictionary(inf, lst[0], ele.GetGenericArguments());
+                    }
+                    else
+                    {
+                        inf.From = _Inf.Enumerable;
+                        inf.ElementType = itr.ElementType;
+                        inf.FromEnumerable = itr.FromEnumerable;
+                    }
                 }
             }
-
             return inf;
         }
 
@@ -369,131 +374,78 @@ namespace Mikodev.Network
             return con.GetBytesWrap(value);
         }
 
-        private static MemoryStream _GetStreamFromEnumerable(IPacketConverter con, IEnumerable itr)
+        internal static byte[][] GetBytesFromEnumerable(IPacketConverter con, IEnumerable itr)
         {
-            var mst = new MemoryStream(Length);
-            var def = con.Length;
-            if (def > 0)
-            {
-                foreach (var i in itr)
-                {
-                    mst.Write(con.GetBytesWrap(i), 0, def);
-                }
-            }
-            else
-            {
-                foreach (var i in itr)
-                {
-                    var buf = con.GetBytesWrap(i);
-                    var len = buf.Length;
-                    var pre = (len == 0 ? s_zero_bytes : BitConverter.GetBytes(len));
-                    mst.Write(pre, 0, sizeof(int));
-                    mst.Write(buf, 0, len);
-                }
-            }
-            return mst;
+            var lst = new List<byte[]>();
+            foreach (var i in itr)
+                lst.Add(con.GetBytesWrap(i));
+            return lst.ToArray();
         }
 
-        private static MemoryStream _GetStreamFromEnumerableGeneric<T>(IPacketConverter<T> con, IEnumerable<T> itr)
+        private static byte[][] _GetBytesFromArray<T>(IPacketConverter con, T[] arr)
         {
-            var mst = new MemoryStream(Length);
-            var def = con.Length;
-            if (def > 0)
-            {
-                foreach (var i in itr)
-                {
-                    mst.Write(con.GetBytesWrap(i), 0, def);
-                }
-            }
+            var res = new byte[arr.Length][];
+            if (con is IPacketConverter<T> gen)
+                for (int i = 0; i < arr.Length; i++)
+                    res[i] = gen.GetBytesWrap(arr[i]);
             else
-            {
-                foreach (var i in itr)
-                {
-                    var buf = con.GetBytesWrap(i);
-                    var len = buf.Length;
-                    var pre = (len == 0 ? s_zero_bytes : BitConverter.GetBytes(len));
-                    mst.Write(pre, 0, sizeof(int));
-                    mst.Write(buf, 0, len);
-                }
-            }
-            return mst;
+                for (int i = 0; i < arr.Length; i++)
+                    res[i] = con.GetBytesWrap(arr[i]);
+            return res;
         }
 
-        private static MemoryStream _GetStreamGeneric<TK, TV>(IPacketConverter keycon, IPacketConverter valcon, IEnumerable<KeyValuePair<TK, TV>> enumerable)
+        private static byte[][] _GetBytesFromList<T>(IPacketConverter con, List<T> arr)
         {
-            var mst = new MemoryStream(Length);
+            var res = new byte[arr.Count][];
+            if (con is IPacketConverter<T> gen)
+                for (int i = 0; i < arr.Count; i++)
+                    res[i] = gen.GetBytesWrap(arr[i]);
+            else
+                for (int i = 0; i < arr.Count; i++)
+                    res[i] = con.GetBytesWrap(arr[i]);
+            return res;
+        }
+
+        private static object _GetBytesFromEnumerable<T>(IPacketConverter con, IEnumerable<T> itr)
+        {
+            if (itr is ICollection<T> col && col.Count > 15)
+                return _GetBytesFromArray(con, col.ToArray());
+
+            var res = new List<byte[]>();
+            if (con is IPacketConverter<T> gen)
+                foreach (var i in itr)
+                    res.Add(gen.GetBytesWrap(i));
+            else
+                foreach (var i in itr)
+                    res.Add(con.GetBytesWrap(i));
+            return res.ToArray();
+        }
+
+        internal static List<KeyValuePair<byte[], byte[]>> GetBytesFromDictionary<TK, TV>(IPacketConverter keycon, IPacketConverter valcon, IEnumerable<KeyValuePair<TK, TV>> enumerable)
+        {
+            var res = new List<KeyValuePair<byte[], byte[]>>();
             var keygen = keycon as IPacketConverter<TK>;
             var valgen = valcon as IPacketConverter<TV>;
-            var keylen = keycon.Length;
-            var vallen = valcon.Length;
 
             foreach (var i in enumerable)
             {
                 var key = i.Key;
-                var keybuf = (keygen != null ? keygen.GetBytesWrap(key) : keycon.GetBytesWrap(key));
-                if (keylen > 0)
-                {
-                    mst.Write(keybuf, 0, keylen);
-                }
-                else
-                {
-                    var len = keybuf.Length;
-                    var pre = (len == 0 ? s_zero_bytes : BitConverter.GetBytes(len));
-                    mst.Write(pre, 0, sizeof(int));
-                    mst.Write(keybuf, 0, len);
-                }
-
                 var val = i.Value;
+                var keybuf = (keygen != null ? keygen.GetBytesWrap(key) : keycon.GetBytesWrap(key));
                 var valbuf = (valgen != null ? valgen.GetBytesWrap(val) : valcon.GetBytesWrap(val));
-                if (vallen > 0)
-                {
-                    mst.Write(valbuf, 0, vallen);
-                }
-                else
-                {
-                    var len = valbuf.Length;
-                    var pre = (len == 0 ? s_zero_bytes : BitConverter.GetBytes(len));
-                    mst.Write(pre, 0, sizeof(int));
-                    mst.Write(valbuf, 0, len);
-                }
+                res.Add(new KeyValuePair<byte[], byte[]>(keybuf, valbuf));
             }
-
-            return mst;
+            return res;
         }
 
-        private static MemoryStream _FromEnumerable<T>(IPacketConverter con, object obj)
-        {
-            if (con is IPacketConverter<T> gen)
-                return _GetStreamFromEnumerableGeneric(gen, (IEnumerable<T>)obj);
-            else return _GetStreamFromEnumerable(con, (IEnumerable)obj);
-        }
-
-        private static MemoryStream _FromDictionary<TK, TV>(IPacketConverter key, IPacketConverter val, object obj)
-        {
-            return _GetStreamGeneric(key, val, (IEnumerable<KeyValuePair<TK, TV>>)obj);
-        }
-
-        internal static MemoryStream GetStream(ConverterDictionary dic, IEnumerable itr, Type type)
-        {
-            var con = GetConverter(dic, type, false);
-            var mst = _GetStreamFromEnumerable(con, itr);
-            return mst;
-        }
-
-        internal static MemoryStream GetStreamGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
+        internal static object GetBytesGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
         {
             var con = GetConverter<T>(dic, false);
-            if (con is IPacketConverter<T> gen)
-                return _GetStreamFromEnumerableGeneric(gen, itr);
-            return _GetStreamFromEnumerable(con, itr);
-        }
-
-        internal static MemoryStream GetStreamGeneric<TK, TV>(ConverterDictionary dic, IEnumerable<KeyValuePair<TK, TV>> itr)
-        {
-            var key = GetConverter<TK>(dic, false);
-            var val = GetConverter<TV>(dic, false);
-            var mst = _GetStreamGeneric(key, val, itr);
-            return mst;
+            if (itr is T[] arr)
+                return _GetBytesFromArray(con, arr);
+            else if (itr is List<T> lst)
+                return _GetBytesFromList(con, lst);
+            return _GetBytesFromEnumerable(con, itr);
         }
     }
 }

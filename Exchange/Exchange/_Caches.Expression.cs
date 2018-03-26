@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -10,8 +9,10 @@ namespace Mikodev.Network
     {
         private const BindingFlags Flags = BindingFlags.Static | BindingFlags.NonPublic;
 
-        private static readonly MethodInfo s_from_enumerable = typeof(_Caches).GetMethod(nameof(_FromEnumerable), Flags);
-        private static readonly MethodInfo s_from_enumerable_key_value_pair = typeof(_Caches).GetMethod(nameof(_FromDictionary), Flags);
+        private static readonly MethodInfo s_from_array = typeof(_Caches).GetMethod(nameof(_GetBytesFromArray), Flags);
+        private static readonly MethodInfo s_from_list = typeof(_Caches).GetMethod(nameof(_GetBytesFromList), Flags);
+        private static readonly MethodInfo s_from_enumerable = typeof(_Caches).GetMethod(nameof(_GetBytesFromEnumerable), Flags);
+        private static readonly MethodInfo s_from_dictionary = typeof(_Caches).GetMethod(nameof(GetBytesFromDictionary), Flags);
 
         private static readonly MethodInfo s_cast_array = typeof(_Convert).GetMethod(nameof(_Convert.ToArrayCast), Flags);
         private static readonly MethodInfo s_cast_list = typeof(_Convert).GetMethod(nameof(_Convert.ToListCast), Flags);
@@ -69,7 +70,7 @@ namespace Mikodev.Network
         {
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
             var lev = Expression.Parameter(typeof(int), "level");
-            var cto = typeof(_EnumerableReader<>).MakeGenericType(element).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
+            var cto = typeof(_EnumerableAdapter<>).MakeGenericType(element).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
             var inv = Expression.New(cto, rea, lev);
             var exp = Expression.Lambda<Func<PacketReader, int, object>>(inv, rea, lev);
             var fun = exp.Compile();
@@ -99,35 +100,36 @@ namespace Mikodev.Network
             return fun;
         }
 
-        private static Func<IEnumerable<KeyValuePair<object, object>>, object> _GetCastDictionaryFunction(params Type[] types)
+        private static Func<List<KeyValuePair<object, object>>, object> _GetCastDictionaryFunction(params Type[] types)
         {
-            var arr = Expression.Parameter(typeof(IEnumerable<KeyValuePair<object, object>>), "pairs");
+            var arr = Expression.Parameter(typeof(List<KeyValuePair<object, object>>), "pairs");
             var met = s_cast_dictionary.MakeGenericMethod(types);
             var cal = Expression.Call(met, arr);
-            var exp = Expression.Lambda<Func<IEnumerable<KeyValuePair<object, object>>, object>>(cal, arr);
+            var exp = Expression.Lambda<Func<List<KeyValuePair<object, object>>, object>>(cal, arr);
             var fun = exp.Compile();
             return fun;
         }
 
-        private static Func<IPacketConverter, object, MemoryStream> _GetFromEnumerableFunction(Type element)
+        private static Func<IPacketConverter, object, object> _GetFromEnumerableFunction(MethodInfo method, Type enumerable)
         {
             var con = Expression.Parameter(typeof(IPacketConverter), "converter");
             var obj = Expression.Parameter(typeof(object), "object");
-            var met = s_from_enumerable.MakeGenericMethod(element);
-            var cal = Expression.Call(met, con, obj);
-            var exp = Expression.Lambda<Func<IPacketConverter, object, MemoryStream>>(cal, con, obj);
+            var cvt = Expression.Convert(obj, enumerable);
+            var cal = Expression.Call(method, con, cvt);
+            var exp = Expression.Lambda<Func<IPacketConverter, object, object>>(cal, con, obj);
             var fun = exp.Compile();
             return fun;
         }
 
-        private static Func<IPacketConverter, IPacketConverter, object, MemoryStream> _GetFromDictionaryFunction(params Type[] types)
+        private static Func<IPacketConverter, IPacketConverter, object, List<KeyValuePair<byte[], byte[]>>> _GetFromDictionaryFunction(params Type[] types)
         {
             var key = Expression.Parameter(typeof(IPacketConverter), "index");
             var val = Expression.Parameter(typeof(IPacketConverter), "element");
             var obj = Expression.Parameter(typeof(object), "object");
-            var met = s_from_enumerable_key_value_pair.MakeGenericMethod(types);
-            var cal = Expression.Call(met, key, val, obj);
-            var exp = Expression.Lambda<Func<IPacketConverter, IPacketConverter, object, MemoryStream>>(cal, key, val, obj);
+            var cvt = Expression.Convert(obj, typeof(IEnumerable<>).MakeGenericType(typeof(KeyValuePair<,>).MakeGenericType(types)));
+            var met = s_from_dictionary.MakeGenericMethod(types);
+            var cal = Expression.Call(met, key, val, cvt);
+            var exp = Expression.Lambda<Func<IPacketConverter, IPacketConverter, object, List<KeyValuePair<byte[], byte[]>>>>(cal, key, val, obj);
             var fun = exp.Compile();
             return fun;
         }
@@ -135,7 +137,7 @@ namespace Mikodev.Network
         private static Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> _GetFromAdapterFunction(params Type[] types)
         {
             var itr = typeof(IEnumerable<>).MakeGenericType(typeof(KeyValuePair<,>).MakeGenericType(types));
-            var cto = typeof(_EnumerableAdapter<,>).MakeGenericType(types).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
+            var cto = typeof(_DictionaryAdapter<,>).MakeGenericType(types).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
             var key = Expression.Parameter(typeof(IPacketConverter), "index");
             var obj = Expression.Parameter(typeof(object), "object");
             var cvt = Expression.Convert(obj, itr);

@@ -139,96 +139,99 @@ namespace Mikodev.Network
             if (ele != null)
                 con = _Caches.GetConverter(_cvt, ele, true);
 
-            if (tag == _Inf.Array)
+            switch (tag)
             {
-                if (con != null)
-                    return inf.ToCollection(this, con);
-                var val = GetValueArray(ele, lev);
-                var res = inf.ToCollectionCast(val);
-                return res;
-            }
-            if (tag == _Inf.List)
-            {
-                if (con != null)
-                    return inf.ToCollection(this, con);
-                var val = GetValueArray(ele, lev);
-                var res = inf.ToCollectionCast(val);
-                return res;
-            }
-            if (tag == _Inf.Enumerable)
-            {
-                if (con != null)
-                    return inf.ToEnumerable(this, con);
-                return inf.ToEnumerableAdapter(this, lev);
-            }
-            else if (tag == _Inf.Collection)
-            {
-                if (con != null)
-                    return inf.ToCollection(this, con);
-                var val = GetValueArray(ele, lev);
-                var res = inf.ToCollectionCast(val);
-                return res;
-            }
-            else if (tag == _Inf.Dictionary)
-            {
-                var keycon = _Caches.GetConverter(_cvt, inf.IndexerType, true);
-                if (keycon == null)
-                    throw PacketException.InvalidKeyType(typ);
-                if (con != null)
-                    return inf.ToDictionary(this, keycon, con);
+                case _Inf.Array:
+                    {
+                        if (con != null)
+                            return inf.ToCollection(this, con);
+                        var val = GetValueArray(ele, lev);
+                        var res = inf.ToCollectionCast(val);
+                        return res;
+                    }
+                case _Inf.List:
+                    {
+                        if (con != null)
+                            return inf.ToCollection(this, con);
+                        var val = GetValueArray(ele, lev);
+                        var res = inf.ToCollectionCast(val);
+                        return res;
+                    }
+                case _Inf.Enumerable:
+                    {
+                        if (con != null)
+                            return inf.ToEnumerable(this, con);
+                        return inf.ToEnumerableAdapter(this, lev);
+                    }
+                case _Inf.Collection:
+                    {
+                        if (con != null)
+                            return inf.ToCollection(this, con);
+                        var val = GetValueArray(ele, lev);
+                        var res = inf.ToCollectionCast(val);
+                        return res;
+                    }
+                case _Inf.Dictionary:
+                    {
+                        var keycon = _Caches.GetConverter(_cvt, inf.IndexerType, true);
+                        if (keycon == null)
+                            throw PacketException.InvalidKeyType(typ);
+                        if (con != null)
+                            return inf.ToDictionary(this, keycon, con);
 
-                var max = _ele.Max();
-                var idx = _ele._off;
-                var buf = _ele._buf;
-                var keylen = keycon.Length;
-                var len = 0;
+                        var max = _ele.Max();
+                        var idx = _ele._off;
+                        var buf = _ele._buf;
+                        var keylen = keycon.Length;
+                        var len = 0;
 
-                var lst = new List<KeyValuePair<object, object>>();
-                while (true)
-                {
-                    var sub = max - idx;
-                    if (sub == 0)
-                        break;
-                    if (keylen > 0)
-                        if (sub < keylen)
-                            throw PacketException.Overflow();
-                        else
-                            len = keylen;
-                    else if (buf.MoveNext(max, ref idx, out len) == false)
-                        throw PacketException.Overflow();
-                    // Wrap error non-check
-                    var key = keycon.GetValueWrap(buf, idx, len);
-                    idx += len;
+                        var lst = new List<KeyValuePair<object, object>>();
+                        while (true)
+                        {
+                            var sub = max - idx;
+                            if (sub == 0)
+                                break;
+                            if (keylen > 0)
+                                if (sub < keylen)
+                                    throw PacketException.Overflow();
+                                else
+                                    len = keylen;
+                            else if (buf.MoveNext(max, ref idx, out len) == false)
+                                throw PacketException.Overflow();
+                            // Wrap error non-check
+                            var key = keycon.GetValueWrap(buf, idx, len);
+                            idx += len;
 
-                    if (buf.MoveNext(max, ref idx, out len) == false)
-                        throw PacketException.Overflow();
-                    var rea = new PacketReader(buf, idx, len, _cvt);
-                    var val = rea.GetValue(ele, lev);
-                    var par = new KeyValuePair<object, object>(key, val);
+                            if (buf.MoveNext(max, ref idx, out len) == false)
+                                throw PacketException.Overflow();
+                            var rea = new PacketReader(buf, idx, len, _cvt);
+                            var val = rea.GetValue(ele, lev);
+                            var par = new KeyValuePair<object, object>(key, val);
 
-                    idx += len;
-                    lst.Add(par);
-                }
-                return inf.ToDictionaryCast(lst);
-            }
-            else
-            {
-                var set = _Caches.GetSetterInfo(typ);
-                var arg = set.Arguments;
-                var fun = set.Function;
-                if (arg == null || fun == null)
-                    throw PacketException.InvalidType(typ);
+                            idx += len;
+                            lst.Add(par);
+                        }
+                        return inf.ToDictionaryCast(lst);
+                    }
+                default:
+                    {
+                        var set = _Caches.GetSetterInfo(typ);
+                        var arg = set.Arguments;
+                        var fun = set.Function;
+                        if (arg == null || fun == null)
+                            throw PacketException.InvalidType(typ);
 
-                var arr = new object[arg.Length];
-                for (int i = 0; i < arg.Length; i++)
-                {
-                    var rea = GetItem(arg[i].Name, false);
-                    var val = rea.GetValue(arg[i].Type, lev);
-                    arr[i] = val;
-                }
+                        var arr = new object[arg.Length];
+                        for (int i = 0; i < arg.Length; i++)
+                        {
+                            var rea = GetItem(arg[i].Name, false);
+                            var val = rea.GetValue(arg[i].Type, lev);
+                            arr[i] = val;
+                        }
 
-                var res = fun.Invoke(arr);
-                return res;
+                        var res = fun.Invoke(arr);
+                        return res;
+                    }
             }
         }
 

@@ -3,30 +3,25 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal sealed class _EnumerableAdapter<TK, TV> : IEnumerable<KeyValuePair<byte[], object>>
+    internal sealed class _EnumerableAdapter<T> : IEnumerable<T>
     {
-        private readonly IPacketConverter _con;
-        private readonly IEnumerable<KeyValuePair<TK, TV>> _kvp;
+        private readonly PacketReader _rea;
+        private readonly int _lev;
 
-        internal _EnumerableAdapter(IPacketConverter key, IEnumerable<KeyValuePair<TK, TV>> pairs)
+        internal _EnumerableAdapter(PacketReader reader, int level)
         {
-            _con = key;
-            _kvp = pairs;
+            _rea = reader;
+            _lev = level;
         }
 
-        private static IEnumerator<KeyValuePair<byte[], object>> _Enumerator(IEnumerable<KeyValuePair<TK, TV>> itr, IPacketConverter con)
+        private static IEnumerator<T> _Enumerable(PacketReader[] arr, int lvl)
         {
-            if (con is IPacketConverter<TK> gen)
-                foreach (var i in itr)
-                    yield return new KeyValuePair<byte[], object>(gen.GetBytesWrap(i.Key), i.Value);
-            else
-                foreach (var i in itr)
-                    yield return new KeyValuePair<byte[], object>(con.GetBytesWrap(i.Key), i.Value);
-            yield break;
+            for (int i = 0; i < arr.Length; i++)
+                yield return (T)arr[i].GetValue(typeof(T), lvl);
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => _Enumerator(_kvp, _con);
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() => _Enumerable(_rea.GetArray(), _lev);
 
-        IEnumerator<KeyValuePair<byte[], object>> IEnumerable<KeyValuePair<byte[], object>>.GetEnumerator() => _Enumerator(_kvp, _con);
+        IEnumerator IEnumerable.GetEnumerator() => _Enumerable(_rea.GetArray(), _lev);
     }
 }

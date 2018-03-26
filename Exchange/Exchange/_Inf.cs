@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Mikodev.Network
 {
     internal sealed class _Inf
     {
-        internal const int Enum = 1;
-        internal const int Mapping = 2; // Dictionary<string, object>
+        internal const int None = 0;
+        internal const int Enum = 126;
 
-        internal const int Array = 16;
-        internal const int List = 17;
-        internal const int Enumerable = 18;
-        internal const int Collection = 19;
+        internal const int Collection = 16;
+        internal const int Array = 17;
+        internal const int List = 18;
+        internal const int Enumerable = 19;
         internal const int Dictionary = 20;
+        internal const int Mapping = 21; // Dictionary<string, object>
 
         internal int Flag { get; set; }
 
@@ -35,11 +35,11 @@ namespace Mikodev.Network
 
         internal Func<PacketReader, IPacketConverter, IPacketConverter, object> ToDictionary { get; set; }
 
-        internal Func<IEnumerable<KeyValuePair<object, object>>, object> ToDictionaryCast { get; set; }
+        internal Func<List<KeyValuePair<object, object>>, object> ToDictionaryCast { get; set; }
 
-        internal Func<IPacketConverter, object, MemoryStream> FromEnumerable { get; set; }
+        internal Func<IPacketConverter, object, object> FromEnumerable { get; set; }
 
-        internal Func<IPacketConverter, IPacketConverter, object, MemoryStream> FromDictionary { get; set; }
+        internal Func<IPacketConverter, IPacketConverter, object, List<KeyValuePair<byte[], byte[]>>> FromDictionary { get; set; }
 
         internal Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> FromDictionaryAdapter { get; set; }
     }

@@ -57,8 +57,9 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(writer);
 
-            var val = (value == null ? null : _Caches.GetStream(writer._cvt, value, type));
-            var sub = new PacketWriter(val, writer._cvt);
+            var con = _Caches.GetConverter(writer._cvt, type, false);
+            var val = (value == null ? null : _Caches.GetBytesFromEnumerable(con, value));
+            var sub = new PacketWriter(val, writer._cvt, con.Length);
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
@@ -69,7 +70,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var val = (value == null ? null : _Caches.GetStreamGeneric(writer._cvt, value));
+            var val = (value == null ? null : _Caches.GetBytesGeneric(writer._cvt, value));
             var sub = new PacketWriter(val, writer._cvt);
             var itm = writer.GetDictionary();
             itm[key] = sub;
@@ -81,8 +82,10 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var val = (value == null ? null : _Caches.GetStreamGeneric(writer._cvt, value));
-            var sub = new PacketWriter(val, writer._cvt);
+            var keycon = _Caches.GetConverter<TK>(writer._cvt, false);
+            var valcon = _Caches.GetConverter<TV>(writer._cvt, false);
+            var val = (value == null ? null : _Caches.GetBytesFromDictionary(keycon, valcon, value));
+            var sub = new PacketWriter(val, writer._cvt, keycon.Length, valcon.Length);
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
