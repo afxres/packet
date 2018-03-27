@@ -14,7 +14,7 @@ namespace Mikodev.Network
 
             var val = _Caches.GetBytes(type, writer._cvt, value);
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(val, writer._cvt);
+            itm[key] = new PacketWriter(writer._cvt, new PacketWriter.Item(val));
             return writer;
         }
 
@@ -25,7 +25,7 @@ namespace Mikodev.Network
 
             var val = _Caches.GetBytesAuto(writer._cvt, value);
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(val, writer._cvt);
+            itm[key] = new PacketWriter(writer._cvt, new PacketWriter.Item(val));
             return writer;
         }
 
@@ -36,7 +36,7 @@ namespace Mikodev.Network
 
             var val = value.ToBytes();
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(val, writer._cvt);
+            itm[key] = new PacketWriter(writer._cvt, new PacketWriter.Item(val));
             return writer;
         }
 
@@ -47,7 +47,7 @@ namespace Mikodev.Network
 
             var val = value.ToBytes();
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(val, writer._cvt);
+            itm[key] = new PacketWriter(writer._cvt, new PacketWriter.Item(val));
             return writer;
         }
 
@@ -58,8 +58,8 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var con = _Caches.GetConverter(writer._cvt, type, false);
-            var val = (value == null ? null : _Caches.GetBytesFromEnumerable(con, value));
-            var sub = new PacketWriter(val, writer._cvt, con.Length);
+            var val = (value == null ? null : _Caches.GetBytesFromEnumerableNonGeneric(con, value));
+            var sub = new PacketWriter(writer._cvt, new PacketWriter.Item(val, con.Length));
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
@@ -70,8 +70,18 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var val = (value == null ? null : _Caches.GetBytesGeneric(writer._cvt, value));
-            var sub = new PacketWriter(val, writer._cvt);
+            var con = _Caches.GetConverter<T>(writer._cvt, false);
+            var val = default(byte[][]);
+            if (value != null)
+            {
+                if (value is T[] arr)
+                    val = _Caches.GetBytesFromArray(con, arr);
+                else if (value is List<T> lst)
+                    val = _Caches.GetBytesFromList(con, lst);
+                else
+                    val = _Caches.GetBytesFromEnumerable(con, value);
+            }
+            var sub = new PacketWriter(writer._cvt, new PacketWriter.Item(val, con.Length));
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
@@ -85,7 +95,7 @@ namespace Mikodev.Network
             var keycon = _Caches.GetConverter<TK>(writer._cvt, false);
             var valcon = _Caches.GetConverter<TV>(writer._cvt, false);
             var val = (value == null ? null : _Caches.GetBytesFromDictionary(keycon, valcon, value));
-            var sub = new PacketWriter(val, writer._cvt, keycon.Length, valcon.Length);
+            var sub = new PacketWriter(writer._cvt, new PacketWriter.Item(val, keycon.Length, valcon.Length));
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
@@ -97,7 +107,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(another, writer._cvt);
+            itm[key] = new PacketWriter(writer._cvt, another);
             return writer;
         }
 
@@ -107,7 +117,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(raw?._str, writer._cvt);
+            itm[key] = new PacketWriter(writer._cvt, new PacketWriter.Item(raw?._str));
             return writer;
         }
     }

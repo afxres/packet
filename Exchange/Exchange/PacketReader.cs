@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
-using PacketReaderDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketReader>;
 
 namespace Mikodev.Network
 {
@@ -18,7 +17,7 @@ namespace Mikodev.Network
         internal readonly _Element _ele;
 
         private PacketReader[] _arr = null;
-        private PacketReaderDictionary _dic = null;
+        private Dictionary<string, PacketReader> _dic = null;
         private int _tag = 0;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
@@ -33,7 +32,7 @@ namespace Mikodev.Network
             _cvt = converters;
         }
 
-        internal PacketReaderDictionary GetDictionary()
+        internal Dictionary<string, PacketReader> GetDictionary()
         {
             var obj = _dic;
             if (obj != null)
@@ -42,24 +41,31 @@ namespace Mikodev.Network
                 return null;
             _tag |= Init;
 
-            var dic = new PacketReaderDictionary();
+            var dic = new Dictionary<string, PacketReader>();
             var buf = _ele._buf;
             var max = _ele.Max();
             var idx = _ele._off;
             var len = 0;
 
-            while (idx < max)
+            try
             {
-                if (buf.MoveNext(max, ref idx, out len) == false)
-                    return null;
-                var key = _Extension.s_encoding.GetString(buf, idx, len);
-                if (dic.ContainsKey(key))
-                    return null;
-                idx += len;
-                if (buf.MoveNext(max, ref idx, out len) == false)
-                    return null;
-                dic.Add(key, new PacketReader(buf, idx, len, _cvt));
-                idx += len;
+                while (idx < max)
+                {
+                    if (buf.MoveNext(max, ref idx, out len) == false)
+                        return null;
+                    var key = _Extension.s_encoding.GetString(buf, idx, len);
+                    idx += len;
+                    if (buf.MoveNext(max, ref idx, out len) == false)
+                        return null;
+                    dic.Add(key, new PacketReader(buf, idx, len, _cvt));
+                    idx += len;
+                }
+            }
+            catch (ArgumentException)
+            {
+                // duplicate key
+                _dic = null;
+                return null;
             }
 
             _dic = dic;
@@ -116,6 +122,14 @@ namespace Mikodev.Network
                 if ((rdr = rdr.GetItem(i ?? throw new ArgumentNullException(), nothrow)) == null)
                     return null;
             return rdr;
+        }
+
+        internal IEnumerable<string> GetKeys()
+        {
+            var dic = GetDictionary();
+            if (dic != null)
+                return dic.Keys;
+            return Enumerable.Empty<string>();
         }
 
         internal object GetValue(Type typ, int lev)
@@ -252,7 +266,7 @@ namespace Mikodev.Network
 
         public int Count => GetDictionary()?.Count ?? 0;
 
-        public IEnumerable<string> Keys => GetDictionary()?.Keys ?? Enumerable.Empty<string>();
+        public IEnumerable<string> Keys => GetKeys();
 
         public PacketReader this[string path, bool nothrow = false]
         {

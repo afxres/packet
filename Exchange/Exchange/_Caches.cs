@@ -374,7 +374,7 @@ namespace Mikodev.Network
             return con.GetBytesWrap(value);
         }
 
-        internal static byte[][] GetBytesFromEnumerable(IPacketConverter con, IEnumerable itr)
+        internal static byte[][] GetBytesFromEnumerableNonGeneric(IPacketConverter con, IEnumerable itr)
         {
             var lst = new List<byte[]>();
             foreach (var i in itr)
@@ -382,7 +382,7 @@ namespace Mikodev.Network
             return lst.ToArray();
         }
 
-        private static byte[][] _GetBytesFromArray<T>(IPacketConverter con, T[] arr)
+        internal static byte[][] GetBytesFromArray<T>(IPacketConverter con, T[] arr)
         {
             var res = new byte[arr.Length][];
             if (con is IPacketConverter<T> gen)
@@ -394,7 +394,7 @@ namespace Mikodev.Network
             return res;
         }
 
-        private static byte[][] _GetBytesFromList<T>(IPacketConverter con, List<T> arr)
+        internal static byte[][] GetBytesFromList<T>(IPacketConverter con, List<T> arr)
         {
             var res = new byte[arr.Count][];
             if (con is IPacketConverter<T> gen)
@@ -406,10 +406,10 @@ namespace Mikodev.Network
             return res;
         }
 
-        private static object _GetBytesFromEnumerable<T>(IPacketConverter con, IEnumerable<T> itr)
+        internal static byte[][] GetBytesFromEnumerable<T>(IPacketConverter con, IEnumerable<T> itr)
         {
             if (itr is ICollection<T> col && col.Count > 15)
-                return _GetBytesFromArray(con, col.ToArray());
+                return GetBytesFromArray(con, col.ToArray());
 
             var res = new List<byte[]>();
             if (con is IPacketConverter<T> gen)
@@ -436,16 +436,6 @@ namespace Mikodev.Network
                 res.Add(new KeyValuePair<byte[], byte[]>(keybuf, valbuf));
             }
             return res;
-        }
-
-        internal static object GetBytesGeneric<T>(ConverterDictionary dic, IEnumerable<T> itr)
-        {
-            var con = GetConverter<T>(dic, false);
-            if (itr is T[] arr)
-                return _GetBytesFromArray(con, arr);
-            else if (itr is List<T> lst)
-                return _GetBytesFromList(con, lst);
-            return _GetBytesFromEnumerable(con, itr);
         }
     }
 }

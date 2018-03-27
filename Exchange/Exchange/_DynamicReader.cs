@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Dynamic;
-using System.Linq;
 using System.Linq.Expressions;
 
 namespace Mikodev.Network
@@ -28,11 +27,7 @@ namespace Mikodev.Network
 
         public override IEnumerable<string> GetDynamicMemberNames()
         {
-            var rea = (PacketReader)Value;
-            var dic = rea.GetDictionary();
-            if (dic != null)
-                return dic.Keys;
-            return Enumerable.Empty<string>();
+            return ((PacketReader)Value).GetKeys();
         }
     }
 }

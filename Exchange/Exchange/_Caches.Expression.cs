@@ -9,9 +9,9 @@ namespace Mikodev.Network
     {
         private const BindingFlags Flags = BindingFlags.Static | BindingFlags.NonPublic;
 
-        private static readonly MethodInfo s_from_array = typeof(_Caches).GetMethod(nameof(_GetBytesFromArray), Flags);
-        private static readonly MethodInfo s_from_list = typeof(_Caches).GetMethod(nameof(_GetBytesFromList), Flags);
-        private static readonly MethodInfo s_from_enumerable = typeof(_Caches).GetMethod(nameof(_GetBytesFromEnumerable), Flags);
+        private static readonly MethodInfo s_from_array = typeof(_Caches).GetMethod(nameof(GetBytesFromArray), Flags);
+        private static readonly MethodInfo s_from_list = typeof(_Caches).GetMethod(nameof(GetBytesFromList), Flags);
+        private static readonly MethodInfo s_from_enumerable = typeof(_Caches).GetMethod(nameof(GetBytesFromEnumerable), Flags);
         private static readonly MethodInfo s_from_dictionary = typeof(_Caches).GetMethod(nameof(GetBytesFromDictionary), Flags);
 
         private static readonly MethodInfo s_cast_array = typeof(_Convert).GetMethod(nameof(_Convert.ToArrayCast), Flags);
@@ -110,13 +110,13 @@ namespace Mikodev.Network
             return fun;
         }
 
-        private static Func<IPacketConverter, object, object> _GetFromEnumerableFunction(MethodInfo method, Type enumerable)
+        private static Func<IPacketConverter, object, byte[][]> _GetFromEnumerableFunction(MethodInfo method, Type enumerable)
         {
             var con = Expression.Parameter(typeof(IPacketConverter), "converter");
             var obj = Expression.Parameter(typeof(object), "object");
             var cvt = Expression.Convert(obj, enumerable);
             var cal = Expression.Call(method, con, cvt);
-            var exp = Expression.Lambda<Func<IPacketConverter, object, object>>(cal, con, obj);
+            var exp = Expression.Lambda<Func<IPacketConverter, object, byte[][]>>(cal, con, obj);
             var fun = exp.Compile();
             return fun;
         }

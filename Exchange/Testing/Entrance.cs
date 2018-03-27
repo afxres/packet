@@ -274,29 +274,33 @@ namespace Mikodev.Testing
                 new byte[0],
                 new byte[] { 1, 2, 3, 4 }
             };
+            var d = new[] { 1.1, 2.2, 3.3, double.NaN };
 
             wtr.SetEnumerable("byte", a).
                 SetEnumerable("ints", b).
-                SetEnumerable("buffer", c);
+                SetEnumerable("buffer", c).
+                SetEnumerable("floats", d);
             var buf = wtr.GetBytes();
 
-            var rdr = new PacketReader(buf);
-            var ra = rdr["byte"].GetValue<byte[]>();
-            var ral = rdr["byte"].GetArray<byte>();
-            var rb = rdr["ints"].GetEnumerable<string>();
-            var rc = rdr["buffer"].GetEnumerable<byte[]>();
+            var rea = new PacketReader(buf);
+            var ra = rea["byte"].GetValue<byte[]>();
+            var ral = rea["byte"].GetArray<byte>();
+            var rb = rea["ints"].GetEnumerable<string>();
+            var rc = rea["buffer"].GetEnumerable<byte[]>();
+            var rd = rea["floats"].GetEnumerable<double>();
 
-            var rax = rdr["byte"].GetEnumerable(typeof(byte));
-            var rbx = rdr["ints"].GetEnumerable(typeof(string));
+            var rax = rea["byte"].GetEnumerable(typeof(byte));
+            var rbx = rea["ints"].GetEnumerable(typeof(string));
 
-            Assert.AreEqual(3, rdr.Count);
-            Assert.AreEqual(3, rdr.Keys.Count());
+            Assert.AreEqual(4, rea.Count);
+            Assert.AreEqual(4, rea.Keys.Count());
             Assert.AreEqual(c.Count, rc.Count());
 
             ThrowIfNotSequenceEqual(a, ra);
             ThrowIfNotSequenceEqual(a, ral);
             ThrowIfNotSequenceEqual(b, rb);
             ThrowIfNotSequenceEqual(c.First(), rc.First());
+            ThrowIfNotSequenceEqual(d, rd);
 
             ThrowIfNotSequenceEqual(a, rax.Cast<byte>());
             ThrowIfNotSequenceEqual(b, rbx.Cast<string>());
@@ -819,6 +823,22 @@ namespace Mikodev.Testing
             var ra = PacketConvert.Deserialize(tc, c);
 
             return;
+        }
+
+        [TestMethod]
+        public void DuplicateKey()
+        {
+            var raw = new PacketRawWriter().
+                SetValue("one").
+                SetValue("text one").
+                SetValue("two").
+                SetValue("text two").
+                SetValue("two").
+                SetValue("duplicate");
+            var buf = raw.GetBytes();
+            var rea = new PacketReader(buf);
+
+            Assert.AreEqual(rea.Count, 0);                
         }
     }
 }

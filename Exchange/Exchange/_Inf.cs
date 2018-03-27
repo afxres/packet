@@ -37,7 +37,7 @@ namespace Mikodev.Network
 
         internal Func<List<KeyValuePair<object, object>>, object> ToDictionaryCast { get; set; }
 
-        internal Func<IPacketConverter, object, object> FromEnumerable { get; set; }
+        internal Func<IPacketConverter, object, byte[][]> FromEnumerable { get; set; }
 
         internal Func<IPacketConverter, IPacketConverter, object, List<KeyValuePair<byte[], byte[]>>> FromDictionary { get; set; }
 

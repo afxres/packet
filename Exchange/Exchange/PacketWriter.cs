@@ -3,159 +3,60 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
-using PacketWriterDictionary = System.Collections.Generic.Dictionary<string, Mikodev.Network.PacketWriter>;
-using PacketWriterPairList = System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<byte[], Mikodev.Network.PacketWriter>>;
 
 namespace Mikodev.Network
 {
     public sealed partial class PacketWriter : IDynamicMetaObjectProvider
     {
         internal readonly ConverterDictionary _cvt;
-        private object _itm;
-        private int _lenone;
-        private int _lentwo;
+        private Item _itm;
 
-        internal PacketWriter(object obj, ConverterDictionary cvt)
+        internal PacketWriter(ConverterDictionary cvt, Item itm)
         {
+            _itm = itm;
             _cvt = cvt;
-            _itm = obj;
         }
 
-        internal PacketWriter(object obj, ConverterDictionary cvt, int lenone)
+        internal PacketWriter(ConverterDictionary cvt, PacketWriter wtr)
         {
             _cvt = cvt;
-            _itm = obj;
-            _lenone = lenone;
+            _itm = (wtr != null ? wtr._itm : Item.Empty);
         }
 
-        internal PacketWriter(object obj, ConverterDictionary cvt, int lenone, int lentwo)
+        public PacketWriter(ConverterDictionary converters = null)
         {
-            _cvt = cvt;
-            _itm = obj;
-            _lenone = lenone;
-            _lentwo = lentwo;
+            _cvt = converters;
+            _itm = Item.Empty;
         }
 
-        internal PacketWriter(PacketWriter wtr, ConverterDictionary cvt)
+        internal IEnumerable<string> GetKeys()
         {
-            _cvt = cvt;
-            if (wtr == null)
-                return;
-            _itm = wtr._itm;
-            _lenone = wtr._lenone;
-            _lentwo = wtr._lentwo;
+            var itm = _itm;
+            if (itm.tag == Item.DictionaryPacketWriter)
+                return ((Dictionary<string, PacketWriter>)itm.obj).Keys;
+            return Enumerable.Empty<string>();
         }
 
-        public PacketWriter(ConverterDictionary converters = null) => _cvt = converters;
-
-        internal object GetObject() => _itm;
-
-        internal PacketWriterDictionary GetDictionary()
+        internal Dictionary<string, PacketWriter> GetDictionary()
         {
-            if (_itm is PacketWriterDictionary dic)
-                return dic;
-            var val = new PacketWriterDictionary();
-            _itm = val;
+            var itm = _itm;
+            if (itm.tag == Item.DictionaryPacketWriter)
+                return (Dictionary<string, PacketWriter>)itm.obj;
+            var val = new Dictionary<string, PacketWriter>();
+            _itm = new Item(val);
             return val;
         }
 
-        internal void GetBytesExtra(Stream str, int lev)
-        {
-            if (lev > _Caches.Depth)
-                throw new PacketException(PacketError.RecursiveError);
-            lev += 1;
-
-            var itm = _itm;
-            if (itm is PacketWriterDictionary dic)
-            {
-                foreach (var i in dic)
-                {
-                    str.WriteKey(i.Key);
-                    i.Value.GetBytes(str, lev);
-                }
-            }
-            else if (itm is List<PacketWriter> lst)
-            {
-                for (int i = 0; i < lst.Count; i++)
-                {
-                    lst[i].GetBytes(str, lev);
-                }
-            }
-            else if (itm is byte[][] byt)
-            {
-                var len = _lenone;
-                if (len > 0)
-                    for (int i = 0; i < byt.Length; i++)
-                        str.Write(byt[i]);
-                else
-                    for (int i = 0; i < byt.Length; i++)
-                        str.WriteExt(byt[i]);
-            }
-            else if (itm is List<KeyValuePair<byte[], byte[]>> itr)
-            {
-                var keylen = _lenone;
-                var vallen = _lentwo;
-                foreach (var i in itr)
-                {
-                    var key = i.Key;
-                    var val = i.Value;
-                    if (keylen > 0)
-                        str.Write(key, 0, key.Length);
-                    else
-                        str.WriteExt(key);
-                    if (vallen > 0)
-                        str.Write(val, 0, val.Length);
-                    else
-                        str.WriteExt(val);
-                }
-            }
-            else if (itm is PacketWriterPairList kvp)
-            {
-                var len = _lenone;
-                for (int i = 0; i < kvp.Count; i++)
-                {
-                    var cur = kvp[i];
-                    if (len > 0)
-                        str.Write(cur.Key, 0, len);
-                    else
-                        str.WriteExt(cur.Key);
-                    cur.Value.GetBytes(str, lev);
-                }
-            }
-            else throw new ApplicationException();
-        }
-
-        internal void GetBytes(Stream str, int lev)
-        {
-            if (lev > _Caches.Depth)
-                throw new PacketException(PacketError.RecursiveError);
-            lev += 1;
-
-            var itm = _itm;
-            if (itm == null)
-            {
-                str.Write(_Extension.s_zero_bytes, 0, sizeof(int));
-            }
-            else if (itm is byte[] buf)
-            {
-                str.WriteExt(buf);
-            }
-            else if (itm is MemoryStream mst)
-            {
-                str.WriteExt(mst);
-            }
-            else
-            {
-                str.BeginInternal(out var src);
-                GetBytesExtra(str, lev);
-                str.FinshInternal(src);
-            }
-        }
-
         internal static PacketWriter GetWriter(ConverterDictionary cvt, object itm, int lev)
+        {
+            return new PacketWriter(cvt, GetRecord(cvt, itm, lev));
+        }
+
+        private static Item GetRecord(ConverterDictionary cvt, object itm, int lev)
         {
             if (lev > _Caches.Depth)
                 throw new PacketException(PacketError.RecursiveError);
@@ -163,43 +64,42 @@ namespace Mikodev.Network
 
             var con = default(IPacketConverter);
             if (itm == null)
-                return new PacketWriter(cvt);
+                return Item.Empty;
             if (itm is PacketWriter oth)
-                return new PacketWriter(oth, cvt);
+                return oth._itm;
             if (itm is PacketRawWriter raw)
-                return new PacketWriter(raw._str, cvt);
+                return new Item(raw._str);
 
-            var type = itm.GetType();
-            if ((con = _Caches.GetConverter(cvt, type, true)) != null)
-                return new PacketWriter(con.GetBytesWrap(itm), cvt);
+            var typ = itm.GetType();
+            if ((con = _Caches.GetConverter(cvt, typ, true)) != null)
+                return new Item(con.GetBytesWrap(itm));
 
-            var inf = _Caches.GetInfo(type);
+            var inf = _Caches.GetInfo(typ);
             var tag = inf.From;
             switch (tag)
             {
                 case _Inf.Enumerable:
                     {
                         if (inf.ElementType == typeof(byte) && itm is ICollection<byte> bytes)
-                            return new PacketWriter(bytes.ToBytes(), cvt);
+                            return new Item(bytes.ToBytes());
                         if (inf.ElementType == typeof(sbyte) && itm is ICollection<sbyte> sbytes)
-                            return new PacketWriter(sbytes.ToBytes(), cvt);
+                            return new Item(sbytes.ToBytes());
 
                         if ((con = _Caches.GetConverter(cvt, inf.ElementType, true)) != null)
-                            return new PacketWriter(inf.FromEnumerable(con, itm), cvt, con.Length);
+                            return new Item(inf.FromEnumerable(con, itm), con.Length);
 
-                        var lst = new List<PacketWriter>();
+                        var lst = new List<Item>();
                         foreach (var i in (itm as IEnumerable))
-                            lst.Add(GetWriter(cvt, i, lev));
-                        return new PacketWriter(lst, cvt);
+                            lst.Add(GetRecord(cvt, i, lev));
+                        return new Item(lst);
                     }
                 case _Inf.Mapping:
                     {
                         var dic = (IDictionary<string, object>)itm;
-                        var wtr = new PacketWriter(cvt);
-                        var lst = wtr.GetDictionary();
+                        var lst = new Dictionary<string, PacketWriter>();
                         foreach (var i in dic)
                             lst[i.Key] = GetWriter(cvt, i.Value, lev);
-                        return wtr;
+                        return new Item(lst);
                     }
                 case _Inf.Dictionary:
                     {
@@ -209,33 +109,30 @@ namespace Mikodev.Network
                         if ((con = _Caches.GetConverter(cvt, inf.ElementType, true)) != null)
                         {
                             var val = inf.FromDictionary(key, con, itm);
-                            var res = new PacketWriter(val, cvt, key.Length, con.Length);
-                            return res;
+                            return new Item(val, key.Length, con.Length);
                         }
                         else
                         {
-                            var val = new PacketWriterPairList();
+                            var val = new List<KeyValuePair<byte[], Item>>();
                             var kvp = inf.FromDictionaryAdapter(key, itm);
                             foreach (var i in kvp)
                             {
-                                var sub = GetWriter(cvt, i.Value, lev);
-                                var tmp = new KeyValuePair<byte[], PacketWriter>(i.Key, sub);
+                                var sub = GetRecord(cvt, i.Value, lev);
+                                var tmp = new KeyValuePair<byte[], Item>(i.Key, sub);
                                 val.Add(tmp);
                             }
-                            var res = new PacketWriter(val, cvt, key.Length);
-                            return res;
+                            return new Item(val, key.Length);
                         }
                     }
                 default:
                     {
-                        var res = new PacketWriter(cvt);
-                        var lst = res.GetDictionary();
-                        var get = _Caches.GetGetterInfo(type);
+                        var lst = new Dictionary<string, PacketWriter>();
+                        var get = _Caches.GetGetterInfo(typ);
                         var val = get.GetValues(itm);
                         var arg = get.Arguments;
                         for (int i = 0; i < arg.Length; i++)
                             lst[arg[i].Name] = GetWriter(cvt, val[i], lev);
-                        return res;
+                        return new Item(lst);
                     }
             }
         }
@@ -244,22 +141,23 @@ namespace Mikodev.Network
 
         public byte[] GetBytes()
         {
-            var obj = _itm;
-            if (obj == null)
+            var itm = _itm;
+            if (itm.obj == null)
                 return _Extension.s_empty_bytes;
-            else if (obj is byte[] buf)
-                return buf;
-            else if (obj is MemoryStream raw)
-                return raw.ToArray();
+            else if (itm.tag == Item.Bytes)
+                return (byte[])itm.obj;
+            else if (itm.tag == Item.MemoryStream)
+                return ((MemoryStream)itm.obj).ToArray();
+
             var mst = new MemoryStream(_Caches.Length);
-            GetBytesExtra(mst, 0);
+            itm.GetBytesExtra(mst, 0);
             var res = mst.ToArray();
             return res;
         }
 
         public override string ToString()
         {
-            var obj = _itm;
+            var obj = _itm.obj;
             var stb = new StringBuilder(nameof(PacketWriter));
             stb.Append(" with ");
             if (obj == null)
