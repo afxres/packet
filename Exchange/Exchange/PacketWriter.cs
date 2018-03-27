@@ -53,10 +53,10 @@ namespace Mikodev.Network
 
         internal static PacketWriter GetWriter(ConverterDictionary cvt, object itm, int lev)
         {
-            return new PacketWriter(cvt, GetRecord(cvt, itm, lev));
+            return new PacketWriter(cvt, GetItem(cvt, itm, lev));
         }
 
-        private static Item GetRecord(ConverterDictionary cvt, object itm, int lev)
+        private static Item GetItem(ConverterDictionary cvt, object itm, int lev)
         {
             if (lev > _Caches.Depth)
                 throw new PacketException(PacketError.RecursiveError);
@@ -90,7 +90,7 @@ namespace Mikodev.Network
 
                         var lst = new List<Item>();
                         foreach (var i in (itm as IEnumerable))
-                            lst.Add(GetRecord(cvt, i, lev));
+                            lst.Add(GetItem(cvt, i, lev));
                         return new Item(lst);
                     }
                 case _Inf.Mapping:
@@ -117,7 +117,7 @@ namespace Mikodev.Network
                             var kvp = inf.FromDictionaryAdapter(key, itm);
                             foreach (var i in kvp)
                             {
-                                var sub = GetRecord(cvt, i.Value, lev);
+                                var sub = GetItem(cvt, i.Value, lev);
                                 var tmp = new KeyValuePair<byte[], Item>(i.Key, sub);
                                 val.Add(tmp);
                             }

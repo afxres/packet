@@ -15,7 +15,7 @@ namespace Mikodev.Network
             internal const int ListItem = 4;
             internal const int DictionaryPacketWriter = 5;
             internal const int DictionaryBytesBytes = 6;
-            internal const int DictionaryBytesRecord = 7;
+            internal const int DictionaryBytesItem = 7;
 
             internal static readonly Item Empty = new Item();
 
@@ -60,7 +60,7 @@ namespace Mikodev.Network
             internal Item(List<KeyValuePair<byte[], Item>> lst, int one)
             {
                 obj = lst;
-                tag = DictionaryBytesRecord;
+                tag = DictionaryBytesItem;
                 lenone = one;
             }
 
@@ -125,7 +125,7 @@ namespace Mikodev.Network
                             }
                             break;
                         }
-                    case DictionaryBytesRecord:
+                    case DictionaryBytesItem:
                         {
                             var kvp = (List<KeyValuePair<byte[], Item>>)obj;
                             for (int i = 0; i < kvp.Count; i++)

@@ -51,7 +51,7 @@ namespace Mikodev.Test
                 }
 
                 GC.Collect();
-                using (new TraceWatch("PacketWriter<> Set")) // 2182.06 ms, avg
+                using (new TraceWatch("PacketWriter<>")) // 2229.12 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -67,7 +67,7 @@ namespace Mikodev.Test
                 }
 
                 GC.Collect();
-                using (new TraceWatch("Serialize (anonymous)")) // 2916.94 ms, avg
+                using (new TraceWatch("Serialize (anonymous)")) // 2897.03 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -76,7 +76,7 @@ namespace Mikodev.Test
                 }
 
                 GC.Collect();
-                using (new TraceWatch("Deserialize (anonymous)")) // 2287.19 ms, avg
+                using (new TraceWatch("Deserialize (anonymous)")) // 2221.38 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
