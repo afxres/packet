@@ -6,7 +6,9 @@ namespace Mikodev.Network
     internal sealed class _Inf
     {
         internal const int None = 0;
-        internal const int Enum = 126;
+        internal const int Enum = 128;
+        internal const int Bytes = 256;
+        internal const int SBytes = 257;
 
         internal const int Collection = 16;
         internal const int Array = 17;

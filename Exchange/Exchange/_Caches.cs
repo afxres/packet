@@ -141,9 +141,9 @@ namespace Mikodev.Network
                 }
             }
 
+            var interfaces = typ.GetInterfaces();
             if (inf.From == _Inf.None)
             {
-                var interfaces = typ.GetInterfaces();
                 if (interfaces.Contains(typeof(IDictionary<string, object>)))
                     inf.From = _Inf.Mapping;
 
@@ -151,12 +151,15 @@ namespace Mikodev.Network
                     .Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                     .Select(GetInfo)
                     .ToList();
-                if (lst.Count > 1)
+                if (lst.Count > 1 && genericArgs != null)
                 {
-                    if (genericArgs != null && genericArgs.Length == 1)
-                        lst = lst.Where(r => r.ElementType == genericArgs[0]).ToList();
-                    else if (genericArgs != null && genericArgs.Length == 2)
-                        lst = lst.Where(r => r.ElementType == typeof(KeyValuePair<,>).MakeGenericType(genericArgs)).ToList();
+                    var cmp = default(Type);
+                    if (genericArgs.Length == 1)
+                        cmp = genericArgs[0];
+                    else if (genericArgs.Length == 2)
+                        cmp = typeof(KeyValuePair<,>).MakeGenericType(genericArgs);
+                    if (cmp != null)
+                        lst = lst.Where(r => r.ElementType == cmp).ToList();
                 }
 
                 if (lst.Count == 1)
@@ -175,6 +178,11 @@ namespace Mikodev.Network
                     }
                 }
             }
+
+            if (inf.ElementType == typeof(byte) && interfaces.Contains(typeof(ICollection<byte>)))
+                inf.Flag = _Inf.Bytes;
+            else if (inf.ElementType == typeof(sbyte) && interfaces.Contains(typeof(ICollection<sbyte>)))
+                inf.Flag = _Inf.SBytes;
             return inf;
         }
 

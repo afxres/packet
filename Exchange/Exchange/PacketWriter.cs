@@ -80,10 +80,10 @@ namespace Mikodev.Network
             {
                 case _Inf.Enumerable:
                     {
-                        if (inf.ElementType == typeof(byte) && itm is ICollection<byte> bytes)
-                            return new Item(bytes.ToBytes());
-                        if (inf.ElementType == typeof(sbyte) && itm is ICollection<sbyte> sbytes)
-                            return new Item(sbytes.ToBytes());
+                        if (inf.Flag == _Inf.Bytes)
+                            return new Item(((ICollection<byte>)itm).ToBytes());
+                        else if (inf.Flag == _Inf.SBytes)
+                            return new Item(((ICollection<sbyte>)itm).ToBytes());
 
                         if ((con = _Caches.GetConverter(cvt, inf.ElementType, true)) != null)
                             return new Item(inf.FromEnumerable(con, itm), con.Length);
