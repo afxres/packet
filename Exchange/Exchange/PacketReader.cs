@@ -10,8 +10,8 @@ namespace Mikodev.Network
 {
     public sealed class PacketReader : IDynamicMetaObjectProvider
     {
-        private const int Init = 1;
-        private const int InitArray = 2;
+        private const int TagArray = 1;
+        private const int TagDictionary = 2;
 
         internal readonly ConverterDictionary _cvt;
         internal readonly _Element _ele;
@@ -37,9 +37,9 @@ namespace Mikodev.Network
             var obj = _dic;
             if (obj != null)
                 return obj;
-            if ((_tag & Init) != 0)
+            if ((_tag & TagDictionary) != 0)
                 return null;
-            _tag |= Init;
+            _tag |= TagDictionary;
 
             var dic = new Dictionary<string, PacketReader>();
             var buf = _ele._buf;
@@ -77,9 +77,9 @@ namespace Mikodev.Network
             var arr = _arr;
             if (arr != null)
                 return arr;
-            if ((_tag & InitArray) != 0)
+            if ((_tag & TagArray) != 0)
                 throw PacketException.Overflow();
-            _tag |= InitArray;
+            _tag |= TagArray;
 
             var lst = new List<PacketReader>();
             var max = _ele.Max();
@@ -90,7 +90,7 @@ namespace Mikodev.Network
             {
                 if (buf.MoveNext(max, ref idx, out len) == false)
                     throw PacketException.Overflow();
-                var rea = new PacketReader(buf, idx, len);
+                var rea = new PacketReader(buf, idx, len, _cvt);
                 lst.Add(rea);
                 idx += len;
             }

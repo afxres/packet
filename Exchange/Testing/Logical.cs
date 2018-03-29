@@ -88,6 +88,11 @@ namespace Mikodev.Testing
         {
             return Name?.GetHashCode() ?? 0;
         }
+
+        public override string ToString()
+        {
+            return $"{nameof(_Box)} {Name}";
+        }
     }
 
     internal class _BoxConverter : IPacketConverter
@@ -394,6 +399,11 @@ namespace Mikodev.Testing
             {
                 a = Enumerable.Range(0, 4).Select(r => new _Two { One = r, Two = r * 2 }),
                 b = Enumerable.Range(0, 8).ToDictionary(r => r.ToString(), r => new _Two { One = r * 2, Two = r * 4 }),
+                x = Enumerable.Range(0, 2)
+                    .Select(t =>
+                        Enumerable.Range(0, 4).Select(r =>
+                            new _Box { Name = $"{t}:{r}" }))
+                    .ToList(),
             };
             var buf = PacketConvert.Serialize(obj, con);
             var rea = new PacketReader(buf, con);
@@ -407,6 +417,7 @@ namespace Mikodev.Testing
             var ra = itr.ToList();
             var rb = rea["b"].GetDictionary<string, _Two>();
             var rc = PacketConvert.Deserialize<IDictionary<int, string>>(tc);
+            var rx = rea["x"].Deserialize<_Box[][]>();
 
             var od = new[] { new _Box { Name = "one" }, new _Box { Name = "Loooooooooooooong name!" } };
             var td = PacketConvert.Serialize(od, con);
