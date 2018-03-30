@@ -7,15 +7,15 @@ namespace Mikodev.Network
     {
         internal const int None = 0;
         internal const int Enum = 128;
-        internal const int Bytes = 256;
-        internal const int SBytes = 257;
 
         internal const int Collection = 16;
         internal const int Array = 17;
         internal const int List = 18;
         internal const int Enumerable = 19;
         internal const int Dictionary = 20;
-        internal const int Mapping = 21; // Dictionary<string, object>
+        internal const int Map = 21; // Dictionary<string, object>
+        internal const int Bytes = 22;
+        internal const int SBytes = 23;
 
         internal int Flag { get; set; }
 

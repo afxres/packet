@@ -145,7 +145,7 @@ namespace Mikodev.Network
             if (inf.From == _Inf.None)
             {
                 if (interfaces.Contains(typeof(IDictionary<string, object>)))
-                    inf.From = _Inf.Mapping;
+                    inf.From = _Inf.Map;
 
                 var lst = interfaces
                     .Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>))
@@ -179,10 +179,13 @@ namespace Mikodev.Network
                 }
             }
 
-            if (inf.ElementType == typeof(byte) && interfaces.Contains(typeof(ICollection<byte>)))
-                inf.Flag = _Inf.Bytes;
-            else if (inf.ElementType == typeof(sbyte) && interfaces.Contains(typeof(ICollection<sbyte>)))
-                inf.Flag = _Inf.SBytes;
+            if (inf.From == _Inf.Enumerable)
+            {
+                if (inf.ElementType == typeof(byte) && interfaces.Contains(typeof(ICollection<byte>)))
+                    inf.From = _Inf.Bytes;
+                else if (inf.ElementType == typeof(sbyte) && interfaces.Contains(typeof(ICollection<sbyte>)))
+                    inf.From = _Inf.SBytes;
+            }
             return inf;
         }
 

@@ -78,13 +78,16 @@ namespace Mikodev.Network
             var tag = inf.From;
             switch (tag)
             {
+                case _Inf.Bytes:
+                    {
+                        return new Item(((ICollection<byte>)itm).ToBytes());
+                    }
+                case _Inf.SBytes:
+                    {
+                        return new Item(((ICollection<sbyte>)itm).ToBytes());
+                    }
                 case _Inf.Enumerable:
                     {
-                        if (inf.Flag == _Inf.Bytes)
-                            return new Item(((ICollection<byte>)itm).ToBytes());
-                        else if (inf.Flag == _Inf.SBytes)
-                            return new Item(((ICollection<sbyte>)itm).ToBytes());
-
                         if ((con = _Caches.GetConverter(cvt, inf.ElementType, true)) != null)
                             return new Item(inf.FromEnumerable(con, itm), con.Length);
 
@@ -93,7 +96,7 @@ namespace Mikodev.Network
                             lst.Add(GetItem(cvt, i, lev));
                         return new Item(lst);
                     }
-                case _Inf.Mapping:
+                case _Inf.Map:
                     {
                         var dic = (IDictionary<string, object>)itm;
                         var lst = new Dictionary<string, PacketWriter>();
