@@ -361,13 +361,22 @@ namespace Mikodev.Network
                 return val;
 
             var inf = GetInfo(typ);
-            if (inf.Flag == _Inf.Enum && s_converters.TryGetValue(inf.ElementType, out val))
-                return val;
+            if (inf.Flag == _Inf.Enum)
+                return s_converters[inf.ElementType];
 
             fail:
             if (nothrow == true)
                 return null;
             throw PacketException.InvalidType(typ);
+        }
+
+        internal static IPacketConverter GetConverterInternal(ConverterDictionary dic, Type typ)
+        {
+            if (dic != null && dic.TryGetValue(typ, out var val))
+                return val;
+            if (s_converters.TryGetValue(typ, out val))
+                return val;
+            return null;
         }
 
         internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value)

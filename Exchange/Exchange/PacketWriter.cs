@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using static Mikodev.Network._Extension;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
@@ -62,7 +63,6 @@ namespace Mikodev.Network
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
-            var con = default(IPacketConverter);
             if (itm == null)
                 return Item.Empty;
             if (itm is PacketWriter oth)
@@ -71,12 +71,15 @@ namespace Mikodev.Network
                 return new Item(raw._str);
 
             var typ = itm.GetType();
-            if ((con = _Caches.GetConverter(cvt, typ, true)) != null)
+            var con = _Caches.GetConverterInternal(cvt, typ);
+            if (con != null)
                 return new Item(con.GetBytesWrap(itm));
 
             var inf = _Caches.GetInfo(typ);
-            var tag = inf.From;
-            switch (tag)
+            if (inf.Flag == _Inf.Enum)
+                return new Item(s_converters[inf.ElementType].GetBytesWrap(itm));
+
+            switch (inf.From)
             {
                 case _Inf.Bytes:
                     {

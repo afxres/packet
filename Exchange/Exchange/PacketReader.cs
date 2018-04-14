@@ -4,6 +4,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using static Mikodev.Network._Extension;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
@@ -143,17 +144,18 @@ namespace Mikodev.Network
             if (typ == typeof(PacketRawReader))
                 return new PacketRawReader(this);
 
-            var con = _Caches.GetConverter(_cvt, typ, true);
+            var con = _Caches.GetConverterInternal(_cvt, typ);
             if (con != null)
                 return con.GetValueWrap(_ele, true);
 
             var inf = _Caches.GetInfo(typ);
-            var tag = inf.To;
             var ele = inf.ElementType;
+            if (inf.Flag == _Inf.Enum)
+                return s_converters[ele].GetValueWrap(_ele, true);
             if (ele != null)
                 con = _Caches.GetConverter(_cvt, ele, true);
 
-            switch (tag)
+            switch (inf.To)
             {
                 case _Inf.Array:
                     {
