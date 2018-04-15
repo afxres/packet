@@ -39,7 +39,7 @@ namespace Mikodev.Network
 
         internal Func<PacketReader, IPacketConverter, object> ToEnumerable { get; set; }
 
-        internal Func<PacketReader, int, object> ToEnumerableAdapter { get; set; }
+        internal Func<PacketReader, int, _Inf, object> ToEnumerableAdapter { get; set; }
 
         internal Func<PacketReader, IPacketConverter, IPacketConverter, object> ToDictionary { get; set; }
 

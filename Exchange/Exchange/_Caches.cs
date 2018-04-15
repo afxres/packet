@@ -393,22 +393,17 @@ namespace Mikodev.Network
             throw PacketException.InvalidType(typ);
         }
 
-        internal static IPacketConverter GetConverterInternal(ConverterDictionary dic, Type typ)
-        {
-            if (dic != null && dic.TryGetValue(typ, out var val))
-                return val;
-            if (s_converters.TryGetValue(typ, out val))
-                return val;
-            return null;
-        }
-
-        internal static bool TryGetConverter(ConverterDictionary dic, Type typ, out IPacketConverter val)
+        internal static bool TryGetConverter(ConverterDictionary dic, Type typ, out IPacketConverter val, ref _Inf inf)
         {
             if (dic != null && dic.TryGetValue(typ, out val))
                 return true;
             if (s_converters.TryGetValue(typ, out val))
                 return true;
-            return false;
+            inf = GetInfo(typ);
+            if (inf.Flag != _Inf.Enum)
+                return false;
+            val = s_converters[typ];
+            return true;
         }
 
         internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value)

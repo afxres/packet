@@ -5,23 +5,26 @@ namespace Mikodev.Network
 {
     internal sealed class _EnumerableAdapter<T> : IEnumerable<T>
     {
-        private readonly PacketReader _rea;
-        private readonly int _lev;
+        private readonly PacketReader rea;
+        private readonly int lev;
+        private readonly _Inf inf;
 
-        internal _EnumerableAdapter(PacketReader reader, int level)
+        internal _EnumerableAdapter(PacketReader rea, int lev, _Inf inf)
         {
-            _rea = reader;
-            _lev = level;
+            this.rea = rea;
+            this.lev = lev;
+            this.inf = inf;
         }
 
-        private static IEnumerator<T> _Enumerable(PacketReader[] arr, int lvl)
+        private IEnumerator<T> Enumerable()
         {
+            var arr = rea.GetArray();
             for (int i = 0; i < arr.Length; i++)
-                yield return (T)arr[i].GetValue(typeof(T), lvl);
+                yield return (T)arr[i].GetValueMatch(typeof(T), lev, inf);
         }
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator() => _Enumerable(_rea.GetArray(), _lev);
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() => Enumerable();
 
-        IEnumerator IEnumerable.GetEnumerator() => _Enumerable(_rea.GetArray(), _lev);
+        IEnumerator IEnumerable.GetEnumerator() => Enumerable();
     }
 }

@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using static Mikodev.Network._Extension;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
@@ -68,7 +67,7 @@ namespace Mikodev.Network
 
             var typ = itm.GetType();
             var inf = default(_Inf);
-            if (_Caches.TryGetConverter(cvt, typ, out var con) || ((inf = _Caches.GetInfo(typ)).Flag == _Inf.Enum && s_converters.TryGetValue(inf.ElementType, out con)))
+            if (_Caches.TryGetConverter(cvt, typ, out var con, ref inf))
                 return new Item(con.GetBytesWrap(itm));
 
             return GetItemMatch(cvt, itm, lev, inf);
@@ -95,7 +94,7 @@ namespace Mikodev.Network
                     {
                         var ele = inf.ElementType;
                         var sub = default(_Inf);
-                        if (_Caches.TryGetConverter(cvt, ele, out var con) || ((sub = _Caches.GetInfo(ele)).Flag == _Inf.Enum && s_converters.TryGetValue(ele, out con)))
+                        if (_Caches.TryGetConverter(cvt, ele, out var con, ref sub))
                             return new Item(inf.FromEnumerable(con, itm), con.Length);
 
                         var lst = new List<Item>();
@@ -110,7 +109,7 @@ namespace Mikodev.Network
                             throw PacketException.InvalidKeyType(inf.IndexType);
                         var ele = inf.ElementType;
                         var sub = default(_Inf);
-                        if (_Caches.TryGetConverter(cvt, ele, out var con) || ((sub = _Caches.GetInfo(ele)).Flag == _Inf.Enum && s_converters.TryGetValue(ele, out con)))
+                        if (_Caches.TryGetConverter(cvt, ele, out var con, ref sub))
                             return new Item(inf.FromDictionary(key, con, itm), key.Length, con.Length);
 
                         var lst = new List<KeyValuePair<byte[], Item>>();

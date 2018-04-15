@@ -4,7 +4,6 @@ using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using static Mikodev.Network._Extension;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
@@ -140,19 +139,18 @@ namespace Mikodev.Network
             lev += 1;
 
             var inf = default(_Inf);
-            if (_Caches.TryGetConverter(_cvt, typ, out var con) || ((inf = _Caches.GetInfo(typ)).Flag == _Inf.Enum && s_converters.TryGetValue(inf.ElementType, out con)))
+            if (_Caches.TryGetConverter(_cvt, typ, out var con, ref inf))
                 return con.GetValueWrap(_ele, true);
             return GetValueMatch(typ, lev, inf);
         }
 
-        private object GetValueMatch(Type typ, int lev, _Inf inf)
+        internal object GetValueMatch(Type typ, int lev, _Inf inf)
         {
             if (lev > _Caches.Depth)
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
-            var ele = inf.ElementType;
-            var con = (ele != null ? _Caches.GetConverter(_cvt, ele, true) : null);
+            var sub = default(_Inf);
             switch (inf.To)
             {
                 case _Inf.Reader:
@@ -161,41 +159,30 @@ namespace Mikodev.Network
                     return new PacketRawReader(this);
 
                 case _Inf.Array:
-                    {
-                        if (con != null)
-                            return inf.ToCollection(this, con);
-                        var val = GetValueArray(ele, lev);
-                        var res = inf.ToCollectionCast(val);
-                        return res;
-                    }
                 case _Inf.List:
+                case _Inf.Collection:
                     {
-                        if (con != null)
+                        if (_Caches.TryGetConverter(_cvt, inf.ElementType, out var con, ref sub))
                             return inf.ToCollection(this, con);
-                        var val = GetValueArray(ele, lev);
-                        var res = inf.ToCollectionCast(val);
+                        var lst = GetArray();
+                        var arr = new object[lst.Length];
+                        for (int i = 0; i < lst.Length; i++)
+                            arr[i] = lst[i].GetValueMatch(inf.ElementType, lev, sub);
+                        var res = inf.ToCollectionCast(arr);
                         return res;
                     }
                 case _Inf.Enumerable:
                     {
-                        if (con != null)
+                        if (_Caches.TryGetConverter(_cvt, inf.ElementType, out var con, ref sub))
                             return inf.ToEnumerable(this, con);
-                        return inf.ToEnumerableAdapter(this, lev);
-                    }
-                case _Inf.Collection:
-                    {
-                        if (con != null)
-                            return inf.ToCollection(this, con);
-                        var val = GetValueArray(ele, lev);
-                        var res = inf.ToCollectionCast(val);
-                        return res;
+                        return inf.ToEnumerableAdapter(this, lev, sub);
                     }
                 case _Inf.Dictionary:
                     {
                         var keycon = _Caches.GetConverter(_cvt, inf.IndexType, true);
                         if (keycon == null)
                             throw PacketException.InvalidKeyType(typ);
-                        if (con != null)
+                        if (_Caches.TryGetConverter(_cvt, inf.ElementType, out var con, ref sub))
                             return inf.ToDictionary(this, keycon, con);
 
                         var max = _ele.Max();
@@ -207,11 +194,11 @@ namespace Mikodev.Network
                         var lst = new List<KeyValuePair<object, object>>();
                         while (true)
                         {
-                            var sub = max - idx;
-                            if (sub == 0)
+                            var res = max - idx;
+                            if (res == 0)
                                 break;
                             if (keylen > 0)
-                                if (sub < keylen)
+                                if (res < keylen)
                                     throw PacketException.Overflow();
                                 else
                                     len = keylen;
@@ -224,7 +211,7 @@ namespace Mikodev.Network
                             if (buf.MoveNext(max, ref idx, out len) == false)
                                 throw PacketException.Overflow();
                             var rea = new PacketReader(buf, idx, len, _cvt);
-                            var val = rea.GetValue(ele, lev);
+                            var val = rea.GetValueMatch(inf.ElementType, lev, sub);
                             var par = new KeyValuePair<object, object>(key, val);
 
                             idx += len;
@@ -252,19 +239,6 @@ namespace Mikodev.Network
                         return res;
                     }
             }
-        }
-
-        internal object[] GetValueArray(Type ele, int lev)
-        {
-            if (lev > _Caches.Depth)
-                throw new PacketException(PacketError.RecursiveError);
-            lev += 1;
-
-            var lst = GetArray();
-            var arr = new object[lst.Length];
-            for (int i = 0; i < lst.Length; i++)
-                arr[i] = lst[i].GetValue(ele, lev);
-            return arr;
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);

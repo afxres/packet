@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -66,13 +67,14 @@ namespace Mikodev.Network
             return fun;
         }
 
-        private static Func<PacketReader, int, object> _GetToEnumerableAdapter(Type element)
+        private static Func<PacketReader, int, _Inf, object> _GetToEnumerableAdapter(Type element)
         {
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
             var lev = Expression.Parameter(typeof(int), "level");
-            var cto = typeof(_EnumerableAdapter<>).MakeGenericType(element).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
-            var inv = Expression.New(cto, rea, lev);
-            var exp = Expression.Lambda<Func<PacketReader, int, object>>(inv, rea, lev);
+            var inf = Expression.Parameter(typeof(_Inf), "info");
+            var cto = typeof(_EnumerableAdapter<>).MakeGenericType(element).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic).Single();
+            var inv = Expression.New(cto, rea, lev, inf);
+            var exp = Expression.Lambda<Func<PacketReader, int, _Inf, object>>(inv, rea, lev, inf);
             var fun = exp.Compile();
             return fun;
         }
@@ -137,7 +139,7 @@ namespace Mikodev.Network
         private static Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> _GetFromAdapterFunction(params Type[] types)
         {
             var itr = typeof(IEnumerable<>).MakeGenericType(typeof(KeyValuePair<,>).MakeGenericType(types));
-            var cto = typeof(_DictionaryAdapter<,>).MakeGenericType(types).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
+            var cto = typeof(_DictionaryAdapter<,>).MakeGenericType(types).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic).Single();
             var key = Expression.Parameter(typeof(IPacketConverter), "index");
             var obj = Expression.Parameter(typeof(object), "object");
             var cvt = Expression.Convert(obj, itr);
