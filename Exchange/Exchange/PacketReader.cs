@@ -139,24 +139,27 @@ namespace Mikodev.Network
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
-            if (typ == typeof(object) || typ == typeof(PacketReader))
-                return this;
-            if (typ == typeof(PacketRawReader))
-                return new PacketRawReader(this);
-
-            var con = _Caches.GetConverterInternal(_cvt, typ);
-            if (con != null)
+            var inf = default(_Inf);
+            if (_Caches.TryGetConverter(_cvt, typ, out var con) || ((inf = _Caches.GetInfo(typ)).Flag == _Inf.Enum && s_converters.TryGetValue(inf.ElementType, out con)))
                 return con.GetValueWrap(_ele, true);
+            return GetValueMatch(typ, lev, inf);
+        }
 
-            var inf = _Caches.GetInfo(typ);
+        private object GetValueMatch(Type typ, int lev, _Inf inf)
+        {
+            if (lev > _Caches.Depth)
+                throw new PacketException(PacketError.RecursiveError);
+            lev += 1;
+
             var ele = inf.ElementType;
-            if (inf.Flag == _Inf.Enum)
-                return s_converters[ele].GetValueWrap(_ele, true);
-            if (ele != null)
-                con = _Caches.GetConverter(_cvt, ele, true);
-
+            var con = (ele != null ? _Caches.GetConverter(_cvt, ele, true) : null);
             switch (inf.To)
             {
+                case _Inf.Reader:
+                    return this;
+                case _Inf.RawReader:
+                    return new PacketRawReader(this);
+
                 case _Inf.Array:
                     {
                         if (con != null)

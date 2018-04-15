@@ -65,10 +65,6 @@ namespace Mikodev.Network
 
             if (itm == null)
                 return Item.Empty;
-            if (itm is PacketWriter oth)
-                return oth._itm;
-            if (itm is PacketRawWriter raw)
-                return new Item(raw._str);
 
             var typ = itm.GetType();
             var inf = default(_Inf);
@@ -86,14 +82,15 @@ namespace Mikodev.Network
 
             switch (inf.From)
             {
+                case _Inf.Writer:
+                    return ((PacketWriter)itm)._itm;
+                case _Inf.RawWriter:
+                    return new Item(((PacketRawWriter)itm)._str);
                 case _Inf.Bytes:
-                    {
-                        return new Item(((ICollection<byte>)itm).ToBytes());
-                    }
+                    return new Item(((ICollection<byte>)itm).ToBytes());
                 case _Inf.SBytes:
-                    {
-                        return new Item(((ICollection<sbyte>)itm).ToBytes());
-                    }
+                    return new Item(((ICollection<sbyte>)itm).ToBytes());
+
                 case _Inf.Enumerable:
                     {
                         var ele = inf.ElementType;

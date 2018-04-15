@@ -41,6 +41,26 @@ namespace Mikodev.Network
         private static _Inf _GetInfo(Type typ)
         {
             var inf = new _Inf() { Type = typ };
+            if (typ == typeof(PacketWriter))
+            {
+                inf.From = _Inf.Writer;
+                return inf;
+            }
+            else if (typ == typeof(PacketRawWriter))
+            {
+                inf.From = _Inf.RawWriter;
+                return inf;
+            }
+            else if (typ == typeof(PacketReader) || typ == typeof(object))
+            {
+                inf.To = _Inf.Reader;
+                return inf;
+            }
+            else if (typ == typeof(PacketRawReader))
+            {
+                inf.To = _Inf.RawReader;
+                return inf;
+            }
             if (typ.IsEnum)
             {
                 inf.Flag = _Inf.Enum;

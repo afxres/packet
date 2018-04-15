@@ -8,6 +8,8 @@ namespace Mikodev.Network
         internal const int None = 0;
         internal const int Enum = 128;
 
+        internal const int Reader = 14;
+        internal const int RawReader = 15;
         internal const int Collection = 16;
         internal const int Array = 17;
         internal const int List = 18;
@@ -16,6 +18,8 @@ namespace Mikodev.Network
         internal const int Map = 21; // Dictionary<string, object>
         internal const int Bytes = 22;
         internal const int SBytes = 23;
+        internal const int Writer = 24;
+        internal const int RawWriter = 25;
 
         internal int Flag { get; set; }
 
