@@ -189,7 +189,7 @@ namespace Mikodev.Network
                     }
                 case _Inf.Dictionary:
                     {
-                        var keycon = _Caches.GetConverter(_cvt, inf.IndexerType, true);
+                        var keycon = _Caches.GetConverter(_cvt, inf.IndexType, true);
                         if (keycon == null)
                             throw PacketException.InvalidKeyType(typ);
                         if (con != null)

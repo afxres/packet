@@ -28,8 +28,11 @@ namespace Mikodev.Network
 
         private static void _GetInfoFromDictionary(_Inf inf, _Inf itr, params Type[] types)
         {
-            inf.From = _Inf.Dictionary;
-            inf.IndexerType = types[0];
+            if (types[0] == typeof(string) && types[1] == typeof(object))
+                inf.From = _Inf.Map;
+            else
+                inf.From = _Inf.Dictionary;
+            inf.IndexType = types[0];
             inf.ElementType = types[1];
             inf.FromDictionary = itr.FromDictionary;
             inf.FromDictionaryAdapter = itr.FromDictionaryAdapter;
@@ -37,7 +40,7 @@ namespace Mikodev.Network
 
         private static _Inf _GetInfo(Type typ)
         {
-            var inf = new _Inf();
+            var inf = new _Inf() { Type = typ };
             if (typ.IsEnum)
             {
                 inf.Flag = _Inf.Enum;
@@ -377,6 +380,15 @@ namespace Mikodev.Network
             if (s_converters.TryGetValue(typ, out val))
                 return val;
             return null;
+        }
+
+        internal static bool TryGetConverter(ConverterDictionary dic, Type typ, out IPacketConverter val)
+        {
+            if (dic != null && dic.TryGetValue(typ, out val))
+                return true;
+            if (s_converters.TryGetValue(typ, out val))
+                return true;
+            return false;
         }
 
         internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value)

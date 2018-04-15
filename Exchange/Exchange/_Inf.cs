@@ -23,9 +23,11 @@ namespace Mikodev.Network
 
         internal int To { get; set; }
 
+        internal Type Type { get; set; }
+
         internal Type ElementType { get; set; }
 
-        internal Type IndexerType { get; set; }
+        internal Type IndexType { get; set; }
 
         internal Func<PacketReader, IPacketConverter, object> ToCollection { get; set; }
 
