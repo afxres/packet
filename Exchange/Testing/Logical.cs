@@ -177,6 +177,14 @@ namespace Mikodev.Testing
                    Name == other.Name;
         }
 
+        public override int GetHashCode()
+        {
+            var hashCode = -1919740922;
+            hashCode = hashCode * -1521134295 + Id.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
+            return hashCode;
+        }
+
         public override string ToString()
         {
             return $"{nameof(_Index)} id: {Id}, name: {Name}";
