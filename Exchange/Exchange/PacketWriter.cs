@@ -156,7 +156,7 @@ namespace Mikodev.Network
                 return ((MemoryStream)itm.obj).ToArray();
 
             var mst = new MemoryStream(_Caches.Length);
-            itm.GetBytesExtra(mst, 0);
+            itm.GetBytesMatch(mst, 0);
             var res = mst.ToArray();
             return res;
         }

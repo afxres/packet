@@ -8,11 +8,9 @@ namespace Mikodev.Network
         internal const int None = 0;
         internal const int Enum = 128;
 
-        internal const int Reader = 14;
-        internal const int RawReader = 15;
-        internal const int Collection = 16;
-        internal const int Array = 17;
-        internal const int List = 18;
+        internal const int Reader = 16;
+        internal const int RawReader = 17;
+        internal const int Collection = 18;
         internal const int Enumerable = 19;
         internal const int Dictionary = 20;
         internal const int Map = 21; // Dictionary<string, object>

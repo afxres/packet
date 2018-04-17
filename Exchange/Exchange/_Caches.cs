@@ -93,11 +93,21 @@ namespace Mikodev.Network
                     }
                     return inf;
                 }
+                if (genericDefinition == typeof(ICollection<>))
+                {
+                    var ele = genericArgs[0];
+                    inf.ElementType = ele;
+                    inf.To = _Inf.Collection; // to icollection
+                    var arr = GetInfo(ele.MakeArrayType());
+                    inf.ToCollection = arr.ToCollection;
+                    inf.ToCollectionCast = arr.ToCollectionCast;
+                    return inf;
+                }
                 if (genericDefinition == typeof(IList<>))
                 {
                     var ele = genericArgs[0];
                     inf.ElementType = ele;
-                    inf.To = _Inf.List;
+                    inf.To = _Inf.Collection; // to list
                     inf.ToCollection = _GetToFunction(s_to_list, ele);
                     inf.ToCollectionCast = _GetCastFunction(s_cast_list, ele);
                     return inf;
@@ -124,7 +134,7 @@ namespace Mikodev.Network
                 inf.ElementType = ele;
 
                 inf.From = _Inf.Enumerable;
-                inf.To = _Inf.Array;
+                inf.To = _Inf.Collection; // to array
                 inf.FromEnumerable = _GetFromEnumerableFunction(s_from_array.MakeGenericMethod(ele), typ);
                 inf.ToCollection = _GetToFunction(s_to_array, ele);
                 inf.ToCollectionCast = _GetCastFunction(s_cast_array, ele);
@@ -137,7 +147,7 @@ namespace Mikodev.Network
                     var sub = GetInfo(typeof(IList<>).MakeGenericType(ele));
                     inf.ElementType = ele;
                     inf.From = _Inf.Enumerable;
-                    inf.To = _Inf.List;
+                    inf.To = _Inf.Collection; // to list
                     inf.FromEnumerable = _GetFromEnumerableFunction(s_from_list.MakeGenericMethod(ele), typ);
                     inf.ToCollection = sub.ToCollection;
                     inf.ToCollectionCast = sub.ToCollectionCast;

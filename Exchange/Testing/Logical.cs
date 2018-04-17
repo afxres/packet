@@ -159,6 +159,30 @@ namespace Mikodev.Testing
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
+    internal class _Index : IEquatable<_Index>
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as _Index);
+        }
+
+        public bool Equals(_Index other)
+        {
+            return other != null &&
+                   Id == other.Id &&
+                   Name == other.Name;
+        }
+
+        public override string ToString()
+        {
+            return $"{nameof(_Index)} id: {Id}, name: {Name}";
+        }
+    }
+
     [TestClass]
     public class Logical
     {
@@ -229,6 +253,26 @@ namespace Mikodev.Testing
 
             lst.ForEach(r => r.Start());
             Task.WaitAll(lst.ToArray());
+        }
+
+        [TestMethod]
+        public void Collection()
+        {
+            var arr = Enumerable.Range(0, 8).Select(r => new _Index { Id = r, Name = r.ToString() }).ToArray();
+            var buf = PacketConvert.Serialize(arr);
+            var rs = PacketConvert.Deserialize<PacketReader[]>(buf);
+            var os = PacketConvert.Deserialize<object[]>(buf);
+            var rr = PacketConvert.Deserialize<PacketRawReader[]>(buf);
+            var ra = PacketConvert.Deserialize<_Index[]>(buf);
+            var rl = PacketConvert.Deserialize<List<_Index>>(buf);
+            var ri = PacketConvert.Deserialize<IList<_Index>>(buf);
+            var rc = PacketConvert.Deserialize<ICollection<_Index>>(buf);
+
+            ThrowIfNotSequenceEqual(arr, ra);
+            ThrowIfNotSequenceEqual(arr, rl);
+            ThrowIfNotSequenceEqual(arr, ri);
+            ThrowIfNotSequenceEqual(arr, rc);
+            return;
         }
 
         [TestMethod]

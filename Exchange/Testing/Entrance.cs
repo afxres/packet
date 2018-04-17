@@ -277,7 +277,7 @@ namespace Mikodev.Testing
             var d = new[] { 1.1, 2.2, 3.3, double.NaN };
 
             wtr.SetEnumerable("byte", a).
-                SetEnumerable("ints", b).
+                SetEnumerable("string", b).
                 SetEnumerable("buffer", c).
                 SetEnumerable("floats", d);
             var buf = wtr.GetBytes();
@@ -285,12 +285,18 @@ namespace Mikodev.Testing
             var rea = new PacketReader(buf);
             var ra = rea["byte"].GetValue<byte[]>();
             var ral = rea["byte"].GetArray<byte>();
-            var rb = rea["ints"].GetEnumerable<string>();
+            var rb = rea["string"].GetEnumerable<string>();
             var rc = rea["buffer"].GetEnumerable<byte[]>();
             var rd = rea["floats"].GetEnumerable<double>();
 
             var rax = rea["byte"].GetEnumerable(typeof(byte));
-            var rbx = rea["ints"].GetEnumerable(typeof(string));
+            var rbx = rea["string"].GetEnumerable(typeof(string));
+
+            var raa = rea["byte"].Deserialize<byte[]>();
+            var rbl = rea["string"].Deserialize<List<string>>();
+            var rdl = rea["floats"].Deserialize<IList<double>>();
+            var rbs = rea["string"].Deserialize<HashSet<string>>();
+            var rbc = rea["string"].Deserialize<ICollection<string>>();
 
             Assert.AreEqual(4, rea.Count);
             Assert.AreEqual(4, rea.Keys.Count());
@@ -301,6 +307,12 @@ namespace Mikodev.Testing
             ThrowIfNotSequenceEqual(b, rb);
             ThrowIfNotSequenceEqual(c.First(), rc.First());
             ThrowIfNotSequenceEqual(d, rd);
+
+            ThrowIfNotEqual(b.ToHashSet(), rbs);
+            ThrowIfNotSequenceEqual(a, raa);
+            ThrowIfNotSequenceEqual(b, rbl);
+            ThrowIfNotSequenceEqual(d, rdl);
+            ThrowIfNotSequenceEqual(b, rbc);
 
             ThrowIfNotSequenceEqual(a, rax.Cast<byte>());
             ThrowIfNotSequenceEqual(b, rbx.Cast<string>());
@@ -838,7 +850,7 @@ namespace Mikodev.Testing
             var buf = raw.GetBytes();
             var rea = new PacketReader(buf);
 
-            Assert.AreEqual(rea.Count, 0);                
+            Assert.AreEqual(rea.Count, 0);
         }
     }
 }

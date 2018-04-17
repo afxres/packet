@@ -158,8 +158,6 @@ namespace Mikodev.Network
                 case _Inf.RawReader:
                     return new PacketRawReader(this);
 
-                case _Inf.Array:
-                case _Inf.List:
                 case _Inf.Collection:
                     {
                         if (_Caches.TryGetConverter(_cvt, inf.ElementType, out var con, ref sub))

@@ -72,7 +72,7 @@ namespace Mikodev.Network
                 lentwo = two;
             }
 
-            internal void GetBytesExtra(Stream str, int lev)
+            internal void GetBytesMatch(Stream str, int lev)
             {
                 if (lev > _Caches.Depth)
                     throw new PacketException(PacketError.RecursiveError);
@@ -164,7 +164,7 @@ namespace Mikodev.Network
                 else
                 {
                     str.BeginInternal(out var src);
-                    GetBytesExtra(str, lev);
+                    GetBytesMatch(str, lev);
                     str.FinshInternal(src);
                 }
             }
