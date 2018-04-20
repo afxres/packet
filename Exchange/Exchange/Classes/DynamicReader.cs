@@ -4,9 +4,9 @@ using System.Linq.Expressions;
 
 namespace Mikodev.Network
 {
-    internal sealed class _DynamicReader : DynamicMetaObject
+    internal sealed class DynamicReader : DynamicMetaObject
     {
-        public _DynamicReader(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
+        public DynamicReader(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {

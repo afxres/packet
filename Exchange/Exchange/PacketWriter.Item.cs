@@ -74,7 +74,7 @@ namespace Mikodev.Network
 
             internal void GetBytesMatch(Stream str, int lev)
             {
-                if (lev > _Caches.Depth)
+                if (lev > Cache.Depth)
                     throw new PacketException(PacketError.RecursiveError);
                 lev += 1;
 
@@ -104,7 +104,7 @@ namespace Mikodev.Network
                             foreach (var i in dic)
                             {
                                 str.WriteKey(i.Key);
-                                i.Value._itm.GetBytes(str, lev);
+                                i.Value.item.GetBytes(str, lev);
                             }
                             break;
                         }
@@ -145,13 +145,13 @@ namespace Mikodev.Network
 
             internal void GetBytes(Stream str, int lev)
             {
-                if (lev > _Caches.Depth)
+                if (lev > Cache.Depth)
                     throw new PacketException(PacketError.RecursiveError);
                 lev += 1;
 
                 if (obj == null)
                 {
-                    str.Write(_Extension.s_zero_bytes, 0, sizeof(int));
+                    str.Write(Extension.s_zero_bytes, 0, sizeof(int));
                 }
                 else if (tag == Bytes)
                 {

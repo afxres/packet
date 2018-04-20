@@ -6,24 +6,24 @@ using System.Reflection;
 
 namespace Mikodev.Network
 {
-    partial class _Caches
+    partial class Cache
     {
         private const BindingFlags Flags = BindingFlags.Static | BindingFlags.NonPublic;
 
-        private static readonly MethodInfo s_from_array = typeof(_Caches).GetMethod(nameof(GetBytesFromArray), Flags);
-        private static readonly MethodInfo s_from_list = typeof(_Caches).GetMethod(nameof(GetBytesFromList), Flags);
-        private static readonly MethodInfo s_from_enumerable = typeof(_Caches).GetMethod(nameof(GetBytesFromEnumerable), Flags);
-        private static readonly MethodInfo s_from_dictionary = typeof(_Caches).GetMethod(nameof(GetBytesFromDictionary), Flags);
+        private static readonly MethodInfo s_from_array = typeof(Cache).GetMethod(nameof(GetBytesFromArray), Flags);
+        private static readonly MethodInfo s_from_list = typeof(Cache).GetMethod(nameof(GetBytesFromList), Flags);
+        private static readonly MethodInfo s_from_enumerable = typeof(Cache).GetMethod(nameof(GetBytesFromEnumerable), Flags);
+        private static readonly MethodInfo s_from_dictionary = typeof(Cache).GetMethod(nameof(GetBytesFromDictionary), Flags);
 
-        private static readonly MethodInfo s_cast_array = typeof(_Convert).GetMethod(nameof(_Convert.ToArrayCast), Flags);
-        private static readonly MethodInfo s_cast_list = typeof(_Convert).GetMethod(nameof(_Convert.ToListCast), Flags);
-        private static readonly MethodInfo s_cast_dictionary = typeof(_Convert).GetMethod(nameof(_Convert.ToDictionaryCast), Flags);
+        private static readonly MethodInfo s_cast_array = typeof(Convert).GetMethod(nameof(Convert.ToArrayCast), Flags);
+        private static readonly MethodInfo s_cast_list = typeof(Convert).GetMethod(nameof(Convert.ToListCast), Flags);
+        private static readonly MethodInfo s_cast_dictionary = typeof(Convert).GetMethod(nameof(Convert.ToDictionaryCast), Flags);
 
-        private static readonly MethodInfo s_to_array = typeof(_Convert).GetMethod(nameof(_Convert.ToArray), Flags);
-        private static readonly MethodInfo s_to_list = typeof(_Convert).GetMethod(nameof(_Convert.ToList), Flags);
-        private static readonly MethodInfo s_to_collection = typeof(_Convert).GetMethod(nameof(_Convert.ToCollection), Flags);
-        private static readonly MethodInfo s_to_enumerable = typeof(_Convert).GetMethod(nameof(_Convert.ToEnumerable), Flags);
-        private static readonly MethodInfo s_to_dictionary = typeof(_Convert).GetMethod(nameof(_Convert.ToDictionary), Flags);
+        private static readonly MethodInfo s_to_array = typeof(Convert).GetMethod(nameof(Convert.ToArray), Flags);
+        private static readonly MethodInfo s_to_list = typeof(Convert).GetMethod(nameof(Convert.ToList), Flags);
+        private static readonly MethodInfo s_to_collection = typeof(Convert).GetMethod(nameof(Convert.ToCollection), Flags);
+        private static readonly MethodInfo s_to_enumerable = typeof(Convert).GetMethod(nameof(Convert.ToEnumerable), Flags);
+        private static readonly MethodInfo s_to_dictionary = typeof(Convert).GetMethod(nameof(Convert.ToDictionary), Flags);
 
         private static Func<PacketReader, IPacketConverter, object> _GetToFunction(MethodInfo info, Type element)
         {
@@ -67,14 +67,14 @@ namespace Mikodev.Network
             return fun;
         }
 
-        private static Func<PacketReader, int, _Inf, object> _GetToEnumerableAdapter(Type element)
+        private static Func<PacketReader, int, Info, object> _GetToEnumerableAdapter(Type element)
         {
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
             var lev = Expression.Parameter(typeof(int), "level");
-            var inf = Expression.Parameter(typeof(_Inf), "info");
-            var cto = typeof(_EnumerableAdapter<>).MakeGenericType(element).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic).Single();
+            var inf = Expression.Parameter(typeof(Info), "info");
+            var cto = typeof(EnumerableAdapter<>).MakeGenericType(element).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic).Single();
             var inv = Expression.New(cto, rea, lev, inf);
-            var exp = Expression.Lambda<Func<PacketReader, int, _Inf, object>>(inv, rea, lev, inf);
+            var exp = Expression.Lambda<Func<PacketReader, int, Info, object>>(inv, rea, lev, inf);
             var fun = exp.Compile();
             return fun;
         }
@@ -139,7 +139,7 @@ namespace Mikodev.Network
         private static Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> _GetFromAdapterFunction(params Type[] types)
         {
             var itr = typeof(IEnumerable<>).MakeGenericType(typeof(KeyValuePair<,>).MakeGenericType(types));
-            var cto = typeof(_DictionaryAdapter<,>).MakeGenericType(types).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic).Single();
+            var cto = typeof(DictionaryAdapter<,>).MakeGenericType(types).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic).Single();
             var key = Expression.Parameter(typeof(IPacketConverter), "index");
             var obj = Expression.Parameter(typeof(object), "object");
             var cvt = Expression.Convert(obj, itr);

@@ -7,7 +7,7 @@ namespace Mikodev.Network.Converters
     {
         public static byte[] ToBytes(IPAddress value) => value.GetAddressBytes();
 
-        public static IPAddress ToIPAddress(byte[] buffer, int offset, int length) => new IPAddress(_Extension.Span(buffer, offset, length));
+        public static IPAddress ToIPAddress(byte[] buffer, int offset, int length) => new IPAddress(Extension.Span(buffer, offset, length));
 
         public int Length => 0;
 

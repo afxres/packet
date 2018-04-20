@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal sealed class _Inf
+    internal sealed class Info
     {
         internal const int None = 0;
         internal const int Enum = 128;
@@ -37,7 +37,7 @@ namespace Mikodev.Network
 
         internal Func<PacketReader, IPacketConverter, object> ToEnumerable { get; set; }
 
-        internal Func<PacketReader, int, _Inf, object> ToEnumerableAdapter { get; set; }
+        internal Func<PacketReader, int, Info, object> ToEnumerableAdapter { get; set; }
 
         internal Func<PacketReader, IPacketConverter, IPacketConverter, object> ToDictionary { get; set; }
 

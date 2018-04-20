@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal static class _Convert
+    internal static class Convert
     {
-        private static List<T> _List<T>(PacketReader rea, IPacketConverter con)
+        private static List<T> GetList<T>(PacketReader rea, IPacketConverter con)
         {
             var itm = rea.GetArray();
             var len = itm.Length;
@@ -18,10 +18,10 @@ namespace Mikodev.Network
             {
                 if (gen != null)
                     for (int i = 0; i < len; i++)
-                        lst.Add(gen.GetValue(itm[i]._ele));
+                        lst.Add(gen.GetValue(itm[i].element));
                 else
                     for (int i = 0; i < len; i++)
-                        lst.Add((T)con.GetValue(itm[i]._ele));
+                        lst.Add((T)con.GetValue(itm[i].element));
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
@@ -30,7 +30,7 @@ namespace Mikodev.Network
             return lst;
         }
 
-        private static T[] _Array<T>(PacketReader rea, IPacketConverter con)
+        private static T[] GetArray<T>(PacketReader rea, IPacketConverter con)
         {
             var itm = rea.GetArray();
             var len = itm.Length;
@@ -43,10 +43,10 @@ namespace Mikodev.Network
             {
                 if (gen != null)
                     for (int i = 0; i < len; i++)
-                        arr[i] = gen.GetValue(itm[i]._ele);
+                        arr[i] = gen.GetValue(itm[i].element);
                 else
                     for (int i = 0; i < len; i++)
-                        arr[i] = (T)con.GetValue(itm[i]._ele);
+                        arr[i] = (T)con.GetValue(itm[i].element);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
@@ -58,32 +58,32 @@ namespace Mikodev.Network
         internal static T[] ToArray<T>(PacketReader rea, IPacketConverter con)
         {
             if (con.Length < 1)
-                return _Array<T>(rea, con);
-            return rea._ele.ToArray<T>(con);
+                return GetArray<T>(rea, con);
+            return rea.element.ToArray<T>(con);
         }
 
         internal static List<T> ToList<T>(PacketReader rea, IPacketConverter con)
         {
             if (con.Length < 1)
-                return _List<T>(rea, con);
-            return new List<T>(rea._ele.ToArray<T>(con));
+                return GetList<T>(rea, con);
+            return new List<T>(rea.element.ToArray<T>(con));
         }
 
         internal static IEnumerable<T> ToCollection<T>(PacketReader rea, IPacketConverter con)
         {
             if (con.Length < 1)
-                return _Array<T>(rea, con);
-            return rea._ele.ToArray<T>(con);
+                return GetArray<T>(rea, con);
+            return rea.element.ToArray<T>(con);
         }
 
         internal static IEnumerable<T> ToEnumerable<T>(PacketReader rea, IPacketConverter con)
         {
-            return new _Enumerable<T>(rea, con);
+            return new Enumerable<T>(rea, con);
         }
 
         internal static Dictionary<TK, TV> ToDictionary<TK, TV>(PacketReader rea, IPacketConverter idx, IPacketConverter ele)
         {
-            return rea._ele.ToDictionary<TK, TV>(idx, ele);
+            return rea.element.ToDictionary<TK, TV>(idx, ele);
         }
 
         internal static T[] ToArrayCast<T>(object[] arr)

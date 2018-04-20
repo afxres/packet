@@ -4,14 +4,14 @@ using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, M
 
 namespace Mikodev.Network
 {
-    partial class _Extension
+    partial class Extension
     {
         internal static readonly ConverterDictionary s_converters = null;
 
-        static _Extension()
+        static Extension()
         {
             var dic = new ConverterDictionary();
-            var ass = typeof(_Extension).Assembly;
+            var ass = typeof(Extension).Assembly;
 
             foreach (var t in ass.GetTypes())
             {
@@ -26,9 +26,9 @@ namespace Mikodev.Network
             s_converters = dic;
         }
 
-        internal static object GetValueWrap(this IPacketConverter con, _Element ele, bool check = false)
+        internal static object GetValueWrap(this IPacketConverter con, Element ele, bool check = false)
         {
-            return GetValueWrap(con, ele._buf, ele._off, ele._len, check);
+            return GetValueWrap(con, ele.buffer, ele.offset, ele.length, check);
         }
 
         internal static object GetValueWrap(this IPacketConverter con, byte[] buf, int off, int len, bool check = false)
@@ -45,9 +45,9 @@ namespace Mikodev.Network
             }
         }
 
-        internal static T GetValueWrapAuto<T>(this IPacketConverter con, _Element element, bool check = false)
+        internal static T GetValueWrapAuto<T>(this IPacketConverter con, Element element, bool check = false)
         {
-            return GetValueWrapAuto<T>(con, element._buf, element._off, element._len, check);
+            return GetValueWrapAuto<T>(con, element.buffer, element.offset, element.length, check);
         }
 
         internal static T GetValueWrapAuto<T>(this IPacketConverter con, byte[] buf, int off, int len, bool check = false)
@@ -66,14 +66,14 @@ namespace Mikodev.Network
             }
         }
 
-        internal static T GetValue<T>(this IPacketConverter<T> con, _Element ele)
+        internal static T GetValue<T>(this IPacketConverter<T> con, Element ele)
         {
-            return con.GetValue(ele._buf, ele._off, ele._len);
+            return con.GetValue(ele.buffer, ele.offset, ele.length);
         }
 
-        internal static object GetValue(this IPacketConverter con, _Element ele)
+        internal static object GetValue(this IPacketConverter con, Element ele)
         {
-            return con.GetValue(ele._buf, ele._off, ele._len);
+            return con.GetValue(ele.buffer, ele.offset, ele.length);
         }
 
         internal static T GetValueWrap<T>(this IPacketConverter<T> con, byte[] buf, int off, int len)
@@ -88,11 +88,11 @@ namespace Mikodev.Network
             }
         }
 
-        internal static T GetValueWrap<T>(this IPacketConverter<T> con, _Element ele)
+        internal static T GetValueWrap<T>(this IPacketConverter<T> con, Element ele)
         {
             try
             {
-                return con.GetValue(ele._buf, ele._off, ele._len);
+                return con.GetValue(ele.buffer, ele.offset, ele.length);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {

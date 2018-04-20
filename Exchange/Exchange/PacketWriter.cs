@@ -12,150 +12,150 @@ namespace Mikodev.Network
 {
     public sealed partial class PacketWriter : IDynamicMetaObjectProvider
     {
-        internal readonly ConverterDictionary _cvt;
-        private Item _itm;
+        internal readonly ConverterDictionary converters;
+        private Item item;
 
         internal PacketWriter(ConverterDictionary cvt, Item itm)
         {
-            _itm = itm;
-            _cvt = cvt;
+            converters = cvt;
+            item = itm;
         }
 
         internal PacketWriter(ConverterDictionary cvt, PacketWriter wtr)
         {
-            _cvt = cvt;
-            _itm = (wtr != null ? wtr._itm : Item.Empty);
+            converters = cvt;
+            item = (wtr != null ? wtr.item : Item.Empty);
         }
 
         public PacketWriter(ConverterDictionary converters = null)
         {
-            _cvt = converters;
-            _itm = Item.Empty;
+            this.converters = converters;
+            item = Item.Empty;
         }
 
         internal IEnumerable<string> GetKeys()
         {
-            var itm = _itm;
-            if (itm.tag == Item.DictionaryPacketWriter)
-                return ((Dictionary<string, PacketWriter>)itm.obj).Keys;
-            return Enumerable.Empty<string>();
+            var item = this.item;
+            if (item.tag == Item.DictionaryPacketWriter)
+                return ((Dictionary<string, PacketWriter>)item.obj).Keys;
+            return System.Linq.Enumerable.Empty<string>();
         }
 
         internal Dictionary<string, PacketWriter> GetDictionary()
         {
-            var itm = _itm;
-            if (itm.tag == Item.DictionaryPacketWriter)
-                return (Dictionary<string, PacketWriter>)itm.obj;
-            var val = new Dictionary<string, PacketWriter>();
-            _itm = new Item(val);
-            return val;
+            var item = this.item;
+            if (item.tag == Item.DictionaryPacketWriter)
+                return (Dictionary<string, PacketWriter>)item.obj;
+            var dictionary = new Dictionary<string, PacketWriter>();
+            this.item = new Item(dictionary);
+            return dictionary;
         }
 
-        internal static PacketWriter GetWriter(ConverterDictionary cvt, object itm, int lev)
+        internal static PacketWriter GetWriter(ConverterDictionary converters, object value, int level)
         {
-            return new PacketWriter(cvt, GetItem(cvt, itm, lev));
+            return new PacketWriter(converters, GetItem(converters, value, level));
         }
 
-        private static Item GetItem(ConverterDictionary cvt, object itm, int lev)
+        private static Item GetItem(ConverterDictionary converters, object value, int level)
         {
-            if (lev > _Caches.Depth)
+            if (level > Cache.Depth)
                 throw new PacketException(PacketError.RecursiveError);
-            lev += 1;
+            level += 1;
 
-            if (itm == null)
+            if (value == null)
                 return Item.Empty;
 
-            var typ = itm.GetType();
-            var inf = default(_Inf);
-            if (_Caches.TryGetConverter(cvt, typ, out var con, ref inf))
-                return new Item(con.GetBytesWrap(itm));
+            var typ = value.GetType();
+            var inf = default(Info);
+            if (Cache.TryGetConverter(converters, typ, out var con, ref inf))
+                return new Item(con.GetBytesWrap(value));
 
-            return GetItemMatch(cvt, itm, lev, inf);
+            return GetItemMatch(converters, value, level, inf);
         }
 
-        private static Item GetItemMatch(ConverterDictionary cvt, object itm, int lev, _Inf inf)
+        private static Item GetItemMatch(ConverterDictionary converters, object value, int level, Info info)
         {
-            if (lev > _Caches.Depth)
+            if (level > Cache.Depth)
                 throw new PacketException(PacketError.RecursiveError);
-            lev += 1;
+            level += 1;
 
-            switch (inf.From)
+            switch (info.From)
             {
-                case _Inf.Writer:
-                    return ((PacketWriter)itm)._itm;
-                case _Inf.RawWriter:
-                    return new Item(((PacketRawWriter)itm)._str);
-                case _Inf.Bytes:
-                    return new Item(((ICollection<byte>)itm).ToBytes());
-                case _Inf.SBytes:
-                    return new Item(((ICollection<sbyte>)itm).ToBytes());
+                case Info.Writer:
+                    return ((PacketWriter)value).item;
+                case Info.RawWriter:
+                    return new Item(((PacketRawWriter)value).stream);
+                case Info.Bytes:
+                    return new Item(((ICollection<byte>)value).ToBytes());
+                case Info.SBytes:
+                    return new Item(((ICollection<sbyte>)value).ToBytes());
 
-                case _Inf.Enumerable:
+                case Info.Enumerable:
                     {
-                        var ele = inf.ElementType;
-                        var sub = default(_Inf);
-                        if (_Caches.TryGetConverter(cvt, ele, out var con, ref sub))
-                            return new Item(inf.FromEnumerable(con, itm), con.Length);
+                        var ele = info.ElementType;
+                        var sub = default(Info);
+                        if (Cache.TryGetConverter(converters, ele, out var con, ref sub))
+                            return new Item(info.FromEnumerable(con, value), con.Length);
 
                         var lst = new List<Item>();
-                        foreach (var i in ((IEnumerable)itm))
-                            lst.Add(GetItemMatch(cvt, i, lev, sub));
+                        foreach (var i in ((IEnumerable)value))
+                            lst.Add(GetItemMatch(converters, i, level, sub));
                         return new Item(lst);
                     }
-                case _Inf.Dictionary:
+                case Info.Dictionary:
                     {
-                        var key = _Caches.GetConverter(cvt, inf.IndexType, true);
+                        var key = Cache.GetConverter(converters, info.IndexType, true);
                         if (key == null)
-                            throw PacketException.InvalidKeyType(inf.IndexType);
-                        var ele = inf.ElementType;
-                        var sub = default(_Inf);
-                        if (_Caches.TryGetConverter(cvt, ele, out var con, ref sub))
-                            return new Item(inf.FromDictionary(key, con, itm), key.Length, con.Length);
+                            throw PacketException.InvalidKeyType(info.IndexType);
+                        var ele = info.ElementType;
+                        var sub = default(Info);
+                        if (Cache.TryGetConverter(converters, ele, out var con, ref sub))
+                            return new Item(info.FromDictionary(key, con, value), key.Length, con.Length);
 
                         var lst = new List<KeyValuePair<byte[], Item>>();
-                        var kvp = inf.FromDictionaryAdapter(key, itm);
+                        var kvp = info.FromDictionaryAdapter(key, value);
                         foreach (var i in kvp)
                         {
-                            var res = GetItemMatch(cvt, i.Value, lev, sub);
+                            var res = GetItemMatch(converters, i.Value, level, sub);
                             var tmp = new KeyValuePair<byte[], Item>(i.Key, res);
                             lst.Add(tmp);
                         }
                         return new Item(lst, key.Length);
                     }
-                case _Inf.Map:
+                case Info.Map:
                     {
-                        var dic = (IDictionary<string, object>)itm;
+                        var dic = (IDictionary<string, object>)value;
                         var lst = new Dictionary<string, PacketWriter>();
                         foreach (var i in dic)
-                            lst[i.Key] = GetWriter(cvt, i.Value, lev);
+                            lst[i.Key] = GetWriter(converters, i.Value, level);
                         return new Item(lst);
                     }
                 default:
                     {
                         var lst = new Dictionary<string, PacketWriter>();
-                        var get = _Caches.GetGetterInfo(inf.Type);
-                        var val = get.GetValues(itm);
+                        var get = Cache.GetGetterInfo(info.Type);
+                        var val = get.GetValues(value);
                         var arg = get.Arguments;
                         for (int i = 0; i < arg.Length; i++)
-                            lst[arg[i].Name] = GetWriter(cvt, val[i], lev);
+                            lst[arg[i].Key] = GetWriter(converters, val[i], level);
                         return new Item(lst);
                     }
             }
         }
 
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicWriter(parameter, this);
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicWriter(parameter, this);
 
         public byte[] GetBytes()
         {
-            var itm = _itm;
+            var itm = item;
             if (itm.obj == null)
-                return _Extension.s_empty_bytes;
+                return Extension.s_empty_bytes;
             else if (itm.tag == Item.Bytes)
                 return (byte[])itm.obj;
             else if (itm.tag == Item.MemoryStream)
                 return ((MemoryStream)itm.obj).ToArray();
 
-            var mst = new MemoryStream(_Caches.Length);
+            var mst = new MemoryStream(Cache.Length);
             itm.GetBytesMatch(mst, 0);
             var res = mst.ToArray();
             return res;
@@ -163,7 +163,7 @@ namespace Mikodev.Network
 
         public override string ToString()
         {
-            var obj = _itm.obj;
+            var obj = item.obj;
             var stb = new StringBuilder(nameof(PacketWriter));
             stb.Append(" with ");
             if (obj == null)

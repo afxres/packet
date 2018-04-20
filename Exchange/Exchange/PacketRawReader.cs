@@ -4,38 +4,38 @@ namespace Mikodev.Network
 {
     public sealed class PacketRawReader
     {
-        internal readonly ConverterDictionary _cvt;
-        private readonly _Element _ele;
-        private int _idx;
+        internal readonly ConverterDictionary converters;
+        private readonly Element element;
+        private int index;
 
         public PacketRawReader(PacketReader source)
         {
-            _cvt = source._cvt;
-            _ele = source._ele;
-            _idx = source._ele._off;
+            converters = source.converters;
+            element = source.element;
+            index = source.element.offset;
         }
 
         public PacketRawReader(byte[] buffer, ConverterDictionary converters = null)
         {
-            _cvt = converters;
-            _ele = new _Element(buffer);
-            _idx = 0;
+            this.converters = converters;
+            element = new Element(buffer);
+            index = 0;
         }
 
         public PacketRawReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
-            _ele = new _Element(buffer, offset, length);
-            _cvt = converters;
+            element = new Element(buffer, offset, length);
+            this.converters = converters;
         }
 
-        internal object Next(IPacketConverter con) => _ele.Next(ref _idx, con);
+        internal object Next(IPacketConverter con) => element.Next(ref index, con);
 
-        internal T NextAuto<T>(IPacketConverter con) => _ele.NextAuto<T>(ref _idx, con);
+        internal T NextAuto<T>(IPacketConverter con) => element.NextAuto<T>(ref index, con);
 
-        public bool Any => _idx < _ele.Max();
+        public bool Any => index < element.Max();
 
-        public void Reset() => _idx = _ele._off;
+        public void Reset() => index = element.offset;
 
-        public override string ToString() => $"{nameof(PacketRawReader)} with {_ele._len} byte(s)";
+        public override string ToString() => $"{nameof(PacketRawReader)} with {element.length} byte(s)";
     }
 }

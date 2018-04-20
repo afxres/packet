@@ -5,13 +5,13 @@ namespace Mikodev.Network
 {
     public sealed class PacketRawWriter
     {
-        internal readonly ConverterDictionary _cvt;
-        internal readonly MemoryStream _str = new MemoryStream(_Caches.Length);
+        internal readonly ConverterDictionary converters;
+        internal readonly MemoryStream stream = new MemoryStream(Cache.Length);
 
-        public PacketRawWriter(ConverterDictionary converters = null) => _cvt = converters;
+        public PacketRawWriter(ConverterDictionary converters = null) => this.converters = converters;
 
-        public byte[] GetBytes() => _str.ToArray();
+        public byte[] GetBytes() => stream.ToArray();
 
-        public override string ToString() => $"{nameof(PacketRawWriter)} with {_str.Length} byte(s)";
+        public override string ToString() => $"{nameof(PacketRawWriter)} with {stream.Length} byte(s)";
     }
 }

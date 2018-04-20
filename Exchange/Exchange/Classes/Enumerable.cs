@@ -4,15 +4,15 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal class _Enumerable : IEnumerable
+    internal class Enumerable : IEnumerable
     {
-        protected readonly PacketReader rea;
-        protected readonly IPacketConverter con;
+        protected readonly PacketReader reader;
+        protected readonly IPacketConverter converter;
 
-        internal _Enumerable(PacketReader rea, IPacketConverter con)
+        internal Enumerable(PacketReader reader, IPacketConverter converter)
         {
-            this.rea = rea;
-            this.con = con;
+            this.reader = reader;
+            this.converter = converter;
         }
 
         private static IEnumerator Enumerator(byte[] buf, int off, int sum, int def, IPacketConverter con)
@@ -24,25 +24,25 @@ namespace Mikodev.Network
         private static IEnumerator Enumerator(PacketReader[] arr, IPacketConverter con)
         {
             for (int idx = 0; idx < arr.Length; idx++)
-                yield return con.GetValueWrap(arr[idx]._ele);
+                yield return con.GetValueWrap(arr[idx].element);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            var def = con.Length;
+            var def = converter.Length;
             if (def < 1)
-                return Enumerator(rea.GetArray(), con);
-            var ele = rea._ele;
-            var sum = Math.DivRem(ele._len, def, out var rem);
+                return Enumerator(reader.GetArray(), converter);
+            var ele = reader.element;
+            var sum = Math.DivRem(ele.length, def, out var rem);
             if (rem != 0)
                 throw PacketException.Overflow();
-            return Enumerator(ele._buf, ele._off, sum, def, con);
+            return Enumerator(ele.buffer, ele.offset, sum, def, converter);
         }
     }
 
-    internal sealed class _Enumerable<T> : _Enumerable, IEnumerable<T>
+    internal sealed class Enumerable<T> : Enumerable, IEnumerable<T>
     {
-        internal _Enumerable(PacketReader rea, IPacketConverter con) : base(rea, con) { }
+        internal Enumerable(PacketReader rea, IPacketConverter con) : base(rea, con) { }
 
         private static IEnumerator<T> Enumerator(byte[] buf, int off, int sum, int def, IPacketConverter con)
         {
@@ -58,22 +58,22 @@ namespace Mikodev.Network
         {
             if (con is IPacketConverter<T> gen)
                 for (int idx = 0; idx < arr.Length; idx++)
-                    yield return gen.GetValueWrap(arr[idx]._ele);
+                    yield return gen.GetValueWrap(arr[idx].element);
             else
                 for (int idx = 0; idx < arr.Length; idx++)
-                    yield return (T)con.GetValueWrap(arr[idx]._ele);
+                    yield return (T)con.GetValueWrap(arr[idx].element);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            var def = con.Length;
+            var def = converter.Length;
             if (def < 1)
-                return Enumerator(rea.GetArray(), con);
-            var ele = rea._ele;
-            var sum = Math.DivRem(ele._len, def, out var rem);
+                return Enumerator(reader.GetArray(), converter);
+            var ele = reader.element;
+            var sum = Math.DivRem(ele.length, def, out var rem);
             if (rem != 0)
                 throw PacketException.Overflow();
-            else return Enumerator(ele._buf, ele._off, sum, def, con);
+            else return Enumerator(ele.buffer, ele.offset, sum, def, converter);
         }
     }
 }

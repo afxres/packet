@@ -18,7 +18,7 @@ namespace Mikodev.Network.Converters
 
         public static IPEndPoint ToIPEndPoint(byte[] buffer, int offset, int length)
         {
-            var add = new IPAddress(_Extension.Span(buffer, offset, length - sizeof(ushort)));
+            var add = new IPAddress(Extension.Span(buffer, offset, length - sizeof(ushort)));
             var pot = BitConverter.ToUInt16(buffer, offset + length - sizeof(ushort));
             return new IPEndPoint(add, pot);
         }

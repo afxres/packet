@@ -70,37 +70,37 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer);
-            return _Caches.GetConverter(null, type, false).GetValueWrap(buffer, 0, buffer.Length, true);
+            return Cache.GetConverter(null, type, false).GetValueWrap(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue(byte[] buffer, int offset, int length, Type type)
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer, offset, length);
-            return _Caches.GetConverter(null, type, false).GetValueWrap(buffer, offset, length, true);
+            return Cache.GetConverter(null, type, false).GetValueWrap(buffer, offset, length, true);
         }
 
         public static object GetValue<T>(byte[] buffer)
         {
             ThrowIfArgumentError(buffer);
-            return _Caches.GetConverter<T>(null, false).GetValueWrapAuto<T>(buffer, 0, buffer.Length, true);
+            return Cache.GetConverter<T>(null, false).GetValueWrapAuto<T>(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue<T>(byte[] buffer, int offset, int length)
         {
             ThrowIfArgumentError(buffer, offset, length);
-            return _Caches.GetConverter<T>(null, false).GetValueWrap(buffer, offset, length, true);
+            return Cache.GetConverter<T>(null, false).GetValueWrap(buffer, offset, length, true);
         }
 
         public static byte[] GetBytes(object value, Type type)
         {
             ThrowIfArgumentError(type);
-            return _Caches.GetBytes(type, null, value);
+            return Cache.GetBytes(type, null, value);
         }
 
         public static byte[] GetBytes<T>(T value)
         {
-            return _Caches.GetBytesAuto(null, value);
+            return Cache.GetBytesAuto(null, value);
         }
 
         public static object Deserialize(byte[] buffer, Type type, ConverterDictionary converters = null)
@@ -157,7 +157,7 @@ namespace Mikodev.Network
 
         public static void ClearReflectionCache()
         {
-            _Caches.ClearCache();
+            Cache.ClearCache();
         }
     }
 }

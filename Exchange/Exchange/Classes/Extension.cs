@@ -6,7 +6,7 @@ using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, 
 
 namespace Mikodev.Network
 {
-    internal static partial class _Extension
+    internal static partial class Extension
     {
         internal static readonly Encoding s_encoding = Encoding.UTF8;
 
@@ -90,7 +90,7 @@ namespace Mikodev.Network
 
         internal static void WriteValue(this Stream str, ConverterDictionary cvt, object itm, Type type)
         {
-            var con = _Caches.GetConverter(cvt, type, false);
+            var con = Cache.GetConverter(cvt, type, false);
             var len = con.Length > 0;
             if (len)
                 str.Write(con.GetBytesWrap(itm));
@@ -101,7 +101,7 @@ namespace Mikodev.Network
 
         internal static void WriteValueGeneric<T>(this Stream str, ConverterDictionary cvt, T itm)
         {
-            var con = _Caches.GetConverter<T>(cvt, false);
+            var con = Cache.GetConverter<T>(cvt, false);
             var len = con.Length > 0;
             var gen = con as IPacketConverter<T>;
             if (len && gen != null)

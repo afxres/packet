@@ -13,38 +13,38 @@ namespace Mikodev.Network
         private const int TagArray = 1;
         private const int TagDictionary = 2;
 
-        internal readonly ConverterDictionary _cvt;
-        internal readonly _Element _ele;
+        internal readonly ConverterDictionary converters;
+        internal readonly Element element;
 
-        private PacketReader[] _arr = null;
-        private Dictionary<string, PacketReader> _dic = null;
-        private int _tag = 0;
+        private PacketReader[] array = null;
+        private Dictionary<string, PacketReader> dictionary = null;
+        private int tag = 0;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
-            _ele = new _Element(buffer);
-            _cvt = converters;
+            element = new Element(buffer);
+            this.converters = converters;
         }
 
         public PacketReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
-            _ele = new _Element(buffer, offset, length);
-            _cvt = converters;
+            element = new Element(buffer, offset, length);
+            this.converters = converters;
         }
 
         internal Dictionary<string, PacketReader> GetDictionary()
         {
-            var obj = _dic;
+            var obj = dictionary;
             if (obj != null)
                 return obj;
-            if ((_tag & TagDictionary) != 0)
+            if ((tag & TagDictionary) != 0)
                 return null;
-            _tag |= TagDictionary;
+            tag |= TagDictionary;
 
             var dic = new Dictionary<string, PacketReader>();
-            var buf = _ele._buf;
-            var max = _ele.Max();
-            var idx = _ele._off;
+            var buf = element.buffer;
+            var max = element.Max();
+            var idx = element.offset;
             var len = 0;
 
             try
@@ -53,49 +53,49 @@ namespace Mikodev.Network
                 {
                     if (buf.MoveNext(max, ref idx, out len) == false)
                         return null;
-                    var key = _Extension.s_encoding.GetString(buf, idx, len);
+                    var key = Extension.s_encoding.GetString(buf, idx, len);
                     idx += len;
                     if (buf.MoveNext(max, ref idx, out len) == false)
                         return null;
-                    dic.Add(key, new PacketReader(buf, idx, len, _cvt));
+                    dic.Add(key, new PacketReader(buf, idx, len, converters));
                     idx += len;
                 }
             }
             catch (ArgumentException)
             {
                 // duplicate key
-                _dic = null;
+                dictionary = null;
                 return null;
             }
 
-            _dic = dic;
+            dictionary = dic;
             return dic;
         }
 
         internal PacketReader[] GetArray()
         {
-            var arr = _arr;
+            var arr = array;
             if (arr != null)
                 return arr;
-            if ((_tag & TagArray) != 0)
+            if ((tag & TagArray) != 0)
                 throw PacketException.Overflow();
-            _tag |= TagArray;
+            tag |= TagArray;
 
             var lst = new List<PacketReader>();
-            var max = _ele.Max();
-            var idx = _ele._off;
-            var buf = _ele._buf;
+            var max = element.Max();
+            var idx = element.offset;
+            var buf = element.buffer;
             var len = 0;
             while (idx != max)
             {
                 if (buf.MoveNext(max, ref idx, out len) == false)
                     throw PacketException.Overflow();
-                var rea = new PacketReader(buf, idx, len, _cvt);
+                var rea = new PacketReader(buf, idx, len, converters);
                 lst.Add(rea);
                 idx += len;
             }
             arr = lst.ToArray();
-            _arr = arr;
+            array = arr;
             return arr;
         }
 
@@ -129,38 +129,38 @@ namespace Mikodev.Network
             var dic = GetDictionary();
             if (dic != null)
                 return dic.Keys;
-            return Enumerable.Empty<string>();
+            return System.Linq.Enumerable.Empty<string>();
         }
 
         internal object GetValue(Type typ, int lev)
         {
-            if (lev > _Caches.Depth)
+            if (lev > Cache.Depth)
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
-            var inf = default(_Inf);
-            if (_Caches.TryGetConverter(_cvt, typ, out var con, ref inf))
-                return con.GetValueWrap(_ele, true);
+            var inf = default(Info);
+            if (Cache.TryGetConverter(converters, typ, out var con, ref inf))
+                return con.GetValueWrap(element, true);
             return GetValueMatch(typ, lev, inf);
         }
 
-        internal object GetValueMatch(Type typ, int lev, _Inf inf)
+        internal object GetValueMatch(Type typ, int lev, Info inf)
         {
-            if (lev > _Caches.Depth)
+            if (lev > Cache.Depth)
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
-            var sub = default(_Inf);
+            var sub = default(Info);
             switch (inf.To)
             {
-                case _Inf.Reader:
+                case Info.Reader:
                     return this;
-                case _Inf.RawReader:
+                case Info.RawReader:
                     return new PacketRawReader(this);
 
-                case _Inf.Collection:
+                case Info.Collection:
                     {
-                        if (_Caches.TryGetConverter(_cvt, inf.ElementType, out var con, ref sub))
+                        if (Cache.TryGetConverter(converters, inf.ElementType, out var con, ref sub))
                             return inf.ToCollection(this, con);
                         var lst = GetArray();
                         var arr = new object[lst.Length];
@@ -169,23 +169,23 @@ namespace Mikodev.Network
                         var res = inf.ToCollectionCast(arr);
                         return res;
                     }
-                case _Inf.Enumerable:
+                case Info.Enumerable:
                     {
-                        if (_Caches.TryGetConverter(_cvt, inf.ElementType, out var con, ref sub))
+                        if (Cache.TryGetConverter(converters, inf.ElementType, out var con, ref sub))
                             return inf.ToEnumerable(this, con);
                         return inf.ToEnumerableAdapter(this, lev, sub);
                     }
-                case _Inf.Dictionary:
+                case Info.Dictionary:
                     {
-                        var keycon = _Caches.GetConverter(_cvt, inf.IndexType, true);
+                        var keycon = Cache.GetConverter(converters, inf.IndexType, true);
                         if (keycon == null)
                             throw PacketException.InvalidKeyType(typ);
-                        if (_Caches.TryGetConverter(_cvt, inf.ElementType, out var con, ref sub))
+                        if (Cache.TryGetConverter(converters, inf.ElementType, out var con, ref sub))
                             return inf.ToDictionary(this, keycon, con);
 
-                        var max = _ele.Max();
-                        var idx = _ele._off;
-                        var buf = _ele._buf;
+                        var max = element.Max();
+                        var idx = element.offset;
+                        var buf = element.buffer;
                         var keylen = keycon.Length;
                         var len = 0;
 
@@ -208,7 +208,7 @@ namespace Mikodev.Network
 
                             if (buf.MoveNext(max, ref idx, out len) == false)
                                 throw PacketException.Overflow();
-                            var rea = new PacketReader(buf, idx, len, _cvt);
+                            var rea = new PacketReader(buf, idx, len, converters);
                             var val = rea.GetValueMatch(inf.ElementType, lev, sub);
                             var par = new KeyValuePair<object, object>(key, val);
 
@@ -219,27 +219,25 @@ namespace Mikodev.Network
                     }
                 default:
                     {
-                        var set = _Caches.GetSetterInfo(typ);
-                        var arg = set.Arguments;
-                        var fun = set.Function;
-                        if (arg == null || fun == null)
+                        var set = Cache.GetSetterInfo(typ);
+                        if (set == null)
                             throw PacketException.InvalidType(typ);
-
+                        var arg = set.Arguments;
                         var arr = new object[arg.Length];
                         for (int i = 0; i < arg.Length; i++)
                         {
-                            var rea = GetItem(arg[i].Name, false);
-                            var val = rea.GetValue(arg[i].Type, lev);
+                            var rea = GetItem(arg[i].Key, false);
+                            var val = rea.GetValue(arg[i].Value, lev);
                             arr[i] = val;
                         }
 
-                        var res = fun.Invoke(arr);
+                        var res = set.GetObject(arr);
                         return res;
                     }
             }
         }
 
-        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new _DynamicReader(parameter, this);
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicReader(parameter, this);
 
         public int Count => GetDictionary()?.Count ?? 0;
 
@@ -251,7 +249,7 @@ namespace Mikodev.Network
             {
                 if (path == null)
                     throw new ArgumentNullException(nameof(path));
-                var key = path.Split(_Extension.s_separators);
+                var key = path.Split(Extension.s_separators);
                 var val = GetItem(key, nothrow);
                 return val;
             }
@@ -264,7 +262,7 @@ namespace Mikodev.Network
             var dic = GetDictionary();
             if (dic != null)
                 stb.AppendFormat("{0} node(s), ", dic.Count);
-            stb.AppendFormat("{0} byte(s)", _ele._len);
+            stb.AppendFormat("{0} byte(s)", element.length);
             return stb.ToString();
         }
 

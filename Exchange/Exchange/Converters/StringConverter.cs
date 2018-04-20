@@ -7,12 +7,12 @@ namespace Mikodev.Network.Converters
     {
         public int Length => 0;
 
-        public byte[] GetBytes(string value) => _Extension.s_encoding.GetBytes(value);
+        public byte[] GetBytes(string value) => Extension.s_encoding.GetBytes(value);
 
-        public string GetValue(byte[] buffer, int offset, int length) => _Extension.s_encoding.GetString(buffer, offset, length);
+        public string GetValue(byte[] buffer, int offset, int length) => Extension.s_encoding.GetString(buffer, offset, length);
 
-        byte[] IPacketConverter.GetBytes(object value) => _Extension.s_encoding.GetBytes((string)value);
+        byte[] IPacketConverter.GetBytes(object value) => Extension.s_encoding.GetBytes((string)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => _Extension.s_encoding.GetString(buffer, offset, length);
+        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => Extension.s_encoding.GetString(buffer, offset, length);
     }
 }

@@ -7,9 +7,9 @@ namespace Mikodev.Network
     [Serializable]
     public sealed class PacketException : Exception
     {
-        private readonly PacketError _err = PacketError.None;
+        private readonly PacketError error = PacketError.None;
 
-        private static string _GetMessage(PacketError code)
+        private static string GetMessage(PacketError code)
         {
             switch (code)
             {
@@ -26,26 +26,26 @@ namespace Mikodev.Network
             }
         }
 
-        public PacketError ErrorCode => _err;
+        public PacketError ErrorCode => error;
 
-        public PacketException(PacketError code) : base(_GetMessage(code)) => _err = code;
+        public PacketException(PacketError code) : base(GetMessage(code)) => error = code;
 
-        public PacketException(PacketError code, string message) : base(message) => _err = code;
+        public PacketException(PacketError code, string message) : base(message) => error = code;
 
-        public PacketException(PacketError code, Exception except) : base(_GetMessage(code), except) => _err = code;
+        public PacketException(PacketError code, Exception except) : base(GetMessage(code), except) => error = code;
 
         internal PacketException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));
-            _err = (PacketError)info.GetValue(nameof(PacketError), typeof(PacketError));
+            error = (PacketError)info.GetValue(nameof(PacketError), typeof(PacketError));
         }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));
-            info.AddValue(nameof(PacketError), _err);
+            info.AddValue(nameof(PacketError), error);
             base.GetObjectData(info, context);
         }
 
