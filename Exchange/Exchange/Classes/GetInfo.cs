@@ -3,12 +3,12 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    internal sealed class GetterInfo
+    internal sealed class GetInfo
     {
         private readonly KeyValuePair<string, Type>[] infos;
         private readonly Action<object, object[]> action;
 
-        internal GetterInfo(KeyValuePair<string, Type>[] infos, Action<object, object[]> action)
+        internal GetInfo(KeyValuePair<string, Type>[] infos, Action<object, object[]> action)
         {
             this.infos = infos;
             this.action = action;

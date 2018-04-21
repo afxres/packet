@@ -77,11 +77,11 @@ namespace Mikodev.Network
 
                     if (keylen > 0)
                         if (sub < keylen)
-                            throw PacketException.Overflow();
+                            goto fail;
                         else
                             len = keylen;
                     else if (buffer.MoveNext(max, ref idx, out len) == false)
-                        throw PacketException.Overflow();
+                        goto fail;
 
                     var key = (keygen != null ? keygen.GetValue(buffer, idx, len) : (TK)keycon.GetValue(buffer, idx, len));
                     idx += len;
@@ -89,11 +89,11 @@ namespace Mikodev.Network
 
                     if (vallen > 0)
                         if (sub < vallen)
-                            throw PacketException.Overflow();
+                            goto fail;
                         else
                             len = vallen;
                     else if (buffer.MoveNext(max, ref idx, out len) == false)
-                        throw PacketException.Overflow();
+                        goto fail;
 
                     var val = (valgen != null ? valgen.GetValue(buffer, idx, len) : (TV)valcon.GetValue(buffer, idx, len));
                     idx += len;
@@ -104,8 +104,10 @@ namespace Mikodev.Network
             {
                 throw PacketException.ConvertError(ex);
             }
-
             return dic;
+
+            fail:
+            throw PacketException.Overflow();
         }
 
         internal T[] ToArray<T>(IPacketConverter con)

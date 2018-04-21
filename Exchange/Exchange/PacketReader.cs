@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
@@ -150,7 +149,6 @@ namespace Mikodev.Network
                 throw new PacketException(PacketError.RecursiveError);
             lev += 1;
 
-            var sub = default(Info);
             switch (inf.To)
             {
                 case Info.Reader:
@@ -160,6 +158,7 @@ namespace Mikodev.Network
 
                 case Info.Collection:
                     {
+                        var sub = default(Info);
                         if (Cache.TryGetConverter(converters, inf.ElementType, out var con, ref sub))
                             return inf.ToCollection(this, con);
                         var lst = GetArray();
@@ -171,12 +170,14 @@ namespace Mikodev.Network
                     }
                 case Info.Enumerable:
                     {
+                        var sub = default(Info);
                         if (Cache.TryGetConverter(converters, inf.ElementType, out var con, ref sub))
                             return inf.ToEnumerable(this, con);
                         return inf.ToEnumerableAdapter(this, lev, sub);
                     }
                 case Info.Dictionary:
                     {
+                        var sub = default(Info);
                         var keycon = Cache.GetConverter(converters, inf.IndexType, true);
                         if (keycon == null)
                             throw PacketException.InvalidKeyType(typ);
@@ -197,17 +198,17 @@ namespace Mikodev.Network
                                 break;
                             if (keylen > 0)
                                 if (res < keylen)
-                                    throw PacketException.Overflow();
+                                    goto fail;
                                 else
                                     len = keylen;
                             else if (buf.MoveNext(max, ref idx, out len) == false)
-                                throw PacketException.Overflow();
+                                goto fail;
                             // Wrap error non-check
                             var key = keycon.GetValueWrap(buf, idx, len);
                             idx += len;
 
                             if (buf.MoveNext(max, ref idx, out len) == false)
-                                throw PacketException.Overflow();
+                                goto fail;
                             var rea = new PacketReader(buf, idx, len, converters);
                             var val = rea.GetValueMatch(inf.ElementType, lev, sub);
                             var par = new KeyValuePair<object, object>(key, val);
@@ -216,10 +217,12 @@ namespace Mikodev.Network
                             lst.Add(par);
                         }
                         return inf.ToDictionaryCast(lst);
+                        fail:
+                        throw PacketException.Overflow();
                     }
                 default:
                     {
-                        var set = Cache.GetSetterInfo(typ);
+                        var set = Cache.GetSetInfo(typ);
                         if (set == null)
                             throw PacketException.InvalidType(typ);
                         var arg = set.Arguments;

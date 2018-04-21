@@ -7,17 +7,15 @@ namespace Mikodev.Network.Converters
     {
         public static byte[] ToBytes(sbyte[] buffer)
         {
-            var len = buffer?.Length ?? 0;
-            var buf = new byte[len];
-            if (len > 0)
-                Buffer.BlockCopy(buffer, 0, buf, 0, len);
+            var buf = new byte[buffer?.Length ?? 0];
+            if (buf.Length > 0)
+                Buffer.BlockCopy(buffer, 0, buf, 0, buf.Length);
             return buf;
         }
 
         public static sbyte[] ToSbyteArray(byte[] buffer, int offset, int length)
         {
-            var len = buffer?.Length ?? 0;
-            if (length < 0 || length > len)
+            if (length < 0 || length > (buffer?.Length ?? 0))
                 throw PacketException.Overflow();
             var buf = new sbyte[length];
             if (length > 0)

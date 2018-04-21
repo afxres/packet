@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
@@ -35,20 +34,20 @@ namespace Mikodev.Network
 
         internal IEnumerable<string> GetKeys()
         {
-            var item = this.item;
-            if (item.tag == Item.DictionaryPacketWriter)
-                return ((Dictionary<string, PacketWriter>)item.obj).Keys;
+            var itm = item;
+            if (itm.tag == Item.DictionaryPacketWriter)
+                return ((Dictionary<string, PacketWriter>)itm.obj).Keys;
             return System.Linq.Enumerable.Empty<string>();
         }
 
         internal Dictionary<string, PacketWriter> GetDictionary()
         {
-            var item = this.item;
-            if (item.tag == Item.DictionaryPacketWriter)
-                return (Dictionary<string, PacketWriter>)item.obj;
-            var dictionary = new Dictionary<string, PacketWriter>();
-            this.item = new Item(dictionary);
-            return dictionary;
+            var itm = item;
+            if (itm.tag == Item.DictionaryPacketWriter)
+                return (Dictionary<string, PacketWriter>)itm.obj;
+            var dic = new Dictionary<string, PacketWriter>();
+            item = new Item(dic);
+            return dic;
         }
 
         internal static PacketWriter GetWriter(ConverterDictionary converters, object value, int level)
@@ -133,7 +132,7 @@ namespace Mikodev.Network
                 default:
                     {
                         var lst = new Dictionary<string, PacketWriter>();
-                        var get = Cache.GetGetterInfo(info.Type);
+                        var get = Cache.GetGetInfo(info.Type);
                         var val = get.GetValues(value);
                         var arg = get.Arguments;
                         for (int i = 0; i < arg.Length; i++)

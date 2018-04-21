@@ -10,8 +10,6 @@ namespace Mikodev.Network
     {
         internal static readonly Encoding s_encoding = Encoding.UTF8;
 
-        internal static readonly byte[] s_zero_bytes = new byte[sizeof(int)];
-
         internal static readonly byte[] s_empty_bytes = new byte[0];
 
         internal static readonly char[] s_separators = new[] { '/', '\\' };
@@ -26,7 +24,7 @@ namespace Mikodev.Network
                 goto fail;
             return true;
 
-        fail:
+            fail:
             len = 0;
             return false;
         }

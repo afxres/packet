@@ -9,8 +9,7 @@ namespace Mikodev.Network.Converters
 
         public static byte[] ToByteArray(byte[] buffer, int offset, int length)
         {
-            var len = buffer?.Length ?? 0;
-            if (length < 0 || length > len)
+            if (length < 0 || length > (buffer?.Length ?? 0))
                 throw PacketException.Overflow();
             var buf = new byte[length];
             if (length > 0)
