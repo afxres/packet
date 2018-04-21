@@ -8,7 +8,6 @@ namespace Mikodev.Network
     {
         internal sealed class Item
         {
-            internal const int Null = 0;
             internal const int Bytes = 1;
             internal const int MemoryStream = 2;
             internal const int ArrayBytes = 3;
