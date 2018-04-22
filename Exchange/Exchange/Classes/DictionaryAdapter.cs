@@ -14,19 +14,19 @@ namespace Mikodev.Network
             this.dictionary = dictionary;
         }
 
-        private static IEnumerator<KeyValuePair<byte[], object>> Enumerator(IEnumerable<KeyValuePair<TK, TV>> itr, IPacketConverter con)
+        private IEnumerator<KeyValuePair<byte[], object>> Enumerator()
         {
-            if (con is IPacketConverter<TK> gen)
-                foreach (var i in itr)
+            if (converter is IPacketConverter<TK> gen)
+                foreach (var i in dictionary)
                     yield return new KeyValuePair<byte[], object>(gen.GetBytesWrap(i.Key), i.Value);
             else
-                foreach (var i in itr)
-                    yield return new KeyValuePair<byte[], object>(con.GetBytesWrap(i.Key), i.Value);
+                foreach (var i in dictionary)
+                    yield return new KeyValuePair<byte[], object>(converter.GetBytesWrap(i.Key), i.Value);
             yield break;
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => Enumerator(dictionary, converter);
+        IEnumerator IEnumerable.GetEnumerator() => Enumerator();
 
-        IEnumerator<KeyValuePair<byte[], object>> IEnumerable<KeyValuePair<byte[], object>>.GetEnumerator() => Enumerator(dictionary, converter);
+        IEnumerator<KeyValuePair<byte[], object>> IEnumerable<KeyValuePair<byte[], object>>.GetEnumerator() => Enumerator();
     }
 }

@@ -6,7 +6,7 @@ namespace Mikodev.Network
     internal sealed class SetInfo
     {
         private readonly KeyValuePair<string, Type>[] arguments;
-        private Func<object[], object> func;
+        private readonly Func<object[], object> func;
 
         internal SetInfo(KeyValuePair<string, Type>[] arguments, Func<object[], object> func)
         {

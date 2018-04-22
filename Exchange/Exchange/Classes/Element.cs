@@ -28,41 +28,41 @@ namespace Mikodev.Network
 
         internal int Max() => offset + length;
 
-        internal void MoveNext(int def, ref int idx, out int len)
+        internal void MoveNext(int define, ref int index, out int length)
         {
-            var max = offset + length;
-            if ((def > 0 && idx + def > max) || (def < 1 && buffer.MoveNext(max, ref idx, out def) == false))
+            var max = offset + this.length;
+            if ((define > 0 && index + define > max) || (define < 1 && buffer.MoveNext(max, ref index, out define) == false))
                 throw PacketException.Overflow();
-            len = def;
+            length = define;
         }
 
-        internal object Next(ref int idx, IPacketConverter con)
+        internal object Next(ref int index, IPacketConverter converter)
         {
-            var tmp = idx;
-            MoveNext(con.Length, ref tmp, out var len);
-            var res = con.GetValueWrap(buffer, tmp, len);
-            idx = tmp + len;
+            var tmp = index;
+            MoveNext(converter.Length, ref tmp, out var len);
+            var res = converter.GetValueWrap(buffer, tmp, len);
+            index = tmp + len;
             return res;
         }
 
-        internal T NextAuto<T>(ref int idx, IPacketConverter con)
+        internal T NextAuto<T>(ref int index, IPacketConverter converter)
         {
-            var tmp = idx;
-            MoveNext(con.Length, ref tmp, out var len);
-            var res = con.GetValueWrapAuto<T>(buffer, tmp, len);
-            idx = tmp + len;
+            var tmp = index;
+            MoveNext(converter.Length, ref tmp, out var len);
+            var res = converter.GetValueWrapAuto<T>(buffer, tmp, len);
+            index = tmp + len;
             return res;
         }
 
-        internal Dictionary<TK, TV> ToDictionary<TK, TV>(IPacketConverter keycon, IPacketConverter valcon)
+        internal Dictionary<TK, TV> ToDictionary<TK, TV>(IPacketConverter indexConverter, IPacketConverter elementConverter)
         {
             var dic = new Dictionary<TK, TV>();
             if (length == 0)
                 return dic;
-            var keygen = keycon as IPacketConverter<TK>;
-            var valgen = valcon as IPacketConverter<TV>;
-            var keylen = keycon.Length;
-            var vallen = valcon.Length;
+            var keygen = indexConverter as IPacketConverter<TK>;
+            var valgen = elementConverter as IPacketConverter<TV>;
+            var keylen = indexConverter.Length;
+            var vallen = elementConverter.Length;
             var max = offset + length;
             var idx = offset;
             var len = 0;
@@ -83,7 +83,7 @@ namespace Mikodev.Network
                     else if (buffer.MoveNext(max, ref idx, out len) == false)
                         goto fail;
 
-                    var key = (keygen != null ? keygen.GetValue(buffer, idx, len) : (TK)keycon.GetValue(buffer, idx, len));
+                    var key = (keygen != null ? keygen.GetValue(buffer, idx, len) : (TK)indexConverter.GetValue(buffer, idx, len));
                     idx += len;
                     sub = max - idx;
 
@@ -95,7 +95,7 @@ namespace Mikodev.Network
                     else if (buffer.MoveNext(max, ref idx, out len) == false)
                         goto fail;
 
-                    var val = (valgen != null ? valgen.GetValue(buffer, idx, len) : (TV)valcon.GetValue(buffer, idx, len));
+                    var val = (valgen != null ? valgen.GetValue(buffer, idx, len) : (TV)elementConverter.GetValue(buffer, idx, len));
                     idx += len;
                     dic.Add(key, val);
                 }
@@ -110,7 +110,7 @@ namespace Mikodev.Network
             throw PacketException.Overflow();
         }
 
-        internal T[] ToArray<T>(IPacketConverter con)
+        internal T[] ToArray<T>(IPacketConverter converter)
         {
             if (length < 1)
                 return new T[0];
@@ -118,12 +118,12 @@ namespace Mikodev.Network
                 return (T[])(object)ByteArrayConverter.ToByteArray(buffer, offset, length);
             else if (typeof(T) == typeof(sbyte))
                 return (T[])(object)SByteArrayConverter.ToSbyteArray(buffer, offset, length);
-            var def = con.Length;
+            var def = converter.Length;
             var sum = Math.DivRem(length, def, out var rem);
             if (rem != 0)
                 throw PacketException.Overflow();
             var arr = new T[sum];
-            var gen = con as IPacketConverter<T>;
+            var gen = converter as IPacketConverter<T>;
 
             try
             {
@@ -132,7 +132,7 @@ namespace Mikodev.Network
                         arr[idx] = gen.GetValue(buffer, offset + idx * def, def);
                 else
                     for (int idx = 0; idx < sum; idx++)
-                        arr[idx] = (T)con.GetValue(buffer, offset + idx * def, def);
+                        arr[idx] = (T)converter.GetValue(buffer, offset + idx * def, def);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {

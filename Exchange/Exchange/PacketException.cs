@@ -54,9 +54,9 @@ namespace Mikodev.Network
             return new PacketException(PacketError.Overflow);
         }
 
-        internal static PacketException ConvertError(Exception ex)
+        internal static PacketException ConvertError(Exception exception)
         {
-            return new PacketException(PacketError.ConvertError, ex);
+            return new PacketException(PacketError.ConvertError, exception);
         }
 
         internal static PacketException ConvertMismatch(int length)
@@ -74,9 +74,9 @@ namespace Mikodev.Network
             return new PacketException(PacketError.InvalidKeyType, $"Invalid dictionary key type: {type}");
         }
 
-        internal static bool WrapFilter(Exception ex)
+        internal static bool WrapFilter(Exception exception)
         {
-            if (ex is PacketException || ex is OutOfMemoryException || ex is StackOverflowException || ex is ThreadAbortException)
+            if (exception is PacketException || exception is OutOfMemoryException || exception is StackOverflowException || exception is ThreadAbortException)
                 return false;
             return true;
         }

@@ -8,12 +8,12 @@ namespace Mikodev.Network
     {
         public DynamicWriter(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 
-        private PacketWriter GetItem(PacketWriter wtr, string key)
+        private PacketWriter GetItem(PacketWriter writer, string key)
         {
-            var lst = wtr.GetDictionary();
+            var lst = writer.GetDictionary();
             if (lst.TryGetValue(key, out var res) && res is PacketWriter pkt)
                 return pkt;
-            var sub = new PacketWriter(wtr.converters);
+            var sub = new PacketWriter(writer.converters);
             lst[key] = sub;
             return sub;
         }

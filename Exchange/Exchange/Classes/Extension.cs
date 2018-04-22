@@ -14,44 +14,44 @@ namespace Mikodev.Network
 
         internal static readonly char[] s_separators = new[] { '/', '\\' };
 
-        internal static bool MoveNext(this byte[] buf, int max, ref int idx, out int len)
+        internal static bool MoveNext(this byte[] buffer, int max, ref int index, out int length)
         {
-            if (idx < 0 || max - idx < sizeof(int))
+            if (index < 0 || max - index < sizeof(int))
                 goto fail;
-            len = BitConverter.ToInt32(buf, idx);
-            idx += sizeof(int);
-            if (len < 0 || max - idx < len)
+            length = BitConverter.ToInt32(buffer, index);
+            index += sizeof(int);
+            if (length < 0 || max - index < length)
                 goto fail;
             return true;
 
             fail:
-            len = 0;
+            length = 0;
             return false;
         }
 
-        internal static void Write(this Stream str, byte[] buf) => str.Write(buf, 0, buf.Length);
+        internal static void Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
 
-        internal static void WriteKey(this Stream str, string key)
+        internal static void WriteKey(this Stream stream, string key)
         {
             var buf = s_encoding.GetBytes(key);
             var len = BitConverter.GetBytes(buf.Length);
-            str.Write(len, 0, len.Length);
-            str.Write(buf, 0, buf.Length);
+            stream.Write(len, 0, len.Length);
+            stream.Write(buf, 0, buf.Length);
         }
 
-        internal static void WriteExt(this Stream str, byte[] buf)
+        internal static void WriteExt(this Stream stream, byte[] buffer)
         {
-            var len = BitConverter.GetBytes(buf.Length);
-            str.Write(len, 0, len.Length);
-            str.Write(buf, 0, buf.Length);
+            var len = BitConverter.GetBytes(buffer.Length);
+            stream.Write(len, 0, len.Length);
+            stream.Write(buffer, 0, buffer.Length);
         }
 
-        internal static void WriteExt(this Stream str, MemoryStream mst)
+        internal static void WriteExt(this Stream stream, MemoryStream other)
         {
-            var len = (int)mst.Length;
+            var len = (int)other.Length;
             var buf = BitConverter.GetBytes(len);
-            str.Write(buf, 0, sizeof(int));
-            mst.WriteTo(str);
+            stream.Write(buf, 0, sizeof(int));
+            other.WriteTo(stream);
         }
 
         internal static byte[] Span(byte[] buffer, int offset, int length)
@@ -67,70 +67,70 @@ namespace Mikodev.Network
             return buf;
         }
 
-        internal static void BeginInternal(this Stream str, out long src)
+        internal static void BeginInternal(this Stream stream, out long source)
         {
-            var pos = str.Position;
-            str.Position += sizeof(int);
-            src = pos;
+            var pos = stream.Position;
+            stream.Position += sizeof(int);
+            source = pos;
         }
 
-        internal static void FinshInternal(this Stream str, long src)
+        internal static void FinshInternal(this Stream stream, long source)
         {
-            var dst = str.Position;
-            var len = dst - src - sizeof(int);
+            var dst = stream.Position;
+            var len = dst - source - sizeof(int);
             if (len > int.MaxValue)
                 throw PacketException.Overflow();
-            str.Position = src;
+            stream.Position = source;
             var buf = BitConverter.GetBytes((int)len);
-            str.Write(buf, 0, buf.Length);
-            str.Position = dst;
+            stream.Write(buf, 0, buf.Length);
+            stream.Position = dst;
         }
 
-        internal static void WriteValue(this Stream str, ConverterDictionary cvt, object itm, Type type)
+        internal static void WriteValue(this Stream stream, ConverterDictionary converters, object value, Type type)
         {
-            var con = Cache.GetConverter(cvt, type, false);
+            var con = Cache.GetConverter(converters, type, false);
             var len = con.Length > 0;
             if (len)
-                str.Write(con.GetBytesWrap(itm));
+                stream.Write(con.GetBytesWrap(value));
             else
-                str.WriteExt(con.GetBytesWrap(itm));
+                stream.WriteExt(con.GetBytesWrap(value));
             return;
         }
 
-        internal static void WriteValueGeneric<T>(this Stream str, ConverterDictionary cvt, T itm)
+        internal static void WriteValueGeneric<T>(this Stream stream, ConverterDictionary converters, T value)
         {
-            var con = Cache.GetConverter<T>(cvt, false);
+            var con = Cache.GetConverter<T>(converters, false);
             var len = con.Length > 0;
             var gen = con as IPacketConverter<T>;
             if (len && gen != null)
-                str.Write(gen.GetBytesWrap(itm));
+                stream.Write(gen.GetBytesWrap(value));
             else if (len)
-                str.Write(con.GetBytesWrap(itm));
+                stream.Write(con.GetBytesWrap(value));
             else if (gen != null)
-                str.WriteExt(gen.GetBytesWrap(itm));
+                stream.WriteExt(gen.GetBytesWrap(value));
             else
-                str.WriteExt(con.GetBytesWrap(itm));
+                stream.WriteExt(con.GetBytesWrap(value));
             return;
         }
 
-        internal static byte[] ToBytes(this ICollection<byte> buffer)
+        internal static byte[] ToBytes(this ICollection<byte> collection)
         {
-            var len = buffer?.Count ?? 0;
+            var len = collection?.Count ?? 0;
             if (len == 0)
                 return s_empty_bytes;
             var buf = new byte[len];
-            buffer.CopyTo(buf, 0);
+            collection.CopyTo(buf, 0);
             return buf;
         }
 
-        internal static byte[] ToBytes(this ICollection<sbyte> buffer)
+        internal static byte[] ToBytes(this ICollection<sbyte> collection)
         {
-            var len = buffer?.Count ?? 0;
+            var len = collection?.Count ?? 0;
             if (len == 0)
                 return s_empty_bytes;
             var buf = new byte[len];
             var tmp = new sbyte[len];
-            buffer.CopyTo(tmp, 0);
+            collection.CopyTo(tmp, 0);
             Buffer.BlockCopy(tmp, 0, buf, 0, len);
             return buf;
         }

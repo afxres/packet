@@ -15,16 +15,16 @@ namespace Mikodev.Network
             this.converter = converter;
         }
 
-        private static IEnumerator Enumerator(byte[] buf, int off, int sum, int def, IPacketConverter con)
+        private static IEnumerator Enumerator(byte[] buffer, int offset, int count, int define, IPacketConverter converter)
         {
-            for (int idx = 0; idx < sum; idx++)
-                yield return con.GetValueWrap(buf, off + def * idx, def);
+            for (int idx = 0; idx < count; idx++)
+                yield return converter.GetValueWrap(buffer, offset + define * idx, define);
         }
 
-        private static IEnumerator Enumerator(PacketReader[] arr, IPacketConverter con)
+        private static IEnumerator Enumerator(PacketReader[] array, IPacketConverter converter)
         {
-            for (int idx = 0; idx < arr.Length; idx++)
-                yield return con.GetValueWrap(arr[idx].element);
+            for (int idx = 0; idx < array.Length; idx++)
+                yield return converter.GetValueWrap(array[idx].element);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -42,26 +42,26 @@ namespace Mikodev.Network
 
     internal sealed class Enumerable<T> : Enumerable, IEnumerable<T>
     {
-        internal Enumerable(PacketReader rea, IPacketConverter con) : base(rea, con) { }
+        internal Enumerable(PacketReader reader, IPacketConverter converter) : base(reader, converter) { }
 
-        private static IEnumerator<T> Enumerator(byte[] buf, int off, int sum, int def, IPacketConverter con)
+        private static IEnumerator<T> Enumerator(byte[] buffer, int offset, int count, int define, IPacketConverter converter)
         {
-            if (con is IPacketConverter<T> gen)
-                for (int idx = 0; idx < sum; idx++)
-                    yield return gen.GetValueWrap(buf, off + def * idx, def);
+            if (converter is IPacketConverter<T> gen)
+                for (int idx = 0; idx < count; idx++)
+                    yield return gen.GetValueWrap(buffer, offset + define * idx, define);
             else
-                for (int idx = 0; idx < sum; idx++)
-                    yield return (T)con.GetValueWrap(buf, off + def * idx, def);
+                for (int idx = 0; idx < count; idx++)
+                    yield return (T)converter.GetValueWrap(buffer, offset + define * idx, define);
         }
 
-        private static IEnumerator<T> Enumerator(PacketReader[] arr, IPacketConverter con)
+        private static IEnumerator<T> Enumerator(PacketReader[] array, IPacketConverter converter)
         {
-            if (con is IPacketConverter<T> gen)
-                for (int idx = 0; idx < arr.Length; idx++)
-                    yield return gen.GetValueWrap(arr[idx].element);
+            if (converter is IPacketConverter<T> gen)
+                for (int idx = 0; idx < array.Length; idx++)
+                    yield return gen.GetValueWrap(array[idx].element);
             else
-                for (int idx = 0; idx < arr.Length; idx++)
-                    yield return (T)con.GetValueWrap(arr[idx].element);
+                for (int idx = 0; idx < array.Length; idx++)
+                    yield return (T)converter.GetValueWrap(array[idx].element);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()

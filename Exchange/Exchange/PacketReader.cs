@@ -131,25 +131,25 @@ namespace Mikodev.Network
             return System.Linq.Enumerable.Empty<string>();
         }
 
-        internal object GetValue(Type typ, int lev)
+        internal object GetValue(Type type, int level)
         {
-            if (lev > Cache.Depth)
+            if (level > Cache.Limits)
                 throw new PacketException(PacketError.RecursiveError);
-            lev += 1;
+            level += 1;
 
             var inf = default(Info);
-            if (Cache.TryGetConverter(converters, typ, out var con, ref inf))
+            if (Cache.TryGetConverter(converters, type, out var con, ref inf))
                 return con.GetValueWrap(element, true);
-            return GetValueMatch(typ, lev, inf);
+            return GetValueMatch(type, level, inf);
         }
 
-        internal object GetValueMatch(Type typ, int lev, Info inf)
+        internal object GetValueMatch(Type type, int level, Info info)
         {
-            if (lev > Cache.Depth)
+            if (level > Cache.Limits)
                 throw new PacketException(PacketError.RecursiveError);
-            lev += 1;
+            level += 1;
 
-            switch (inf.To)
+            switch (info.To)
             {
                 case Info.Reader:
                     return this;
@@ -159,30 +159,30 @@ namespace Mikodev.Network
                 case Info.Collection:
                     {
                         var sub = default(Info);
-                        if (Cache.TryGetConverter(converters, inf.ElementType, out var con, ref sub))
-                            return inf.ToCollection(this, con);
+                        if (Cache.TryGetConverter(converters, info.ElementType, out var con, ref sub))
+                            return info.ToCollection(this, con);
                         var lst = GetArray();
                         var arr = new object[lst.Length];
                         for (int i = 0; i < lst.Length; i++)
-                            arr[i] = lst[i].GetValueMatch(inf.ElementType, lev, sub);
-                        var res = inf.ToCollectionCast(arr);
+                            arr[i] = lst[i].GetValueMatch(info.ElementType, level, sub);
+                        var res = info.ToCollectionCast(arr);
                         return res;
                     }
                 case Info.Enumerable:
                     {
                         var sub = default(Info);
-                        if (Cache.TryGetConverter(converters, inf.ElementType, out var con, ref sub))
-                            return inf.ToEnumerable(this, con);
-                        return inf.ToEnumerableAdapter(this, lev, sub);
+                        if (Cache.TryGetConverter(converters, info.ElementType, out var con, ref sub))
+                            return info.ToEnumerable(this, con);
+                        return info.ToEnumerableAdapter(this, level, sub);
                     }
                 case Info.Dictionary:
                     {
                         var sub = default(Info);
-                        var keycon = Cache.GetConverter(converters, inf.IndexType, true);
+                        var keycon = Cache.GetConverter(converters, info.IndexType, true);
                         if (keycon == null)
-                            throw PacketException.InvalidKeyType(typ);
-                        if (Cache.TryGetConverter(converters, inf.ElementType, out var con, ref sub))
-                            return inf.ToDictionary(this, keycon, con);
+                            throw PacketException.InvalidKeyType(type);
+                        if (Cache.TryGetConverter(converters, info.ElementType, out var con, ref sub))
+                            return info.ToDictionary(this, keycon, con);
 
                         var max = element.Max();
                         var idx = element.offset;
@@ -210,27 +210,27 @@ namespace Mikodev.Network
                             if (buf.MoveNext(max, ref idx, out len) == false)
                                 goto fail;
                             var rea = new PacketReader(buf, idx, len, converters);
-                            var val = rea.GetValueMatch(inf.ElementType, lev, sub);
+                            var val = rea.GetValueMatch(info.ElementType, level, sub);
                             var par = new KeyValuePair<object, object>(key, val);
 
                             idx += len;
                             lst.Add(par);
                         }
-                        return inf.ToDictionaryCast(lst);
+                        return info.ToDictionaryCast(lst);
                         fail:
                         throw PacketException.Overflow();
                     }
                 default:
                     {
-                        var set = Cache.GetSetInfo(typ);
+                        var set = Cache.GetSetInfo(type);
                         if (set == null)
-                            throw PacketException.InvalidType(typ);
+                            throw PacketException.InvalidType(type);
                         var arg = set.Arguments;
                         var arr = new object[arg.Length];
                         for (int i = 0; i < arg.Length; i++)
                         {
                             var rea = GetItem(arg[i].Key, false);
-                            var val = rea.GetValue(arg[i].Value, lev);
+                            var val = rea.GetValue(arg[i].Value, level);
                             arr[i] = val;
                         }
 

@@ -11,7 +11,7 @@ namespace Mikodev.Network
     internal static partial class Cache
     {
         internal const int Length = 256;
-        internal const int Depth = 64;
+        internal const int Limits = 64;
 
         private static readonly ConcurrentDictionary<Type, Info> s_infos = new ConcurrentDictionary<Type, Info>();
         private static readonly ConcurrentDictionary<Type, GetInfo> s_get_infos = new ConcurrentDictionary<Type, GetInfo>();
@@ -24,119 +24,119 @@ namespace Mikodev.Network
             s_set_infos.Clear();
         }
 
-        internal static IPacketConverter GetConverter<T>(ConverterDictionary dic, bool nothrow)
+        internal static IPacketConverter GetConverter<T>(ConverterDictionary converters, bool nothrow)
         {
-            return GetConverter(dic, typeof(T), nothrow);
+            return GetConverter(converters, typeof(T), nothrow);
         }
 
-        internal static IPacketConverter GetConverter(ConverterDictionary dic, Type typ, bool nothrow)
+        internal static IPacketConverter GetConverter(ConverterDictionary converters, Type type, bool nothrow)
         {
-            if (typ == null)
-                throw new ArgumentNullException(nameof(typ));
-            if (dic != null && dic.TryGetValue(typ, out var val))
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+            if (converters != null && converters.TryGetValue(type, out var val))
                 if (val == null)
                     goto fail;
                 else return val;
-            if (s_converters.TryGetValue(typ, out val))
+            if (s_converters.TryGetValue(type, out val))
                 return val;
 
-            var inf = GetInfo(typ);
+            var inf = GetInfo(type);
             if (inf.Flag == Info.Enum)
                 return s_converters[inf.ElementType];
 
             fail:
             if (nothrow == true)
                 return null;
-            throw PacketException.InvalidType(typ);
+            throw PacketException.InvalidType(type);
         }
 
-        internal static bool TryGetConverter(ConverterDictionary dic, Type typ, out IPacketConverter val, ref Info inf)
+        internal static bool TryGetConverter(ConverterDictionary converters, Type type, out IPacketConverter converter, ref Info info)
         {
-            if (dic != null && dic.TryGetValue(typ, out val))
+            if (converters != null && converters.TryGetValue(type, out converter))
                 return true;
-            if (s_converters.TryGetValue(typ, out val))
+            if (s_converters.TryGetValue(type, out converter))
                 return true;
-            inf = GetInfo(typ);
-            if (inf.Flag != Info.Enum)
+            info = GetInfo(type);
+            if (info.Flag != Info.Enum)
                 return false;
-            val = s_converters[typ];
+            converter = s_converters[type];
             return true;
         }
 
-        internal static byte[] GetBytes(Type type, ConverterDictionary dic, object value)
+        internal static byte[] GetBytes(Type type, ConverterDictionary converters, object value)
         {
-            var con = GetConverter(dic, type, false);
+            var con = GetConverter(converters, type, false);
             var buf = con.GetBytesWrap(value);
             return buf;
         }
 
-        internal static byte[] GetBytesAuto<T>(ConverterDictionary dic, T value)
+        internal static byte[] GetBytesAuto<T>(ConverterDictionary converters, T value)
         {
-            var con = GetConverter<T>(dic, false);
+            var con = GetConverter<T>(converters, false);
             if (con is IPacketConverter<T> res)
                 return res.GetBytesWrap(value);
             return con.GetBytesWrap(value);
         }
 
-        internal static byte[][] GetBytesFromEnumerableNonGeneric(IPacketConverter con, IEnumerable itr)
+        internal static byte[][] GetBytesFromEnumerableNonGeneric(IPacketConverter converter, IEnumerable enumerable)
         {
             var lst = new List<byte[]>();
-            foreach (var i in itr)
-                lst.Add(con.GetBytesWrap(i));
+            foreach (var i in enumerable)
+                lst.Add(converter.GetBytesWrap(i));
             return lst.ToArray();
         }
 
-        internal static byte[][] GetBytesFromArray<T>(IPacketConverter con, T[] arr)
+        internal static byte[][] GetBytesFromArray<T>(IPacketConverter converter, T[] array)
         {
-            var res = new byte[arr.Length][];
-            if (con is IPacketConverter<T> gen)
-                for (int i = 0; i < arr.Length; i++)
-                    res[i] = gen.GetBytesWrap(arr[i]);
+            var res = new byte[array.Length][];
+            if (converter is IPacketConverter<T> gen)
+                for (int i = 0; i < array.Length; i++)
+                    res[i] = gen.GetBytesWrap(array[i]);
             else
-                for (int i = 0; i < arr.Length; i++)
-                    res[i] = con.GetBytesWrap(arr[i]);
+                for (int i = 0; i < array.Length; i++)
+                    res[i] = converter.GetBytesWrap(array[i]);
             return res;
         }
 
-        internal static byte[][] GetBytesFromList<T>(IPacketConverter con, List<T> arr)
+        internal static byte[][] GetBytesFromList<T>(IPacketConverter converter, List<T> list)
         {
-            var res = new byte[arr.Count][];
-            if (con is IPacketConverter<T> gen)
-                for (int i = 0; i < arr.Count; i++)
-                    res[i] = gen.GetBytesWrap(arr[i]);
+            var res = new byte[list.Count][];
+            if (converter is IPacketConverter<T> gen)
+                for (int i = 0; i < list.Count; i++)
+                    res[i] = gen.GetBytesWrap(list[i]);
             else
-                for (int i = 0; i < arr.Count; i++)
-                    res[i] = con.GetBytesWrap(arr[i]);
+                for (int i = 0; i < list.Count; i++)
+                    res[i] = converter.GetBytesWrap(list[i]);
             return res;
         }
 
-        internal static byte[][] GetBytesFromEnumerable<T>(IPacketConverter con, IEnumerable<T> itr)
+        internal static byte[][] GetBytesFromEnumerable<T>(IPacketConverter converter, IEnumerable<T> enumerable)
         {
-            if (itr is ICollection<T> col && col.Count > 15)
-                return GetBytesFromArray(con, col.ToArray());
+            if (enumerable is ICollection<T> col && col.Count > 15)
+                return GetBytesFromArray(converter, col.ToArray());
 
             var res = new List<byte[]>();
-            if (con is IPacketConverter<T> gen)
-                foreach (var i in itr)
+            if (converter is IPacketConverter<T> gen)
+                foreach (var i in enumerable)
                     res.Add(gen.GetBytesWrap(i));
             else
-                foreach (var i in itr)
-                    res.Add(con.GetBytesWrap(i));
+                foreach (var i in enumerable)
+                    res.Add(converter.GetBytesWrap(i));
             return res.ToArray();
         }
 
-        internal static List<KeyValuePair<byte[], byte[]>> GetBytesFromDictionary<TK, TV>(IPacketConverter keycon, IPacketConverter valcon, IEnumerable<KeyValuePair<TK, TV>> enumerable)
+        internal static List<KeyValuePair<byte[], byte[]>> GetBytesFromDictionary<TK, TV>(IPacketConverter indexConverter, IPacketConverter elementConverter, IEnumerable<KeyValuePair<TK, TV>> enumerable)
         {
             var res = new List<KeyValuePair<byte[], byte[]>>();
-            var keygen = keycon as IPacketConverter<TK>;
-            var valgen = valcon as IPacketConverter<TV>;
+            var keygen = indexConverter as IPacketConverter<TK>;
+            var valgen = elementConverter as IPacketConverter<TV>;
 
             foreach (var i in enumerable)
             {
                 var key = i.Key;
                 var val = i.Value;
-                var keybuf = (keygen != null ? keygen.GetBytesWrap(key) : keycon.GetBytesWrap(key));
-                var valbuf = (valgen != null ? valgen.GetBytesWrap(val) : valcon.GetBytesWrap(val));
+                var keybuf = (keygen != null ? keygen.GetBytesWrap(key) : indexConverter.GetBytesWrap(key));
+                var valbuf = (valgen != null ? valgen.GetBytesWrap(val) : elementConverter.GetBytesWrap(val));
                 res.Add(new KeyValuePair<byte[], byte[]>(keybuf, valbuf));
             }
             return res;

@@ -6,53 +6,53 @@ namespace Mikodev.Network
 {
     partial class Cache
     {
-        private static void CreateInfoFromDictionary(Info inf, Info itr, params Type[] types)
+        private static void CreateInfoFromDictionary(Info info, Info enumerableInfo, params Type[] types)
         {
             if (types[0] == typeof(string) && types[1] == typeof(object))
-                inf.From = Info.Map;
+                info.From = Info.Map;
             else
-                inf.From = Info.Dictionary;
-            inf.IndexType = types[0];
-            inf.ElementType = types[1];
-            inf.FromDictionary = itr.FromDictionary;
-            inf.FromDictionaryAdapter = itr.FromDictionaryAdapter;
+                info.From = Info.Dictionary;
+            info.IndexType = types[0];
+            info.ElementType = types[1];
+            info.FromDictionary = enumerableInfo.FromDictionary;
+            info.FromDictionaryAdapter = enumerableInfo.FromDictionaryAdapter;
         }
 
-        private static Info CreateInfo(Type typ)
+        private static Info CreateInfo(Type type)
         {
-            var inf = new Info() { Type = typ };
-            if (typ == typeof(PacketWriter))
+            var inf = new Info() { Type = type };
+            if (type == typeof(PacketWriter))
             {
                 inf.From = Info.Writer;
                 return inf;
             }
-            else if (typ == typeof(PacketRawWriter))
+            else if (type == typeof(PacketRawWriter))
             {
                 inf.From = Info.RawWriter;
                 return inf;
             }
-            else if (typ == typeof(PacketReader) || typ == typeof(object))
+            else if (type == typeof(PacketReader) || type == typeof(object))
             {
                 inf.To = Info.Reader;
                 return inf;
             }
-            else if (typ == typeof(PacketRawReader))
+            else if (type == typeof(PacketRawReader))
             {
                 inf.To = Info.RawReader;
                 return inf;
             }
-            if (typ.IsEnum)
+            if (type.IsEnum)
             {
                 inf.Flag = Info.Enum;
-                inf.ElementType = Enum.GetUnderlyingType(typ);
+                inf.ElementType = Enum.GetUnderlyingType(type);
                 return inf;
             }
 
-            var generic = typ.IsGenericType;
-            var genericArgs = generic ? typ.GetGenericArguments() : null;
-            var genericDefinition = generic ? typ.GetGenericTypeDefinition() : null;
+            var generic = type.IsGenericType;
+            var genericArgs = generic ? type.GetGenericArguments() : null;
+            var genericDefinition = generic ? type.GetGenericTypeDefinition() : null;
 
-            if (generic && typ.IsInterface)
+            if (generic && type.IsInterface)
             {
                 if (genericDefinition == typeof(IEnumerable<>))
                 {
@@ -64,7 +64,7 @@ namespace Mikodev.Network
 
                     // From ... function
                     inf.From = Info.Enumerable;
-                    inf.FromEnumerable = GetFromEnumerableFunction(s_from_enumerable.MakeGenericMethod(ele), typ);
+                    inf.FromEnumerable = GetFromEnumerableFunction(s_from_enumerable.MakeGenericMethod(ele), type);
                     if (ele.IsGenericType && ele.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
                     {
                         var arg = ele.GetGenericArguments();
@@ -105,17 +105,17 @@ namespace Mikodev.Network
                 }
             }
 
-            if (typ.IsArray)
+            if (type.IsArray)
             {
-                if (typ.GetArrayRank() != 1)
+                if (type.GetArrayRank() != 1)
                     throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
-                var ele = typ.GetElementType();
+                var ele = type.GetElementType();
                 genericArgs = new Type[1] { ele };
                 inf.ElementType = ele;
 
                 inf.From = Info.Enumerable;
                 inf.To = Info.Collection; // to array
-                inf.FromEnumerable = GetFromEnumerableFunction(s_from_array.MakeGenericMethod(ele), typ);
+                inf.FromEnumerable = GetFromEnumerableFunction(s_from_array.MakeGenericMethod(ele), type);
                 inf.ToCollection = GetToFunction(s_to_array, ele);
                 inf.ToCollectionCast = GetCastFunction(s_cast_array, ele);
             }
@@ -128,13 +128,13 @@ namespace Mikodev.Network
                     inf.ElementType = ele;
                     inf.From = Info.Enumerable;
                     inf.To = Info.Collection; // to list
-                    inf.FromEnumerable = GetFromEnumerableFunction(s_from_list.MakeGenericMethod(ele), typ);
+                    inf.FromEnumerable = GetFromEnumerableFunction(s_from_list.MakeGenericMethod(ele), type);
                     inf.ToCollection = sub.ToCollection;
                     inf.ToCollectionCast = sub.ToCollectionCast;
                 }
                 else
                 {
-                    var fun = GetToCollectionFunction(typ, ele, out var ctor);
+                    var fun = GetToCollectionFunction(type, ele, out var ctor);
                     if (fun != null)
                     {
                         inf.ElementType = ele;
@@ -154,7 +154,7 @@ namespace Mikodev.Network
                 }
             }
 
-            var interfaces = typ.GetInterfaces();
+            var interfaces = type.GetInterfaces();
             if (inf.From == Info.None)
             {
                 if (interfaces.Contains(typeof(IDictionary<string, object>)))

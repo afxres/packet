@@ -26,57 +26,57 @@ namespace Mikodev.Network
 
             private Item() { }
 
-            internal Item(byte[] buf)
+            internal Item(byte[] buffer)
             {
-                obj = buf;
+                obj = buffer;
                 tag = Bytes;
             }
 
-            internal Item(MemoryStream mst)
+            internal Item(MemoryStream stream)
             {
-                obj = mst;
+                obj = stream;
                 tag = MemoryStream;
             }
 
-            internal Item(List<Item> lst)
+            internal Item(List<Item> list)
             {
-                obj = lst;
+                obj = list;
                 tag = ListItem;
             }
 
-            internal Item(Dictionary<string, PacketWriter> dic)
+            internal Item(Dictionary<string, PacketWriter> dictionary)
             {
-                obj = dic;
+                obj = dictionary;
                 tag = DictionaryPacketWriter;
             }
 
-            internal Item(byte[][] arr, int len)
+            internal Item(byte[][] array, int length)
             {
-                obj = arr;
+                obj = array;
                 tag = ArrayBytes;
-                lenone = len;
+                lenone = length;
             }
 
-            internal Item(List<KeyValuePair<byte[], Item>> lst, int one)
+            internal Item(List<KeyValuePair<byte[], Item>> dictionary, int length)
             {
-                obj = lst;
+                obj = dictionary;
                 tag = DictionaryBytesItem;
-                lenone = one;
+                lenone = length;
             }
 
-            internal Item(List<KeyValuePair<byte[], byte[]>> lst, int one, int two)
+            internal Item(List<KeyValuePair<byte[], byte[]>> dictionary, int indexLength, int elementLength)
             {
-                obj = lst;
+                obj = dictionary;
                 tag = DictionaryBytesBytes;
-                lenone = one;
-                lentwo = two;
+                lenone = indexLength;
+                lentwo = elementLength;
             }
 
-            internal void GetBytesMatch(Stream str, int lev)
+            internal void GetBytesMatch(Stream stream, int level)
             {
-                if (lev > Cache.Depth)
+                if (level > Cache.Limits)
                     throw new PacketException(PacketError.RecursiveError);
-                lev += 1;
+                level += 1;
 
                 switch (tag)
                 {
@@ -85,17 +85,17 @@ namespace Mikodev.Network
                             var byt = (byte[][])obj;
                             if (lenone > 0)
                                 for (int i = 0; i < byt.Length; i++)
-                                    str.Write(byt[i]);
+                                    stream.Write(byt[i]);
                             else
                                 for (int i = 0; i < byt.Length; i++)
-                                    str.WriteExt(byt[i]);
+                                    stream.WriteExt(byt[i]);
                             break;
                         }
                     case ListItem:
                         {
                             var lst = (List<Item>)obj;
                             for (int i = 0; i < lst.Count; i++)
-                                lst[i].GetBytes(str, lev);
+                                lst[i].GetBytes(stream, level);
                             break;
                         }
                     case DictionaryPacketWriter:
@@ -103,8 +103,8 @@ namespace Mikodev.Network
                             var dic = (Dictionary<string, PacketWriter>)obj;
                             foreach (var i in dic)
                             {
-                                str.WriteKey(i.Key);
-                                i.Value.item.GetBytes(str, lev);
+                                stream.WriteKey(i.Key);
+                                i.Value.item.GetBytes(stream, level);
                             }
                             break;
                         }
@@ -115,13 +115,13 @@ namespace Mikodev.Network
                             {
                                 var cur = itr[i];
                                 if (lenone > 0)
-                                    str.Write(cur.Key, 0, lenone);
+                                    stream.Write(cur.Key, 0, lenone);
                                 else
-                                    str.WriteExt(cur.Key);
+                                    stream.WriteExt(cur.Key);
                                 if (lentwo > 0)
-                                    str.Write(cur.Value, 0, lentwo);
+                                    stream.Write(cur.Value, 0, lentwo);
                                 else
-                                    str.WriteExt(cur.Value);
+                                    stream.WriteExt(cur.Value);
                             }
                             break;
                         }
@@ -132,10 +132,10 @@ namespace Mikodev.Network
                             {
                                 var cur = kvp[i];
                                 if (lenone > 0)
-                                    str.Write(cur.Key, 0, lenone);
+                                    stream.Write(cur.Key, 0, lenone);
                                 else
-                                    str.WriteExt(cur.Key);
-                                cur.Value.GetBytes(str, lev);
+                                    stream.WriteExt(cur.Key);
+                                cur.Value.GetBytes(stream, level);
                             }
                             break;
                         }
@@ -143,29 +143,29 @@ namespace Mikodev.Network
                 }
             }
 
-            internal void GetBytes(Stream str, int lev)
+            internal void GetBytes(Stream stream, int level)
             {
-                if (lev > Cache.Depth)
+                if (level > Cache.Limits)
                     throw new PacketException(PacketError.RecursiveError);
-                lev += 1;
+                level += 1;
 
                 if (obj == null)
                 {
-                    str.Write(s_zero_bytes, 0, sizeof(int));
+                    stream.Write(s_zero_bytes, 0, sizeof(int));
                 }
                 else if (tag == Bytes)
                 {
-                    str.WriteExt((byte[])obj);
+                    stream.WriteExt((byte[])obj);
                 }
                 else if (tag == MemoryStream)
                 {
-                    str.WriteExt((MemoryStream)obj);
+                    stream.WriteExt((MemoryStream)obj);
                 }
                 else
                 {
-                    str.BeginInternal(out var src);
-                    GetBytesMatch(str, lev);
-                    str.FinshInternal(src);
+                    stream.BeginInternal(out var src);
+                    GetBytesMatch(stream, level);
+                    stream.FinshInternal(src);
                 }
             }
         }

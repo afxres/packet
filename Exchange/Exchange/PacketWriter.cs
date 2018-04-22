@@ -14,16 +14,16 @@ namespace Mikodev.Network
         internal readonly ConverterDictionary converters;
         private Item item;
 
-        internal PacketWriter(ConverterDictionary cvt, Item itm)
+        internal PacketWriter(ConverterDictionary converters, Item item)
         {
-            converters = cvt;
-            item = itm;
+            this.converters = converters;
+            this.item = item;
         }
 
-        internal PacketWriter(ConverterDictionary cvt, PacketWriter wtr)
+        internal PacketWriter(ConverterDictionary converters, PacketWriter writer)
         {
-            converters = cvt;
-            item = (wtr != null ? wtr.item : Item.Empty);
+            this.converters = converters;
+            item = (writer != null ? writer.item : Item.Empty);
         }
 
         public PacketWriter(ConverterDictionary converters = null)
@@ -57,7 +57,7 @@ namespace Mikodev.Network
 
         private static Item GetItem(ConverterDictionary converters, object value, int level)
         {
-            if (level > Cache.Depth)
+            if (level > Cache.Limits)
                 throw new PacketException(PacketError.RecursiveError);
             level += 1;
 
@@ -74,7 +74,7 @@ namespace Mikodev.Network
 
         private static Item GetItemMatch(ConverterDictionary converters, object value, int level, Info info)
         {
-            if (level > Cache.Depth)
+            if (level > Cache.Limits)
                 throw new PacketException(PacketError.RecursiveError);
             level += 1;
 

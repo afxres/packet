@@ -26,18 +26,65 @@ namespace Mikodev.Network
             s_converters = dic;
         }
 
-        internal static object GetValueWrap(this IPacketConverter con, Element ele, bool check = false)
+        internal static object GetValueWrap(this IPacketConverter converter, Element element, bool check = false)
         {
-            return GetValueWrap(con, ele.buffer, ele.offset, ele.length, check);
+            return GetValueWrap(converter, element.buffer, element.offset, element.length, check);
         }
 
-        internal static object GetValueWrap(this IPacketConverter con, byte[] buf, int off, int len, bool check = false)
+        internal static object GetValueWrap(this IPacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
         {
             try
             {
-                if (check && con.Length > len)
-                    throw PacketException.Overflow();
-                return con.GetValue(buf, off, len);
+                if (check && converter.Length > length)
+                    goto fail;
+                return converter.GetValue(buffer, offset, length);
+            }
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            {
+                throw PacketException.ConvertError(ex);
+            }
+            fail:
+            throw PacketException.Overflow();
+        }
+
+        internal static T GetValueWrapAuto<T>(this IPacketConverter converter, Element element, bool check = false)
+        {
+            return GetValueWrapAuto<T>(converter, element.buffer, element.offset, element.length, check);
+        }
+
+        internal static T GetValueWrapAuto<T>(this IPacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
+        {
+            try
+            {
+                if (check && converter.Length > length)
+                    goto fail;
+                if (converter is IPacketConverter<T> res)
+                    return res.GetValue(buffer, offset, length);
+                return (T)converter.GetValue(buffer, offset, length);
+            }
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            {
+                throw PacketException.ConvertError(ex);
+            }
+            fail:
+            throw PacketException.Overflow();
+        }
+
+        internal static T GetValue<T>(this IPacketConverter<T> converter, Element element)
+        {
+            return converter.GetValue(element.buffer, element.offset, element.length);
+        }
+
+        internal static object GetValue(this IPacketConverter converter, Element element)
+        {
+            return converter.GetValue(element.buffer, element.offset, element.length);
+        }
+
+        internal static T GetValueWrap<T>(this IPacketConverter<T> converter, byte[] buffer, int offset, int length)
+        {
+            try
+            {
+                return converter.GetValue(buffer, offset, length);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
@@ -45,20 +92,11 @@ namespace Mikodev.Network
             }
         }
 
-        internal static T GetValueWrapAuto<T>(this IPacketConverter con, Element element, bool check = false)
-        {
-            return GetValueWrapAuto<T>(con, element.buffer, element.offset, element.length, check);
-        }
-
-        internal static T GetValueWrapAuto<T>(this IPacketConverter con, byte[] buf, int off, int len, bool check = false)
+        internal static T GetValueWrap<T>(this IPacketConverter<T> converter, Element element)
         {
             try
             {
-                if (check && con.Length > len)
-                    throw PacketException.Overflow();
-                if (con is IPacketConverter<T> res)
-                    return res.GetValue(buf, off, len);
-                return (T)con.GetValue(buf, off, len);
+                return converter.GetValue(element.buffer, element.offset, element.length);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
@@ -66,48 +104,14 @@ namespace Mikodev.Network
             }
         }
 
-        internal static T GetValue<T>(this IPacketConverter<T> con, Element ele)
-        {
-            return con.GetValue(ele.buffer, ele.offset, ele.length);
-        }
-
-        internal static object GetValue(this IPacketConverter con, Element ele)
-        {
-            return con.GetValue(ele.buffer, ele.offset, ele.length);
-        }
-
-        internal static T GetValueWrap<T>(this IPacketConverter<T> con, byte[] buf, int off, int len)
+        internal static byte[] GetBytesWrap(this IPacketConverter converter, object value)
         {
             try
             {
-                return con.GetValue(buf, off, len);
-            }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
-            {
-                throw PacketException.ConvertError(ex);
-            }
-        }
-
-        internal static T GetValueWrap<T>(this IPacketConverter<T> con, Element ele)
-        {
-            try
-            {
-                return con.GetValue(ele.buffer, ele.offset, ele.length);
-            }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
-            {
-                throw PacketException.ConvertError(ex);
-            }
-        }
-
-        internal static byte[] GetBytesWrap(this IPacketConverter con, object val)
-        {
-            try
-            {
-                var buf = con.GetBytes(val);
+                var buf = converter.GetBytes(value);
                 if (buf == null)
                     buf = s_empty_bytes;
-                var len = con.Length;
+                var len = converter.Length;
                 if (len > 0 && len != buf.Length)
                     throw PacketException.ConvertMismatch(len);
                 return buf;
@@ -118,14 +122,14 @@ namespace Mikodev.Network
             }
         }
 
-        internal static byte[] GetBytesWrap<T>(this IPacketConverter<T> con, T val)
+        internal static byte[] GetBytesWrap<T>(this IPacketConverter<T> converter, T value)
         {
             try
             {
-                var buf = con.GetBytes(val);
+                var buf = converter.GetBytes(value);
                 if (buf == null)
                     buf = s_empty_bytes;
-                var len = con.Length;
+                var len = converter.Length;
                 if (len > 0 && len != buf.Length)
                     throw PacketException.ConvertMismatch(len);
                 return buf;

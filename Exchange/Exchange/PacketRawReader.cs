@@ -28,9 +28,9 @@ namespace Mikodev.Network
             this.converters = converters;
         }
 
-        internal object Next(IPacketConverter con) => element.Next(ref index, con);
+        internal object Next(IPacketConverter converter) => element.Next(ref index, converter);
 
-        internal T NextAuto<T>(IPacketConverter con) => element.NextAuto<T>(ref index, con);
+        internal T NextAuto<T>(IPacketConverter converter) => element.NextAuto<T>(ref index, converter);
 
         public bool Any => index < element.Max();
 
