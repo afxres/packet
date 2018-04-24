@@ -86,21 +86,6 @@ namespace Mikodev.Network
             return reader.element.ToDictionary<TK, TV>(indexConverter, elementConverter);
         }
 
-        internal static T[] ToArrayCast<T>(object[] array)
-        {
-            var len = array.Length;
-            var res = new T[len];
-            Array.Copy(array, res, len);
-            return res;
-        }
-
-        internal static List<T> ToListCast<T>(object[] array)
-        {
-            var val = ToArrayCast<T>(array);
-            var res = new List<T>(val);
-            return res;
-        }
-
         internal static Dictionary<TK, TV> ToDictionaryCast<TK, TV>(IEnumerable<KeyValuePair<object, object>> dictionary)
         {
             var dic = new Dictionary<TK, TV>();

@@ -89,7 +89,7 @@ namespace Mikodev.Network
                     inf.ElementType = ele;
                     inf.To = Info.Collection; // to list
                     inf.ToCollection = GetToFunction(s_to_list, ele);
-                    inf.ToCollectionCast = GetCastFunction(s_cast_list, ele);
+                    inf.ToCollectionCast = GetCastListFunction(ele); // cast to list
                     return inf;
                 }
                 if (genericDefinition == typeof(IDictionary<,>))
@@ -117,12 +117,18 @@ namespace Mikodev.Network
                 inf.To = Info.Collection; // to array
                 inf.FromEnumerable = GetFromEnumerableFunction(s_from_array.MakeGenericMethod(ele), type);
                 inf.ToCollection = GetToFunction(s_to_array, ele);
-                inf.ToCollectionCast = GetCastFunction(s_cast_array, ele);
+                inf.ToCollectionCast = GetCastArrayFunction(ele); // cast to array
             }
             else if (generic && genericArgs.Length == 1)
             {
                 var ele = genericArgs[0];
-                if (genericDefinition == typeof(List<>))
+                if (IsFSharpList(type))
+                {
+                    inf.To = Info.Collection;
+                    inf.ToCollection = GetToFSharpListFunction(ele);
+                    inf.ToCollectionCast = GetCastFSharpListFunction(ele);
+                }
+                else if (genericDefinition == typeof(List<>))
                 {
                     var sub = GetInfo(typeof(IList<>).MakeGenericType(ele));
                     inf.ElementType = ele;

@@ -270,6 +270,7 @@ namespace Mikodev.Testing
             var buf = PacketConvert.Serialize(arr);
             var rs = PacketConvert.Deserialize<PacketReader[]>(buf);
             var os = PacketConvert.Deserialize<object[]>(buf);
+            var ol = PacketConvert.Deserialize<List<object>>(buf);
             var rr = PacketConvert.Deserialize<PacketRawReader[]>(buf);
             var ra = PacketConvert.Deserialize<_Index[]>(buf);
             var rl = PacketConvert.Deserialize<List<_Index>>(buf);

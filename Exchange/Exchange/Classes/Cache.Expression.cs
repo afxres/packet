@@ -15,8 +15,6 @@ namespace Mikodev.Network
         private static readonly MethodInfo s_from_enumerable = typeof(Cache).GetMethod(nameof(GetBytesFromEnumerable), Flags);
         private static readonly MethodInfo s_from_dictionary = typeof(Cache).GetMethod(nameof(GetBytesFromDictionary), Flags);
 
-        private static readonly MethodInfo s_cast_array = typeof(Convert).GetMethod(nameof(Convert.ToArrayCast), Flags);
-        private static readonly MethodInfo s_cast_list = typeof(Convert).GetMethod(nameof(Convert.ToListCast), Flags);
         private static readonly MethodInfo s_cast_dictionary = typeof(Convert).GetMethod(nameof(Convert.ToDictionaryCast), Flags);
 
         private static readonly MethodInfo s_to_array = typeof(Convert).GetMethod(nameof(Convert.ToArray), Flags);
@@ -24,6 +22,8 @@ namespace Mikodev.Network
         private static readonly MethodInfo s_to_collection = typeof(Convert).GetMethod(nameof(Convert.ToCollection), Flags);
         private static readonly MethodInfo s_to_enumerable = typeof(Convert).GetMethod(nameof(Convert.ToEnumerable), Flags);
         private static readonly MethodInfo s_to_dictionary = typeof(Convert).GetMethod(nameof(Convert.ToDictionary), Flags);
+
+        private static readonly MethodInfo s_array_copy = typeof(Array).GetMethod(nameof(Array.Copy), new[] { typeof(Array), typeof(Array), typeof(int) });
 
         private static Func<PacketReader, IPacketConverter, object> GetToFunction(MethodInfo info, Type element)
         {
@@ -79,23 +79,42 @@ namespace Mikodev.Network
             return fun;
         }
 
-        private static Func<object[], object> GetCastFunction(MethodInfo info, Type element)
+        private static Expression GetCastArrayExpression(Type elementType, out ParameterExpression parameter)
         {
-            var arr = Expression.Parameter(typeof(object[]), "array");
-            var met = info.MakeGenericMethod(element);
-            var cal = Expression.Call(met, arr);
-            var exp = Expression.Lambda<Func<object[], object>>(cal, arr);
+            parameter = Expression.Parameter(typeof(object[]), "parameter");
+            if (elementType == typeof(object))
+                return parameter;
+            var len = Expression.ArrayLength(parameter);
+            var dst = Expression.NewArrayBounds(elementType, len);
+            var loc = Expression.Variable(elementType.MakeArrayType(), "destination");
+            var ass = Expression.Assign(loc, dst);
+            var cpy = Expression.Call(s_array_copy, parameter, loc, len);
+            var blk = Expression.Block(new ParameterExpression[] { loc }, new Expression[] { ass, cpy, loc });
+            return blk;
+        }
+
+        private static Func<object[], object> GetCastArrayFunction(Type elementType)
+        {
+            var blk = GetCastArrayExpression(elementType, out var arr);
+            var exp = Expression.Lambda<Func<object[], object>>(blk, arr);
             var fun = exp.Compile();
             return fun;
         }
 
-        private static Func<object[], object> GetCastCollectionFunction(Type element, ConstructorInfo info)
+        private static Func<object[], object> GetCastListFunction(Type elementType)
         {
-            var itr = typeof(IEnumerable<>).MakeGenericType(element);
-            var arr = Expression.Parameter(typeof(object[]), "array");
-            var cal = Expression.Call(s_cast_array.MakeGenericMethod(element), arr);
-            var cst = Expression.Convert(cal, itr);
-            var inv = Expression.New(info, cst);
+            var blk = GetCastArrayExpression(elementType, out var arr);
+            var con = typeof(List<>).MakeGenericType(elementType).GetConstructor(new[] { typeof(IEnumerable<>).MakeGenericType(elementType) });
+            var inv = Expression.New(con, blk);
+            var exp = Expression.Lambda<Func<object[], object>>(inv, arr);
+            var fun = exp.Compile();
+            return fun;
+        }
+
+        private static Func<object[], object> GetCastCollectionFunction(Type elementType, ConstructorInfo constructorInfo)
+        {
+            var blk = GetCastArrayExpression(elementType, out var arr);
+            var inv = Expression.New(constructorInfo, blk);
             var box = Expression.Convert(inv, typeof(object));
             var exp = Expression.Lambda<Func<object[], object>>(box, arr);
             var fun = exp.Compile();
@@ -104,7 +123,7 @@ namespace Mikodev.Network
 
         private static Func<List<KeyValuePair<object, object>>, object> GetCastDictionaryFunction(params Type[] types)
         {
-            var arr = Expression.Parameter(typeof(List<KeyValuePair<object, object>>), "pairs");
+            var arr = Expression.Parameter(typeof(List<KeyValuePair<object, object>>), "dictionary");
             var met = s_cast_dictionary.MakeGenericMethod(types);
             var cal = Expression.Call(met, arr);
             var exp = Expression.Lambda<Func<List<KeyValuePair<object, object>>, object>>(cal, arr);
