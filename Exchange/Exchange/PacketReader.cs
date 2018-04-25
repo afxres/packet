@@ -42,7 +42,7 @@ namespace Mikodev.Network
 
             var dic = new Dictionary<string, PacketReader>();
             var buf = element.buffer;
-            var max = element.Max();
+            var max = element.Max;
             var idx = element.offset;
             var len = 0;
 
@@ -81,7 +81,7 @@ namespace Mikodev.Network
             tag |= TagArray;
 
             var lst = new List<PacketReader>();
-            var max = element.Max();
+            var max = element.Max;
             var idx = element.offset;
             var buf = element.buffer;
             var len = 0;
@@ -184,7 +184,7 @@ namespace Mikodev.Network
                         if (Cache.TryGetConverter(converters, info.ElementType, out var con, ref sub))
                             return info.ToDictionary(this, keycon, con);
 
-                        var max = element.Max();
+                        var max = element.Max;
                         var idx = element.offset;
                         var buf = element.buffer;
                         var keylen = keycon.Length;

@@ -32,7 +32,7 @@ namespace Mikodev.Network
 
         internal T NextAuto<T>(IPacketConverter converter) => element.NextAuto<T>(ref index, converter);
 
-        public bool Any => index < element.Max();
+        public bool Any => index < element.Max;
 
         public void Reset() => index = element.offset;
 

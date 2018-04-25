@@ -10,9 +10,9 @@ using static Mikodev.Testing.Extensions;
 
 namespace Mikodev.Testing
 {
-    internal class _Ref { }
+    internal class TestRef { }
 
-    internal class _Converter : IPacketConverter
+    internal class TestConverter : IPacketConverter
     {
         internal static readonly string _BytesErr = Guid.NewGuid().ToString();
 
@@ -25,7 +25,7 @@ namespace Mikodev.Testing
         object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => throw new OutOfMemoryException(_ValueErr);
     }
 
-    internal class _BadConverter : IPacketConverter
+    internal class TestBadConverter : IPacketConverter
     {
         int IPacketConverter.Length => 4;
 
@@ -40,20 +40,41 @@ namespace Mikodev.Testing
         }
     }
 
-    internal class _Two
+    internal class TestTwo
     {
         public int One { get; set; }
 
         public int Two { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            var two = obj as TestTwo;
+            return two != null &&
+                   One == two.One &&
+                   Two == two.Two;
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = -661386576;
+            hashCode = hashCode * -1521134295 + One.GetHashCode();
+            hashCode = hashCode * -1521134295 + Two.GetHashCode();
+            return hashCode;
+        }
+
+        public override string ToString()
+        {
+            return $"{nameof(TestTwo)} one: {One}, two: {Two}";
+        }
     }
 
-    internal class _TwoConverter : IPacketConverter
+    internal class TestTwoConverter : IPacketConverter
     {
         public int Length => sizeof(int) * 2;
 
         public byte[] GetBytes(object value)
         {
-            var two = (_Two)value;
+            var two = (TestTwo)value;
             var buf = new byte[sizeof(int) * 2];
             var a = BitConverter.GetBytes(two.One);
             var b = BitConverter.GetBytes(two.Two);
@@ -68,18 +89,18 @@ namespace Mikodev.Testing
                 throw new ArgumentOutOfRangeException(nameof(length));
             var a = BitConverter.ToInt32(buffer, offset);
             var b = BitConverter.ToInt32(buffer, offset + sizeof(int));
-            var two = new _Two { One = a, Two = b };
+            var two = new TestTwo { One = a, Two = b };
             return two;
         }
     }
 
-    internal class _Box
+    internal class TestBox
     {
         public string Name { get; set; }
 
         public override bool Equals(object obj)
         {
-            if (obj is _Box box)
+            if (obj is TestBox box)
                 return Name.Equals(box.Name);
             return false;
         }
@@ -91,62 +112,62 @@ namespace Mikodev.Testing
 
         public override string ToString()
         {
-            return $"{nameof(_Box)} {Name}";
+            return $"{nameof(TestBox)} {Name}";
         }
     }
 
-    internal class _BoxConverter : IPacketConverter
+    internal class TestBoxConverter : IPacketConverter
     {
         public int Length => 0;
 
         public byte[] GetBytes(object value)
         {
-            return Encoding.UTF8.GetBytes(((_Box)value).Name);
+            return Encoding.UTF8.GetBytes(((TestBox)value).Name);
         }
 
         public object GetValue(byte[] buffer, int offset, int length)
         {
-            return new _Box { Name = Encoding.UTF8.GetString(buffer, offset, length) };
+            return new TestBox { Name = Encoding.UTF8.GetString(buffer, offset, length) };
         }
     }
 
-    internal class _Empty { }
+    internal class TestEmpty { }
 
-    internal class _Person
+    internal class TestPerson
     {
         public int Age { get; set; }
 
         public string Name { get; set; }
     }
 
-    internal class _ReadOnly
+    internal class TestReadOnly
     {
         public int Number { get; }
 
         public string Text { get; }
 
-        public _ReadOnly(int num, string text)
+        public TestReadOnly(int num, string text)
         {
             Number = num;
             Text = text;
         }
     }
 
-    internal class _WriteOnly
+    internal class TestWriteOnly
     {
-        public string Name => nameof(_WriteOnly);
+        public string Name => nameof(TestWriteOnly);
 
         public string Value { set { } }
     }
 
-    internal struct _Value
+    internal struct TestValue
     {
         public int One { get; set; }
 
         public string Two { get; set; }
     }
 
-    internal class _Tuple : IEnumerable<KeyValuePair<int, string>>
+    internal class TestTuple : IEnumerable<KeyValuePair<int, string>>
     {
         public IEnumerator<KeyValuePair<int, string>> GetEnumerator()
         {
@@ -159,7 +180,7 @@ namespace Mikodev.Testing
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
-    internal class _Index : IEquatable<_Index>
+    internal class TestIndex : IEquatable<TestIndex>
     {
         public int Id { get; set; }
 
@@ -167,10 +188,10 @@ namespace Mikodev.Testing
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as _Index);
+            return Equals(obj as TestIndex);
         }
 
-        public bool Equals(_Index other)
+        public bool Equals(TestIndex other)
         {
             return other != null &&
                    Id == other.Id &&
@@ -187,7 +208,7 @@ namespace Mikodev.Testing
 
         public override string ToString()
         {
-            return $"{nameof(_Index)} id: {Id}, name: {Name}";
+            return $"{nameof(TestIndex)} id: {Id}, name: {Name}";
         }
     }
 
@@ -197,24 +218,24 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Rethrow()
         {
-            var val = new _Ref();
-            var con = new Dictionary<Type, IPacketConverter> { [typeof(_Ref)] = new _Converter() };
+            var val = new TestRef();
+            var con = new Dictionary<Type, IPacketConverter> { [typeof(TestRef)] = new TestConverter() };
 
             try
             {
                 var buf = new PacketRawWriter(con).SetValue(val);
                 Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.ConvertError && ex.InnerException.Message == _Converter._BytesErr)
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.ConvertError && ex.InnerException.Message == TestConverter._BytesErr)
             {
                 // ignore
             }
 
             try
             {
-                var res = new PacketRawReader(new byte[4], con).GetValue<_Ref>();
+                var res = new PacketRawReader(new byte[4], con).GetValue<TestRef>();
             }
-            catch (Exception ex) when (ex.Message == _Converter._ValueErr)
+            catch (Exception ex) when (ex.Message == TestConverter._ValueErr)
             {
                 // ignore
             }
@@ -266,16 +287,16 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Collection()
         {
-            var arr = Enumerable.Range(0, 8).Select(r => new _Index { Id = r, Name = r.ToString() }).ToArray();
+            var arr = Enumerable.Range(0, 8).Select(r => new TestIndex { Id = r, Name = r.ToString() }).ToArray();
             var buf = PacketConvert.Serialize(arr);
             var rs = PacketConvert.Deserialize<PacketReader[]>(buf);
             var os = PacketConvert.Deserialize<object[]>(buf);
             var ol = PacketConvert.Deserialize<List<object>>(buf);
             var rr = PacketConvert.Deserialize<PacketRawReader[]>(buf);
-            var ra = PacketConvert.Deserialize<_Index[]>(buf);
-            var rl = PacketConvert.Deserialize<List<_Index>>(buf);
-            var ri = PacketConvert.Deserialize<IList<_Index>>(buf);
-            var rc = PacketConvert.Deserialize<ICollection<_Index>>(buf);
+            var ra = PacketConvert.Deserialize<TestIndex[]>(buf);
+            var rl = PacketConvert.Deserialize<List<TestIndex>>(buf);
+            var ri = PacketConvert.Deserialize<IList<TestIndex>>(buf);
+            var rc = PacketConvert.Deserialize<ICollection<TestIndex>>(buf);
 
             ThrowIfNotSequenceEqual(arr, ra);
             ThrowIfNotSequenceEqual(arr, rl);
@@ -312,11 +333,11 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Deserialize()
         {
-            var p = new _Person() { Age = 20, Name = "Bob" };
+            var p = new TestPerson() { Age = 20, Name = "Bob" };
             var pkt = PacketWriter.Serialize(p);
             var buf = pkt.GetBytes();
             var rea = new PacketReader(buf);
-            var val = rea.Deserialize<_Person>();
+            var val = rea.Deserialize<TestPerson>();
 
             Assert.AreEqual(p.Age, val.Age);
             Assert.AreEqual(p.Name, val.Name);
@@ -357,14 +378,14 @@ namespace Mikodev.Testing
         [TestMethod]
         public void DeserializeReadOnly()
         {
-            var a = new _ReadOnly(10, "read");
+            var a = new TestReadOnly(10, "read");
             var pkt = PacketWriter.Serialize(a);
             var buf = pkt.GetBytes();
             var rea = new PacketReader(buf);
 
             try
             {
-                var val = rea.Deserialize<_ReadOnly>();
+                var val = rea.Deserialize<TestReadOnly>();
                 Assert.Fail();
             }
             catch (PacketException ex) when (ex.ErrorCode == PacketError.InvalidType)
@@ -376,12 +397,12 @@ namespace Mikodev.Testing
         [TestMethod]
         public void DeserializeWriteOnly()
         {
-            var a = new _WriteOnly();
+            var a = new TestWriteOnly();
             var pkt = PacketWriter.Serialize(a);
             var buf = pkt.GetBytes();
             var rea = new PacketReader(buf);
-            var obj = rea.Deserialize<_WriteOnly>();
-            var val = rea.GetItem(nameof(_WriteOnly.Value), true);
+            var obj = rea.Deserialize<TestWriteOnly>();
+            var val = rea.GetItem(nameof(TestWriteOnly.Value), true);
 
             Assert.AreEqual(val, null);
         }
@@ -389,11 +410,11 @@ namespace Mikodev.Testing
         [TestMethod]
         public void DeserializeEmpty()
         {
-            var a = new _Empty();
+            var a = new TestEmpty();
             var pkt = PacketWriter.Serialize(a);
             var buf = pkt.GetBytes();
             var rea = new PacketReader(buf);
-            var obj = rea.Deserialize<_Empty>();
+            var obj = rea.Deserialize<TestEmpty>();
 
             Assert.AreEqual(buf.Length, 0);
         }
@@ -401,11 +422,11 @@ namespace Mikodev.Testing
         [TestMethod]
         public void DeserializeStructural()
         {
-            var v = new _Value { One = 1, Two = "Two" };
+            var v = new TestValue { One = 1, Two = "Two" };
             var pkt = PacketWriter.Serialize(v);
             var buf = pkt.GetBytes();
             var rea = new PacketReader(buf);
-            var obj = rea.Deserialize<_Value>();
+            var obj = rea.Deserialize<TestValue>();
 
             Assert.AreEqual(obj.One, 1);
             Assert.AreEqual(obj.Two, "Two");
@@ -414,11 +435,11 @@ namespace Mikodev.Testing
         [TestMethod]
         public void ConvertMismatch()
         {
-            var cvt = new Dictionary<Type, IPacketConverter>() { [typeof(_Ref)] = new _BadConverter() };
+            var cvt = new Dictionary<Type, IPacketConverter>() { [typeof(TestRef)] = new TestBadConverter() };
 
             try
             {
-                var buf = PacketConvert.Serialize(new _Ref(), cvt);
+                var buf = PacketConvert.Serialize(new TestRef(), cvt);
                 Assert.Fail();
             }
             catch (PacketException ex) when (ex.ErrorCode == PacketError.ConvertMismatch)
@@ -445,39 +466,48 @@ namespace Mikodev.Testing
         {
             var con = new Dictionary<Type, IPacketConverter>()
             {
-                [typeof(_Two)] = new _TwoConverter(),
-                [typeof(_Box)] = new _BoxConverter(),
+                [typeof(TestTwo)] = new TestTwoConverter(),
+                [typeof(TestBox)] = new TestBoxConverter(),
             };
             var obj = new
             {
-                a = Enumerable.Range(0, 4).Select(r => new _Two { One = r, Two = r * 2 }),
-                b = Enumerable.Range(0, 8).ToDictionary(r => r.ToString(), r => new _Two { One = r * 2, Two = r * 4 }),
+                a = Enumerable.Range(0, 4).Select(r => new TestTwo { One = r, Two = r * 2 }),
+                b = Enumerable.Range(0, 8).ToDictionary(r => r.ToString(), r => new TestTwo { One = r * 2, Two = r * 4 }),
                 x = Enumerable.Range(0, 2)
                     .Select(t =>
                         Enumerable.Range(0, 4).Select(r =>
-                            new _Box { Name = $"{t}:{r}" }))
+                            new TestBox { Name = $"{t}:{r}" }))
                     .ToList(),
             };
             var buf = PacketConvert.Serialize(obj, con);
             var rea = new PacketReader(buf, con);
-            var itr = rea["a"].GetEnumerable<_Two>();
+            var itr = rea["a"].GetEnumerable<TestTwo>();
 
-            var oc = new _Tuple();
+            var oc = new TestTuple();
             var c = oc.ToDictionary(r => r.Key, r => r.Value);
             var kvp = PacketWriter.Serialize(oc);
             var tc = kvp.GetBytes();
 
             var ra = itr.ToList();
-            var rb = rea["b"].GetDictionary<string, _Two>();
+            var rb = rea["b"].GetDictionary<string, TestTwo>();
             var rc = PacketConvert.Deserialize<IDictionary<int, string>>(tc);
-            var rx = rea["x"].Deserialize<_Box[][]>();
+            var rx = rea["x"].Deserialize<TestBox[][]>();
 
-            var od = new[] { new _Box { Name = "one" }, new _Box { Name = "Loooooooooooooong name!" } };
+            var od = new[] { new TestBox { Name = "one" }, new TestBox { Name = "Loooooooooooooong name!" }, new TestBox { Name = "what?" } };
             var td = PacketConvert.Serialize(od, con);
-            var rd = PacketConvert.Deserialize<IEnumerable<_Box>>(td, con);
+            var rd = PacketConvert.Deserialize<IEnumerable<TestBox>>(td, con);
+            var rdx = PacketConvert.Deserialize<TestBox[]>(td, con);
+            var rdy = PacketConvert.Deserialize<List<TestBox>>(td, con);
+
+            var rax = rea["a"].Deserialize<TestTwo[]>();
+            var ray = rea["a"].Deserialize<List<TestTwo>>();
 
             ThrowIfNotEqual(c, rc);
             ThrowIfNotSequenceEqual(od, rd);
+            ThrowIfNotSequenceEqual(od, rdx);
+            ThrowIfNotSequenceEqual(od, rdy);
+            ThrowIfNotSequenceEqual(obj.a, rax);
+            ThrowIfNotSequenceEqual(obj.a, ray);
             return;
         }
     }

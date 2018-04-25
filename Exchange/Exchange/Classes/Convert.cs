@@ -66,10 +66,10 @@ namespace Mikodev.Network
         {
             if (converter.Length < 1)
                 return GetList<T>(reader, converter);
-            return new List<T>(reader.element.ToArray<T>(converter));
+            return reader.element.ToList<T>(converter);
         }
 
-        internal static IEnumerable<T> ToEnumerable<T>(PacketReader reader, IPacketConverter converter)
+        internal static Enumerable<T> ToEnumerable<T>(PacketReader reader, IPacketConverter converter)
         {
             return new Enumerable<T>(reader, converter);
         }

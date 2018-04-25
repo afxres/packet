@@ -1,5 +1,6 @@
 ﻿using Mikodev.Network.Converters;
 using System;
+using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
@@ -25,11 +26,11 @@ namespace Mikodev.Network
             this.length = length;
         }
 
-        internal int Max() => offset + length;
+        internal int Max => offset + length;
 
         internal void MoveNext(int define, ref int index, out int length)
         {
-            var max = offset + this.length;
+            var max = Max;
             if ((define > 0 && index + define > max) || (define < 1 && buffer.MoveNext(max, ref index, out define) == false))
                 throw PacketException.Overflow();
             length = define;
@@ -61,7 +62,7 @@ namespace Mikodev.Network
             var valgen = elementConverter as IPacketConverter<TV>;
             var keylen = indexConverter.Length;
             var vallen = elementConverter.Length;
-            var max = offset + length;
+            var max = Max;
             var idx = offset;
             var len = 0;
 
@@ -108,14 +109,19 @@ namespace Mikodev.Network
             throw PacketException.Overflow();
         }
 
+        private object ByteArray => ByteArrayConverter.ToByteArray(buffer, offset, length);
+
+        private object SByteArray => SByteArrayConverter.ToSbyteArray(buffer, offset, length);
+
         internal T[] ToArray<T>(IPacketConverter converter)
         {
             if (length < 1)
                 return new T[0];
             if (typeof(T) == typeof(byte))
-                return (T[])(object)ByteArrayConverter.ToByteArray(buffer, offset, length);
+                return (T[])ByteArray;
             else if (typeof(T) == typeof(sbyte))
-                return (T[])(object)SByteArrayConverter.ToSbyteArray(buffer, offset, length);
+                return (T[])SByteArray;
+
             var def = converter.Length;
             var sum = Math.DivRem(length, def, out var rem);
             if (rem != 0)
@@ -137,6 +143,38 @@ namespace Mikodev.Network
                 throw PacketException.ConvertError(ex);
             }
             return arr;
+        }
+
+        internal List<T> ToList<T>(IPacketConverter converter)
+        {
+            if (length < 1)
+                return new List<T>();
+            if (typeof(T) == typeof(byte))
+                return new List<T>((T[])ByteArray);
+            else if (typeof(T) == typeof(sbyte))
+                return new List<T>((T[])SByteArray);
+
+            var def = converter.Length;
+            var sum = Math.DivRem(length, def, out var rem);
+            if (rem != 0)
+                throw PacketException.Overflow();
+            var lst = new List<T>(sum);
+            var gen = converter as IPacketConverter<T>;
+
+            try
+            {
+                if (gen != null)
+                    for (int idx = 0; idx < sum; idx++)
+                        lst.Add(gen.GetValue(buffer, offset + idx * def, def));
+                else
+                    for (int idx = 0; idx < sum; idx++)
+                        lst.Add((T)converter.GetValue(buffer, offset + idx * def, def));
+            }
+            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            {
+                throw PacketException.ConvertError(ex);
+            }
+            return lst;
         }
     }
 }

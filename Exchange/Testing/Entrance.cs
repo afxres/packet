@@ -94,12 +94,14 @@ namespace Mikodev.Testing
         [TestMethod]
         public void EmptyCollection()
         {
-            var obj = new { array = new int[0], list = new List<string>() };
+            var obj = new { array = new int[0], empty = new IPAddress[0], numbers = new List<double>(), list = new List<string>() };
             var buf = PacketConvert.Serialize(obj);
             var res = PacketConvert.Deserialize(buf, obj);
 
             ThrowIfNotSequenceEqual(obj.array, res.array);
             ThrowIfNotSequenceEqual(obj.list, res.list);
+            ThrowIfNotSequenceEqual(obj.numbers, res.numbers);
+            ThrowIfNotSequenceEqual(obj.empty, res.empty);
             return;
         }
 
@@ -253,13 +255,21 @@ namespace Mikodev.Testing
             var rea = new PacketReader(buf);
             var ra = rea["a"].GetArray<byte>();
             var rb = rea["b"].GetArray<byte>();
-            var rc = rea["c"].GetList<sbyte>();
-            var rd = rea["d"].GetList<sbyte>();
+            var rax = rea["a"].GetList<byte>();
+            var rbx = rea["b"].GetList<byte>();
+            var rc = rea["c"].GetArray<sbyte>();
+            var rd = rea["d"].GetArray<sbyte>();
+            var rcx = rea["c"].GetList<sbyte>();
+            var rdx = rea["d"].GetList<sbyte>();
 
             ThrowIfNotSequenceEqual(a, ra);
             ThrowIfNotSequenceEqual(b, rb);
             ThrowIfNotSequenceEqual(c, rc);
             ThrowIfNotSequenceEqual(d, rd);
+            ThrowIfNotSequenceEqual(a, rax);
+            ThrowIfNotSequenceEqual(b, rbx);
+            ThrowIfNotSequenceEqual(c, rcx);
+            ThrowIfNotSequenceEqual(d, rdx);
         }
 
         [TestMethod]

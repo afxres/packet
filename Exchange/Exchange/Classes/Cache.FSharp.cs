@@ -8,13 +8,15 @@ namespace Mikodev.Network
 {
     partial class Cache
     {
+        private const string FSharpCollectionsNamespace = "Microsoft.FSharp.Collections";
+
         private static MethodInfo s_to_fslist;
         private static MethodInfo s_to_tuple_list = typeof(Convert).GetMethod(nameof(Convert.ToTupleList), Flags);
         private static MethodInfo s_cast_tuple_list = typeof(Convert).GetMethod(nameof(Convert.ToTupleListCast), Flags);
 
         private static bool IsFSharpList(Type type)
         {
-            if (type.Name != "FSharpList`1" || type.Namespace != "Microsoft.FSharp.Collections")
+            if (type.Name != "FSharpList`1" || type.Namespace != FSharpCollectionsNamespace)
                 return false;
             var fun = s_to_fslist;
             if (fun != null)
@@ -31,7 +33,7 @@ namespace Mikodev.Network
 
         private static bool IsFSharpMap(Type type, Type[] elementTypes, out ConstructorInfo constructorInfo)
         {
-            if (type.Name != "FSharpMap`2" || type.Namespace != "Microsoft.FSharp.Collections")
+            if (type.Name != "FSharpMap`2" || type.Namespace != FSharpCollectionsNamespace)
                 goto fail;
             var con = type.GetConstructor(new[] { typeof(IEnumerable<>).MakeGenericType(typeof(Tuple<,>).MakeGenericType(elementTypes)) });
             if (con == null)
