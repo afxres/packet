@@ -21,4 +21,8 @@
     <ProjectReference Include="..\Exchange\Exchange.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Update="System.ValueTuple" Version="4.4.0" />
+  </ItemGroup>
+
 </Project>

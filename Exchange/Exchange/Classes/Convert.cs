@@ -69,13 +69,6 @@ namespace Mikodev.Network
             return new List<T>(reader.element.ToArray<T>(converter));
         }
 
-        internal static IEnumerable<T> ToCollection<T>(PacketReader reader, IPacketConverter converter)
-        {
-            if (converter.Length < 1)
-                return GetArray<T>(reader, converter);
-            return reader.element.ToArray<T>(converter);
-        }
-
         internal static IEnumerable<T> ToEnumerable<T>(PacketReader reader, IPacketConverter converter)
         {
             return new Enumerable<T>(reader, converter);
@@ -83,15 +76,42 @@ namespace Mikodev.Network
 
         internal static Dictionary<TK, TV> ToDictionary<TK, TV>(PacketReader reader, IPacketConverter indexConverter, IPacketConverter elementConverter)
         {
-            return reader.element.ToDictionary<TK, TV>(indexConverter, elementConverter);
+            var dic = new DictionaryBuilder<TK, TV>();
+            reader.element.ToDictionary(indexConverter, elementConverter, dic);
+            return dic.dictionary;
         }
 
-        internal static Dictionary<TK, TV> ToDictionaryCast<TK, TV>(IEnumerable<KeyValuePair<object, object>> dictionary)
+        internal static Dictionary<TK, TV> ToDictionaryCast<TK, TV>(List<object> list)
         {
             var dic = new Dictionary<TK, TV>();
-            foreach (var i in dictionary)
-                dic.Add((TK)i.Key, (TV)i.Value);
+            var idx = 0;
+            while (idx < list.Count)
+            {
+                var key = (TK)list[idx++];
+                var val = (TV)list[idx++];
+                dic.Add(key, val);
+            }
             return dic;
+        }
+
+        internal static List<Tuple<TK, TV>> ToTupleList<TK, TV>(PacketReader reader, IPacketConverter indexConverter, IPacketConverter elementConverter)
+        {
+            var dic = new TupleListBuilder<TK, TV>();
+            reader.element.ToDictionary(indexConverter, elementConverter, dic);
+            return dic.tuples;
+        }
+
+        internal static List<Tuple<TK, TV>> ToTupleListCast<TK, TV>(List<object> list)
+        {
+            var lst = new List<Tuple<TK, TV>>();
+            var idx = 0;
+            while (idx < list.Count)
+            {
+                var key = (TK)list[idx++];
+                var val = (TV)list[idx++];
+                lst.Add(new Tuple<TK, TV>(key, val));
+            }
+            return lst;
         }
     }
 }

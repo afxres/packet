@@ -190,7 +190,7 @@ namespace Mikodev.Network
                         var keylen = keycon.Length;
                         var len = 0;
 
-                        var lst = new List<KeyValuePair<object, object>>();
+                        var lst = new List<object>();
                         while (true)
                         {
                             var res = max - idx;
@@ -211,13 +211,13 @@ namespace Mikodev.Network
                                 goto fail;
                             var rea = new PacketReader(buf, idx, len, converters);
                             var val = rea.GetValueMatch(info.ElementType, level, sub);
-                            var par = new KeyValuePair<object, object>(key, val);
 
                             idx += len;
-                            lst.Add(par);
+                            lst.Add(key);
+                            lst.Add(val);
                         }
                         return info.ToDictionaryCast(lst);
-                        fail:
+                    fail:
                         throw PacketException.Overflow();
                     }
                 default:

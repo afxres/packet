@@ -1,6 +1,5 @@
 ﻿using Mikodev.Network.Converters;
 using System;
-using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
@@ -54,11 +53,10 @@ namespace Mikodev.Network
             return res;
         }
 
-        internal Dictionary<TK, TV> ToDictionary<TK, TV>(IPacketConverter indexConverter, IPacketConverter elementConverter)
+        internal void ToDictionary<TK, TV>(IPacketConverter indexConverter, IPacketConverter elementConverter, DictionaryAbstract<TK, TV> dictionary)
         {
-            var dic = new Dictionary<TK, TV>();
             if (length == 0)
-                return dic;
+                return;
             var keygen = indexConverter as IPacketConverter<TK>;
             var valgen = elementConverter as IPacketConverter<TV>;
             var keylen = indexConverter.Length;
@@ -97,16 +95,16 @@ namespace Mikodev.Network
 
                     var val = (valgen != null ? valgen.GetValue(buffer, idx, len) : (TV)elementConverter.GetValue(buffer, idx, len));
                     idx += len;
-                    dic.Add(key, val);
+                    dictionary.Add(key, val);
                 }
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
                 throw PacketException.ConvertError(ex);
             }
-            return dic;
 
-            fail:
+            return;
+        fail:
             throw PacketException.Overflow();
         }
 

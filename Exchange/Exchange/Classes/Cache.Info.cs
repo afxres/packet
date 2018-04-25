@@ -124,6 +124,7 @@ namespace Mikodev.Network
                 var ele = genericArgs[0];
                 if (IsFSharpList(type))
                 {
+                    // f# list
                     inf.To = Info.Collection;
                     inf.ToCollection = GetToFSharpListFunction(ele);
                     inf.ToCollectionCast = GetCastFSharpListFunction(ele);
@@ -152,11 +153,20 @@ namespace Mikodev.Network
             }
             else if (generic && genericArgs.Length == 2)
             {
-                if (genericDefinition == typeof(Dictionary<,>))
+                if (IsFSharpMap(type, genericArgs, out var constructorInfo))
                 {
+                    // f# map
                     inf.To = Info.Dictionary;
-                    inf.ToDictionary = GetToDictionaryFunction(genericArgs[0], genericArgs[1]);
-                    inf.ToDictionaryCast = GetCastDictionaryFunction(genericArgs[0], genericArgs[1]);
+                    inf.ToDictionary = GetToFSharpMapFunction(constructorInfo, genericArgs);
+                    inf.ToDictionaryCast = GetCastFSharpMapFunction(constructorInfo, genericArgs);
+                }
+                else if (genericDefinition == typeof(Dictionary<,>))
+                {
+                    var itr = typeof(IDictionary<,>).MakeGenericType(genericArgs);
+                    var sub = GetInfo(itr);
+                    inf.To = Info.Dictionary;
+                    inf.ToDictionary = sub.ToDictionary;
+                    inf.ToDictionaryCast = sub.ToDictionaryCast;
                 }
             }
 

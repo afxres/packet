@@ -19,7 +19,6 @@ namespace Mikodev.Network
 
         private static readonly MethodInfo s_to_array = typeof(Convert).GetMethod(nameof(Convert.ToArray), Flags);
         private static readonly MethodInfo s_to_list = typeof(Convert).GetMethod(nameof(Convert.ToList), Flags);
-        private static readonly MethodInfo s_to_collection = typeof(Convert).GetMethod(nameof(Convert.ToCollection), Flags);
         private static readonly MethodInfo s_to_enumerable = typeof(Convert).GetMethod(nameof(Convert.ToEnumerable), Flags);
         private static readonly MethodInfo s_to_dictionary = typeof(Convert).GetMethod(nameof(Convert.ToDictionary), Flags);
 
@@ -45,7 +44,7 @@ namespace Mikodev.Network
                 return null;
             var con = Expression.Parameter(typeof(IPacketConverter), "converter");
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
-            var met = s_to_collection.MakeGenericMethod(element);
+            var met = s_to_array.MakeGenericMethod(element);
             var cal = Expression.Call(met, rea, con);
             var cst = Expression.Convert(cal, itr);
             var inv = Expression.New(cto, cst);
@@ -121,12 +120,12 @@ namespace Mikodev.Network
             return fun;
         }
 
-        private static Func<List<KeyValuePair<object, object>>, object> GetCastDictionaryFunction(params Type[] types)
+        private static Func<List<object>, object> GetCastDictionaryFunction(params Type[] types)
         {
-            var arr = Expression.Parameter(typeof(List<KeyValuePair<object, object>>), "dictionary");
+            var arr = Expression.Parameter(typeof(List<object>), "list");
             var met = s_cast_dictionary.MakeGenericMethod(types);
             var cal = Expression.Call(met, arr);
-            var exp = Expression.Lambda<Func<List<KeyValuePair<object, object>>, object>>(cal, arr);
+            var exp = Expression.Lambda<Func<List<object>, object>>(cal, arr);
             var fun = exp.Compile();
             return fun;
         }

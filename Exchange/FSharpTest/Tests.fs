@@ -10,13 +10,29 @@ module Extension =
             Assert.Fail()
         else ()
 
+    let AreMapEqual<'k , 'v when 'k : comparison and 'v : equality> (a : Map<'k, 'v>) (b : Map<'k, 'v>) =
+        if (a |> Map.count) <> (b |> Map.count) then
+            Assert.Fail()
+        for p in a do
+            if p.Value <> b.[p.Key] then
+                Assert.Fail()
+        ()
+
+    let AreSetEqual<'t when 't : comparison and 't : equality> (a : Set<'t>) (b : Set<'t>) =
+        if (a |> Set.count) <> (b |> Set.count) then
+            Assert.Fail()
+        for i in a do
+            if not (b |> Seq.contains i) then
+                Assert.Fail()
+        ()
+
 type Person = { id : int ; name : string }
 
 [<TestClass>]
 type FSharpTestClass () =
 
     [<TestMethod>]
-    member __.BasicCollection () =
+    member __.BasicCollections () =
         let source = [ for i in 0..9 do yield i * i ]
         let buffer = PacketConvert.Serialize(source)
         let reader = new PacketReader(buffer)
@@ -47,3 +63,37 @@ type FSharpTestClass () =
         Extension.AreaSequenceEqual source array
         Extension.AreaSequenceEqual source sequence
         ()
+
+    [<TestMethod>]
+    member __.Map () =
+        let a = [0..15] |> List.map (fun r -> (sprintf "%d" r, { id = -r; name = sprintf "%02x" r })) |> Map
+        let b = [0..15] |> List.map (fun r -> (r, sprintf "%d" r)) |> Map
+        let ta = PacketConvert.Serialize(a)
+        let tb = PacketConvert.Serialize(b)
+
+        let ra = PacketConvert.Deserialize<Map<string, Person>>(ta)
+        let rb = PacketConvert.Deserialize<Map<int, string>>(tb)
+
+        Extension.AreMapEqual a ra
+        Extension.AreMapEqual b rb
+        ()
+
+    [<TestMethod>]
+    member __.Set () =
+        let a = [0..15] |> List.map ((*) 2) |> Set
+        let b = [0..15] |> List.map (sprintf "%d") |> Set
+        let c = [0..15] |> List.map (fun r -> { id = r; name = sprintf "%d" r }) |> Set
+
+        let ta = PacketConvert.Serialize(a)
+        let tb = PacketConvert.Serialize(b)
+        let tc = PacketConvert.Serialize(c)
+
+        let ra = PacketConvert.Deserialize<Set<int>>(ta)
+        let rb = PacketConvert.Deserialize<Set<string>>(tb)
+        let rc = PacketConvert.Deserialize<Set<Person>>(tc)
+
+        Extension.AreSetEqual a ra
+        Extension.AreSetEqual b rb
+        Extension.AreSetEqual c rc
+        ()
+        

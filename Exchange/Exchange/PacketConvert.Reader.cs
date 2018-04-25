@@ -59,7 +59,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(reader);
             var key = Cache.GetConverter<TK>(reader.converters, false);
             var val = Cache.GetConverter<TV>(reader.converters, false);
-            var res = reader.element.ToDictionary<TK, TV>(key, val);
+            var res = Convert.ToDictionary<TK, TV>(reader, key, val);
             return res;
         }
 
@@ -67,7 +67,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(reader);
             var con = Cache.GetConverter<T>(reader.converters, false);
-            var col = Convert.ToCollection<T>(reader, con);
+            var col = Convert.ToArray<T>(reader, con);
             var res = new HashSet<T>(col);
             return res;
         }
