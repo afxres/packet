@@ -14,7 +14,7 @@ namespace Mikodev.Network.Converters
             return buf;
         }
 
-        public static Decimal ToDecimal(byte[] buffer, int offset)
+        public static Decimal ToValue(byte[] buffer, int offset)
         {
             var arr = new int[sizeof(Decimal) / sizeof(int)];
             for (int i = 0; i < arr.Length; i++)
@@ -27,10 +27,10 @@ namespace Mikodev.Network.Converters
 
         public byte[] GetBytes(decimal value) => ToBytes(value);
 
-        public decimal GetValue(byte[] buffer, int offset, int length) => ToDecimal(buffer, offset);
+        public decimal GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
 
         byte[] IPacketConverter.GetBytes(object value) => ToBytes((Decimal)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToDecimal(buffer, offset);
+        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
     }
 }

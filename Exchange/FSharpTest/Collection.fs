@@ -28,8 +28,13 @@ module Extension =
 
 type Person = { id : int ; name : string }
 
+type Book(id : int, name : string, price : decimal) =
+    member this.id = id
+    member this.name = name
+    member this.price = price
+
 [<TestClass>]
-type FSharpTestClass () =
+type Collections () =
 
     [<TestMethod>]
     member __.BasicCollections () =
@@ -95,5 +100,14 @@ type FSharpTestClass () =
         Extension.AreSetEqual a ra
         Extension.AreSetEqual b rb
         Extension.AreSetEqual c rc
+        ()
+
+    [<TestMethod>]
+    member __.Class () =
+        let a = new Book(1, "F# Pro", decimal(50))
+        let w = PacketWriter.Serialize(a)
+        let t = w.GetBytes()
+        let r = new PacketReader(t)
+        let v = r.Deserialize<Book>()
         ()
         

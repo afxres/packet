@@ -94,7 +94,15 @@ namespace Mikodev.Testing
         [TestMethod]
         public void EmptyCollection()
         {
-            var obj = new { array = new int[0], empty = new IPAddress[0], numbers = new List<double>(), list = new List<string>() };
+            var obj = new
+            {
+                array = new int[0],
+                bytes = new byte[0],
+                sbytes = new sbyte[0],
+                empty = new IPAddress[0],
+                numbers = new List<double>(),
+                list = new List<string>()
+            };
             var buf = PacketConvert.Serialize(obj);
             var res = PacketConvert.Deserialize(buf, obj);
 
@@ -102,6 +110,8 @@ namespace Mikodev.Testing
             ThrowIfNotSequenceEqual(obj.list, res.list);
             ThrowIfNotSequenceEqual(obj.numbers, res.numbers);
             ThrowIfNotSequenceEqual(obj.empty, res.empty);
+            ThrowIfNotSequenceEqual(obj.bytes, res.bytes);
+            ThrowIfNotSequenceEqual(obj.sbytes, res.sbytes);
             return;
         }
 

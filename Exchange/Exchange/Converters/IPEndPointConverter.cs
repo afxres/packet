@@ -16,7 +16,7 @@ namespace Mikodev.Network.Converters
             return res;
         }
 
-        public static IPEndPoint ToIPEndPoint(byte[] buffer, int offset, int length)
+        public static IPEndPoint ToValue(byte[] buffer, int offset, int length)
         {
             var add = new IPAddress(Extension.Span(buffer, offset, length - sizeof(ushort)));
             var pot = BitConverter.ToUInt16(buffer, offset + length - sizeof(ushort));
@@ -27,10 +27,10 @@ namespace Mikodev.Network.Converters
 
         public byte[] GetBytes(IPEndPoint value) => ToBytes(value);
 
-        public IPEndPoint GetValue(byte[] buffer, int offset, int length) => ToIPEndPoint(buffer, offset, length);
+        public IPEndPoint GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
 
         byte[] IPacketConverter.GetBytes(object value) => ToBytes((IPEndPoint)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToIPEndPoint(buffer, offset, length);
+        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
     }
 }

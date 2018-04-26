@@ -9,16 +9,16 @@ namespace Mikodev.Network.Converters
 
         public static byte[] ToBytes(Guid value) => value.ToByteArray();
 
-        public static Guid ToGuid(byte[] buffer, int offset) => new Guid(Extension.Span(buffer, offset, SizeOf));
+        public static Guid ToValue(byte[] buffer, int offset) => new Guid(Extension.Span(buffer, offset, SizeOf));
 
         public int Length => SizeOf;
 
         public byte[] GetBytes(Guid value) => ToBytes(value);
 
-        public Guid GetValue(byte[] buffer, int offset, int length) => ToGuid(buffer, offset);
+        public Guid GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
 
         byte[] IPacketConverter.GetBytes(object value) => ToBytes((Guid)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToGuid(buffer, offset);
+        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
     }
 }

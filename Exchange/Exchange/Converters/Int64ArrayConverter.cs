@@ -1,10 +1,10 @@
 ﻿using System;
-using Model = System.SByte;
+using Model = System.Int64;
 
 namespace Mikodev.Network.Converters
 {
     [PacketConverter(typeof(Model[]))]
-    internal sealed class SByteArrayConverter : IPacketConverter, IPacketConverter<Model[]>
+    internal sealed class Int64ArrayConverter : IPacketConverter, IPacketConverter<Model[]>
     {
         private static readonly Model[] s_empty_array = new Model[0];
 
@@ -12,7 +12,7 @@ namespace Mikodev.Network.Converters
         {
             if (value == null || value.Length == 0)
                 return Extension.s_empty_bytes;
-            var len = value.Length;
+            var len = value.Length * sizeof(Model);
             var dst = new byte[len];
             Buffer.BlockCopy(value, 0, dst, 0, len);
             return dst;
@@ -22,9 +22,9 @@ namespace Mikodev.Network.Converters
         {
             if (length == 0)
                 return s_empty_array;
-            if (buffer == null || (uint)length > (uint)buffer.Length)
+            if (buffer == null || (uint)length > (uint)buffer.Length || (length % sizeof(Model)) != 0)
                 throw PacketException.Overflow();
-            var dst = new Model[length];
+            var dst = new Model[length / sizeof(Model)];
             Buffer.BlockCopy(buffer, offset, dst, 0, length);
             return dst;
         }

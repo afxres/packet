@@ -7,16 +7,16 @@ namespace Mikodev.Network.Converters
     {
         public static byte[] ToBytes(DateTime value) => BitConverter.GetBytes(value.ToBinary());
 
-        public static DateTime ToDateTime(byte[] buffer, int offset) => DateTime.FromBinary(BitConverter.ToInt64(buffer, offset));
+        public static DateTime ToValue(byte[] buffer, int offset) => DateTime.FromBinary(BitConverter.ToInt64(buffer, offset));
 
         public int Length => sizeof(Int64);
 
         public byte[] GetBytes(DateTime value) => ToBytes(value);
 
-        public DateTime GetValue(byte[] buffer, int offset, int length) => ToDateTime(buffer, offset);
+        public DateTime GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
 
         byte[] IPacketConverter.GetBytes(object value) => ToBytes((DateTime)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToDateTime(buffer, offset);
+        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
     }
 }

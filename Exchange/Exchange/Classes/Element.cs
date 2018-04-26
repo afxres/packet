@@ -105,22 +105,22 @@ namespace Mikodev.Network
             }
 
             return;
-        fail:
+            fail:
             throw PacketException.Overflow();
         }
 
-        private object ByteArray => ByteArrayConverter.ToByteArray(buffer, offset, length);
+        private object GetByteArray() => ByteArrayConverter.ToValue(buffer, offset, length);
 
-        private object SByteArray => SByteArrayConverter.ToSbyteArray(buffer, offset, length);
+        private object GetSByteArray() => SByteArrayConverter.ToValue(buffer, offset, length);
 
         internal T[] ToArray<T>(IPacketConverter converter)
         {
             if (length < 1)
                 return new T[0];
             if (typeof(T) == typeof(byte))
-                return (T[])ByteArray;
+                return (T[])GetByteArray();
             else if (typeof(T) == typeof(sbyte))
-                return (T[])SByteArray;
+                return (T[])GetSByteArray();
 
             var def = converter.Length;
             var sum = Math.DivRem(length, def, out var rem);
@@ -150,9 +150,9 @@ namespace Mikodev.Network
             if (length < 1)
                 return new List<T>();
             if (typeof(T) == typeof(byte))
-                return new List<T>((T[])ByteArray);
+                return new List<T>((T[])GetByteArray());
             else if (typeof(T) == typeof(sbyte))
-                return new List<T>((T[])SByteArray);
+                return new List<T>((T[])GetSByteArray());
 
             var def = converter.Length;
             var sum = Math.DivRem(length, def, out var rem);

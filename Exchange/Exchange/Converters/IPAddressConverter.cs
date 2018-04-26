@@ -7,16 +7,16 @@ namespace Mikodev.Network.Converters
     {
         public static byte[] ToBytes(IPAddress value) => value.GetAddressBytes();
 
-        public static IPAddress ToIPAddress(byte[] buffer, int offset, int length) => new IPAddress(Extension.Span(buffer, offset, length));
+        public static IPAddress ToValue(byte[] buffer, int offset, int length) => new IPAddress(Extension.Span(buffer, offset, length));
 
         public int Length => 0;
 
         public byte[] GetBytes(IPAddress value) => ToBytes(value);
 
-        public IPAddress GetValue(byte[] buffer, int offset, int length) => ToIPAddress(buffer, offset, length);
+        public IPAddress GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
 
         byte[] IPacketConverter.GetBytes(object value) => ToBytes((IPAddress)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToIPAddress(buffer, offset, length);
+        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
     }
 }

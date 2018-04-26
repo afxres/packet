@@ -13,7 +13,7 @@ namespace Mikodev.Test
         internal static void DoWork()
         {
             var dic = new Dictionary<string, List<TimeSpan>>();
-            TraceWatch.InstanceDisposed += (tag, span) =>
+            TraceWatch.InstanceDisposed = (tag, span) =>
             {
                 if (dic.TryGetValue(tag, out var val))
                     val.Add(span);
@@ -49,7 +49,7 @@ namespace Mikodev.Test
                     }
                 }
                 
-                using (new TraceWatch("PacketWriter<>")) // 2266.53 ms, avg
+                using (new TraceWatch("PacketWriter<>")) // 2228.99 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -64,7 +64,7 @@ namespace Mikodev.Test
                     }
                 }
                 
-                using (new TraceWatch("Serialize (anonymous)")) // 2743.17 ms, avg
+                using (new TraceWatch("Serialize (anonymous)")) // 2453.45 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -72,7 +72,7 @@ namespace Mikodev.Test
                     }
                 }
                 
-                using (new TraceWatch("Deserialize (anonymous)")) // 2031.75 ms, avg
+                using (new TraceWatch("Deserialize (anonymous)")) // 1960.96 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {

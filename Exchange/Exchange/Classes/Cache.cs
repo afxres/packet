@@ -50,17 +50,17 @@ namespace Mikodev.Network
             throw PacketException.InvalidType(type);
         }
 
-        internal static bool TryGetConverter(ConverterDictionary converters, Type type, out IPacketConverter converter, ref Info info)
+        internal static Info GetConverterOrInfo(ConverterDictionary converters, Type type, out IPacketConverter converter)
         {
             if (converters != null && converters.TryGetValue(type, out converter))
-                return true;
+                return null;
             if (s_converters.TryGetValue(type, out converter))
-                return true;
-            info = GetInfo(type);
+                return null;
+            var info = GetInfo(type);
             if (info.Flag != Info.Enum)
-                return false;
+                return info;
             converter = s_converters[type];
-            return true;
+            return null;
         }
 
         internal static byte[] GetBytes(Type type, ConverterDictionary converters, object value)

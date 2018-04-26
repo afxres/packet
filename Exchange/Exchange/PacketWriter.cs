@@ -65,20 +65,20 @@ namespace Mikodev.Network
                 return Item.Empty;
 
             var typ = value.GetType();
-            var inf = default(Info);
-            if (Cache.TryGetConverter(converters, typ, out var con, ref inf))
+            var inf = Cache.GetConverterOrInfo(converters, typ, out var con);
+            if (inf == null)
                 return new Item(con.GetBytesWrap(value));
 
             return GetItemMatch(converters, value, level, inf);
         }
 
-        private static Item GetItemMatch(ConverterDictionary converters, object value, int level, Info info)
+        private static Item GetItemMatch(ConverterDictionary converters, object value, int level, Info valueInfo)
         {
             if (level > Cache.Limits)
                 throw new PacketException(PacketError.RecursiveError);
             level += 1;
 
-            switch (info.From)
+            switch (valueInfo.From)
             {
                 case Info.Writer:
                     return ((PacketWriter)value).item;
@@ -91,31 +91,31 @@ namespace Mikodev.Network
 
                 case Info.Enumerable:
                     {
-                        var ele = info.ElementType;
-                        var sub = default(Info);
-                        if (Cache.TryGetConverter(converters, ele, out var con, ref sub))
-                            return new Item(info.FromEnumerable(con, value), con.Length);
+                        var ele = valueInfo.ElementType;
+                        var inf = Cache.GetConverterOrInfo(converters, ele, out var con);
+                        if (inf == null)
+                            return new Item(valueInfo.FromEnumerable(con, value), con.Length);
 
                         var lst = new List<Item>();
                         foreach (var i in ((IEnumerable)value))
-                            lst.Add(GetItemMatch(converters, i, level, sub));
+                            lst.Add(GetItemMatch(converters, i, level, inf));
                         return new Item(lst);
                     }
                 case Info.Dictionary:
                     {
-                        var key = Cache.GetConverter(converters, info.IndexType, true);
+                        var key = Cache.GetConverter(converters, valueInfo.IndexType, true);
                         if (key == null)
-                            throw PacketException.InvalidKeyType(info.IndexType);
-                        var ele = info.ElementType;
-                        var sub = default(Info);
-                        if (Cache.TryGetConverter(converters, ele, out var con, ref sub))
-                            return new Item(info.FromDictionary(key, con, value), key.Length, con.Length);
+                            throw PacketException.InvalidKeyType(valueInfo.IndexType);
+                        var ele = valueInfo.ElementType;
+                        var inf = Cache.GetConverterOrInfo(converters, ele, out var con);
+                        if (inf == null)
+                            return new Item(valueInfo.FromDictionary(key, con, value), key.Length, con.Length);
 
                         var lst = new List<KeyValuePair<byte[], Item>>();
-                        var kvp = info.FromDictionaryAdapter(key, value);
+                        var kvp = valueInfo.FromDictionaryAdapter(key, value);
                         foreach (var i in kvp)
                         {
-                            var res = GetItemMatch(converters, i.Value, level, sub);
+                            var res = GetItemMatch(converters, i.Value, level, inf);
                             var tmp = new KeyValuePair<byte[], Item>(i.Key, res);
                             lst.Add(tmp);
                         }
@@ -132,7 +132,7 @@ namespace Mikodev.Network
                 default:
                     {
                         var lst = new Dictionary<string, PacketWriter>();
-                        var get = Cache.GetGetInfo(info.Type);
+                        var get = Cache.GetGetInfo(valueInfo.Type);
                         var val = get.GetValues(value);
                         var arg = get.Arguments;
                         for (int i = 0; i < arg.Length; i++)
