@@ -18,9 +18,9 @@ namespace Mikodev.Network
 
         private IEnumerator<T> Enumerator()
         {
-            var arr = reader.GetArray();
-            for (int i = 0; i < arr.Length; i++)
-                yield return (T)arr[i].GetValueMatch(typeof(T), level, info);
+            var lst = reader.GetList();
+            for (int i = 0; i < lst.Count; i++)
+                yield return (T)lst[i].GetValueMatch(typeof(T), level, info);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => Enumerator();

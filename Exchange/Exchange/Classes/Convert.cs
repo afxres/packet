@@ -7,8 +7,8 @@ namespace Mikodev.Network
     {
         private static List<T> GetList<T>(PacketReader reader, IPacketConverter converter)
         {
-            var itm = reader.GetArray();
-            var len = itm.Length;
+            var itm = reader.GetList();
+            var len = itm.Count;
             if (len < 1)
                 return new List<T>();
             var lst = new List<T>(len);
@@ -32,8 +32,8 @@ namespace Mikodev.Network
 
         private static T[] GetArray<T>(PacketReader reader, IPacketConverter converter)
         {
-            var itm = reader.GetArray();
-            var len = itm.Length;
+            var itm = reader.GetList();
+            var len = itm.Count;
             if (len < 1)
                 return new T[0];
             var arr = new T[len];

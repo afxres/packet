@@ -15,7 +15,7 @@ namespace Mikodev.Network
         internal readonly ConverterDictionary converters;
         internal readonly Element element;
 
-        private PacketReader[] array = null;
+        private List<PacketReader> list = null;
         private Dictionary<string, PacketReader> dictionary = null;
         private int tag = 0;
 
@@ -71,11 +71,11 @@ namespace Mikodev.Network
             return dic;
         }
 
-        internal PacketReader[] GetArray()
+        internal List<PacketReader> GetList()
         {
-            var arr = array;
-            if (arr != null)
-                return arr;
+            var src = list;
+            if (src != null)
+                return src;
             if ((tag & TagArray) != 0)
                 throw PacketException.Overflow();
             tag |= TagArray;
@@ -93,9 +93,8 @@ namespace Mikodev.Network
                 lst.Add(rea);
                 idx += len;
             }
-            arr = lst.ToArray();
-            array = arr;
-            return arr;
+            list = lst;
+            return lst;
         }
 
         /// <summary>
@@ -161,9 +160,10 @@ namespace Mikodev.Network
                         var inf = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
                         if (inf == null)
                             return valueInfo.ToCollection(this, con);
-                        var lst = GetArray();
-                        var arr = new object[lst.Length];
-                        for (int i = 0; i < lst.Length; i++)
+                        var lst = GetList();
+                        var len = lst.Count;
+                        var arr = new object[len];
+                        for (int i = 0; i < len; i++)
                             arr[i] = lst[i].GetValueMatch(valueInfo.ElementType, level, inf);
                         var res = valueInfo.ToCollectionCast(arr);
                         return res;
@@ -217,7 +217,7 @@ namespace Mikodev.Network
                             lst.Add(val);
                         }
                         return valueInfo.ToDictionaryCast(lst);
-                    fail:
+                        fail:
                         throw PacketException.Overflow();
                     }
                 default:

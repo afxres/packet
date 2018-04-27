@@ -21,17 +21,17 @@ namespace Mikodev.Network
                 yield return converter.GetValueWrap(buffer, offset + define * idx, define);
         }
 
-        private static IEnumerator Enumerator(PacketReader[] array, IPacketConverter converter)
+        private static IEnumerator Enumerator(List<PacketReader> list, IPacketConverter converter)
         {
-            for (int idx = 0; idx < array.Length; idx++)
-                yield return converter.GetValueWrap(array[idx].element);
+            for (int idx = 0; idx < list.Count; idx++)
+                yield return converter.GetValueWrap(list[idx].element);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             var def = converter.Length;
             if (def < 1)
-                return Enumerator(reader.GetArray(), converter);
+                return Enumerator(reader.GetList(), converter);
             var ele = reader.element;
             var sum = Math.DivRem(ele.length, def, out var rem);
             if (rem != 0)
@@ -54,21 +54,21 @@ namespace Mikodev.Network
                     yield return (T)converter.GetValueWrap(buffer, offset + define * idx, define);
         }
 
-        private static IEnumerator<T> Enumerator(PacketReader[] array, IPacketConverter converter)
+        private static IEnumerator<T> Enumerator(List<PacketReader> list, IPacketConverter converter)
         {
             if (converter is IPacketConverter<T> gen)
-                for (int idx = 0; idx < array.Length; idx++)
-                    yield return gen.GetValueWrap(array[idx].element);
+                for (int idx = 0; idx < list.Count; idx++)
+                    yield return gen.GetValueWrap(list[idx].element);
             else
-                for (int idx = 0; idx < array.Length; idx++)
-                    yield return (T)converter.GetValueWrap(array[idx].element);
+                for (int idx = 0; idx < list.Count; idx++)
+                    yield return (T)converter.GetValueWrap(list[idx].element);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             var def = converter.Length;
             if (def < 1)
-                return Enumerator(reader.GetArray(), converter);
+                return Enumerator(reader.GetList(), converter);
             var ele = reader.element;
             var sum = Math.DivRem(ele.length, def, out var rem);
             if (rem != 0)
