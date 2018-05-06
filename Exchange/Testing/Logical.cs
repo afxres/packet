@@ -4,12 +4,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using static Mikodev.Testing.Extensions;
 
 namespace Mikodev.Testing
 {
+    internal enum TestStatus : int { None, Success, Error, }
+
     internal class TestRef { }
 
     internal class TestConverter : IPacketConverter
@@ -446,6 +449,23 @@ namespace Mikodev.Testing
             {
                 // ignore
             }
+        }
+
+        [TestMethod]
+        public void CustomEnum()
+        {
+            var obj = new
+            {
+                err = TestStatus.Success,
+                iep = new IPEndPoint(IPAddress.Loopback, IPEndPoint.MaxPort),
+            };
+            var wtr = PacketWriter.Serialize(obj);
+            var buf = wtr.GetBytes();
+            var rea = new PacketReader(buf);
+            var res = rea.Deserialize(obj);
+
+            Assert.AreEqual(obj.err, res.err);
+            Assert.AreEqual(obj.iep, res.iep);
         }
 
         [TestMethod]

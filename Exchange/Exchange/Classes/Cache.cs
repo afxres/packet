@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using static Mikodev.Network.Extension;
 using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
@@ -24,6 +25,9 @@ namespace Mikodev.Network
             s_set_infos.Clear();
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static IPacketConverter GetConverter<T>(ConverterDictionary converters, bool nothrow)
         {
             return GetConverter(converters, typeof(T), nothrow);
@@ -50,6 +54,9 @@ namespace Mikodev.Network
             throw PacketException.InvalidType(type);
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static Info GetConverterOrInfo(ConverterDictionary converters, Type type, out IPacketConverter converter)
         {
             if (converters != null && converters.TryGetValue(type, out converter))
@@ -59,7 +66,7 @@ namespace Mikodev.Network
             var info = GetInfo(type);
             if (info.Flag != Info.Enum)
                 return info;
-            converter = s_converters[type];
+            converter = s_converters[info.ElementType];
             return null;
         }
 

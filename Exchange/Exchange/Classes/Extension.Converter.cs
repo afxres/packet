@@ -1,5 +1,6 @@
 ﻿using Mikodev.Network.Converters;
 using System;
+using System.Runtime.CompilerServices;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.IPacketConverter>;
 
 namespace Mikodev.Network
@@ -26,38 +27,48 @@ namespace Mikodev.Network
             s_converters = dic;
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static object GetValueWrap(this IPacketConverter converter, Element element, bool check = false)
         {
             return GetValueWrap(converter, element.buffer, element.offset, element.length, check);
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static object GetValueWrap(this IPacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
         {
             try
             {
                 if (check && converter.Length > length)
-                    goto fail;
+                    throw PacketException.Overflow();
                 return converter.GetValue(buffer, offset, length);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
                 throw PacketException.ConvertError(ex);
             }
-            fail:
-            throw PacketException.Overflow();
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static T GetValueWrapAuto<T>(this IPacketConverter converter, Element element, bool check = false)
         {
             return GetValueWrapAuto<T>(converter, element.buffer, element.offset, element.length, check);
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static T GetValueWrapAuto<T>(this IPacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
         {
             try
             {
                 if (check && converter.Length > length)
-                    goto fail;
+                    throw PacketException.Overflow();
                 if (converter is IPacketConverter<T> res)
                     return res.GetValue(buffer, offset, length);
                 return (T)converter.GetValue(buffer, offset, length);
@@ -66,20 +77,27 @@ namespace Mikodev.Network
             {
                 throw PacketException.ConvertError(ex);
             }
-            fail:
-            throw PacketException.Overflow();
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static T GetValue<T>(this IPacketConverter<T> converter, Element element)
         {
             return converter.GetValue(element.buffer, element.offset, element.length);
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static object GetValue(this IPacketConverter converter, Element element)
         {
             return converter.GetValue(element.buffer, element.offset, element.length);
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static T GetValueWrap<T>(this IPacketConverter<T> converter, byte[] buffer, int offset, int length)
         {
             try
@@ -92,6 +110,9 @@ namespace Mikodev.Network
             }
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static T GetValueWrap<T>(this IPacketConverter<T> converter, Element element)
         {
             try
@@ -104,6 +125,9 @@ namespace Mikodev.Network
             }
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static byte[] GetBytesWrap(this IPacketConverter converter, object value)
         {
             try
@@ -122,6 +146,9 @@ namespace Mikodev.Network
             }
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static byte[] GetBytesWrap<T>(this IPacketConverter<T> converter, T value)
         {
             try
