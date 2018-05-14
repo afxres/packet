@@ -68,22 +68,6 @@ var packet = PacketWriter.Serialize(new
 });
 ```
 
-序列化词典 (也可用于 ExpandoObject)
-```csharp
-var packet = PacketWriter.Serialize(new Dictionary<string, object>()
-{
-    ["integer"] = 1024,
-    ["directory"] = new Dictionary<string, object>()
-    {
-        ["string"] = "Dave",
-    },
-    ["anonymous"] = new
-    {
-        number = 20,
-    },
-});
-```
-
 ### 自定义类型, 转换器
 
 自定义数据类
@@ -163,4 +147,47 @@ var packet = PacketWriter.Serialize(p, customConverters);
 var buffer = packet.GetBytes();
 var reader = new PacketReader(buffer, customConverters);
 var person = reader.GetValue<Person>();
+```
+
+### 对 F# 的支持
+
+F# 集合 List Map Set
+``` fsharp
+open Mikodev.Network
+open System
+
+[<EntryPoint>]
+let main argv = 
+    // list
+    let list = [ for i in 0..9 do yield i * i ]
+    let ta = PacketConvert.Serialize(list)
+    let ra = PacketConvert.Deserialize<int list>(ta)
+
+    // map
+    let map = seq { for i in 0..9 do yield (i, sprintf "%x" (i * i)) } |> Map
+    let tb = PacketConvert.Serialize(map)
+    let rb = PacketConvert.Deserialize<Map<int, string>>(tb)
+
+    // set
+    let random = new Random()
+    let set = seq { for i in 0..9 do yield random.Next() } |> Set
+    let tc = PacketConvert.Serialize(set)
+    let rc = PacketConvert.Deserialize<Set<int>>(tc)
+
+    0
+```
+
+记录
+``` fsharp
+open Mikodev.Network
+open System
+
+type Book = { id : Guid; title : string; tags : string list }
+
+[<EntryPoint>]
+let main argv = 
+    let blank = { id = Guid.NewGuid(); title = "Way to bug"; tags = [ "exciting"; "marvelous" ] }
+    let buffer = PacketConvert.Serialize(blank)
+    let book = PacketConvert.Deserialize<Book>(buffer)
+    0
 ```
