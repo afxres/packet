@@ -5,10 +5,10 @@ namespace Mikodev.Network
 {
     internal sealed class DictionaryAdapter<TK, TV> : IEnumerable<KeyValuePair<byte[], object>>
     {
-        private readonly IPacketConverter converter;
+        private readonly PacketConverter converter;
         private readonly IEnumerable<KeyValuePair<TK, TV>> dictionary;
 
-        internal DictionaryAdapter(IPacketConverter converter, IEnumerable<KeyValuePair<TK, TV>> dictionary)
+        internal DictionaryAdapter(PacketConverter converter, IEnumerable<KeyValuePair<TK, TV>> dictionary)
         {
             this.converter = converter;
             this.dictionary = dictionary;
@@ -16,12 +16,12 @@ namespace Mikodev.Network
 
         private IEnumerator<KeyValuePair<byte[], object>> Enumerator()
         {
-            if (converter is IPacketConverter<TK> gen)
+            if (converter is PacketConverter<TK> gen)
                 foreach (var i in dictionary)
                     yield return new KeyValuePair<byte[], object>(gen.GetBytesWrap(i.Key), i.Value);
             else
                 foreach (var i in dictionary)
-                    yield return new KeyValuePair<byte[], object>(converter.GetBytesWrap(i.Key), i.Value);
+                    yield return new KeyValuePair<byte[], object>(converter.GetBufferWrap(i.Key), i.Value);
             yield break;
         }
 

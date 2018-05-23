@@ -11,7 +11,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(reader);
             var con = Cache.GetConverter(reader.converters, type, false);
-            var val = con.GetValueWrap(reader.element, true);
+            var val = con.GetObjectWrap(reader.element, true);
             return val;
         }
 

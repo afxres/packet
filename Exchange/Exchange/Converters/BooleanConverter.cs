@@ -3,16 +3,16 @@
 namespace Mikodev.Network.Converters
 {
     [PacketConverter(typeof(Boolean))]
-    internal sealed class BooleanConverter : IPacketConverter, IPacketConverter<Boolean>
+    internal sealed class BooleanConverter : PacketConverter<Boolean>
     {
-        public int Length => sizeof(Boolean);
+        public override int Length => sizeof(Boolean);
 
-        public byte[] GetBytes(Boolean value) => BitConverter.GetBytes(value);
+        public override byte[] GetBytes(Boolean value) => BitConverter.GetBytes(value);
 
-        public Boolean GetValue(byte[] buffer, int offset, int length) => BitConverter.ToBoolean(buffer, offset);
+        public override Boolean GetValue(byte[] buffer, int offset, int length) => BitConverter.ToBoolean(buffer, offset);
 
-        byte[] IPacketConverter.GetBytes(object value) => BitConverter.GetBytes((Boolean)value);
+        public override byte[] GetBuffer(object value) => BitConverter.GetBytes((Boolean)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => BitConverter.ToBoolean(buffer, offset);
+        public override object GetObject(byte[] buffer, int offset, int length) => BitConverter.ToBoolean(buffer, offset);
     }
 }

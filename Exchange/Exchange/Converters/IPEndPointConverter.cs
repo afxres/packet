@@ -4,7 +4,7 @@ using System.Net;
 namespace Mikodev.Network.Converters
 {
     [PacketConverter(typeof(IPEndPoint))]
-    internal sealed class IPEndPointConverter : IPacketConverter, IPacketConverter<IPEndPoint>
+    internal sealed class IPEndPointConverter : PacketConverter<IPEndPoint>
     {
         public static byte[] ToBytes(IPEndPoint value)
         {
@@ -23,14 +23,14 @@ namespace Mikodev.Network.Converters
             return new IPEndPoint(add, pot);
         }
 
-        public int Length => 0;
+        public override int Length => 0;
 
-        public byte[] GetBytes(IPEndPoint value) => ToBytes(value);
+        public override byte[] GetBytes(IPEndPoint value) => ToBytes(value);
 
-        public IPEndPoint GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
+        public override IPEndPoint GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
 
-        byte[] IPacketConverter.GetBytes(object value) => ToBytes((IPEndPoint)value);
+        public override byte[] GetBuffer(object value) => ToBytes((IPEndPoint)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
+        public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
     }
 }

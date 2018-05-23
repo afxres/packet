@@ -1,16 +1,16 @@
 ﻿namespace Mikodev.Network.Converters
 {
     [PacketConverter(typeof(sbyte))]
-    internal sealed class SByteConverter : IPacketConverter, IPacketConverter<sbyte>
+    internal sealed class SByteConverter : PacketConverter<sbyte>
     {
-        public int Length => sizeof(sbyte);
+        public override int Length => sizeof(sbyte);
 
-        public byte[] GetBytes(sbyte value) => new byte[] { (byte)value };
+        public override byte[] GetBytes(sbyte value) => new byte[] { (byte)value };
 
-        public sbyte GetValue(byte[] buffer, int offset, int length) => (sbyte)buffer[offset];
+        public override sbyte GetValue(byte[] buffer, int offset, int length) => (sbyte)buffer[offset];
 
-        byte[] IPacketConverter.GetBytes(object value) => new byte[] { (byte)(sbyte)value };
+        public override byte[] GetBuffer(object value) => new byte[] { (byte)(sbyte)value };
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => buffer[offset];
+        public override object GetObject(byte[] buffer, int offset, int length) => buffer[offset];
     }
 }

@@ -1,4 +1,4 @@
-﻿using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+﻿using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -28,9 +28,9 @@ namespace Mikodev.Network
             this.converters = converters;
         }
 
-        internal object Next(IPacketConverter converter) => element.Next(ref index, converter);
+        internal object Next(PacketConverter converter) => element.Next(ref index, converter);
 
-        internal T NextAuto<T>(IPacketConverter converter) => element.NextAuto<T>(ref index, converter);
+        internal T NextAuto<T>(PacketConverter converter) => element.NextAuto<T>(ref index, converter);
 
         public bool Any => index < element.Max;
 

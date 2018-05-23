@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [PacketConverter(typeof(Decimal))]
-    internal sealed class DecimalConverter : IPacketConverter, IPacketConverter<Decimal>
+    internal sealed class DecimalConverter : PacketConverter<Decimal>
     {
         public static byte[] ToBytes(Decimal value)
         {
@@ -23,14 +23,14 @@ namespace Mikodev.Network.Converters
             return val;
         }
 
-        public int Length => sizeof(Decimal);
+        public override int Length => sizeof(Decimal);
 
-        public byte[] GetBytes(decimal value) => ToBytes(value);
+        public override byte[] GetBytes(decimal value) => ToBytes(value);
 
-        public decimal GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
+        public override decimal GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
 
-        byte[] IPacketConverter.GetBytes(object value) => ToBytes((Decimal)value);
+        public override byte[] GetBuffer(object value) => ToBytes((Decimal)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
+        public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
     }
 }

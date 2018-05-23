@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -91,9 +91,9 @@ namespace Mikodev.Network
             var con = Cache.GetConverter(converters, type, false);
             var len = con.Length > 0;
             if (len)
-                stream.Write(con.GetBytesWrap(value));
+                stream.Write(con.GetBufferWrap(value));
             else
-                stream.WriteExt(con.GetBytesWrap(value));
+                stream.WriteExt(con.GetBufferWrap(value));
             return;
         }
 
@@ -101,15 +101,15 @@ namespace Mikodev.Network
         {
             var con = Cache.GetConverter<T>(converters, false);
             var len = con.Length > 0;
-            var gen = con as IPacketConverter<T>;
+            var gen = con as PacketConverter<T>;
             if (len && gen != null)
                 stream.Write(gen.GetBytesWrap(value));
             else if (len)
-                stream.Write(con.GetBytesWrap(value));
+                stream.Write(con.GetBufferWrap(value));
             else if (gen != null)
                 stream.WriteExt(gen.GetBytesWrap(value));
             else
-                stream.WriteExt(con.GetBytesWrap(value));
+                stream.WriteExt(con.GetBufferWrap(value));
             return;
         }
 

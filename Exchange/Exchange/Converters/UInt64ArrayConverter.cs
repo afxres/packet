@@ -4,7 +4,7 @@ using Model = System.UInt64;
 namespace Mikodev.Network.Converters
 {
     [PacketConverter(typeof(Model[]))]
-    internal sealed class UInt64ArrayConverter : IPacketConverter, IPacketConverter<Model[]>
+    internal sealed class UInt64ArrayConverter : PacketConverter<Model[]>
     {
         private static readonly Model[] s_empty_array = new Model[0];
 
@@ -29,14 +29,14 @@ namespace Mikodev.Network.Converters
             return dst;
         }
 
-        public int Length => 0;
+        public override int Length => 0;
 
-        public byte[] GetBytes(Model[] value) => ToBytes(value);
+        public override byte[] GetBytes(Model[] value) => ToBytes(value);
 
-        public Model[] GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
+        public override Model[] GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
 
-        byte[] IPacketConverter.GetBytes(object value) => ToBytes((Model[])value);
+        public override byte[] GetBuffer(object value) => ToBytes((Model[])value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
+        public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
     }
 }

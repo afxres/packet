@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -70,14 +70,14 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer);
-            return Cache.GetConverter(null, type, false).GetValueWrap(buffer, 0, buffer.Length, true);
+            return Cache.GetConverter(null, type, false).GetObjectWrap(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue(byte[] buffer, int offset, int length, Type type)
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer, offset, length);
-            return Cache.GetConverter(null, type, false).GetValueWrap(buffer, offset, length, true);
+            return Cache.GetConverter(null, type, false).GetObjectWrap(buffer, offset, length, true);
         }
 
         public static object GetValue<T>(byte[] buffer)
@@ -89,7 +89,7 @@ namespace Mikodev.Network
         public static object GetValue<T>(byte[] buffer, int offset, int length)
         {
             ThrowIfArgumentError(buffer, offset, length);
-            return Cache.GetConverter<T>(null, false).GetValueWrap(buffer, offset, length, true);
+            return Cache.GetConverter<T>(null, false).GetObjectWrap(buffer, offset, length, true);
         }
 
         public static byte[] GetBytes(object value, Type type)

@@ -7,24 +7,24 @@ namespace Mikodev.Network
     internal class Enumerable : IEnumerable
     {
         protected readonly PacketReader reader;
-        protected readonly IPacketConverter converter;
+        protected readonly PacketConverter converter;
 
-        internal Enumerable(PacketReader reader, IPacketConverter converter)
+        internal Enumerable(PacketReader reader, PacketConverter converter)
         {
             this.reader = reader;
             this.converter = converter;
         }
 
-        private static IEnumerator Enumerator(byte[] buffer, int offset, int count, int define, IPacketConverter converter)
+        private static IEnumerator Enumerator(byte[] buffer, int offset, int count, int define, PacketConverter converter)
         {
             for (int idx = 0; idx < count; idx++)
-                yield return converter.GetValueWrap(buffer, offset + define * idx, define);
+                yield return converter.GetObjectWrap(buffer, offset + define * idx, define);
         }
 
-        private static IEnumerator Enumerator(List<PacketReader> list, IPacketConverter converter)
+        private static IEnumerator Enumerator(List<PacketReader> list, PacketConverter converter)
         {
             for (int idx = 0; idx < list.Count; idx++)
-                yield return converter.GetValueWrap(list[idx].element);
+                yield return converter.GetObjectWrap(list[idx].element);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -42,26 +42,26 @@ namespace Mikodev.Network
 
     internal sealed class Enumerable<T> : Enumerable, IEnumerable<T>
     {
-        internal Enumerable(PacketReader reader, IPacketConverter converter) : base(reader, converter) { }
+        internal Enumerable(PacketReader reader, PacketConverter converter) : base(reader, converter) { }
 
-        private static IEnumerator<T> Enumerator(byte[] buffer, int offset, int count, int define, IPacketConverter converter)
+        private static IEnumerator<T> Enumerator(byte[] buffer, int offset, int count, int define, PacketConverter converter)
         {
-            if (converter is IPacketConverter<T> gen)
+            if (converter is PacketConverter<T> gen)
                 for (int idx = 0; idx < count; idx++)
                     yield return gen.GetValueWrap(buffer, offset + define * idx, define);
             else
                 for (int idx = 0; idx < count; idx++)
-                    yield return (T)converter.GetValueWrap(buffer, offset + define * idx, define);
+                    yield return (T)converter.GetObjectWrap(buffer, offset + define * idx, define);
         }
 
-        private static IEnumerator<T> Enumerator(List<PacketReader> list, IPacketConverter converter)
+        private static IEnumerator<T> Enumerator(List<PacketReader> list, PacketConverter converter)
         {
-            if (converter is IPacketConverter<T> gen)
+            if (converter is PacketConverter<T> gen)
                 for (int idx = 0; idx < list.Count; idx++)
                     yield return gen.GetValueWrap(list[idx].element);
             else
                 for (int idx = 0; idx < list.Count; idx++)
-                    yield return (T)converter.GetValueWrap(list[idx].element);
+                    yield return (T)converter.GetObjectWrap(list[idx].element);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()

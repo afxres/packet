@@ -1,4 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netcoreapp2.0;net40;net45</TargetFrameworks>
     <AssemblyName>Mikodev.Exchange</AssemblyName>
@@ -8,11 +9,13 @@
     <Company>Mikodev</Company>
     <Copyright>Mikodev 2018</Copyright>
     <Product>Mikodev.Network</Product>
-    <Version>1.5.8</Version>
+    <Version>1.6.0-alpha01</Version>
     <PackageTags>binary packet dynamic serialize</PackageTags>
     <PackageProjectUrl>https://github.com/afxres/packet</PackageProjectUrl>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net40' ">
     <DefineConstants>NET40</DefineConstants>
   </PropertyGroup>
+
 </Project>

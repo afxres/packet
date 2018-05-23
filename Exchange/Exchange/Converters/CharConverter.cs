@@ -3,16 +3,16 @@
 namespace Mikodev.Network.Converters
 {
     [PacketConverter(typeof(Char))]
-    internal sealed class CharConverter : IPacketConverter, IPacketConverter<Char>
+    internal sealed class CharConverter : PacketConverter<Char>
     {
-        public int Length => sizeof(Char);
+        public override int Length => sizeof(Char);
 
-        public byte[] GetBytes(Char value) => BitConverter.GetBytes(value);
+        public override byte[] GetBytes(Char value) => BitConverter.GetBytes(value);
 
-        public Char GetValue(byte[] buffer, int offset, int length) => BitConverter.ToChar(buffer, offset);
+        public override Char GetValue(byte[] buffer, int offset, int length) => BitConverter.ToChar(buffer, offset);
 
-        byte[] IPacketConverter.GetBytes(object value) => BitConverter.GetBytes((Char)value);
+        public override byte[] GetBuffer(object value) => BitConverter.GetBytes((Char)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => BitConverter.ToChar(buffer, offset);
+        public override object GetObject(byte[] buffer, int offset, int length) => BitConverter.ToChar(buffer, offset);
     }
 }

@@ -36,16 +36,16 @@ namespace Mikodev.Network
             length = define;
         }
 
-        internal object Next(ref int index, IPacketConverter converter)
+        internal object Next(ref int index, PacketConverter converter)
         {
             var tmp = index;
             MoveNext(converter.Length, ref tmp, out var len);
-            var res = converter.GetValueWrap(buffer, tmp, len);
+            var res = converter.GetObjectWrap(buffer, tmp, len);
             index = tmp + len;
             return res;
         }
 
-        internal T NextAuto<T>(ref int index, IPacketConverter converter)
+        internal T NextAuto<T>(ref int index, PacketConverter converter)
         {
             var tmp = index;
             MoveNext(converter.Length, ref tmp, out var len);
@@ -54,12 +54,12 @@ namespace Mikodev.Network
             return res;
         }
 
-        internal void ToDictionary<TK, TV>(IPacketConverter indexConverter, IPacketConverter elementConverter, DictionaryAbstract<TK, TV> dictionary)
+        internal void ToDictionary<TK, TV>(PacketConverter indexConverter, PacketConverter elementConverter, DictionaryAbstract<TK, TV> dictionary)
         {
             if (length == 0)
                 return;
-            var keygen = indexConverter as IPacketConverter<TK>;
-            var valgen = elementConverter as IPacketConverter<TV>;
+            var keygen = indexConverter as PacketConverter<TK>;
+            var valgen = elementConverter as PacketConverter<TV>;
             var keylen = indexConverter.Length;
             var vallen = elementConverter.Length;
             var max = Max;
@@ -82,7 +82,7 @@ namespace Mikodev.Network
                     else if (buffer.MoveNext(max, ref idx, out len) == false)
                         goto fail;
 
-                    var key = (keygen != null ? keygen.GetValue(buffer, idx, len) : (TK)indexConverter.GetValue(buffer, idx, len));
+                    var key = (keygen != null ? keygen.GetValue(buffer, idx, len) : (TK)indexConverter.GetObject(buffer, idx, len));
                     idx += len;
                     sub = max - idx;
 
@@ -94,7 +94,7 @@ namespace Mikodev.Network
                     else if (buffer.MoveNext(max, ref idx, out len) == false)
                         goto fail;
 
-                    var val = (valgen != null ? valgen.GetValue(buffer, idx, len) : (TV)elementConverter.GetValue(buffer, idx, len));
+                    var val = (valgen != null ? valgen.GetValue(buffer, idx, len) : (TV)elementConverter.GetObject(buffer, idx, len));
                     idx += len;
                     dictionary.Add(key, val);
                 }
@@ -113,7 +113,7 @@ namespace Mikodev.Network
 
         private object GetSByteArray() => SByteArrayConverter.ToValue(buffer, offset, length);
 
-        internal T[] ToArray<T>(IPacketConverter converter)
+        internal T[] ToArray<T>(PacketConverter converter)
         {
             if (length < 1)
                 return new T[0];
@@ -127,7 +127,7 @@ namespace Mikodev.Network
             if (rem != 0)
                 throw PacketException.Overflow();
             var arr = new T[sum];
-            var gen = converter as IPacketConverter<T>;
+            var gen = converter as PacketConverter<T>;
 
             try
             {
@@ -136,7 +136,7 @@ namespace Mikodev.Network
                         arr[idx] = gen.GetValue(buffer, offset + idx * def, def);
                 else
                     for (int idx = 0; idx < sum; idx++)
-                        arr[idx] = (T)converter.GetValue(buffer, offset + idx * def, def);
+                        arr[idx] = (T)converter.GetObject(buffer, offset + idx * def, def);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
@@ -145,7 +145,7 @@ namespace Mikodev.Network
             return arr;
         }
 
-        internal List<T> ToList<T>(IPacketConverter converter)
+        internal List<T> ToList<T>(PacketConverter converter)
         {
             if (length < 1)
                 return new List<T>();
@@ -159,7 +159,7 @@ namespace Mikodev.Network
             if (rem != 0)
                 throw PacketException.Overflow();
             var lst = new List<T>(sum);
-            var gen = converter as IPacketConverter<T>;
+            var gen = converter as PacketConverter<T>;
 
             try
             {
@@ -168,7 +168,7 @@ namespace Mikodev.Network
                         lst.Add(gen.GetValue(buffer, offset + idx * def, def));
                 else
                     for (int idx = 0; idx < sum; idx++)
-                        lst.Add((T)converter.GetValue(buffer, offset + idx * def, def));
+                        lst.Add((T)converter.GetObject(buffer, offset + idx * def, def));
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {

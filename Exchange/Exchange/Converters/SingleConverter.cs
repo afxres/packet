@@ -3,16 +3,16 @@
 namespace Mikodev.Network.Converters
 {
     [PacketConverter(typeof(Single))]
-    internal sealed class SingleConverter : IPacketConverter, IPacketConverter<Single>
+    internal sealed class SingleConverter : PacketConverter<Single>
     {
-        public int Length => sizeof(Single);
+        public override int Length => sizeof(Single);
 
-        public byte[] GetBytes(Single value) => BitConverter.GetBytes(value);
+        public override byte[] GetBytes(Single value) => BitConverter.GetBytes(value);
 
-        public Single GetValue(byte[] buffer, int offset, int length) => BitConverter.ToSingle(buffer, offset);
+        public override Single GetValue(byte[] buffer, int offset, int length) => BitConverter.ToSingle(buffer, offset);
 
-        byte[] IPacketConverter.GetBytes(object value) => BitConverter.GetBytes((Single)value);
+        public override byte[] GetBuffer(object value) => BitConverter.GetBytes((Single)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => BitConverter.ToSingle(buffer, offset);
+        public override object GetObject(byte[] buffer, int offset, int length) => BitConverter.ToSingle(buffer, offset);
     }
 }

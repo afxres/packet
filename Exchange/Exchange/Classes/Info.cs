@@ -31,22 +31,22 @@ namespace Mikodev.Network
 
         internal Type IndexType { get; set; }
 
-        internal Func<PacketReader, IPacketConverter, object> ToCollection { get; set; }
+        internal Func<PacketReader, PacketConverter, object> ToCollection { get; set; }
 
         internal Func<object[], object> ToCollectionCast { get; set; }
 
-        internal Func<PacketReader, IPacketConverter, object> ToEnumerable { get; set; }
+        internal Func<PacketReader, PacketConverter, object> ToEnumerable { get; set; }
 
         internal Func<PacketReader, int, Info, object> ToEnumerableAdapter { get; set; }
 
-        internal Func<PacketReader, IPacketConverter, IPacketConverter, object> ToDictionary { get; set; }
+        internal Func<PacketReader, PacketConverter, PacketConverter, object> ToDictionary { get; set; }
 
         internal Func<List<object>, object> ToDictionaryCast { get; set; }
 
-        internal Func<IPacketConverter, object, byte[][]> FromEnumerable { get; set; }
+        internal Func<PacketConverter, object, byte[][]> FromEnumerable { get; set; }
 
-        internal Func<IPacketConverter, IPacketConverter, object, List<KeyValuePair<byte[], byte[]>>> FromDictionary { get; set; }
+        internal Func<PacketConverter, PacketConverter, object, List<KeyValuePair<byte[], byte[]>>> FromDictionary { get; set; }
 
-        internal Func<IPacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> FromDictionaryAdapter { get; set; }
+        internal Func<PacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> FromDictionaryAdapter { get; set; }
     }
 }

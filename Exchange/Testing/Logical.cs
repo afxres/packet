@@ -15,29 +15,29 @@ namespace Mikodev.Testing
 
     internal class TestRef { }
 
-    internal class TestConverter : IPacketConverter
+    internal class TestConverter : PacketConverter
     {
         internal static readonly string _BytesErr = Guid.NewGuid().ToString();
 
         internal static readonly string _ValueErr = Guid.NewGuid().ToString();
 
-        int IPacketConverter.Length => 0;
+        public override int Length => 0;
 
-        byte[] IPacketConverter.GetBytes(object value) => throw new Exception(_BytesErr);
+        public override byte[] GetBuffer(object value) => throw new Exception(_BytesErr);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => throw new OutOfMemoryException(_ValueErr);
+        public override object GetObject(byte[] buffer, int offset, int length) => throw new OutOfMemoryException(_ValueErr);
     }
 
-    internal class TestBadConverter : IPacketConverter
+    internal class TestBadConverter : PacketConverter
     {
-        int IPacketConverter.Length => 4;
+        public override int Length => 4;
 
-        byte[] IPacketConverter.GetBytes(object value)
+        public override byte[] GetBuffer(object value)
         {
             return null;
         }
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length)
+        public override object GetObject(byte[] buffer, int offset, int length)
         {
             return new byte[1];
         }
@@ -71,11 +71,11 @@ namespace Mikodev.Testing
         }
     }
 
-    internal class TestTwoConverter : IPacketConverter
+    internal class TestTwoConverter : PacketConverter
     {
-        public int Length => sizeof(int) * 2;
+        public override int Length => sizeof(int) * 2;
 
-        public byte[] GetBytes(object value)
+        public override byte[] GetBuffer(object value)
         {
             var two = (TestTwo)value;
             var buf = new byte[sizeof(int) * 2];
@@ -86,7 +86,7 @@ namespace Mikodev.Testing
             return buf;
         }
 
-        public object GetValue(byte[] buffer, int offset, int length)
+        public override object GetObject(byte[] buffer, int offset, int length)
         {
             if (length < (sizeof(int) * 2))
                 throw new ArgumentOutOfRangeException(nameof(length));
@@ -119,16 +119,16 @@ namespace Mikodev.Testing
         }
     }
 
-    internal class TestBoxConverter : IPacketConverter
+    internal class TestBoxConverter : PacketConverter
     {
-        public int Length => 0;
+        public override int Length => 0;
 
-        public byte[] GetBytes(object value)
+        public override byte[] GetBuffer(object value)
         {
             return Encoding.UTF8.GetBytes(((TestBox)value).Name);
         }
 
-        public object GetValue(byte[] buffer, int offset, int length)
+        public override object GetObject(byte[] buffer, int offset, int length)
         {
             return new TestBox { Name = Encoding.UTF8.GetString(buffer, offset, length) };
         }
@@ -222,7 +222,7 @@ namespace Mikodev.Testing
         public void Rethrow()
         {
             var val = new TestRef();
-            var con = new Dictionary<Type, IPacketConverter> { [typeof(TestRef)] = new TestConverter() };
+            var con = new Dictionary<Type, PacketConverter> { [typeof(TestRef)] = new TestConverter() };
 
             try
             {
@@ -438,7 +438,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void ConvertMismatch()
         {
-            var cvt = new Dictionary<Type, IPacketConverter>() { [typeof(TestRef)] = new TestBadConverter() };
+            var cvt = new Dictionary<Type, PacketConverter>() { [typeof(TestRef)] = new TestBadConverter() };
 
             try
             {
@@ -484,7 +484,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void LegacyConverter()
         {
-            var con = new Dictionary<Type, IPacketConverter>()
+            var con = new Dictionary<Type, PacketConverter>()
             {
                 [typeof(TestTwo)] = new TestTwoConverter(),
                 [typeof(TestBox)] = new TestBoxConverter(),

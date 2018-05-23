@@ -46,16 +46,16 @@ namespace Mikodev.Network
             return false;
         }
 
-        private static Func<PacketReader, IPacketConverter, object> GetToFSharpListFunction(Type elementType)
+        private static Func<PacketReader, PacketConverter, object> GetToFSharpListFunction(Type elementType)
         {
-            var con = Expression.Parameter(typeof(IPacketConverter), "converter");
+            var con = Expression.Parameter(typeof(PacketConverter), "converter");
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
             var met = s_to_array.MakeGenericMethod(elementType);
             var cal = Expression.Call(met, rea, con);
             var cvt = s_to_fslist.MakeGenericMethod(elementType);
             var inv = Expression.Call(cvt, cal);
             var box = Expression.Convert(inv, typeof(object));
-            var exp = Expression.Lambda<Func<PacketReader, IPacketConverter, object>>(box, rea, con);
+            var exp = Expression.Lambda<Func<PacketReader, PacketConverter, object>>(box, rea, con);
             var fun = exp.Compile();
             return fun;
         }
@@ -71,16 +71,16 @@ namespace Mikodev.Network
             return fun;
         }
 
-        private static Func<PacketReader, IPacketConverter, IPacketConverter, object> GetToFSharpMapFunction(ConstructorInfo constructorInfo, params Type[] types)
+        private static Func<PacketReader, PacketConverter, PacketConverter, object> GetToFSharpMapFunction(ConstructorInfo constructorInfo, params Type[] types)
         {
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
-            var key = Expression.Parameter(typeof(IPacketConverter), "key");
-            var val = Expression.Parameter(typeof(IPacketConverter), "value");
+            var key = Expression.Parameter(typeof(PacketConverter), "key");
+            var val = Expression.Parameter(typeof(PacketConverter), "value");
             var met = s_to_tuple_list.MakeGenericMethod(types);
             var cal = Expression.Call(met, rea, key, val);
             var inv = Expression.New(constructorInfo, cal);
             var box = Expression.Convert(inv, typeof(object));
-            var exp = Expression.Lambda<Func<PacketReader, IPacketConverter, IPacketConverter, object>>(box, rea, key, val);
+            var exp = Expression.Lambda<Func<PacketReader, PacketConverter, PacketConverter, object>>(box, rea, key, val);
             var fun = exp.Compile();
             return fun;
         }

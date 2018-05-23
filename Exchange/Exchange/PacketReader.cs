@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Expressions;
 using System.Text;
-using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -138,7 +138,7 @@ namespace Mikodev.Network
 
             var inf = Cache.GetConverterOrInfo(converters, type, out var con);
             if (inf == null)
-                return con.GetValueWrap(element, true);
+                return con.GetObjectWrap(element, true);
             return GetValueMatch(type, level, inf);
         }
 
@@ -204,7 +204,7 @@ namespace Mikodev.Network
                             else if (buf.MoveNext(max, ref idx, out len) == false)
                                 goto fail;
                             // Wrap error non-check
-                            var key = keycon.GetValueWrap(buf, idx, len);
+                            var key = keycon.GetObjectWrap(buf, idx, len);
                             idx += len;
 
                             if (buf.MoveNext(max, ref idx, out len) == false)

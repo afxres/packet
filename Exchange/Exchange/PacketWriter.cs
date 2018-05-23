@@ -5,7 +5,7 @@ using System.Dynamic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Text;
-using ConverterDictionary = System.Collections.Generic.IDictionary<System.Type, Mikodev.Network.IPacketConverter>;
+using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
 {
@@ -67,7 +67,7 @@ namespace Mikodev.Network
             var typ = value.GetType();
             var inf = Cache.GetConverterOrInfo(converters, typ, out var con);
             if (inf == null)
-                return new Item(con.GetBytesWrap(value));
+                return new Item(con.GetBufferWrap(value));
 
             return GetItemMatch(converters, value, level, inf);
         }

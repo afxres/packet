@@ -3,16 +3,16 @@
 namespace Mikodev.Network.Converters
 {
     [PacketConverter(typeof(UInt32))]
-    internal sealed class UInt32Converter : IPacketConverter, IPacketConverter<UInt32>
+    internal sealed class UInt32Converter : PacketConverter<UInt32>
     {
-        public int Length => sizeof(UInt32);
+        public override int Length => sizeof(UInt32);
 
-        public byte[] GetBytes(UInt32 value) => BitConverter.GetBytes(value);
+        public override byte[] GetBytes(UInt32 value) => BitConverter.GetBytes(value);
 
-        public UInt32 GetValue(byte[] buffer, int offset, int length) => BitConverter.ToUInt32(buffer, offset);
+        public override UInt32 GetValue(byte[] buffer, int offset, int length) => BitConverter.ToUInt32(buffer, offset);
 
-        byte[] IPacketConverter.GetBytes(object value) => BitConverter.GetBytes((UInt32)value);
+        public override byte[] GetBuffer(object value) => BitConverter.GetBytes((UInt32)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => BitConverter.ToUInt32(buffer, offset);
+        public override object GetObject(byte[] buffer, int offset, int length) => BitConverter.ToUInt32(buffer, offset);
     }
 }

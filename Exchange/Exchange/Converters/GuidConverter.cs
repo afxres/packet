@@ -3,7 +3,7 @@
 namespace Mikodev.Network.Converters
 {
     [PacketConverter(typeof(Guid))]
-    internal sealed class GuidConverter : IPacketConverter, IPacketConverter<Guid>
+    internal sealed class GuidConverter : PacketConverter<Guid>
     {
         private const int SizeOf = 16;
 
@@ -11,14 +11,14 @@ namespace Mikodev.Network.Converters
 
         public static Guid ToValue(byte[] buffer, int offset) => new Guid(Extension.Span(buffer, offset, SizeOf));
 
-        public int Length => SizeOf;
+        public override int Length => SizeOf;
 
-        public byte[] GetBytes(Guid value) => ToBytes(value);
+        public override byte[] GetBytes(Guid value) => ToBytes(value);
 
-        public Guid GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
+        public override Guid GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
 
-        byte[] IPacketConverter.GetBytes(object value) => ToBytes((Guid)value);
+        public override byte[] GetBuffer(object value) => ToBytes((Guid)value);
 
-        object IPacketConverter.GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
+        public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
     }
 }
