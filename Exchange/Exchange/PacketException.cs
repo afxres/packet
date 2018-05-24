@@ -15,11 +15,11 @@ namespace Mikodev.Network
             switch (code)
             {
                 case PacketError.ConversionError:
-                    return "See inner exception for more information";
+                    return "See the inner exception for details";
                 case PacketError.Overflow:
                     return "Data length overflow";
                 case PacketError.InvalidPath:
-                    return "Path not exists";
+                    return "Path does not exist";
                 default:
                     return "Undefined error";
             }
