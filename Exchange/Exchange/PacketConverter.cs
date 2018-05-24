@@ -2,7 +2,7 @@
 {
     public abstract class PacketConverter
     {
-        public abstract byte[] GetBuffer(object value);
+        public abstract byte[] GetBytes(object value);
 
         public abstract object GetObject(byte[] buffer, int offset, int length);
 

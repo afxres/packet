@@ -15,7 +15,7 @@ namespace Mikodev.Network.Converters
 
         public override DateTime GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
 
-        public override byte[] GetBuffer(object value) => ToBytes((DateTime)value);
+        public override byte[] GetBytes(object value) => ToBytes((DateTime)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
     }

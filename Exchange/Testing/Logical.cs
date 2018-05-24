@@ -23,7 +23,7 @@ namespace Mikodev.Testing
 
         public override int Length => 0;
 
-        public override byte[] GetBuffer(object value) => throw new Exception(_BytesErr);
+        public override byte[] GetBytes(object value) => throw new Exception(_BytesErr);
 
         public override object GetObject(byte[] buffer, int offset, int length) => throw new OutOfMemoryException(_ValueErr);
     }
@@ -32,7 +32,7 @@ namespace Mikodev.Testing
     {
         public override int Length => 4;
 
-        public override byte[] GetBuffer(object value)
+        public override byte[] GetBytes(object value)
         {
             return null;
         }
@@ -75,7 +75,7 @@ namespace Mikodev.Testing
     {
         public override int Length => sizeof(int) * 2;
 
-        public override byte[] GetBuffer(object value)
+        public override byte[] GetBytes(object value)
         {
             var two = (TestTwo)value;
             var buf = new byte[sizeof(int) * 2];
@@ -123,7 +123,7 @@ namespace Mikodev.Testing
     {
         public override int Length => 0;
 
-        public override byte[] GetBuffer(object value)
+        public override byte[] GetBytes(object value)
         {
             return Encoding.UTF8.GetBytes(((TestBox)value).Name);
         }

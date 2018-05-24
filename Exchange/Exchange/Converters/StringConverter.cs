@@ -11,7 +11,7 @@ namespace Mikodev.Network.Converters
 
         public override string GetValue(byte[] buffer, int offset, int length) => Extension.s_encoding.GetString(buffer, offset, length);
 
-        public override byte[] GetBuffer(object value) => Extension.s_encoding.GetBytes((string)value);
+        public override byte[] GetBytes(object value) => Extension.s_encoding.GetBytes((string)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => Extension.s_encoding.GetString(buffer, offset, length);
     }

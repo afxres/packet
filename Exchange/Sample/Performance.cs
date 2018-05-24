@@ -37,10 +37,10 @@ namespace Mikodev.Test
 
             var tmp = PacketConvert.Serialize(ano);
 
-            // release mode
+            // release mode, i7-7700hq
             for (int idx = 0; idx < loop; idx++)
             {
-                using (new TraceWatch("BitConverter")) // 8.02 ms
+                using (new TraceWatch("BitConverter")) // 7.69 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -48,31 +48,31 @@ namespace Mikodev.Test
                         var res = BitConverter.ToInt32(buf, 0);
                     }
                 }
-                
-                using (new TraceWatch("PacketWriter<>")) // 2021.26 ms, avg
+
+                using (new TraceWatch("PacketWriter<>")) // 1781.69 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
-                        var wtr = new PacketWriter().
-                            SetValue(nameof(ano.num), ano.num).
-                            SetValue(nameof(ano.str), ano.str).
-                            SetEnumerable(nameof(ano.arr), ano.arr).
-                            SetItem(nameof(ano.sub), new PacketWriter().
-                                SetValue(nameof(ano.sub.sum), ano.sub.sum).
-                                SetEnumerable(nameof(ano.sub.lst), ano.sub.lst));
+                        var wtr = new PacketWriter()
+                            .SetValue(nameof(ano.num), ano.num)
+                            .SetValue(nameof(ano.str), ano.str)
+                            .SetValue(nameof(ano.arr), ano.arr)
+                            .SetItem(nameof(ano.sub), new PacketWriter()
+                                .SetValue(nameof(ano.sub.sum), ano.sub.sum)
+                                .SetEnumerable(nameof(ano.sub.lst), ano.sub.lst));
                         var buf = wtr.GetBytes();
                     }
                 }
-                
-                using (new TraceWatch("Serialize (anonymous)")) // 2235.97 ms, avg
+
+                using (new TraceWatch("Serialize (anonymous)")) // 2159.14 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
                         var _ = PacketConvert.Serialize(ano);
                     }
                 }
-                
-                using (new TraceWatch("Deserialize (anonymous)")) // 1881.61 ms, avg
+
+                using (new TraceWatch("Deserialize (anonymous)")) // 1794.99 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {

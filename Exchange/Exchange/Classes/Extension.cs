@@ -112,9 +112,9 @@ namespace Mikodev.Network
             var con = Cache.GetConverter(converters, type, false);
             var len = con.Length > 0;
             if (len)
-                stream.Write(con.GetBufferWrap(value));
+                stream.Write(con.GetBytesWrap(value));
             else
-                stream.WriteExt(con.GetBufferWrap(value));
+                stream.WriteExt(con.GetBytesWrap(value));
             return;
         }
 
@@ -126,11 +126,11 @@ namespace Mikodev.Network
             if (len && gen != null)
                 stream.Write(gen.GetBytesWrap(value));
             else if (len)
-                stream.Write(con.GetBufferWrap(value));
+                stream.Write(con.GetBytesWrap(value));
             else if (gen != null)
                 stream.WriteExt(gen.GetBytesWrap(value));
             else
-                stream.WriteExt(con.GetBufferWrap(value));
+                stream.WriteExt(con.GetBytesWrap(value));
             return;
         }
 

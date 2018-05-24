@@ -21,7 +21,7 @@ namespace Mikodev.Network
                     yield return new KeyValuePair<byte[], object>(gen.GetBytesWrap(i.Key), i.Value);
             else
                 foreach (var i in dictionary)
-                    yield return new KeyValuePair<byte[], object>(converter.GetBufferWrap(i.Key), i.Value);
+                    yield return new KeyValuePair<byte[], object>(converter.GetBytesWrap(i.Key), i.Value);
             yield break;
         }
 

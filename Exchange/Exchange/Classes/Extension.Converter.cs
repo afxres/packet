@@ -9,28 +9,19 @@ namespace Mikodev.Network
 #if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static T GetValue<T>(this PacketConverter<T> converter, Element element)
-        {
-            return converter.GetValue(element.buffer, element.offset, element.length);
-        }
+        internal static T GetValue<T>(this PacketConverter<T> converter, Element element) => converter.GetValue(element.buffer, element.offset, element.length);
 
 #if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static object GetObject(this PacketConverter converter, Element element)
-        {
-            return converter.GetObject(element.buffer, element.offset, element.length);
-        }
+        internal static object GetObject(this PacketConverter converter, Element element) => converter.GetObject(element.buffer, element.offset, element.length);
         #endregion
 
         #region bytes -> object
 #if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static object GetObjectWrap(this PacketConverter converter, Element element, bool check = false)
-        {
-            return GetObjectWrap(converter, element.buffer, element.offset, element.length, check);
-        }
+        internal static object GetObjectWrap(this PacketConverter converter, Element element, bool check = false) => GetObjectWrap(converter, element.buffer, element.offset, element.length, check);
 
 #if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -52,10 +43,7 @@ namespace Mikodev.Network
 #if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static T GetValueWrapAuto<T>(this PacketConverter converter, Element element, bool check = false)
-        {
-            return GetValueWrapAuto<T>(converter, element.buffer, element.offset, element.length, check);
-        }
+        internal static T GetValueWrapAuto<T>(this PacketConverter converter, Element element, bool check = false) => GetValueWrapAuto<T>(converter, element.buffer, element.offset, element.length, check);
 
 #if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -79,26 +67,16 @@ namespace Mikodev.Network
 #if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
+        internal static T GetValueWrap<T>(this PacketConverter<T> converter, Element element) => GetValueWrap(converter, element.buffer, element.offset, element.length);
+
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal static T GetValueWrap<T>(this PacketConverter<T> converter, byte[] buffer, int offset, int length)
         {
             try
             {
                 return converter.GetValue(buffer, offset, length);
-            }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
-            {
-                throw PacketException.ConversionError(ex);
-            }
-        }
-
-#if NET40 == false
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal static T GetValueWrap<T>(this PacketConverter<T> converter, Element element)
-        {
-            try
-            {
-                return converter.GetValue(element.buffer, element.offset, element.length);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
@@ -111,11 +89,11 @@ namespace Mikodev.Network
 #if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static byte[] GetBufferWrap(this PacketConverter converter, object value)
+        internal static byte[] GetBytesWrap(this PacketConverter converter, object value)
         {
             try
             {
-                var buf = converter.GetBuffer(value);
+                var buf = converter.GetBytes(value);
                 if (buf == null)
                     buf = s_empty_bytes;
                 var len = converter.Length;

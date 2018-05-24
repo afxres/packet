@@ -11,7 +11,7 @@ namespace Mikodev.Network.Converters
 
         public override Double GetValue(byte[] buffer, int offset, int length) => BitConverter.ToDouble(buffer, offset);
 
-        public override byte[] GetBuffer(object value) => BitConverter.GetBytes((Double)value);
+        public override byte[] GetBytes(object value) => BitConverter.GetBytes((Double)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => BitConverter.ToDouble(buffer, offset);
     }

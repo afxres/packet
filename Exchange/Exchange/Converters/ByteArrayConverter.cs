@@ -24,7 +24,7 @@ namespace Mikodev.Network.Converters
 
         public override byte[] GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
 
-        public override byte[] GetBuffer(object value) => ToBytes((byte[])value);
+        public override byte[] GetBytes(object value) => ToBytes((byte[])value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
     }

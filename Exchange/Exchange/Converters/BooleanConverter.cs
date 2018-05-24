@@ -11,7 +11,7 @@ namespace Mikodev.Network.Converters
 
         public override Boolean GetValue(byte[] buffer, int offset, int length) => BitConverter.ToBoolean(buffer, offset);
 
-        public override byte[] GetBuffer(object value) => BitConverter.GetBytes((Boolean)value);
+        public override byte[] GetBytes(object value) => BitConverter.GetBytes((Boolean)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => BitConverter.ToBoolean(buffer, offset);
     }

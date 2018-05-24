@@ -11,7 +11,7 @@ namespace Mikodev.Network.Converters
 
         public override Char GetValue(byte[] buffer, int offset, int length) => BitConverter.ToChar(buffer, offset);
 
-        public override byte[] GetBuffer(object value) => BitConverter.GetBytes((Char)value);
+        public override byte[] GetBytes(object value) => BitConverter.GetBytes((Char)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => BitConverter.ToChar(buffer, offset);
     }

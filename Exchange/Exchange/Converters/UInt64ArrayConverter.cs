@@ -35,7 +35,7 @@ namespace Mikodev.Network.Converters
 
         public override Model[] GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
 
-        public override byte[] GetBuffer(object value) => ToBytes((Model[])value);
+        public override byte[] GetBytes(object value) => ToBytes((Model[])value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
     }

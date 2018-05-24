@@ -9,7 +9,7 @@
 
         public override sbyte GetValue(byte[] buffer, int offset, int length) => (sbyte)buffer[offset];
 
-        public override byte[] GetBuffer(object value) => new byte[] { (byte)(sbyte)value };
+        public override byte[] GetBytes(object value) => new byte[] { (byte)(sbyte)value };
 
         public override object GetObject(byte[] buffer, int offset, int length) => buffer[offset];
     }

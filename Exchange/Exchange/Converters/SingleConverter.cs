@@ -11,7 +11,7 @@ namespace Mikodev.Network.Converters
 
         public override Single GetValue(byte[] buffer, int offset, int length) => BitConverter.ToSingle(buffer, offset);
 
-        public override byte[] GetBuffer(object value) => BitConverter.GetBytes((Single)value);
+        public override byte[] GetBytes(object value) => BitConverter.GetBytes((Single)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => BitConverter.ToSingle(buffer, offset);
     }

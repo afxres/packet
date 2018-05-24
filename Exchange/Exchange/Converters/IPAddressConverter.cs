@@ -15,7 +15,7 @@ namespace Mikodev.Network.Converters
 
         public override IPAddress GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
 
-        public override byte[] GetBuffer(object value) => ToBytes((IPAddress)value);
+        public override byte[] GetBytes(object value) => ToBytes((IPAddress)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
     }

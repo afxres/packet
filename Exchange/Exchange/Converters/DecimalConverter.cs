@@ -29,7 +29,7 @@ namespace Mikodev.Network.Converters
 
         public override decimal GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
 
-        public override byte[] GetBuffer(object value) => ToBytes((Decimal)value);
+        public override byte[] GetBytes(object value) => ToBytes((Decimal)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
     }

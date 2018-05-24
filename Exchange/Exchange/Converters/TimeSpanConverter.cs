@@ -15,7 +15,7 @@ namespace Mikodev.Network.Converters
 
         public override TimeSpan GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
 
-        public override byte[] GetBuffer(object value) => ToBytes((TimeSpan)value);
+        public override byte[] GetBytes(object value) => ToBytes((TimeSpan)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
     }

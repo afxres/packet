@@ -72,7 +72,7 @@ namespace Mikodev.Network
         internal static byte[] GetBytes(Type type, ConverterDictionary converters, object value)
         {
             var con = GetConverter(converters, type, false);
-            var buf = con.GetBufferWrap(value);
+            var buf = con.GetBytesWrap(value);
             return buf;
         }
 
@@ -81,14 +81,14 @@ namespace Mikodev.Network
             var con = GetConverter<T>(converters, false);
             if (con is PacketConverter<T> res)
                 return res.GetBytesWrap(value);
-            return con.GetBufferWrap(value);
+            return con.GetBytesWrap(value);
         }
 
         internal static byte[][] GetBytesFromEnumerableNonGeneric(PacketConverter converter, IEnumerable enumerable)
         {
             var lst = new List<byte[]>();
             foreach (var i in enumerable)
-                lst.Add(converter.GetBufferWrap(i));
+                lst.Add(converter.GetBytesWrap(i));
             return lst.ToArray();
         }
 
@@ -100,7 +100,7 @@ namespace Mikodev.Network
                     res[i] = gen.GetBytesWrap(array[i]);
             else
                 for (int i = 0; i < array.Length; i++)
-                    res[i] = converter.GetBufferWrap(array[i]);
+                    res[i] = converter.GetBytesWrap(array[i]);
             return res;
         }
 
@@ -112,7 +112,7 @@ namespace Mikodev.Network
                     res[i] = gen.GetBytesWrap(list[i]);
             else
                 for (int i = 0; i < list.Count; i++)
-                    res[i] = converter.GetBufferWrap(list[i]);
+                    res[i] = converter.GetBytesWrap(list[i]);
             return res;
         }
 
@@ -127,7 +127,7 @@ namespace Mikodev.Network
                     res.Add(gen.GetBytesWrap(i));
             else
                 foreach (var i in enumerable)
-                    res.Add(converter.GetBufferWrap(i));
+                    res.Add(converter.GetBytesWrap(i));
             return res.ToArray();
         }
 
@@ -141,8 +141,8 @@ namespace Mikodev.Network
             {
                 var key = i.Key;
                 var val = i.Value;
-                var keybuf = (keygen != null ? keygen.GetBytesWrap(key) : indexConverter.GetBufferWrap(key));
-                var valbuf = (valgen != null ? valgen.GetBytesWrap(val) : elementConverter.GetBufferWrap(val));
+                var keybuf = (keygen != null ? keygen.GetBytesWrap(key) : indexConverter.GetBytesWrap(key));
+                var valbuf = (valgen != null ? valgen.GetBytesWrap(val) : elementConverter.GetBytesWrap(val));
                 res.Add(new KeyValuePair<byte[], byte[]>(keybuf, valbuf));
             }
             return res;

@@ -11,7 +11,7 @@ namespace Mikodev.Network.Converters
 
         public override UInt64 GetValue(byte[] buffer, int offset, int length) => BitConverter.ToUInt64(buffer, offset);
 
-        public override byte[] GetBuffer(object value) => BitConverter.GetBytes((UInt64)value);
+        public override byte[] GetBytes(object value) => BitConverter.GetBytes((UInt64)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => BitConverter.ToUInt64(buffer, offset);
     }

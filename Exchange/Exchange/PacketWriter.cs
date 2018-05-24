@@ -65,7 +65,7 @@ namespace Mikodev.Network
             var typ = value.GetType();
             var inf = Cache.GetConverterOrInfo(converters, typ, out var con);
             if (inf == null)
-                return new Item(con.GetBufferWrap(value));
+                return new Item(con.GetBytesWrap(value));
 
             return GetItemMatch(converters, value, level, inf);
         }

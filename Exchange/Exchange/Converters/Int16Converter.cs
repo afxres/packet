@@ -11,7 +11,7 @@ namespace Mikodev.Network.Converters
 
         public override Int16 GetValue(byte[] buffer, int offset, int length) => BitConverter.ToInt16(buffer, offset);
 
-        public override byte[] GetBuffer(object value) => BitConverter.GetBytes((Int16)value);
+        public override byte[] GetBytes(object value) => BitConverter.GetBytes((Int16)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => BitConverter.ToInt16(buffer, offset);
     }

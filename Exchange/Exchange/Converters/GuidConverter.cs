@@ -17,7 +17,7 @@ namespace Mikodev.Network.Converters
 
         public override Guid GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
 
-        public override byte[] GetBuffer(object value) => ToBytes((Guid)value);
+        public override byte[] GetBytes(object value) => ToBytes((Guid)value);
 
         public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
     }
