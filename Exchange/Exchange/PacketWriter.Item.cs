@@ -74,9 +74,7 @@ namespace Mikodev.Network
 
             internal void GetBytesMatch(Stream stream, int level)
             {
-                if (level > Cache.Limits)
-                    throw new PacketException(PacketError.RecursiveError);
-                level += 1;
+                PacketException.VerifyRecursionError(ref level);
 
                 switch (tag)
                 {
@@ -145,9 +143,7 @@ namespace Mikodev.Network
 
             internal void GetBytes(Stream stream, int level)
             {
-                if (level > Cache.Limits)
-                    throw new PacketException(PacketError.RecursiveError);
-                level += 1;
+                PacketException.VerifyRecursionError(ref level);
 
                 if (obj == null)
                 {

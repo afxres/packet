@@ -4,18 +4,18 @@
     {
         None,
 
-        ConvertError,
+        ConversionError,
 
-        ConvertMismatch,
-
-        Overflow,
-
-        PathError,
-
-        RecursiveError,
+        ConversionMismatch,
 
         InvalidKeyType,
 
+        InvalidPath,
+
         InvalidType,
+
+        Overflow,
+
+        RecursionError,
     }
 }

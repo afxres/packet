@@ -488,14 +488,14 @@ namespace Mikodev.Testing
                 var ta = rea["a/b"];
                 Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError) { /* ignore */ }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.InvalidPath) { /* ignore */ }
 
             try
             {
                 var ta = rea.GetItem("b").GetItem("a");
                 Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.PathError) { /* ignore */ }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.InvalidPath) { /* ignore */ }
 
             try
             {

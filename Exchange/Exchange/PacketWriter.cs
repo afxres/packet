@@ -57,9 +57,7 @@ namespace Mikodev.Network
 
         private static Item GetItem(ConverterDictionary converters, object value, int level)
         {
-            if (level > Cache.Limits)
-                throw new PacketException(PacketError.RecursiveError);
-            level += 1;
+            PacketException.VerifyRecursionError(ref level);
 
             if (value == null)
                 return Item.Empty;
@@ -74,9 +72,7 @@ namespace Mikodev.Network
 
         private static Item GetItemMatch(ConverterDictionary converters, object value, int level, Info valueInfo)
         {
-            if (level > Cache.Limits)
-                throw new PacketException(PacketError.RecursiveError);
-            level += 1;
+            PacketException.VerifyRecursionError(ref level);
 
             switch (valueInfo.From)
             {

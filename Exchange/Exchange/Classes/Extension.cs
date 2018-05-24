@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Network.Converters;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -13,6 +14,26 @@ namespace Mikodev.Network
         internal static readonly byte[] s_empty_bytes = new byte[0];
 
         internal static readonly char[] s_separators = new[] { '/', '\\' };
+
+        internal static readonly ConverterDictionary s_converters = null;
+
+        static Extension()
+        {
+            var dictionary = new ConverterDictionary();
+            var assembly = typeof(Extension).Assembly;
+
+            foreach (var t in assembly.GetTypes())
+            {
+                var attributes = t.GetCustomAttributes(typeof(PacketConverterAttribute), false);
+                if (attributes.Length != 1)
+                    continue;
+                var attribute = (PacketConverterAttribute)attributes[0];
+                var type = attribute.Type;
+                var instance = (PacketConverter)Activator.CreateInstance(t);
+                dictionary.Add(type, instance);
+            }
+            s_converters = dictionary;
+        }
 
         internal static bool MoveNext(this byte[] buffer, int max, ref int index, out int length)
         {

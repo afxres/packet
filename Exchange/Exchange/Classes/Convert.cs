@@ -25,7 +25,7 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ConvertError(ex);
+                throw PacketException.ConversionError(ex);
             }
             return lst;
         }
@@ -50,7 +50,7 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ConvertError(ex);
+                throw PacketException.ConversionError(ex);
             }
             return arr;
         }

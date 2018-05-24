@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Threading;
 
@@ -13,14 +14,12 @@ namespace Mikodev.Network
         {
             switch (code)
             {
-                case PacketError.ConvertError:
+                case PacketError.ConversionError:
                     return "See inner exception for more information";
                 case PacketError.Overflow:
                     return "Data length overflow";
-                case PacketError.PathError:
+                case PacketError.InvalidPath:
                     return "Path not exists";
-                case PacketError.RecursiveError:
-                    return "Recursion limit has been reached";
                 default:
                     return "Undefined error";
             }
@@ -28,11 +27,11 @@ namespace Mikodev.Network
 
         public PacketError ErrorCode => error;
 
-        public PacketException(PacketError code) : base(GetMessage(code)) => error = code;
+        internal PacketException(PacketError code) : base(GetMessage(code)) => error = code;
 
-        public PacketException(PacketError code, string message) : base(message) => error = code;
+        internal PacketException(PacketError code, string message) : base(message) => error = code;
 
-        public PacketException(PacketError code, Exception except) : base(GetMessage(code), except) => error = code;
+        internal PacketException(PacketError code, Exception exception) : base(GetMessage(code), exception) => error = code;
 
         internal PacketException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
@@ -49,19 +48,19 @@ namespace Mikodev.Network
             base.GetObjectData(info, context);
         }
 
-        internal static PacketException Overflow()
+        internal static PacketException ConversionError(Exception exception)
         {
-            return new PacketException(PacketError.Overflow);
+            return new PacketException(PacketError.ConversionError, exception);
         }
 
-        internal static PacketException ConvertError(Exception exception)
+        internal static PacketException ConversionMismatch(int length)
         {
-            return new PacketException(PacketError.ConvertError, exception);
+            return new PacketException(PacketError.ConversionMismatch, $"Converter should return a byte array of length {length}");
         }
 
-        internal static PacketException ConvertMismatch(int length)
+        internal static PacketException InvalidKeyType(Type type)
         {
-            return new PacketException(PacketError.ConvertMismatch, $"Converter should return a byte array of length {length}");
+            return new PacketException(PacketError.InvalidKeyType, $"Invalid dictionary key type: {type}");
         }
 
         internal static PacketException InvalidType(Type type)
@@ -69,9 +68,20 @@ namespace Mikodev.Network
             return new PacketException(PacketError.InvalidType, $"Invalid type: {type}");
         }
 
-        internal static PacketException InvalidKeyType(Type type)
+        internal static PacketException Overflow()
         {
-            return new PacketException(PacketError.InvalidKeyType, $"Invalid dictionary key type: {type}");
+            return new PacketException(PacketError.Overflow);
+        }
+
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        internal static void VerifyRecursionError(ref int level)
+        {
+            const int limits = 64;
+            if (level > limits)
+                throw new PacketException(PacketError.RecursionError, $"Recursion limit of {limits} reached");
+            level++;
         }
 
         internal static bool WrapFilter(Exception exception)

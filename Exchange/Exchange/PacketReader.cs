@@ -107,7 +107,7 @@ namespace Mikodev.Network
                 return val;
             if (nothrow)
                 return null;
-            throw new PacketException(dic == null ? PacketError.Overflow : PacketError.PathError);
+            throw new PacketException(dic == null ? PacketError.Overflow : PacketError.InvalidPath);
         }
 
         /// <summary>
@@ -132,10 +132,7 @@ namespace Mikodev.Network
 
         internal object GetValue(Type type, int level)
         {
-            if (level > Cache.Limits)
-                throw new PacketException(PacketError.RecursiveError);
-            level += 1;
-
+            PacketException.VerifyRecursionError(ref level);
             var inf = Cache.GetConverterOrInfo(converters, type, out var con);
             if (inf == null)
                 return con.GetObjectWrap(element, true);
@@ -144,9 +141,7 @@ namespace Mikodev.Network
 
         internal object GetValueMatch(Type valueType, int level, Info valueInfo)
         {
-            if (level > Cache.Limits)
-                throw new PacketException(PacketError.RecursiveError);
-            level += 1;
+            PacketException.VerifyRecursionError(ref level);
 
             switch (valueInfo.To)
             {

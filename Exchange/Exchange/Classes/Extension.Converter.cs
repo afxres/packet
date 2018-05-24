@@ -1,32 +1,29 @@
-﻿using Mikodev.Network.Converters;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
-using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
 {
     partial class Extension
     {
-        internal static readonly ConverterDictionary s_converters = null;
-
-        static Extension()
+        #region bytes -> object overload
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        internal static T GetValue<T>(this PacketConverter<T> converter, Element element)
         {
-            var dictionary = new ConverterDictionary();
-            var assembly = typeof(Extension).Assembly;
-
-            foreach (var t in assembly.GetTypes())
-            {
-                var attributes = t.GetCustomAttributes(typeof(PacketConverterAttribute), false);
-                if (attributes.Length != 1)
-                    continue;
-                var attribute = (PacketConverterAttribute)attributes[0];
-                var type = attribute.Type;
-                var instance = (PacketConverter)Activator.CreateInstance(t);
-                dictionary.Add(type, instance);
-            }
-            s_converters = dictionary;
+            return converter.GetValue(element.buffer, element.offset, element.length);
         }
 
+#if NET40 == false
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        internal static object GetObject(this PacketConverter converter, Element element)
+        {
+            return converter.GetObject(element.buffer, element.offset, element.length);
+        }
+        #endregion
+
+        #region bytes -> object
 #if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
@@ -48,7 +45,7 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ConvertError(ex);
+                throw PacketException.ConversionError(ex);
             }
         }
 
@@ -75,24 +72,8 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ConvertError(ex);
+                throw PacketException.ConversionError(ex);
             }
-        }
-
-#if NET40 == false
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal static T GetValue<T>(this PacketConverter<T> converter, Element element)
-        {
-            return converter.GetValue(element.buffer, element.offset, element.length);
-        }
-
-#if NET40 == false
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal static object GetObject(this PacketConverter converter, Element element)
-        {
-            return converter.GetObject(element.buffer, element.offset, element.length);
         }
 
 #if NET40 == false
@@ -106,7 +87,7 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ConvertError(ex);
+                throw PacketException.ConversionError(ex);
             }
         }
 
@@ -121,10 +102,12 @@ namespace Mikodev.Network
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ConvertError(ex);
+                throw PacketException.ConversionError(ex);
             }
         }
+        #endregion
 
+        #region object -> bytes
 #if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
@@ -137,12 +120,12 @@ namespace Mikodev.Network
                     buf = s_empty_bytes;
                 var len = converter.Length;
                 if (len > 0 && len != buf.Length)
-                    throw PacketException.ConvertMismatch(len);
+                    throw PacketException.ConversionMismatch(len);
                 return buf;
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ConvertError(ex);
+                throw PacketException.ConversionError(ex);
             }
         }
 
@@ -158,13 +141,14 @@ namespace Mikodev.Network
                     buf = s_empty_bytes;
                 var len = converter.Length;
                 if (len > 0 && len != buf.Length)
-                    throw PacketException.ConvertMismatch(len);
+                    throw PacketException.ConversionMismatch(len);
                 return buf;
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
-                throw PacketException.ConvertError(ex);
+                throw PacketException.ConversionError(ex);
             }
         }
+        #endregion
     }
 }

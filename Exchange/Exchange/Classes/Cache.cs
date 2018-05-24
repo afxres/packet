@@ -12,7 +12,6 @@ namespace Mikodev.Network
     internal static partial class Cache
     {
         internal const int Length = 256;
-        internal const int Limits = 64;
 
         private static readonly ConcurrentDictionary<Type, Info> s_infos = new ConcurrentDictionary<Type, Info>();
         private static readonly ConcurrentDictionary<Type, GetInfo> s_get_infos = new ConcurrentDictionary<Type, GetInfo>();

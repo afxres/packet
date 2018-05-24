@@ -229,7 +229,7 @@ namespace Mikodev.Testing
                 var buf = new PacketRawWriter(con).SetValue(val);
                 Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.ConvertError && ex.InnerException.Message == TestConverter._BytesErr)
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.ConversionError && ex.InnerException.Message == TestConverter._BytesErr)
             {
                 // ignore
             }
@@ -436,7 +436,7 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
-        public void ConvertMismatch()
+        public void ConversionMismatch()
         {
             var cvt = new Dictionary<Type, PacketConverter>() { [typeof(TestRef)] = new TestBadConverter() };
 
@@ -445,7 +445,7 @@ namespace Mikodev.Testing
                 var buf = PacketConvert.Serialize(new TestRef(), cvt);
                 Assert.Fail();
             }
-            catch (PacketException ex) when (ex.ErrorCode == PacketError.ConvertMismatch)
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.ConversionMismatch)
             {
                 // ignore
             }
