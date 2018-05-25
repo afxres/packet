@@ -17,7 +17,7 @@ namespace Mikodev.Network
             internal const int DictionaryBytesItem = 7;
 
             internal static readonly Item Empty = new Item();
-            internal static readonly byte[] s_zero_bytes = new byte[sizeof(int)];
+            internal static readonly byte[] ZeroBytes = new byte[sizeof(int)];
 
             internal readonly object obj;
             internal readonly int tag;
@@ -147,7 +147,7 @@ namespace Mikodev.Network
 
                 if (obj == null)
                 {
-                    stream.Write(s_zero_bytes, 0, sizeof(int));
+                    stream.Write(ZeroBytes, 0, sizeof(int));
                 }
                 else if (tag == Bytes)
                 {

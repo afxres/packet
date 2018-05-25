@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Network.Converters;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -144,7 +145,7 @@ namespace Mikodev.Network
         {
             var itm = item;
             if (itm.obj == null)
-                return Extension.s_empty_bytes;
+                return UnmanagedArrayConverter<byte>.EmptyArray;
             else if (itm.tag == Item.Bytes)
                 return (byte[])itm.obj;
             else if (itm.tag == Item.MemoryStream)

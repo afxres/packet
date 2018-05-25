@@ -73,9 +73,7 @@ namespace Mikodev.Network
             return new PacketException(PacketError.Overflow);
         }
 
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static void VerifyRecursionError(ref int level)
         {
             const int limits = 64;

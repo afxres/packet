@@ -10,15 +10,15 @@ namespace Mikodev.Network
     {
         private const string FSharpCollectionsNamespace = "Microsoft.FSharp.Collections";
 
-        private static MethodInfo s_to_fslist;
-        private static MethodInfo s_to_tuple_list = typeof(Convert).GetMethod(nameof(Convert.ToTupleList), Flags);
-        private static MethodInfo s_cast_tuple_list = typeof(Convert).GetMethod(nameof(Convert.ToTupleListCast), Flags);
+        private static MethodInfo ToFSharpListMethodInfo;
+        private static MethodInfo ToTupleListMethodInfo = typeof(Convert).GetMethod(nameof(Convert.ToTupleList), Flags);
+        private static MethodInfo CastTupleListMethodInfo = typeof(Convert).GetMethod(nameof(Convert.ToTupleListCast), Flags);
 
         private static bool IsFSharpList(Type type)
         {
             if (type.Name != "FSharpList`1" || type.Namespace != FSharpCollectionsNamespace)
                 return false;
-            var fun = s_to_fslist;
+            var fun = ToFSharpListMethodInfo;
             if (fun != null)
                 return true;
             var mod = type.Assembly.GetType("Microsoft.FSharp.Collections.ArrayModule", false, false);
@@ -27,7 +27,7 @@ namespace Mikodev.Network
             var met = mod.GetMethods().Where(r => r.Name == "ToList").ToArray();
             if (met.Length != 1)
                 return false;
-            s_to_fslist = met[0];
+            ToFSharpListMethodInfo = met[0];
             return true;
         }
 
@@ -41,7 +41,7 @@ namespace Mikodev.Network
             constructorInfo = con;
             return true;
 
-        fail:
+            fail:
             constructorInfo = null;
             return false;
         }
@@ -50,9 +50,9 @@ namespace Mikodev.Network
         {
             var con = Expression.Parameter(typeof(PacketConverter), "converter");
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
-            var met = s_to_array.MakeGenericMethod(elementType);
+            var met = ToArrayMethodInfo.MakeGenericMethod(elementType);
             var cal = Expression.Call(met, rea, con);
-            var cvt = s_to_fslist.MakeGenericMethod(elementType);
+            var cvt = ToFSharpListMethodInfo.MakeGenericMethod(elementType);
             var inv = Expression.Call(cvt, cal);
             var box = Expression.Convert(inv, typeof(object));
             var exp = Expression.Lambda<Func<PacketReader, PacketConverter, object>>(box, rea, con);
@@ -63,7 +63,7 @@ namespace Mikodev.Network
         private static Func<object[], object> GetCastFSharpListFunction(Type elementType)
         {
             var blk = GetCastArrayExpression(elementType, out var arr);
-            var cvt = s_to_fslist.MakeGenericMethod(elementType);
+            var cvt = ToFSharpListMethodInfo.MakeGenericMethod(elementType);
             var inv = Expression.Call(cvt, blk);
             var box = Expression.Convert(inv, typeof(object));
             var exp = Expression.Lambda<Func<object[], object>>(box, arr);
@@ -76,7 +76,7 @@ namespace Mikodev.Network
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
             var key = Expression.Parameter(typeof(PacketConverter), "key");
             var val = Expression.Parameter(typeof(PacketConverter), "value");
-            var met = s_to_tuple_list.MakeGenericMethod(types);
+            var met = ToTupleListMethodInfo.MakeGenericMethod(types);
             var cal = Expression.Call(met, rea, key, val);
             var inv = Expression.New(constructorInfo, cal);
             var box = Expression.Convert(inv, typeof(object));
@@ -88,7 +88,7 @@ namespace Mikodev.Network
         private static Func<List<object>, object> GetCastFSharpMapFunction(ConstructorInfo constructorInfo, params Type[] types)
         {
             var arr = Expression.Parameter(typeof(List<object>), "list");
-            var met = s_cast_tuple_list.MakeGenericMethod(types);
+            var met = CastTupleListMethodInfo.MakeGenericMethod(types);
             var cal = Expression.Call(met, arr);
             var inv = Expression.New(constructorInfo, cal);
             var box = Expression.Convert(inv, typeof(object));

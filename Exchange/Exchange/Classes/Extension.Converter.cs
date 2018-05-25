@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Network.Converters;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network
@@ -6,26 +7,18 @@ namespace Mikodev.Network
     partial class Extension
     {
         #region bytes -> object overload
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static T GetValue<T>(this PacketConverter<T> converter, Element element) => converter.GetValue(element.buffer, element.offset, element.length);
 
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static object GetObject(this PacketConverter converter, Element element) => converter.GetObject(element.buffer, element.offset, element.length);
         #endregion
 
         #region bytes -> object
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static object GetObjectWrap(this PacketConverter converter, Element element, bool check = false) => GetObjectWrap(converter, element.buffer, element.offset, element.length, check);
 
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static object GetObjectWrap(this PacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
         {
             try
@@ -40,14 +33,10 @@ namespace Mikodev.Network
             }
         }
 
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static T GetValueWrapAuto<T>(this PacketConverter converter, Element element, bool check = false) => GetValueWrapAuto<T>(converter, element.buffer, element.offset, element.length, check);
 
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static T GetValueWrapAuto<T>(this PacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
         {
             try
@@ -64,14 +53,10 @@ namespace Mikodev.Network
             }
         }
 
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static T GetValueWrap<T>(this PacketConverter<T> converter, Element element) => GetValueWrap(converter, element.buffer, element.offset, element.length);
 
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static T GetValueWrap<T>(this PacketConverter<T> converter, byte[] buffer, int offset, int length)
         {
             try
@@ -86,16 +71,14 @@ namespace Mikodev.Network
         #endregion
 
         #region object -> bytes
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static byte[] GetBytesWrap(this PacketConverter converter, object value)
         {
             try
             {
                 var buf = converter.GetBytes(value);
                 if (buf == null)
-                    buf = s_empty_bytes;
+                    buf = UnmanagedArrayConverter<byte>.EmptyArray;
                 var len = converter.Length;
                 if (len > 0 && len != buf.Length)
                     throw PacketException.ConversionMismatch(len);
@@ -107,16 +90,14 @@ namespace Mikodev.Network
             }
         }
 
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static byte[] GetBytesWrap<T>(this PacketConverter<T> converter, T value)
         {
             try
             {
                 var buf = converter.GetBytes(value);
                 if (buf == null)
-                    buf = s_empty_bytes;
+                    buf = UnmanagedArrayConverter<byte>.EmptyArray;
                 var len = converter.Length;
                 if (len > 0 && len != buf.Length)
                     throw PacketException.ConversionMismatch(len);

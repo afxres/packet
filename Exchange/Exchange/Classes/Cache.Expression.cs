@@ -10,19 +10,19 @@ namespace Mikodev.Network
     {
         private const BindingFlags Flags = BindingFlags.Static | BindingFlags.NonPublic;
 
-        private static readonly MethodInfo s_from_array = typeof(Cache).GetMethod(nameof(GetBytesFromArray), Flags);
-        private static readonly MethodInfo s_from_list = typeof(Cache).GetMethod(nameof(GetBytesFromList), Flags);
-        private static readonly MethodInfo s_from_enumerable = typeof(Cache).GetMethod(nameof(GetBytesFromEnumerable), Flags);
-        private static readonly MethodInfo s_from_dictionary = typeof(Cache).GetMethod(nameof(GetBytesFromDictionary), Flags);
+        private static readonly MethodInfo FromArrayMethodInfo = typeof(Cache).GetMethod(nameof(GetBytesFromArray), Flags);
+        private static readonly MethodInfo FromListMethodInfo = typeof(Cache).GetMethod(nameof(GetBytesFromList), Flags);
+        private static readonly MethodInfo FromEnumerableMethodInfo = typeof(Cache).GetMethod(nameof(GetBytesFromEnumerable), Flags);
+        private static readonly MethodInfo FromDictionaryMethodInfo = typeof(Cache).GetMethod(nameof(GetBytesFromDictionary), Flags);
 
-        private static readonly MethodInfo s_cast_dictionary = typeof(Convert).GetMethod(nameof(Convert.ToDictionaryCast), Flags);
+        private static readonly MethodInfo CastDictionaryMethodInfo = typeof(Convert).GetMethod(nameof(Convert.ToDictionaryCast), Flags);
 
-        private static readonly MethodInfo s_to_array = typeof(Convert).GetMethod(nameof(Convert.ToArray), Flags);
-        private static readonly MethodInfo s_to_list = typeof(Convert).GetMethod(nameof(Convert.ToList), Flags);
-        private static readonly MethodInfo s_to_enumerable = typeof(Convert).GetMethod(nameof(Convert.ToEnumerable), Flags);
-        private static readonly MethodInfo s_to_dictionary = typeof(Convert).GetMethod(nameof(Convert.ToDictionary), Flags);
+        private static readonly MethodInfo ToArrayMethodInfo = typeof(Convert).GetMethod(nameof(Convert.ToArray), Flags);
+        private static readonly MethodInfo ToListMethodInfo = typeof(Convert).GetMethod(nameof(Convert.ToList), Flags);
+        private static readonly MethodInfo ToEnumerableMethodInfo = typeof(Convert).GetMethod(nameof(Convert.ToEnumerable), Flags);
+        private static readonly MethodInfo ToDictionaryMethodInfo = typeof(Convert).GetMethod(nameof(Convert.ToDictionary), Flags);
 
-        private static readonly MethodInfo s_array_copy = typeof(Array).GetMethod(nameof(Array.Copy), new[] { typeof(Array), typeof(Array), typeof(int) });
+        private static readonly MethodInfo CopyArrayMethodInfo = typeof(Array).GetMethod(nameof(Array.Copy), new[] { typeof(Array), typeof(Array), typeof(int) });
 
         private static Func<PacketReader, PacketConverter, object> GetToFunction(MethodInfo info, Type element)
         {
@@ -44,7 +44,7 @@ namespace Mikodev.Network
                 return null;
             var con = Expression.Parameter(typeof(PacketConverter), "converter");
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
-            var met = s_to_array.MakeGenericMethod(element);
+            var met = ToArrayMethodInfo.MakeGenericMethod(element);
             var cal = Expression.Call(met, rea, con);
             var cst = Expression.Convert(cal, itr);
             var inv = Expression.New(cto, cst);
@@ -59,7 +59,7 @@ namespace Mikodev.Network
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
             var key = Expression.Parameter(typeof(PacketConverter), "key");
             var val = Expression.Parameter(typeof(PacketConverter), "value");
-            var met = s_to_dictionary.MakeGenericMethod(types);
+            var met = ToDictionaryMethodInfo.MakeGenericMethod(types);
             var cal = Expression.Call(met, rea, key, val);
             var exp = Expression.Lambda<Func<PacketReader, PacketConverter, PacketConverter, object>>(cal, rea, key, val);
             var fun = exp.Compile();
@@ -87,7 +87,7 @@ namespace Mikodev.Network
             var dst = Expression.NewArrayBounds(elementType, len);
             var loc = Expression.Variable(elementType.MakeArrayType(), "destination");
             var ass = Expression.Assign(loc, dst);
-            var cpy = Expression.Call(s_array_copy, parameter, loc, len);
+            var cpy = Expression.Call(CopyArrayMethodInfo, parameter, loc, len);
             var blk = Expression.Block(new ParameterExpression[] { loc }, new Expression[] { ass, cpy, loc });
             return blk;
         }
@@ -123,7 +123,7 @@ namespace Mikodev.Network
         private static Func<List<object>, object> GetCastDictionaryFunction(params Type[] types)
         {
             var arr = Expression.Parameter(typeof(List<object>), "list");
-            var met = s_cast_dictionary.MakeGenericMethod(types);
+            var met = CastDictionaryMethodInfo.MakeGenericMethod(types);
             var cal = Expression.Call(met, arr);
             var exp = Expression.Lambda<Func<List<object>, object>>(cal, arr);
             var fun = exp.Compile();
@@ -147,7 +147,7 @@ namespace Mikodev.Network
             var val = Expression.Parameter(typeof(PacketConverter), "element");
             var obj = Expression.Parameter(typeof(object), "object");
             var cvt = Expression.Convert(obj, typeof(IEnumerable<>).MakeGenericType(typeof(KeyValuePair<,>).MakeGenericType(types)));
-            var met = s_from_dictionary.MakeGenericMethod(types);
+            var met = FromDictionaryMethodInfo.MakeGenericMethod(types);
             var cal = Expression.Call(met, key, val, cvt);
             var exp = Expression.Lambda<Func<PacketConverter, PacketConverter, object, List<KeyValuePair<byte[], byte[]>>>>(cal, key, val, obj);
             var fun = exp.Compile();

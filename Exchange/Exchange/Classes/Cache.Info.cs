@@ -1,12 +1,236 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Mikodev.Network
 {
     partial class Cache
     {
-        private static void CreateInfoFromDictionary(Info info, Info enumerableInfo, params Type[] types)
+        internal static Info GetInfo(Type type)
+        {
+            if (Infos.TryGetValue(type, out var inf))
+                return inf;
+            return Infos.GetOrAdd(type, GetInfoFromType(type));
+        }
+
+        private static Info GetInfoFromType(Type type)
+        {
+            var info = new Info() { Type = type };
+            if (IsBasicType(info, type))
+                return info;
+            if (type.IsEnum)
+            {
+                info.Flag = Info.Enum;
+                info.ElementType = Enum.GetUnderlyingType(type);
+                return info;
+            }
+
+            var generic = type.IsGenericType;
+            var genericArgs = generic ? type.GetGenericArguments() : null;
+            var genericDefinition = generic ? type.GetGenericTypeDefinition() : null;
+
+            if (generic && type.IsInterface)
+            {
+                if (genericDefinition == typeof(IEnumerable<>))
+                    return GetInfoFromIEnumerable(info, genericArgs, type);
+                if (genericDefinition == typeof(ICollection<>))
+                    return GetInfoFromICollection(info, genericArgs);
+                if (genericDefinition == typeof(IList<>))
+                    return GetInfoFromIList(info, genericArgs);
+                if (genericDefinition == typeof(IDictionary<,>))
+                    return GetInfoFromIDictionary(info, genericArgs);
+            }
+
+            if (type.IsArray)
+            {
+                genericArgs = GetInfoFromArray(info, type);
+            }
+            else if (generic && genericArgs.Length == 1)
+            {
+                if (IsFSharpList(type))
+                    GetInfoFromFSharpList(info, genericArgs[0]);
+                else if (genericDefinition == typeof(List<>))
+                    GetInfoFromList(info, genericArgs[0], type);
+                else
+                    GetInfoFromCollection(info, genericArgs[0], type);
+            }
+            else if (generic && genericArgs.Length == 2)
+            {
+                if (IsFSharpMap(type, genericArgs, out var constructorInfo))
+                    GetInfoFromFSharpMap(info, genericArgs, constructorInfo);
+                else if (genericDefinition == typeof(Dictionary<,>))
+                    GetInfoFromDictionary(info, genericArgs);
+            }
+
+            var interfaces = type.GetInterfaces();
+            if (info.From == Info.None)
+            {
+                GetInfoFindImplementation(info, genericArgs, interfaces);
+            }
+
+            if (info.From == Info.Enumerable)
+            {
+                if (info.ElementType == typeof(byte) && interfaces.Contains(typeof(ICollection<byte>)))
+                    info.From = Info.Bytes;
+                else if (info.ElementType == typeof(sbyte) && interfaces.Contains(typeof(ICollection<sbyte>)))
+                    info.From = Info.SBytes;
+            }
+            return info;
+        }
+
+        private static void GetInfoFindImplementation(Info info, Type[] genericArgs, Type[] interfaces)
+        {
+            if (interfaces.Contains(typeof(IDictionary<string, object>)))
+                info.From = Info.Map;
+
+            var baseList = interfaces
+                .Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                .Select(GetInfo)
+                .ToList();
+            if (baseList.Count > 1 && genericArgs != null)
+            {
+                var comparer = default(Type);
+                if (genericArgs.Length == 1)
+                    comparer = genericArgs[0];
+                else if (genericArgs.Length == 2)
+                    comparer = typeof(KeyValuePair<,>).MakeGenericType(genericArgs);
+                if (comparer != null)
+                    baseList = baseList.Where(r => r.ElementType == comparer).ToList();
+            }
+
+            if (baseList.Count == 1)
+            {
+                var enumerable = baseList[0];
+                var elementType = enumerable.ElementType;
+                if (elementType.IsGenericType && elementType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+                {
+                    GetInfoFromDictionary(info, baseList[0], elementType.GetGenericArguments());
+                }
+                else
+                {
+                    info.From = Info.Enumerable;
+                    info.ElementType = enumerable.ElementType;
+                    info.FromEnumerable = enumerable.FromEnumerable;
+                }
+            }
+        }
+
+        private static void GetInfoFromDictionary(Info info, Type[] genericArgs)
+        {
+            var baseType = typeof(IDictionary<,>).MakeGenericType(genericArgs);
+            var baseInfo = GetInfo(baseType);
+            info.To = Info.Dictionary;
+            info.ToDictionary = baseInfo.ToDictionary;
+            info.ToDictionaryCast = baseInfo.ToDictionaryCast;
+        }
+
+        private static void GetInfoFromFSharpMap(Info info, Type[] genericArgs, ConstructorInfo constructorInfo)
+        {
+            info.To = Info.Dictionary;
+            info.ToDictionary = GetToFSharpMapFunction(constructorInfo, genericArgs);
+            info.ToDictionaryCast = GetCastFSharpMapFunction(constructorInfo, genericArgs);
+        }
+
+        private static Info GetInfoFromIDictionary(Info info, Type[] genericArgs)
+        {
+            var elementType = typeof(KeyValuePair<,>).MakeGenericType(genericArgs);
+            var enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
+            var enumerableInfo = GetInfo(enumerableType);
+            GetInfoFromDictionary(info, enumerableInfo, genericArgs);
+            info.To = Info.Dictionary;
+            info.ToDictionary = GetToDictionaryFunction(genericArgs);
+            info.ToDictionaryCast = GetCastDictionaryFunction(genericArgs);
+            return info;
+        }
+
+        private static Info GetInfoFromIList(Info info, Type[] genericArgs)
+        {
+            var elementType = genericArgs[0];
+            info.ElementType = elementType;
+            info.To = Info.Collection; // to list
+            info.ToCollection = GetToFunction(ToListMethodInfo, elementType);
+            info.ToCollectionCast = GetCastListFunction(elementType); // cast to list
+            return info;
+        }
+
+        private static Info GetInfoFromICollection(Info info, Type[] genericArgs)
+        {
+            var elementType = genericArgs[0];
+            info.ElementType = elementType;
+            info.To = Info.Collection; // to icollection
+            var basicArray = GetInfo(elementType.MakeArrayType());
+            info.ToCollection = basicArray.ToCollection;
+            info.ToCollectionCast = basicArray.ToCollectionCast;
+            return info;
+        }
+
+        private static Info GetInfoFromIEnumerable(Info info, Type[] genericArgs, Type interfaceType)
+        {
+            var elementType = genericArgs[0];
+            info.ElementType = elementType;
+            info.To = Info.Enumerable;
+            info.ToEnumerable = GetToFunction(ToEnumerableMethodInfo, elementType);
+            info.ToEnumerableAdapter = GetToEnumerableAdapter(elementType);
+
+            // From ... function
+            info.From = Info.Enumerable;
+            info.FromEnumerable = GetFromEnumerableFunction(FromEnumerableMethodInfo.MakeGenericMethod(elementType), interfaceType);
+            if (elementType.IsGenericType && elementType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+            {
+                var arguments = elementType.GetGenericArguments();
+                info.FromDictionary = GetFromDictionaryFunction(arguments);
+                info.FromDictionaryAdapter = GetFromAdapterFunction(arguments);
+            }
+            return info;
+        }
+
+        private static void GetInfoFromFSharpList(Info info, Type elementType)
+        {
+            info.To = Info.Collection;
+            info.ToCollection = GetToFSharpListFunction(elementType);
+            info.ToCollectionCast = GetCastFSharpListFunction(elementType);
+        }
+
+        private static void GetInfoFromList(Info info, Type elementType, Type type)
+        {
+            var basicInfo = GetInfo(typeof(IList<>).MakeGenericType(elementType));
+            info.ElementType = elementType;
+            info.From = Info.Enumerable;
+            info.To = Info.Collection; // to list
+            info.FromEnumerable = GetFromEnumerableFunction(FromListMethodInfo.MakeGenericMethod(elementType), type);
+            info.ToCollection = basicInfo.ToCollection;
+            info.ToCollectionCast = basicInfo.ToCollectionCast;
+        }
+
+        private static void GetInfoFromCollection(Info info, Type elementType, Type type)
+        {
+            var functor = GetToCollectionFunction(type, elementType, out var constructor);
+            if (functor != null)
+            {
+                info.ElementType = elementType;
+                info.To = Info.Collection;
+                info.ToCollection = functor;
+                info.ToCollectionCast = GetCastCollectionFunction(elementType, constructor);
+            }
+        }
+
+        private static Type[] GetInfoFromArray(Info info, Type type)
+        {
+            if (type.GetArrayRank() != 1)
+                throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
+            var elementType = type.GetElementType();
+            info.ElementType = elementType;
+
+            info.From = Info.Enumerable;
+            info.To = Info.Collection; // to array
+            info.FromEnumerable = GetFromEnumerableFunction(FromArrayMethodInfo.MakeGenericMethod(elementType), type);
+            info.ToCollection = GetToFunction(ToArrayMethodInfo, elementType);
+            info.ToCollectionCast = GetCastArrayFunction(elementType); // cast to array
+            return new[] { elementType };
+        }
+
+        private static void GetInfoFromDictionary(Info info, Info enumerableInfo, params Type[] types)
         {
             if (types[0] == typeof(string) && types[1] == typeof(object))
                 info.From = Info.Map;
@@ -18,211 +242,19 @@ namespace Mikodev.Network
             info.FromDictionaryAdapter = enumerableInfo.FromDictionaryAdapter;
         }
 
-        private static Info CreateInfo(Type type)
+        private static bool IsBasicType(Info info, Type type)
         {
-            var inf = new Info() { Type = type };
             if (type == typeof(PacketWriter))
-            {
-                inf.From = Info.Writer;
-                return inf;
-            }
+                info.From = Info.Writer;
             else if (type == typeof(PacketRawWriter))
-            {
-                inf.From = Info.RawWriter;
-                return inf;
-            }
+                info.From = Info.RawWriter;
             else if (type == typeof(PacketReader) || type == typeof(object))
-            {
-                inf.To = Info.Reader;
-                return inf;
-            }
+                info.To = Info.Reader;
             else if (type == typeof(PacketRawReader))
-            {
-                inf.To = Info.RawReader;
-                return inf;
-            }
-            if (type.IsEnum)
-            {
-                inf.Flag = Info.Enum;
-                inf.ElementType = Enum.GetUnderlyingType(type);
-                return inf;
-            }
-
-            var generic = type.IsGenericType;
-            var genericArgs = generic ? type.GetGenericArguments() : null;
-            var genericDefinition = generic ? type.GetGenericTypeDefinition() : null;
-
-            if (generic && type.IsInterface)
-            {
-                if (genericDefinition == typeof(IEnumerable<>))
-                {
-                    var ele = genericArgs[0];
-                    inf.ElementType = ele;
-                    inf.To = Info.Enumerable;
-                    inf.ToEnumerable = GetToFunction(s_to_enumerable, ele);
-                    inf.ToEnumerableAdapter = GetToEnumerableAdapter(ele);
-
-                    // From ... function
-                    inf.From = Info.Enumerable;
-                    inf.FromEnumerable = GetFromEnumerableFunction(s_from_enumerable.MakeGenericMethod(ele), type);
-                    if (ele.IsGenericType && ele.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
-                    {
-                        var arg = ele.GetGenericArguments();
-                        inf.FromDictionary = GetFromDictionaryFunction(arg);
-                        inf.FromDictionaryAdapter = GetFromAdapterFunction(arg);
-                    }
-                    return inf;
-                }
-                if (genericDefinition == typeof(ICollection<>))
-                {
-                    var ele = genericArgs[0];
-                    inf.ElementType = ele;
-                    inf.To = Info.Collection; // to icollection
-                    var arr = GetInfo(ele.MakeArrayType());
-                    inf.ToCollection = arr.ToCollection;
-                    inf.ToCollectionCast = arr.ToCollectionCast;
-                    return inf;
-                }
-                if (genericDefinition == typeof(IList<>))
-                {
-                    var ele = genericArgs[0];
-                    inf.ElementType = ele;
-                    inf.To = Info.Collection; // to list
-                    inf.ToCollection = GetToFunction(s_to_list, ele);
-                    inf.ToCollectionCast = GetCastListFunction(ele); // cast to list
-                    return inf;
-                }
-                if (genericDefinition == typeof(IDictionary<,>))
-                {
-                    var kvp = typeof(KeyValuePair<,>).MakeGenericType(genericArgs);
-                    var itr = typeof(IEnumerable<>).MakeGenericType(kvp);
-                    var sub = GetInfo(itr);
-                    CreateInfoFromDictionary(inf, sub, genericArgs);
-                    inf.To = Info.Dictionary;
-                    inf.ToDictionary = GetToDictionaryFunction(genericArgs);
-                    inf.ToDictionaryCast = GetCastDictionaryFunction(genericArgs);
-                    return inf;
-                }
-            }
-
-            if (type.IsArray)
-            {
-                if (type.GetArrayRank() != 1)
-                    throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
-                var ele = type.GetElementType();
-                genericArgs = new Type[1] { ele };
-                inf.ElementType = ele;
-
-                inf.From = Info.Enumerable;
-                inf.To = Info.Collection; // to array
-                inf.FromEnumerable = GetFromEnumerableFunction(s_from_array.MakeGenericMethod(ele), type);
-                inf.ToCollection = GetToFunction(s_to_array, ele);
-                inf.ToCollectionCast = GetCastArrayFunction(ele); // cast to array
-            }
-            else if (generic && genericArgs.Length == 1)
-            {
-                var ele = genericArgs[0];
-                if (IsFSharpList(type))
-                {
-                    // f# list
-                    inf.To = Info.Collection;
-                    inf.ToCollection = GetToFSharpListFunction(ele);
-                    inf.ToCollectionCast = GetCastFSharpListFunction(ele);
-                }
-                else if (genericDefinition == typeof(List<>))
-                {
-                    var sub = GetInfo(typeof(IList<>).MakeGenericType(ele));
-                    inf.ElementType = ele;
-                    inf.From = Info.Enumerable;
-                    inf.To = Info.Collection; // to list
-                    inf.FromEnumerable = GetFromEnumerableFunction(s_from_list.MakeGenericMethod(ele), type);
-                    inf.ToCollection = sub.ToCollection;
-                    inf.ToCollectionCast = sub.ToCollectionCast;
-                }
-                else
-                {
-                    var fun = GetToCollectionFunction(type, ele, out var ctor);
-                    if (fun != null)
-                    {
-                        inf.ElementType = ele;
-                        inf.To = Info.Collection;
-                        inf.ToCollection = fun;
-                        inf.ToCollectionCast = GetCastCollectionFunction(ele, ctor);
-                    }
-                }
-            }
-            else if (generic && genericArgs.Length == 2)
-            {
-                if (IsFSharpMap(type, genericArgs, out var constructorInfo))
-                {
-                    // f# map
-                    inf.To = Info.Dictionary;
-                    inf.ToDictionary = GetToFSharpMapFunction(constructorInfo, genericArgs);
-                    inf.ToDictionaryCast = GetCastFSharpMapFunction(constructorInfo, genericArgs);
-                }
-                else if (genericDefinition == typeof(Dictionary<,>))
-                {
-                    var itr = typeof(IDictionary<,>).MakeGenericType(genericArgs);
-                    var sub = GetInfo(itr);
-                    inf.To = Info.Dictionary;
-                    inf.ToDictionary = sub.ToDictionary;
-                    inf.ToDictionaryCast = sub.ToDictionaryCast;
-                }
-            }
-
-            var interfaces = type.GetInterfaces();
-            if (inf.From == Info.None)
-            {
-                if (interfaces.Contains(typeof(IDictionary<string, object>)))
-                    inf.From = Info.Map;
-
-                var lst = interfaces
-                    .Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                    .Select(GetInfo)
-                    .ToList();
-                if (lst.Count > 1 && genericArgs != null)
-                {
-                    var cmp = default(Type);
-                    if (genericArgs.Length == 1)
-                        cmp = genericArgs[0];
-                    else if (genericArgs.Length == 2)
-                        cmp = typeof(KeyValuePair<,>).MakeGenericType(genericArgs);
-                    if (cmp != null)
-                        lst = lst.Where(r => r.ElementType == cmp).ToList();
-                }
-
-                if (lst.Count == 1)
-                {
-                    var itr = lst[0];
-                    var ele = itr.ElementType;
-                    if (ele.IsGenericType && ele.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
-                    {
-                        CreateInfoFromDictionary(inf, lst[0], ele.GetGenericArguments());
-                    }
-                    else
-                    {
-                        inf.From = Info.Enumerable;
-                        inf.ElementType = itr.ElementType;
-                        inf.FromEnumerable = itr.FromEnumerable;
-                    }
-                }
-            }
-
-            if (inf.From == Info.Enumerable)
-            {
-                if (inf.ElementType == typeof(byte) && interfaces.Contains(typeof(ICollection<byte>)))
-                    inf.From = Info.Bytes;
-                else if (inf.ElementType == typeof(sbyte) && interfaces.Contains(typeof(ICollection<sbyte>)))
-                    inf.From = Info.SBytes;
-            }
-            return inf;
-        }
-
-        internal static Info GetInfo(Type type)
-        {
-            if (s_infos.TryGetValue(type, out var inf))
-                return inf;
-            return s_infos.GetOrAdd(type, CreateInfo(type));
+                info.To = Info.RawReader;
+            else
+                return false;
+            return true;
         }
     }
 }

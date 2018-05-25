@@ -2,23 +2,30 @@
 
 namespace Mikodev.Network.Converters
 {
-    [PacketConverter(typeof(Guid))]
+    [Converter(typeof(Guid))]
     internal sealed class GuidConverter : PacketConverter<Guid>
     {
         private const int SizeOf = 16;
 
-        public static byte[] ToBytes(Guid value) => value.ToByteArray();
+        private static byte[] ToBytes(Guid value) => value.ToByteArray();
 
-        public static Guid ToValue(byte[] buffer, int offset) => new Guid(Extension.Span(buffer, offset, SizeOf));
+        private static Guid ToValue(byte[] buffer, int offset, int length)
+        {
+            if (length < SizeOf)
+                throw PacketException.Overflow();
+            var target = Extension.BorrowOrCopy(buffer, offset, SizeOf);
+            var result = new Guid(target);
+            return result;
+        }
 
         public override int Length => SizeOf;
 
         public override byte[] GetBytes(Guid value) => ToBytes(value);
 
-        public override Guid GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
+        public override Guid GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
 
         public override byte[] GetBytes(object value) => ToBytes((Guid)value);
 
-        public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
+        public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
     }
 }

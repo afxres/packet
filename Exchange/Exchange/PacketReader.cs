@@ -52,7 +52,7 @@ namespace Mikodev.Network
                 {
                     if (buf.MoveNext(max, ref idx, out len) == false)
                         return null;
-                    var key = Extension.s_encoding.GetString(buf, idx, len);
+                    var key = Extension.Encoding.GetString(buf, idx, len);
                     idx += len;
                     if (buf.MoveNext(max, ref idx, out len) == false)
                         return null;
@@ -247,7 +247,7 @@ namespace Mikodev.Network
             {
                 if (path == null)
                     throw new ArgumentNullException(nameof(path));
-                var key = path.Split(Extension.s_separators);
+                var key = path.Split(Extension.Separator);
                 var val = GetItem(key, nothrow);
                 return val;
             }

@@ -2,12 +2,12 @@
 
 namespace Mikodev.Network.Converters
 {
-    [PacketConverter(typeof(IPAddress))]
+    [Converter(typeof(IPAddress))]
     internal sealed class IPAddressConverter : PacketConverter<IPAddress>
     {
-        public static byte[] ToBytes(IPAddress value) => value.GetAddressBytes();
+        private static byte[] ToBytes(IPAddress value) => value.GetAddressBytes();
 
-        public static IPAddress ToValue(byte[] buffer, int offset, int length) => new IPAddress(Extension.Span(buffer, offset, length));
+        private static IPAddress ToValue(byte[] buffer, int offset, int length) => new IPAddress(Extension.BorrowOrCopy(buffer, offset, length));
 
         public override int Length => 0;
 

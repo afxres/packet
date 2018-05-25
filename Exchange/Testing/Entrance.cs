@@ -445,12 +445,14 @@ namespace Mikodev.Testing
             var b = new sbyte[] { -6, -3, 0, 3, 6, 9 };
             var c = new List<byte> { 192, 128, 64, 0 };
             var d = new List<sbyte> { -14, -7, 0, 7, 14, 21 };
+            var e = new long[] { 0x123456789ABCDEF, 0xFF512429871224, 0x7513A45272CE5B8 };
+            var f = new ulong[] { 0xFEDCBA987654321, 0xFB58412A0C8E5 };
 
             var obj = new
             {
                 a,
                 b,
-                sub = new { c, d },
+                sub = new { c, d, e, f },
             };
 
             var buf = PacketConvert.Serialize(obj);
@@ -460,6 +462,8 @@ namespace Mikodev.Testing
             ThrowIfNotSequenceEqual(b, val.b);
             ThrowIfNotSequenceEqual(c, val.sub.c);
             ThrowIfNotSequenceEqual(d, val.sub.d);
+            ThrowIfNotSequenceEqual(e, val.sub.e);
+            ThrowIfNotSequenceEqual(f, val.sub.f);
         }
 
         [TestMethod]

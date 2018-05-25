@@ -140,16 +140,16 @@ namespace Mikodev.Network
 
         internal static GetInfo GetGetInfo(Type type)
         {
-            if (s_get_infos.TryGetValue(type, out var inf))
+            if (GetInfos.TryGetValue(type, out var inf))
                 return inf;
-            return s_get_infos.GetOrAdd(type, CreateGetInfo(type));
+            return GetInfos.GetOrAdd(type, CreateGetInfo(type));
         }
 
         internal static SetInfo GetSetInfo(Type type)
         {
-            if (s_set_infos.TryGetValue(type, out var inf))
+            if (SetInfos.TryGetValue(type, out var inf))
                 return inf;
-            return s_set_infos.GetOrAdd(type, CreateSetInfo(type));
+            return SetInfos.GetOrAdd(type, CreateSetInfo(type));
         }
     }
 }

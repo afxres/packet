@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using static Mikodev.Network.Extension;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
@@ -13,39 +12,34 @@ namespace Mikodev.Network
     {
         internal const int Length = 256;
 
-        private static readonly ConcurrentDictionary<Type, Info> s_infos = new ConcurrentDictionary<Type, Info>();
-        private static readonly ConcurrentDictionary<Type, GetInfo> s_get_infos = new ConcurrentDictionary<Type, GetInfo>();
-        private static readonly ConcurrentDictionary<Type, SetInfo> s_set_infos = new ConcurrentDictionary<Type, SetInfo>();
+        private static readonly ConcurrentDictionary<Type, Info> Infos = new ConcurrentDictionary<Type, Info>();
+        private static readonly ConcurrentDictionary<Type, GetInfo> GetInfos = new ConcurrentDictionary<Type, GetInfo>();
+        private static readonly ConcurrentDictionary<Type, SetInfo> SetInfos = new ConcurrentDictionary<Type, SetInfo>();
 
         internal static void ClearCache()
         {
-            s_infos.Clear();
-            s_get_infos.Clear();
-            s_set_infos.Clear();
+            Infos.Clear();
+            GetInfos.Clear();
+            SetInfos.Clear();
         }
 
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        internal static PacketConverter GetConverter<T>(ConverterDictionary converters, bool nothrow)
-        {
-            return GetConverter(converters, typeof(T), nothrow);
-        }
+        internal static PacketConverter GetConverter<T>(ConverterDictionary converters, bool nothrow) => GetConverter(converters, typeof(T), nothrow);
 
         internal static PacketConverter GetConverter(ConverterDictionary converters, Type type, bool nothrow)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
-            if (converters != null && converters.TryGetValue(type, out var val))
-                if (val == null)
+            if (converters != null && converters.TryGetValue(type, out var value))
+                if (value == null)
                     goto fail;
-                else return val;
-            if (s_converters.TryGetValue(type, out val))
-                return val;
+                else return value;
+            if (Extension.Converters.TryGetValue(type, out value))
+                return value;
 
-            var inf = GetInfo(type);
-            if (inf.Flag == Info.Enum)
-                return s_converters[inf.ElementType];
+            var info = GetInfo(type);
+            if (info.Flag == Info.Enum)
+                return Extension.Converters[info.ElementType];
 
             fail:
             if (nothrow == true)
@@ -53,19 +47,17 @@ namespace Mikodev.Network
             throw PacketException.InvalidType(type);
         }
 
-#if NET40 == false
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal static Info GetConverterOrInfo(ConverterDictionary converters, Type type, out PacketConverter converter)
         {
             if (converters != null && converters.TryGetValue(type, out converter))
                 return null;
-            if (s_converters.TryGetValue(type, out converter))
+            if (Extension.Converters.TryGetValue(type, out converter))
                 return null;
             var info = GetInfo(type);
             if (info.Flag != Info.Enum)
                 return info;
-            converter = s_converters[info.ElementType];
+            converter = Extension.Converters[info.ElementType];
             return null;
         }
 

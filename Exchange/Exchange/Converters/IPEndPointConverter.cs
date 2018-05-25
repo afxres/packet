@@ -1,26 +1,30 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
-    [PacketConverter(typeof(IPEndPoint))]
+    [Converter(typeof(IPEndPoint))]
     internal sealed class IPEndPointConverter : PacketConverter<IPEndPoint>
     {
-        public static byte[] ToBytes(IPEndPoint value)
+        private static byte[] ToBytes(IPEndPoint value)
         {
-            var add = value.Address.GetAddressBytes();
-            var pot = BitConverter.GetBytes((ushort)value.Port);
-            var res = new byte[add.Length + pot.Length];
-            Buffer.BlockCopy(add, 0, res, 0, add.Length);
-            Buffer.BlockCopy(pot, 0, res, add.Length, pot.Length);
-            return res;
+            var address = value.Address.GetAddressBytes();
+            var result = new byte[address.Length + sizeof(ushort)];
+            Unsafe.CopyBlockUnaligned(ref result[0], ref address[0], (uint)address.Length);
+            Unsafe.WriteUnaligned(ref result[address.Length], (ushort)value.Port);
+            return result;
         }
 
-        public static IPEndPoint ToValue(byte[] buffer, int offset, int length)
+        private static IPEndPoint ToValue(byte[] buffer, int offset, int length)
         {
-            var add = new IPAddress(Extension.Span(buffer, offset, length - sizeof(ushort)));
-            var pot = BitConverter.ToUInt16(buffer, offset + length - sizeof(ushort));
-            return new IPEndPoint(add, pot);
+            var addressLength = length - sizeof(ushort);
+            if (buffer == null || offset < 0 || addressLength < 0 || buffer.Length - offset < length)
+                throw PacketException.Overflow();
+            var addressBuffer = new byte[addressLength];
+            Unsafe.CopyBlockUnaligned(ref addressBuffer[0], ref buffer[offset], (uint)addressLength);
+            var address = new IPAddress(addressBuffer);
+            var port = Unsafe.ReadUnaligned<ushort>(ref buffer[offset + addressLength]);
+            return new IPEndPoint(address, port);
         }
 
         public override int Length => 0;

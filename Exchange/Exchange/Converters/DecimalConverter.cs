@@ -1,36 +1,36 @@
-﻿using System;
+﻿using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
-    [PacketConverter(typeof(Decimal))]
-    internal sealed class DecimalConverter : PacketConverter<Decimal>
+    [Converter(typeof(decimal))]
+    internal sealed class DecimalConverter : PacketConverter<decimal>
     {
-        public static byte[] ToBytes(Decimal value)
+        private static byte[] ToBytes(decimal value)
         {
-            var arr = Decimal.GetBits(value);
-            var buf = new byte[sizeof(Decimal)];
-            for (int i = 0; i < arr.Length; i++)
-                Buffer.BlockCopy(BitConverter.GetBytes(arr[i]), 0, buf, i * sizeof(int), sizeof(int));
-            return buf;
+            var source = decimal.GetBits(value);
+            var target = new byte[sizeof(decimal)];
+            Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<int, byte>(ref source[0]), sizeof(decimal));
+            return target;
         }
 
-        public static Decimal ToValue(byte[] buffer, int offset)
+        private static decimal ToValue(byte[] buffer, int offset, int length)
         {
-            var arr = new int[sizeof(Decimal) / sizeof(int)];
-            for (int i = 0; i < arr.Length; i++)
-                arr[i] = BitConverter.ToInt32(buffer, offset + i * sizeof(int));
-            var val = new Decimal(arr);
-            return val;
+            if (buffer == null || offset < 0 || length < sizeof(decimal) || buffer.Length - offset < length)
+                throw PacketException.Overflow();
+            var target = new int[sizeof(decimal) / sizeof(int)];
+            Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref target[0]), ref buffer[offset], sizeof(decimal));
+            var result = new decimal(target);
+            return result;
         }
 
-        public override int Length => sizeof(Decimal);
+        public override int Length => sizeof(decimal);
 
         public override byte[] GetBytes(decimal value) => ToBytes(value);
 
-        public override decimal GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
+        public override decimal GetValue(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
 
-        public override byte[] GetBytes(object value) => ToBytes((Decimal)value);
+        public override byte[] GetBytes(object value) => ToBytes((decimal)value);
 
-        public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset);
+        public override object GetObject(byte[] buffer, int offset, int length) => ToValue(buffer, offset, length);
     }
 }
