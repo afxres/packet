@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
@@ -8,7 +9,10 @@ namespace Mikodev.Network.Converters
         internal static byte[] ToBytes(T value)
         {
             var buffer = new byte[Unsafe.SizeOf<T>()];
-            Unsafe.WriteUnaligned(ref buffer[0], value);
+            if (BitConverter.IsLittleEndian == Extension.UseLittleEndian)
+                Unsafe.WriteUnaligned(ref buffer[0], value);
+            else
+                Unsafe.WriteUnaligned(ref buffer[0], Extension.ReverseEndianness(value));
             return buffer;
         }
 
@@ -17,7 +21,16 @@ namespace Mikodev.Network.Converters
         {
             if (buffer == null || offset < 0 || length < Unsafe.SizeOf<T>() || buffer.Length - offset < length)
                 throw PacketException.Overflow();
-            return Unsafe.ReadUnaligned<T>(ref buffer[offset]);
+            return ToValueUnchecked(ref buffer[offset]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static T ToValueUnchecked(ref byte location)
+        {
+            if (BitConverter.IsLittleEndian == Extension.UseLittleEndian)
+                return Unsafe.ReadUnaligned<T>(ref location);
+            else
+                return Extension.ReverseEndianness(Unsafe.ReadUnaligned<T>(ref location));
         }
 
         public override int Length => Unsafe.SizeOf<T>();

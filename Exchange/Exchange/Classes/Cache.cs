@@ -47,7 +47,6 @@ namespace Mikodev.Network
             throw PacketException.InvalidType(type);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static Info GetConverterOrInfo(ConverterDictionary converters, Type type, out PacketConverter converter)
         {
             if (converters != null && converters.TryGetValue(type, out converter))

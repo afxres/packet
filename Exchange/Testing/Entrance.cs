@@ -611,7 +611,6 @@ namespace Mikodev.Testing
             var sc = new PacketReader(tc);
 
             Assert.AreEqual(a, sa.GetValue<int>());
-            Assert.AreEqual(a, BitConverter.ToInt32(ta, 0));
             Assert.AreEqual(b, sb.GetValue<string>());
             Assert.AreEqual(b, Encoding.UTF8.GetString(tb));
             ThrowIfNotSequenceEqual(c, sc.GetEnumerable<int>());
@@ -633,7 +632,6 @@ namespace Mikodev.Testing
             var sc = new PacketReader(tc);
 
             Assert.AreEqual(a, sa);
-            Assert.AreEqual(a, BitConverter.ToInt32(ta, 0));
             Assert.AreEqual(b, sb);
             Assert.AreEqual(b, Encoding.UTF8.GetString(tb));
             ThrowIfNotSequenceEqual(c, sc.GetEnumerable<int>());

@@ -71,18 +71,17 @@ namespace Mikodev.Network
         #endregion
 
         #region object -> bytes
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static byte[] GetBytesWrap(this PacketConverter converter, object value)
         {
             try
             {
-                var buf = converter.GetBytes(value);
-                if (buf == null)
-                    buf = UnmanagedArrayConverter<byte>.EmptyArray;
-                var len = converter.Length;
-                if (len > 0 && len != buf.Length)
-                    throw PacketException.ConversionMismatch(len);
-                return buf;
+                var buffer = converter.GetBytes(value);
+                if (buffer == null)
+                    buffer = UnmanagedArrayConverter<byte>.EmptyArray;
+                var define = converter.Length;
+                if (define > 0 && define != buffer.Length)
+                    throw PacketException.ConversionMismatch(define);
+                return buffer;
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {
@@ -90,18 +89,17 @@ namespace Mikodev.Network
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static byte[] GetBytesWrap<T>(this PacketConverter<T> converter, T value)
         {
             try
             {
-                var buf = converter.GetBytes(value);
-                if (buf == null)
-                    buf = UnmanagedArrayConverter<byte>.EmptyArray;
-                var len = converter.Length;
-                if (len > 0 && len != buf.Length)
-                    throw PacketException.ConversionMismatch(len);
-                return buf;
+                var buffer = converter.GetBytes(value);
+                if (buffer == null)
+                    buffer = UnmanagedArrayConverter<byte>.EmptyArray;
+                var define = converter.Length;
+                if (define > 0 && define != buffer.Length)
+                    throw PacketException.ConversionMismatch(define);
+                return buffer;
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {

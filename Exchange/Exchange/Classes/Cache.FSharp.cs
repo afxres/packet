@@ -18,16 +18,16 @@ namespace Mikodev.Network
         {
             if (type.Name != "FSharpList`1" || type.Namespace != FSharpCollectionsNamespace)
                 return false;
-            var fun = ToFSharpListMethodInfo;
-            if (fun != null)
+            var methodInfo = ToFSharpListMethodInfo;
+            if (methodInfo != null)
                 return true;
-            var mod = type.Assembly.GetType("Microsoft.FSharp.Collections.ArrayModule", false, false);
-            if (mod == null)
+            var arrayModule = type.Assembly.GetType("Microsoft.FSharp.Collections.ArrayModule", false, false);
+            if (arrayModule == null)
                 return false;
-            var met = mod.GetMethods().Where(r => r.Name == "ToList").ToArray();
-            if (met.Length != 1)
+            var methods = arrayModule.GetMethods().Where(r => r.Name == "ToList").ToArray();
+            if (methods.Length != 1)
                 return false;
-            ToFSharpListMethodInfo = met[0];
+            ToFSharpListMethodInfo = methods[0];
             return true;
         }
 
@@ -35,10 +35,10 @@ namespace Mikodev.Network
         {
             if (type.Name != "FSharpMap`2" || type.Namespace != FSharpCollectionsNamespace)
                 goto fail;
-            var con = type.GetConstructor(new[] { typeof(IEnumerable<>).MakeGenericType(typeof(Tuple<,>).MakeGenericType(elementTypes)) });
-            if (con == null)
+            var constructor = type.GetConstructor(new[] { typeof(IEnumerable<>).MakeGenericType(typeof(Tuple<,>).MakeGenericType(elementTypes)) });
+            if (constructor == null)
                 goto fail;
-            constructorInfo = con;
+            constructorInfo = constructor;
             return true;
 
             fail:

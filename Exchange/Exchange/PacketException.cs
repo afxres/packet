@@ -8,7 +8,8 @@ namespace Mikodev.Network
     [Serializable]
     public sealed class PacketException : Exception
     {
-        private readonly PacketError error = PacketError.None;
+        private const int RecursionLimits = 64;
+        private const string RecursionError = "Recursion limit of 64 reached";
 
         private static string GetMessage(PacketError code)
         {
@@ -25,26 +26,26 @@ namespace Mikodev.Network
             }
         }
 
-        public PacketError ErrorCode => error;
+        public PacketError ErrorCode { get; private set; } = PacketError.None;
 
-        internal PacketException(PacketError code) : base(GetMessage(code)) => error = code;
+        internal PacketException(PacketError code) : base(GetMessage(code)) => ErrorCode = code;
 
-        internal PacketException(PacketError code, string message) : base(message) => error = code;
+        internal PacketException(PacketError code, string message) : base(message) => ErrorCode = code;
 
-        internal PacketException(PacketError code, Exception exception) : base(GetMessage(code), exception) => error = code;
+        internal PacketException(PacketError code, Exception exception) : base(GetMessage(code), exception) => ErrorCode = code;
 
         internal PacketException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));
-            error = (PacketError)info.GetValue(nameof(PacketError), typeof(PacketError));
+            ErrorCode = (PacketError)info.GetValue(nameof(PacketError), typeof(PacketError));
         }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));
-            info.AddValue(nameof(PacketError), error);
+            info.AddValue(nameof(PacketError), ErrorCode);
             base.GetObjectData(info, context);
         }
 
@@ -76,9 +77,8 @@ namespace Mikodev.Network
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void VerifyRecursionError(ref int level)
         {
-            const int limits = 64;
-            if (level > limits)
-                throw new PacketException(PacketError.RecursionError, $"Recursion limit of {limits} reached");
+            if (level > RecursionLimits)
+                throw new PacketException(PacketError.RecursionError, RecursionError);
             level++;
         }
 

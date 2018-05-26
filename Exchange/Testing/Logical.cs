@@ -51,8 +51,7 @@ namespace Mikodev.Testing
 
         public override bool Equals(object obj)
         {
-            var two = obj as TestTwo;
-            return two != null &&
+            return obj is TestTwo two &&
                    One == two.One &&
                    Two == two.Two;
         }

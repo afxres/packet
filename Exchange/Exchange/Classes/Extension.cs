@@ -66,13 +66,14 @@ namespace Mikodev.Network
             Converters = dictionary;
         }
 
-        internal static bool MoveNext(this byte[] buffer, int max, ref int index, out int length)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool MoveNext(this byte[] buffer, int limits, ref int offset, out int length)
         {
-            if (index < 0 || max - index < sizeof(int))
+            if (offset < 0 || limits - offset < sizeof(int))
                 goto fail;
-            length = Unsafe.ReadUnaligned<int>(ref buffer[index]);
-            index += sizeof(int);
-            if (length < 0 || max - index < length)
+            length = UnmanagedConverter<int>.ToValueUnchecked(ref buffer[offset]);
+            offset += sizeof(int);
+            if (length < 0 || limits - offset < length)
                 goto fail;
             return true;
 
@@ -81,6 +82,7 @@ namespace Mikodev.Network
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
 
         internal static void WriteKey(this Stream stream, string key)

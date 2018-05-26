@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
@@ -13,6 +14,8 @@ namespace Mikodev.Network.Converters
             var targetLength = source.Length * Unsafe.SizeOf<T>();
             var target = new byte[targetLength];
             Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<T, byte>(ref source[0]), (uint)targetLength);
+            if (BitConverter.IsLittleEndian != Extension.UseLittleEndian && Unsafe.SizeOf<T>() != 1)
+                Extension.ReverseEndiannessExplicitly<T>(target);
             return target;
         }
 
@@ -24,6 +27,8 @@ namespace Mikodev.Network.Converters
                 throw PacketException.Overflow();
             var target = new T[length / Unsafe.SizeOf<T>()];
             Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref buffer[offset], (uint)length);
+            if (BitConverter.IsLittleEndian != Extension.UseLittleEndian && Unsafe.SizeOf<T>() != 1)
+                Extension.ReverseEndianness(target);
             return target;
         }
 
