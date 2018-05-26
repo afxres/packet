@@ -48,13 +48,13 @@ namespace Mikodev.Network
 
             try
             {
-                while (idx < max)
+                while (idx != max)
                 {
-                    if (buf.MoveNext(max, ref idx, out len) == false)
+                    if ((len = buf.MoveNextExcept(ref idx, max)) < 0)
                         return null;
                     var key = Extension.Encoding.GetString(buf, idx, len);
                     idx += len;
-                    if (buf.MoveNext(max, ref idx, out len) == false)
+                    if ((len = buf.MoveNextExcept(ref idx, max)) < 0)
                         return null;
                     dic.Add(key, new PacketReader(buf, idx, len, converters));
                     idx += len;
@@ -87,8 +87,7 @@ namespace Mikodev.Network
             var len = 0;
             while (idx != max)
             {
-                if (buf.MoveNext(max, ref idx, out len) == false)
-                    throw PacketException.Overflow();
+                len = buf.MoveNext(ref idx, max, 0);
                 var rea = new PacketReader(buf, idx, len, converters);
                 lst.Add(rea);
                 idx += len;
@@ -186,34 +185,21 @@ namespace Mikodev.Network
                         var len = 0;
 
                         var lst = new List<object>();
-                        while (true)
+                        while (idx != max)
                         {
-                            var res = max - idx;
-                            if (res == 0)
-                                break;
-                            if (keylen > 0)
-                                if (res < keylen)
-                                    goto fail;
-                                else
-                                    len = keylen;
-                            else if (buf.MoveNext(max, ref idx, out len) == false)
-                                goto fail;
+                            len = buf.MoveNext(ref idx, max, keylen);
                             // Wrap error non-check
                             var key = keycon.GetObjectWrap(buf, idx, len);
                             idx += len;
+                            lst.Add(key);
 
-                            if (buf.MoveNext(max, ref idx, out len) == false)
-                                goto fail;
+                            len = buf.MoveNext(ref idx, max, 0);
                             var rea = new PacketReader(buf, idx, len, converters);
                             var val = rea.GetValueMatch(valueInfo.ElementType, level, inf);
-
                             idx += len;
-                            lst.Add(key);
                             lst.Add(val);
                         }
                         return valueInfo.ToDictionaryCast(lst);
-                        fail:
-                        throw PacketException.Overflow();
                     }
                 default:
                     {

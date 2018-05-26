@@ -28,30 +28,22 @@ namespace Mikodev.Network
 
         internal int Max => offset + length;
 
-        internal void MoveNext(int define, ref int index, out int length)
-        {
-            var max = Max;
-            if ((define > 0 && index + define > max) || (define < 1 && buffer.MoveNext(max, ref index, out define) == false))
-                throw PacketException.Overflow();
-            length = define;
-        }
-
         internal object Next(ref int index, PacketConverter converter)
         {
-            var tmp = index;
-            MoveNext(converter.Length, ref tmp, out var len);
-            var res = converter.GetObjectWrap(buffer, tmp, len);
-            index = tmp + len;
-            return res;
+            var offset = index;
+            var length = buffer.MoveNext(ref offset, Max, converter.Length);
+            var result = converter.GetObjectWrap(buffer, offset, length);
+            index = offset + length;
+            return result;
         }
 
         internal T NextAuto<T>(ref int index, PacketConverter converter)
         {
-            var tmp = index;
-            MoveNext(converter.Length, ref tmp, out var len);
-            var res = converter.GetValueWrapAuto<T>(buffer, tmp, len);
-            index = tmp + len;
-            return res;
+            var offset = index;
+            var length = buffer.MoveNext(ref offset, Max, converter.Length);
+            var result = converter.GetValueWrapAuto<T>(buffer, offset, length);
+            index = offset + length;
+            return result;
         }
 
         internal void ToDictionary<TK, TV>(PacketConverter indexConverter, PacketConverter elementConverter, DictionaryAbstract<TK, TV> dictionary)
@@ -68,34 +60,16 @@ namespace Mikodev.Network
 
             try
             {
-                while (true)
+                while (idx != max)
                 {
-                    var sub = max - idx;
-                    if (sub == 0)
-                        break;
-
-                    if (keylen > 0)
-                        if (sub < keylen)
-                            goto fail;
-                        else
-                            len = keylen;
-                    else if (buffer.MoveNext(max, ref idx, out len) == false)
-                        goto fail;
-
+                    len = buffer.MoveNext(ref idx, max, keylen);
                     var key = (keygen != null ? keygen.GetValue(buffer, idx, len) : (TK)indexConverter.GetObject(buffer, idx, len));
                     idx += len;
-                    sub = max - idx;
 
-                    if (vallen > 0)
-                        if (sub < vallen)
-                            goto fail;
-                        else
-                            len = vallen;
-                    else if (buffer.MoveNext(max, ref idx, out len) == false)
-                        goto fail;
-
+                    len = buffer.MoveNext(ref idx, max, vallen);
                     var val = (valgen != null ? valgen.GetValue(buffer, idx, len) : (TV)elementConverter.GetObject(buffer, idx, len));
                     idx += len;
+
                     dictionary.Add(key, val);
                 }
             }
@@ -103,10 +77,6 @@ namespace Mikodev.Network
             {
                 throw PacketException.ConversionError(ex);
             }
-
-            return;
-            fail:
-            throw PacketException.Overflow();
         }
 
         internal T[] ToArray<T>(PacketConverter converter)
