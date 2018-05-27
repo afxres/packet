@@ -214,6 +214,17 @@ namespace Mikodev.Testing
         }
     }
 
+    internal class TestAddOnlyList<T> : IEnumerable<T>
+    {
+        private readonly List<T> list = new List<T>();
+
+        public void Add(T item) => list.Add(item);
+
+        public IEnumerator<T> GetEnumerator() => list.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => list.GetEnumerator();
+    }
+
     [TestClass]
     public class Logical
     {
@@ -527,6 +538,31 @@ namespace Mikodev.Testing
             ThrowIfNotSequenceEqual(od, rdy);
             ThrowIfNotSequenceEqual(obj.a, rax);
             ThrowIfNotSequenceEqual(obj.a, ray);
+            return;
+        }
+
+        [TestMethod]
+        public void CollectionWithAddFunction()
+        {
+            var random = new Random();
+            TestAddOnlyList<T> ToAddOnlyList<T>(IEnumerable<T> enumerable)
+            {
+                var list = new TestAddOnlyList<T>();
+                foreach (var i in enumerable)
+                    list.Add(i);
+                return list;
+            }
+            var xa = Enumerable.Range(0, 4).Select(r => random.Next()).ToArray();
+            var la = ToAddOnlyList(xa);
+            var ta = PacketConvert.Serialize(la);
+            var ra = PacketConvert.Deserialize<TestAddOnlyList<int>>(ta);
+            ThrowIfNotSequenceEqual(ra, xa);
+
+            var xb = Enumerable.Range(0, 4).Select(r => new { id = random.Next(), text = random.Next().ToString("x") }).ToArray();
+            var lb = ToAddOnlyList(xb);
+            var tb = PacketConvert.Serialize(lb);
+            var rb = PacketConvert.Deserialize(tb, lb);
+            ThrowIfNotSequenceEqual(rb, xb);
             return;
         }
     }

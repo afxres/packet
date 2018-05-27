@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -42,6 +43,7 @@ namespace Mikodev.Network
                     return GetInfoFromIDictionary(info, genericArgs);
             }
 
+            var interfaces = type.GetInterfaces();
             if (type.IsArray)
             {
                 genericArgs = GetInfoFromArray(info, type);
@@ -52,7 +54,7 @@ namespace Mikodev.Network
                     GetInfoFromFSharpList(info, genericArgs[0]);
                 else if (genericDefinition == typeof(List<>))
                     GetInfoFromList(info, genericArgs[0], type);
-                else
+                else if (interfaces.Contains(typeof(IEnumerable)))
                     GetInfoFromCollection(info, genericArgs[0], type);
             }
             else if (generic && genericArgs.Length == 2)
@@ -63,7 +65,6 @@ namespace Mikodev.Network
                     GetInfoFromDictionary(info, genericArgs);
             }
 
-            var interfaces = type.GetInterfaces();
             if (info.From == Info.None)
             {
                 GetInfoFindImplementation(info, genericArgs, interfaces);
@@ -208,6 +209,7 @@ namespace Mikodev.Network
             var functor = default(Func<PacketReader, PacketConverter, object>);
             if ((functor = GetToCollectionFunction(type, elementType, out var constructor)) != null)
             {
+                /* .ctor(IEnumerable<T> items) */
                 info.ElementType = elementType;
                 info.To = Info.Collection;
                 info.ToCollection = functor;
@@ -215,6 +217,7 @@ namespace Mikodev.Network
             }
             else if ((functor = GetToCollectionFunction(type, elementType, out var non, out var add)) != null)
             {
+                /* foreach -> Add(T item) */
                 info.ElementType = elementType;
                 info.To = Info.Collection;
                 info.ToCollection = functor;
