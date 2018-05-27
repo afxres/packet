@@ -205,13 +205,20 @@ namespace Mikodev.Network
 
         private static void GetInfoFromCollection(Info info, Type elementType, Type type)
         {
-            var functor = GetToCollectionFunction(type, elementType, out var constructor);
-            if (functor != null)
+            var functor = default(Func<PacketReader, PacketConverter, object>);
+            if ((functor = GetToCollectionFunction(type, elementType, out var constructor)) != null)
             {
                 info.ElementType = elementType;
                 info.To = Info.Collection;
                 info.ToCollection = functor;
                 info.ToCollectionCast = GetCastCollectionFunction(elementType, constructor);
+            }
+            else if ((functor = GetToCollectionFunction(type, elementType, out var non, out var add)) != null)
+            {
+                info.ElementType = elementType;
+                info.To = Info.Collection;
+                info.ToCollection = functor;
+                info.ToCollectionCast = GetCastCollectionFunction(elementType, non, add);
             }
         }
 

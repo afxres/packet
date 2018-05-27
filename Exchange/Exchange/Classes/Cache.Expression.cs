@@ -54,6 +54,41 @@ namespace Mikodev.Network
             return fun;
         }
 
+        private static Func<PacketReader, PacketConverter, object> GetToCollectionFunction(Type type, Type elementType, out ConstructorInfo constructor, out MethodInfo add)
+        {
+            constructor = type.GetConstructor(Type.EmptyTypes);
+            add = type.GetMethod("Add", BindingFlags.Instance | BindingFlags.Public, null, new[] { elementType }, null);
+            if (constructor == null || add == null)
+                return null;
+            var converter = Expression.Parameter(typeof(PacketConverter), "converter");
+            var reader = Expression.Parameter(typeof(PacketReader), "reader");
+            var method = ToArrayMethodInfo.MakeGenericMethod(elementType);
+            var result = AddCollectionFromArray(elementType, Expression.Call(method, reader, converter), constructor, add);
+            var expression = Expression.Lambda<Func<PacketReader, PacketConverter, object>>(result, reader, converter);
+            var functor = expression.Compile();
+            return functor;
+        }
+
+        private static Expression AddCollectionFromArray(Type elementType, Expression value, ConstructorInfo constructor, MethodInfo add)
+        {
+            var instance = Expression.Variable(constructor.DeclaringType, "collection");
+            var array = Expression.Variable(value.Type, "array");
+            var index = Expression.Variable(typeof(int), "index");
+            var label = Expression.Label(typeof(object), "result");
+            var block = Expression.Block(
+                new[] { instance, array, index },
+                Expression.Assign(instance, Expression.New(constructor)),
+                Expression.Assign(array, value),
+                Expression.Assign(index, Expression.Constant(0)),
+                Expression.Loop(
+                    Expression.IfThenElse(
+                        Expression.LessThan(index, Expression.ArrayLength(array)),
+                        Expression.Call(instance, add, Expression.ArrayAccess(array, Expression.PostIncrementAssign(index))),
+                        Expression.Break(label, Expression.Convert(instance, typeof(object)))),
+                    label));
+            return block;
+        }
+
         private static Func<PacketReader, PacketConverter, PacketConverter, object> GetToDictionaryFunction(params Type[] types)
         {
             var rea = Expression.Parameter(typeof(PacketReader), "reader");
@@ -80,7 +115,7 @@ namespace Mikodev.Network
 
         private static Expression GetCastArrayExpression(Type elementType, out ParameterExpression parameter)
         {
-            parameter = Expression.Parameter(typeof(object[]), "parameter");
+            parameter = Expression.Parameter(typeof(object[]), "objects");
             if (elementType == typeof(object))
                 return parameter;
             var len = Expression.ArrayLength(parameter);
@@ -88,7 +123,7 @@ namespace Mikodev.Network
             var loc = Expression.Variable(elementType.MakeArrayType(), "destination");
             var ass = Expression.Assign(loc, dst);
             var cpy = Expression.Call(CopyArrayMethodInfo, parameter, loc, len);
-            var blk = Expression.Block(new ParameterExpression[] { loc }, new Expression[] { ass, cpy, loc });
+            var blk = Expression.Block(new[] { loc }, new Expression[] { ass, cpy, loc });
             return blk;
         }
 
@@ -110,11 +145,20 @@ namespace Mikodev.Network
             return fun;
         }
 
-        private static Func<object[], object> GetCastCollectionFunction(Type elementType, ConstructorInfo constructorInfo)
+        private static Func<object[], object> GetCastCollectionFunction(Type elementType, ConstructorInfo constructor)
         {
             var blk = GetCastArrayExpression(elementType, out var arr);
-            var inv = Expression.New(constructorInfo, blk);
+            var inv = Expression.New(constructor, blk);
             var box = Expression.Convert(inv, typeof(object));
+            var exp = Expression.Lambda<Func<object[], object>>(box, arr);
+            var fun = exp.Compile();
+            return fun;
+        }
+
+        private static Func<object[], object> GetCastCollectionFunction(Type elementType, ConstructorInfo constructor, MethodInfo add)
+        {
+            var blk = GetCastArrayExpression(elementType, out var arr);
+            var box = AddCollectionFromArray(elementType, blk, constructor, add);
             var exp = Expression.Lambda<Func<object[], object>>(box, arr);
             var fun = exp.Compile();
             return fun;
