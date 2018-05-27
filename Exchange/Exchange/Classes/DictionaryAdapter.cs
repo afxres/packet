@@ -22,7 +22,6 @@ namespace Mikodev.Network
             else
                 foreach (var i in dictionary)
                     yield return new KeyValuePair<byte[], object>(converter.GetBytesWrap(i.Key), i.Value);
-            yield break;
         }
 
         IEnumerator IEnumerable.GetEnumerator() => Enumerator();

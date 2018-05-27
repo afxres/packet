@@ -26,12 +26,12 @@ namespace Mikodev.Network
             this.length = length;
         }
 
-        internal int Max => offset + length;
+        internal int Limits => offset + length;
 
         internal object Next(ref int index, PacketConverter converter)
         {
             var offset = index;
-            var length = buffer.MoveNext(ref offset, Max, converter.Length);
+            var length = buffer.MoveNextExcept(ref offset, Limits, converter.Length);
             var result = converter.GetObjectWrap(buffer, offset, length);
             index = offset + length;
             return result;
@@ -40,7 +40,7 @@ namespace Mikodev.Network
         internal T NextAuto<T>(ref int index, PacketConverter converter)
         {
             var offset = index;
-            var length = buffer.MoveNext(ref offset, Max, converter.Length);
+            var length = buffer.MoveNextExcept(ref offset, Limits, converter.Length);
             var result = converter.GetValueWrapAuto<T>(buffer, offset, length);
             index = offset + length;
             return result;
@@ -52,9 +52,9 @@ namespace Mikodev.Network
                 return;
             var keygen = indexConverter as PacketConverter<TK>;
             var valgen = elementConverter as PacketConverter<TV>;
-            var keylen = indexConverter.Length;
-            var vallen = elementConverter.Length;
-            var max = Max;
+            var keydef = indexConverter.Length;
+            var valdef = elementConverter.Length;
+            var max = Limits;
             var idx = offset;
             var len = 0;
 
@@ -62,11 +62,11 @@ namespace Mikodev.Network
             {
                 while (idx != max)
                 {
-                    len = buffer.MoveNext(ref idx, max, keylen);
+                    len = buffer.MoveNextExcept(ref idx, max, keydef);
                     var key = (keygen != null ? keygen.GetValue(buffer, idx, len) : (TK)indexConverter.GetObject(buffer, idx, len));
                     idx += len;
 
-                    len = buffer.MoveNext(ref idx, max, vallen);
+                    len = buffer.MoveNextExcept(ref idx, max, valdef);
                     var val = (valgen != null ? valgen.GetValue(buffer, idx, len) : (TV)elementConverter.GetObject(buffer, idx, len));
                     idx += len;
 

@@ -42,7 +42,7 @@ namespace Mikodev.Network
 
             var dic = new Dictionary<string, PacketReader>();
             var buf = element.buffer;
-            var max = element.Max;
+            var max = element.Limits;
             var idx = element.offset;
             var len = 0;
 
@@ -50,11 +50,11 @@ namespace Mikodev.Network
             {
                 while (idx != max)
                 {
-                    if ((len = buf.MoveNextExcept(ref idx, max)) < 0)
+                    if ((len = buf.MoveNext(ref idx, max)) < 0)
                         return null;
                     var key = Extension.Encoding.GetString(buf, idx, len);
                     idx += len;
-                    if ((len = buf.MoveNextExcept(ref idx, max)) < 0)
+                    if ((len = buf.MoveNext(ref idx, max)) < 0)
                         return null;
                     dic.Add(key, new PacketReader(buf, idx, len, converters));
                     idx += len;
@@ -81,13 +81,13 @@ namespace Mikodev.Network
             tag |= TagArray;
 
             var lst = new List<PacketReader>();
-            var max = element.Max;
+            var max = element.Limits;
             var idx = element.offset;
             var buf = element.buffer;
             var len = 0;
             while (idx != max)
             {
-                len = buf.MoveNext(ref idx, max, 0);
+                len = buf.MoveNextExcept(ref idx, max, 0);
                 var rea = new PacketReader(buf, idx, len, converters);
                 lst.Add(rea);
                 idx += len;
@@ -178,22 +178,22 @@ namespace Mikodev.Network
                         if (inf == null)
                             return valueInfo.ToDictionary(this, keycon, con);
 
-                        var max = element.Max;
+                        var max = element.Limits;
                         var idx = element.offset;
                         var buf = element.buffer;
-                        var keylen = keycon.Length;
+                        var keydef = keycon.Length;
                         var len = 0;
 
                         var lst = new List<object>();
                         while (idx != max)
                         {
-                            len = buf.MoveNext(ref idx, max, keylen);
+                            len = buf.MoveNextExcept(ref idx, max, keydef);
                             // Wrap error non-check
                             var key = keycon.GetObjectWrap(buf, idx, len);
                             idx += len;
                             lst.Add(key);
 
-                            len = buf.MoveNext(ref idx, max, 0);
+                            len = buf.MoveNextExcept(ref idx, max, 0);
                             var rea = new PacketReader(buf, idx, len, converters);
                             var val = rea.GetValueMatch(valueInfo.ElementType, level, inf);
                             idx += len;

@@ -17,8 +17,7 @@ namespace Mikodev.Network
         static Extension()
         {
             var dictionary = new ConverterDictionary();
-            var assembly = typeof(Extension).Assembly;
-            var assemblyTypes = assembly.GetTypes();
+            var assemblyTypes = typeof(Extension).Assembly.GetTypes();
             var unmanagedConverterType = typeof(UnmanagedConverter<>);
             var unmanagedArrayConverterType = typeof(UnmanagedArrayConverter<>);
             var unmanagedElementTypes = new[]
@@ -66,7 +65,7 @@ namespace Mikodev.Network
             Converters = dictionary;
         }
 
-        internal static int MoveNextExcept(this byte[] buffer, ref int offset, int limits)
+        internal static int MoveNext(this byte[] buffer, ref int offset, int limits)
         {
             var cursor = offset;
             if (limits - cursor < sizeof(int))
@@ -79,7 +78,7 @@ namespace Mikodev.Network
             return length;
         }
 
-        internal static int MoveNext(this byte[] buffer, ref int offset, int limits, int define)
+        internal static int MoveNextExcept(this byte[] buffer, ref int offset, int limits, int define)
         {
             if (define > 0)
             {
@@ -89,7 +88,7 @@ namespace Mikodev.Network
             }
             else
             {
-                var length = MoveNextExcept(buffer, ref offset, limits);
+                var length = MoveNext(buffer, ref offset, limits);
                 if (length < 0)
                     goto fail;
                 return length;
