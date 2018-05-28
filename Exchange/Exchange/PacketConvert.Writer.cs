@@ -75,11 +75,12 @@ namespace Mikodev.Network
             if (value != null)
             {
                 if (value is T[] arr)
-                    val = Cache.GetBytesFromArray(con, arr);
+                    val = Convert.FromArray(con, arr);
                 else if (value is List<T> lst)
-                    val = Cache.GetBytesFromList(con, lst);
+                    val = Convert.FromList(con, lst);
                 else
-                    val = Cache.GetBytesFromEnumerable(con, value);
+                    val = Convert.FromEnumerable(con, value);
+
             }
             var sub = new PacketWriter(writer.converters, new PacketWriter.Item(val, con.Length));
             var itm = writer.GetDictionary();
@@ -94,7 +95,7 @@ namespace Mikodev.Network
 
             var keycon = Cache.GetConverter<TK>(writer.converters, false);
             var valcon = Cache.GetConverter<TV>(writer.converters, false);
-            var val = (value == null ? null : Cache.GetBytesFromDictionary(keycon, valcon, value));
+            var val = (value == null ? null : Convert.FromDictionary(keycon, valcon, value));
             var sub = new PacketWriter(writer.converters, new PacketWriter.Item(val, keycon.Length, valcon.Length));
             var itm = writer.GetDictionary();
             itm[key] = sub;

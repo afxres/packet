@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
@@ -38,7 +37,7 @@ namespace Mikodev.Network
                 return value;
 
             var info = GetInfo(type);
-            if (info.Flag == Info.Enum)
+            if (info.Flag == InfoFlags.Enum)
                 return Extension.Converters[info.ElementType];
 
             fail:
@@ -54,12 +53,13 @@ namespace Mikodev.Network
             if (Extension.Converters.TryGetValue(type, out converter))
                 return null;
             var info = GetInfo(type);
-            if (info.Flag != Info.Enum)
+            if (info.Flag != InfoFlags.Enum)
                 return info;
             converter = Extension.Converters[info.ElementType];
             return null;
         }
 
+        #region get bytes
         internal static byte[] GetBytes(Type type, ConverterDictionary converters, object value)
         {
             var con = GetConverter(converters, type, false);
@@ -82,61 +82,6 @@ namespace Mikodev.Network
                 lst.Add(converter.GetBytesWrap(i));
             return lst.ToArray();
         }
-
-        internal static byte[][] GetBytesFromArray<T>(PacketConverter converter, T[] array)
-        {
-            var res = new byte[array.Length][];
-            if (converter is PacketConverter<T> gen)
-                for (int i = 0; i < array.Length; i++)
-                    res[i] = gen.GetBytesWrap(array[i]);
-            else
-                for (int i = 0; i < array.Length; i++)
-                    res[i] = converter.GetBytesWrap(array[i]);
-            return res;
-        }
-
-        internal static byte[][] GetBytesFromList<T>(PacketConverter converter, List<T> list)
-        {
-            var res = new byte[list.Count][];
-            if (converter is PacketConverter<T> gen)
-                for (int i = 0; i < list.Count; i++)
-                    res[i] = gen.GetBytesWrap(list[i]);
-            else
-                for (int i = 0; i < list.Count; i++)
-                    res[i] = converter.GetBytesWrap(list[i]);
-            return res;
-        }
-
-        internal static byte[][] GetBytesFromEnumerable<T>(PacketConverter converter, IEnumerable<T> enumerable)
-        {
-            if (enumerable is ICollection<T> col && col.Count > 15)
-                return GetBytesFromArray(converter, col.ToArray());
-
-            var res = new List<byte[]>();
-            if (converter is PacketConverter<T> gen)
-                foreach (var i in enumerable)
-                    res.Add(gen.GetBytesWrap(i));
-            else
-                foreach (var i in enumerable)
-                    res.Add(converter.GetBytesWrap(i));
-            return res.ToArray();
-        }
-
-        internal static List<KeyValuePair<byte[], byte[]>> GetBytesFromDictionary<TK, TV>(PacketConverter indexConverter, PacketConverter elementConverter, IEnumerable<KeyValuePair<TK, TV>> enumerable)
-        {
-            var res = new List<KeyValuePair<byte[], byte[]>>();
-            var keygen = indexConverter as PacketConverter<TK>;
-            var valgen = elementConverter as PacketConverter<TV>;
-
-            foreach (var i in enumerable)
-            {
-                var key = i.Key;
-                var val = i.Value;
-                var keybuf = (keygen != null ? keygen.GetBytesWrap(key) : indexConverter.GetBytesWrap(key));
-                var valbuf = (valgen != null ? valgen.GetBytesWrap(val) : elementConverter.GetBytesWrap(val));
-                res.Add(new KeyValuePair<byte[], byte[]>(keybuf, valbuf));
-            }
-            return res;
-        }
+        #endregion
     }
 }

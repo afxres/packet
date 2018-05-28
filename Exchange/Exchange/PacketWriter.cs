@@ -77,16 +77,16 @@ namespace Mikodev.Network
 
             switch (valueInfo.From)
             {
-                case Info.Writer:
+                case InfoFlags.Writer:
                     return ((PacketWriter)value).item;
-                case Info.RawWriter:
+                case InfoFlags.RawWriter:
                     return new Item(((PacketRawWriter)value).stream);
-                case Info.Bytes:
+                case InfoFlags.Bytes:
                     return new Item(((ICollection<byte>)value).ToBytes());
-                case Info.SBytes:
+                case InfoFlags.SBytes:
                     return new Item(((ICollection<sbyte>)value).ToBytes());
 
-                case Info.Enumerable:
+                case InfoFlags.Enumerable:
                     {
                         var ele = valueInfo.ElementType;
                         var inf = Cache.GetConverterOrInfo(converters, ele, out var con);
@@ -98,7 +98,7 @@ namespace Mikodev.Network
                             lst.Add(GetItemMatch(converters, i, level, inf));
                         return new Item(lst);
                     }
-                case Info.Dictionary:
+                case InfoFlags.Dictionary:
                     {
                         var key = Cache.GetConverter(converters, valueInfo.IndexType, true);
                         if (key == null)
@@ -118,7 +118,7 @@ namespace Mikodev.Network
                         }
                         return new Item(lst, key.Length);
                     }
-                case Info.Map:
+                case InfoFlags.Expando:
                     {
                         var dic = (IDictionary<string, object>)value;
                         var lst = new Dictionary<string, PacketWriter>();

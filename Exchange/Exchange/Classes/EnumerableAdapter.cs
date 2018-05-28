@@ -9,18 +9,18 @@ namespace Mikodev.Network
         private readonly Info info;
         private readonly int level;
 
-        internal EnumerableAdapter(PacketReader reader, int level, Info info)
+        internal EnumerableAdapter(PacketReader reader, Info info, int level)
         {
             this.reader = reader;
-            this.level = level;
             this.info = info;
+            this.level = level;
         }
 
         private IEnumerator<T> Enumerator()
         {
-            var lst = reader.GetList();
-            for (int i = 0; i < lst.Count; i++)
-                yield return (T)lst[i].GetValueMatch(typeof(T), level, info);
+            var list = reader.GetList();
+            for (int i = 0; i < list.Count; i++)
+                yield return (T)list[i].GetValueMatch(typeof(T), level, info);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => Enumerator();

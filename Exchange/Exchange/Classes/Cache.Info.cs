@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace Mikodev.Network
 {
@@ -22,7 +21,7 @@ namespace Mikodev.Network
                 return info;
             if (type.IsEnum)
             {
-                info.Flag = Info.Enum;
+                info.Flag = InfoFlags.Enum;
                 info.ElementType = Enum.GetUnderlyingType(type);
                 return info;
             }
@@ -50,32 +49,54 @@ namespace Mikodev.Network
             }
             else if (generic && genericArgs.Length == 1)
             {
-                if (IsFSharpList(type))
-                    GetInfoFromFSharpList(info, genericArgs[0]);
+                var elementType = genericArgs[0];
+                if (Convert.ToFSharpListFunc(type, elementType, out var collectionFunc, out var collectionExtFunc))
+                {
+                    info.To = InfoFlags.Collection;
+                    info.ToCollection = collectionFunc;
+                    info.ToCollectionExt = collectionExtFunc;
+                }
                 else if (genericDefinition == typeof(List<>))
-                    GetInfoFromList(info, genericArgs[0], type);
+                {
+                    GetInfoFromList(info, elementType, type);
+                }
                 else if (interfaces.Contains(typeof(IEnumerable)))
-                    GetInfoFromCollection(info, genericArgs[0], type);
+                {
+                    if (Convert.ToCollectionByConstructorFunc(type, elementType, out collectionFunc, out collectionExtFunc) ||
+                        Convert.ToCollectionByAddFunc(type, elementType, out collectionFunc, out collectionExtFunc))
+                    {
+                        info.ElementType = elementType;
+                        info.To = InfoFlags.Collection;
+                        info.ToCollection = collectionFunc;
+                        info.ToCollectionExt = collectionExtFunc;
+                    }
+                }
             }
             else if (generic && genericArgs.Length == 2)
             {
-                if (IsFSharpMap(type, genericArgs, out var constructorInfo))
-                    GetInfoFromFSharpMap(info, genericArgs, constructorInfo);
+                if (Convert.ToFSharpMapFunc(type, genericArgs, out var dictionaryFunc, out var dictionaryExtFunc))
+                {
+                    info.To = InfoFlags.Dictionary;
+                    info.ToDictionary = dictionaryFunc;
+                    info.ToDictionaryExt = dictionaryExtFunc;
+                }
                 else if (genericDefinition == typeof(Dictionary<,>))
+                {
                     GetInfoFromDictionary(info, genericArgs);
+                }
             }
 
-            if (info.From == Info.None)
+            if (info.From == InfoFlags.None)
             {
                 GetInfoFindImplementation(info, genericArgs, interfaces);
             }
 
-            if (info.From == Info.Enumerable)
+            if (info.From == InfoFlags.Enumerable)
             {
                 if (info.ElementType == typeof(byte) && interfaces.Contains(typeof(ICollection<byte>)))
-                    info.From = Info.Bytes;
+                    info.From = InfoFlags.Bytes;
                 else if (info.ElementType == typeof(sbyte) && interfaces.Contains(typeof(ICollection<sbyte>)))
-                    info.From = Info.SBytes;
+                    info.From = InfoFlags.SBytes;
             }
             return info;
         }
@@ -83,7 +104,7 @@ namespace Mikodev.Network
         private static void GetInfoFindImplementation(Info info, Type[] genericArgs, Type[] interfaces)
         {
             if (interfaces.Contains(typeof(IDictionary<string, object>)))
-                info.From = Info.Map;
+                info.From = InfoFlags.Expando;
 
             var baseList = interfaces
                 .Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>))
@@ -110,7 +131,7 @@ namespace Mikodev.Network
                 }
                 else
                 {
-                    info.From = Info.Enumerable;
+                    info.From = InfoFlags.Enumerable;
                     info.ElementType = enumerable.ElementType;
                     info.FromEnumerable = enumerable.FromEnumerable;
                 }
@@ -121,16 +142,9 @@ namespace Mikodev.Network
         {
             var baseType = typeof(IDictionary<,>).MakeGenericType(genericArgs);
             var baseInfo = GetInfo(baseType);
-            info.To = Info.Dictionary;
+            info.To = InfoFlags.Dictionary;
             info.ToDictionary = baseInfo.ToDictionary;
-            info.ToDictionaryCast = baseInfo.ToDictionaryCast;
-        }
-
-        private static void GetInfoFromFSharpMap(Info info, Type[] genericArgs, ConstructorInfo constructorInfo)
-        {
-            info.To = Info.Dictionary;
-            info.ToDictionary = GetToFSharpMapFunction(constructorInfo, genericArgs);
-            info.ToDictionaryCast = GetCastFSharpMapFunction(constructorInfo, genericArgs);
+            info.ToDictionaryExt = baseInfo.ToDictionaryExt;
         }
 
         private static Info GetInfoFromIDictionary(Info info, Type[] genericArgs)
@@ -139,9 +153,9 @@ namespace Mikodev.Network
             var enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
             var enumerableInfo = GetInfo(enumerableType);
             GetInfoFromDictionary(info, enumerableInfo, genericArgs);
-            info.To = Info.Dictionary;
-            info.ToDictionary = GetToDictionaryFunction(genericArgs);
-            info.ToDictionaryCast = GetCastDictionaryFunction(genericArgs);
+            info.To = InfoFlags.Dictionary;
+            info.ToDictionary = Convert.ToDictionaryFunc(genericArgs);
+            info.ToDictionaryExt = Convert.ToDictionaryExtFunc(genericArgs);
             return info;
         }
 
@@ -149,9 +163,9 @@ namespace Mikodev.Network
         {
             var elementType = genericArgs[0];
             info.ElementType = elementType;
-            info.To = Info.Collection; // to list
-            info.ToCollection = GetToFunction(ToListMethodInfo, elementType);
-            info.ToCollectionCast = GetCastListFunction(elementType); // cast to list
+            info.To = InfoFlags.Collection; // to list
+            info.ToCollection = Convert.ToListFunc(elementType);
+            info.ToCollectionExt = Convert.ToListExtFunc(elementType);
             return info;
         }
 
@@ -159,10 +173,10 @@ namespace Mikodev.Network
         {
             var elementType = genericArgs[0];
             info.ElementType = elementType;
-            info.To = Info.Collection; // to icollection
+            info.To = InfoFlags.Collection; // to icollection
             var basicArray = GetInfo(elementType.MakeArrayType());
             info.ToCollection = basicArray.ToCollection;
-            info.ToCollectionCast = basicArray.ToCollectionCast;
+            info.ToCollectionExt = basicArray.ToCollectionExt;
             return info;
         }
 
@@ -170,59 +184,31 @@ namespace Mikodev.Network
         {
             var elementType = genericArgs[0];
             info.ElementType = elementType;
-            info.To = Info.Enumerable;
-            info.ToEnumerable = GetToFunction(ToEnumerableMethodInfo, elementType);
-            info.ToEnumerableAdapter = GetToEnumerableAdapter(elementType);
+            info.To = InfoFlags.Enumerable;
+            info.ToEnumerable = Convert.ToEnumerableFunc(elementType);
+            info.ToEnumerableAdapter = Convert.ToEnumerableAdapterFunc(elementType);
 
             // From ... function
-            info.From = Info.Enumerable;
-            info.FromEnumerable = GetFromEnumerableFunction(FromEnumerableMethodInfo.MakeGenericMethod(elementType), interfaceType);
+            info.From = InfoFlags.Enumerable;
+            info.FromEnumerable = Convert.FromEnumerableFunc(interfaceType, elementType);
             if (elementType.IsGenericType && elementType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
             {
                 var arguments = elementType.GetGenericArguments();
-                info.FromDictionary = GetFromDictionaryFunction(arguments);
-                info.FromDictionaryAdapter = GetFromAdapterFunction(arguments);
+                info.FromDictionary = Convert.FromDictionaryFunc(arguments);
+                info.FromDictionaryAdapter = Convert.FromDictionaryAdapterFunc(arguments);
             }
             return info;
-        }
-
-        private static void GetInfoFromFSharpList(Info info, Type elementType)
-        {
-            info.To = Info.Collection;
-            info.ToCollection = GetToFSharpListFunction(elementType);
-            info.ToCollectionCast = GetCastFSharpListFunction(elementType);
         }
 
         private static void GetInfoFromList(Info info, Type elementType, Type type)
         {
             var basicInfo = GetInfo(typeof(IList<>).MakeGenericType(elementType));
             info.ElementType = elementType;
-            info.From = Info.Enumerable;
-            info.To = Info.Collection; // to list
-            info.FromEnumerable = GetFromEnumerableFunction(FromListMethodInfo.MakeGenericMethod(elementType), type);
+            info.From = InfoFlags.Enumerable;
+            info.To = InfoFlags.Collection; // to list
+            info.FromEnumerable = Convert.FromListFunc(type, elementType);
             info.ToCollection = basicInfo.ToCollection;
-            info.ToCollectionCast = basicInfo.ToCollectionCast;
-        }
-
-        private static void GetInfoFromCollection(Info info, Type elementType, Type type)
-        {
-            var functor = default(Func<PacketReader, PacketConverter, object>);
-            if ((functor = GetToCollectionFunction(type, elementType, out var constructor)) != null)
-            {
-                /* .ctor(IEnumerable<T> items) */
-                info.ElementType = elementType;
-                info.To = Info.Collection;
-                info.ToCollection = functor;
-                info.ToCollectionCast = GetCastCollectionFunction(elementType, constructor);
-            }
-            else if ((functor = GetToCollectionFunction(type, elementType, out var non, out var add)) != null)
-            {
-                /* foreach -> Add(T item) */
-                info.ElementType = elementType;
-                info.To = Info.Collection;
-                info.ToCollection = functor;
-                info.ToCollectionCast = GetCastCollectionFunction(elementType, non, add);
-            }
+            info.ToCollectionExt = basicInfo.ToCollectionExt;
         }
 
         private static Type[] GetInfoFromArray(Info info, Type type)
@@ -232,20 +218,20 @@ namespace Mikodev.Network
             var elementType = type.GetElementType();
             info.ElementType = elementType;
 
-            info.From = Info.Enumerable;
-            info.To = Info.Collection; // to array
-            info.FromEnumerable = GetFromEnumerableFunction(FromArrayMethodInfo.MakeGenericMethod(elementType), type);
-            info.ToCollection = GetToFunction(ToArrayMethodInfo, elementType);
-            info.ToCollectionCast = GetCastArrayFunction(elementType); // cast to array
+            info.From = InfoFlags.Enumerable;
+            info.To = InfoFlags.Collection; // to array
+            info.FromEnumerable = Convert.FromArrayFunc(type, elementType);
+            info.ToCollection = Convert.ToArrayFunc(elementType);
+            info.ToCollectionExt = Convert.ToArrayExtFunc(elementType);
             return new[] { elementType };
         }
 
         private static void GetInfoFromDictionary(Info info, Info enumerableInfo, params Type[] types)
         {
             if (types[0] == typeof(string) && types[1] == typeof(object))
-                info.From = Info.Map;
+                info.From = InfoFlags.Expando;
             else
-                info.From = Info.Dictionary;
+                info.From = InfoFlags.Dictionary;
             info.IndexType = types[0];
             info.ElementType = types[1];
             info.FromDictionary = enumerableInfo.FromDictionary;
@@ -255,13 +241,13 @@ namespace Mikodev.Network
         private static bool IsBasicType(Info info, Type type)
         {
             if (type == typeof(PacketWriter))
-                info.From = Info.Writer;
+                info.From = InfoFlags.Writer;
             else if (type == typeof(PacketRawWriter))
-                info.From = Info.RawWriter;
+                info.From = InfoFlags.RawWriter;
             else if (type == typeof(PacketReader) || type == typeof(object))
-                info.To = Info.Reader;
+                info.To = InfoFlags.Reader;
             else if (type == typeof(PacketRawReader))
-                info.To = Info.RawReader;
+                info.To = InfoFlags.RawReader;
             else
                 return false;
             return true;

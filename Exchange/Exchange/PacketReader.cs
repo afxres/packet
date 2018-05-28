@@ -144,12 +144,12 @@ namespace Mikodev.Network
 
             switch (valueInfo.To)
             {
-                case Info.Reader:
+                case InfoFlags.Reader:
                     return this;
-                case Info.RawReader:
+                case InfoFlags.RawReader:
                     return new PacketRawReader(this);
 
-                case Info.Collection:
+                case InfoFlags.Collection:
                     {
                         var inf = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
                         if (inf == null)
@@ -159,17 +159,17 @@ namespace Mikodev.Network
                         var arr = new object[len];
                         for (int i = 0; i < len; i++)
                             arr[i] = lst[i].GetValueMatch(valueInfo.ElementType, level, inf);
-                        var res = valueInfo.ToCollectionCast(arr);
+                        var res = valueInfo.ToCollectionExt(arr);
                         return res;
                     }
-                case Info.Enumerable:
+                case InfoFlags.Enumerable:
                     {
                         var inf = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
                         if (inf == null)
                             return valueInfo.ToEnumerable(this, con);
-                        return valueInfo.ToEnumerableAdapter(this, level, inf);
+                        return valueInfo.ToEnumerableAdapter(this, inf, level);
                     }
-                case Info.Dictionary:
+                case InfoFlags.Dictionary:
                     {
                         var keycon = Cache.GetConverter(converters, valueInfo.IndexType, true);
                         if (keycon == null)
@@ -199,7 +199,7 @@ namespace Mikodev.Network
                             idx += len;
                             lst.Add(val);
                         }
-                        return valueInfo.ToDictionaryCast(lst);
+                        return valueInfo.ToDictionaryExt(lst);
                     }
                 default:
                     {

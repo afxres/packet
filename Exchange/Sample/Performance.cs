@@ -40,7 +40,7 @@ namespace Mikodev.Test
             // release mode, i7-7700hq
             for (int idx = 0; idx < loop; idx++)
             {
-                using (new TraceWatch("BitConverter")) // 7.739 ms
+                using (new TraceWatch("BitConverter")) // 7.776 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -49,7 +49,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("PacketWriter<>")) // 1770.054 ms, avg
+                using (new TraceWatch("PacketWriter<>")) // 1766.981 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -64,7 +64,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Serialize (anonymous)")) // 2102.113 ms, avg
+                using (new TraceWatch("Serialize (anonymous)")) // 2096.987 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -72,7 +72,7 @@ namespace Mikodev.Test
                     }
                 }
 
-                using (new TraceWatch("Deserialize (anonymous)")) // 1713.921 ms, avg
+                using (new TraceWatch("Deserialize (anonymous)")) // 1730.629 ms, avg
                 {
                     for (int i = 0; i < max; i++)
                     {
