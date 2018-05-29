@@ -62,25 +62,25 @@ namespace Mikodev.Network
         #region get bytes
         internal static byte[] GetBytes(Type type, ConverterDictionary converters, object value)
         {
-            var con = GetConverter(converters, type, false);
-            var buf = con.GetBytesWrap(value);
-            return buf;
+            var converter = GetConverter(converters, type, false);
+            var buffer = converter.GetBytesWrap(value);
+            return buffer;
         }
 
         internal static byte[] GetBytesAuto<T>(ConverterDictionary converters, T value)
         {
-            var con = GetConverter<T>(converters, false);
-            if (con is PacketConverter<T> res)
-                return res.GetBytesWrap(value);
-            return con.GetBytesWrap(value);
+            var converter = GetConverter<T>(converters, false);
+            if (converter is PacketConverter<T> generic)
+                return generic.GetBytesWrap(value);
+            return converter.GetBytesWrap(value);
         }
 
         internal static byte[][] GetBytesFromEnumerableNonGeneric(PacketConverter converter, IEnumerable enumerable)
         {
-            var lst = new List<byte[]>();
+            var result = new List<byte[]>();
             foreach (var i in enumerable)
-                lst.Add(converter.GetBytesWrap(i));
-            return lst.ToArray();
+                result.Add(converter.GetBytesWrap(i));
+            return result.ToArray();
         }
         #endregion
     }

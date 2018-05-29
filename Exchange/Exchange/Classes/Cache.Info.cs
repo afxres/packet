@@ -103,14 +103,11 @@ namespace Mikodev.Network
 
         private static void GetInfoFindImplementation(Info info, Type[] genericArgs, Type[] interfaces)
         {
-            if (interfaces.Contains(typeof(IDictionary<string, object>)))
-                info.From = InfoFlags.Expando;
-
-            var baseList = interfaces
+            var list = interfaces
                 .Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 .Select(GetInfo)
                 .ToList();
-            if (baseList.Count > 1 && genericArgs != null)
+            if (list.Count > 1 && genericArgs != null)
             {
                 var comparer = default(Type);
                 if (genericArgs.Length == 1)
@@ -118,16 +115,16 @@ namespace Mikodev.Network
                 else if (genericArgs.Length == 2)
                     comparer = typeof(KeyValuePair<,>).MakeGenericType(genericArgs);
                 if (comparer != null)
-                    baseList = baseList.Where(r => r.ElementType == comparer).ToList();
+                    list = list.Where(r => r.ElementType == comparer).ToList();
             }
 
-            if (baseList.Count == 1)
+            if (list.Count == 1)
             {
-                var enumerable = baseList[0];
+                var enumerable = list[0];
                 var elementType = enumerable.ElementType;
                 if (elementType.IsGenericType && elementType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
                 {
-                    GetInfoFromDictionary(info, baseList[0], elementType.GetGenericArguments());
+                    GetInfoFromDictionary(info, list[0], elementType.GetGenericArguments());
                 }
                 else
                 {

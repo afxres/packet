@@ -17,26 +17,26 @@ namespace Mikodev.Network
 
         private static IEnumerator Enumerator(byte[] buffer, int offset, int count, int define, PacketConverter converter)
         {
-            for (int idx = 0; idx < count; idx++)
-                yield return converter.GetObjectWrap(buffer, offset + define * idx, define);
+            for (int i = 0; i < count; i++)
+                yield return converter.GetObjectWrap(buffer, offset + define * i, define);
         }
 
         private static IEnumerator Enumerator(List<PacketReader> list, PacketConverter converter)
         {
-            for (int idx = 0; idx < list.Count; idx++)
-                yield return converter.GetObjectWrap(list[idx].element);
+            for (int i = 0; i < list.Count; i++)
+                yield return converter.GetObjectWrap(list[i].element);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            var def = converter.Length;
-            if (def < 1)
+            var define = converter.Length;
+            if (define < 1)
                 return Enumerator(reader.GetList(), converter);
-            var ele = reader.element;
-            var sum = Math.DivRem(ele.length, def, out var rem);
-            if (rem != 0)
+            var element = reader.element;
+            var quotient = Math.DivRem(element.length, define, out var remainder);
+            if (remainder != 0)
                 throw PacketException.Overflow();
-            return Enumerator(ele.buffer, ele.offset, sum, def, converter);
+            return Enumerator(element.buffer, element.offset, quotient, define, converter);
         }
     }
 
@@ -46,34 +46,34 @@ namespace Mikodev.Network
 
         private static IEnumerator<T> Enumerator(byte[] buffer, int offset, int count, int define, PacketConverter converter)
         {
-            if (converter is PacketConverter<T> gen)
-                for (int idx = 0; idx < count; idx++)
-                    yield return gen.GetValueWrap(buffer, offset + define * idx, define);
+            if (converter is PacketConverter<T> generic)
+                for (int i = 0; i < count; i++)
+                    yield return generic.GetValueWrap(buffer, offset + define * i, define);
             else
-                for (int idx = 0; idx < count; idx++)
-                    yield return (T)converter.GetObjectWrap(buffer, offset + define * idx, define);
+                for (int i = 0; i < count; i++)
+                    yield return (T)converter.GetObjectWrap(buffer, offset + define * i, define);
         }
 
         private static IEnumerator<T> Enumerator(List<PacketReader> list, PacketConverter converter)
         {
-            if (converter is PacketConverter<T> gen)
-                for (int idx = 0; idx < list.Count; idx++)
-                    yield return gen.GetValueWrap(list[idx].element);
+            if (converter is PacketConverter<T> generic)
+                for (int i = 0; i < list.Count; i++)
+                    yield return generic.GetValueWrap(list[i].element);
             else
-                for (int idx = 0; idx < list.Count; idx++)
-                    yield return (T)converter.GetObjectWrap(list[idx].element);
+                for (int i = 0; i < list.Count; i++)
+                    yield return (T)converter.GetObjectWrap(list[i].element);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            var def = converter.Length;
-            if (def < 1)
+            var define = converter.Length;
+            if (define < 1)
                 return Enumerator(reader.GetList(), converter);
-            var ele = reader.element;
-            var sum = Math.DivRem(ele.length, def, out var rem);
-            if (rem != 0)
+            var element = reader.element;
+            var quotient = Math.DivRem(element.length, define, out var remainder);
+            if (remainder != 0)
                 throw PacketException.Overflow();
-            else return Enumerator(ele.buffer, ele.offset, sum, def, converter);
+            else return Enumerator(element.buffer, element.offset, quotient, define, converter);
         }
     }
 }

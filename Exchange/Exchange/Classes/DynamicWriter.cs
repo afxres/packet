@@ -10,31 +10,31 @@ namespace Mikodev.Network
 
         private PacketWriter GetItem(PacketWriter writer, string key)
         {
-            var lst = writer.GetDictionary();
-            if (lst.TryGetValue(key, out var res) && res is PacketWriter pkt)
-                return pkt;
-            var sub = new PacketWriter(writer.converters);
-            lst[key] = sub;
-            return sub;
+            var dictionary = writer.GetDictionary();
+            if (dictionary.TryGetValue(key, out var value) && value is PacketWriter packetWriter)
+                return packetWriter;
+            var childWriter = new PacketWriter(writer.converters);
+            dictionary[key] = childWriter;
+            return childWriter;
         }
 
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
-            var val = GetItem((PacketWriter)Value, binder.Name);
-            var exp = Expression.Constant(val);
-            return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
+            var writer = GetItem((PacketWriter)Value, binder.Name);
+            var constant = Expression.Constant(writer);
+            return new DynamicMetaObject(constant, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
 
-        public override DynamicMetaObject BindSetMember(SetMemberBinder binder, DynamicMetaObject value)
+        public override DynamicMetaObject BindSetMember(SetMemberBinder binder, DynamicMetaObject metaObject)
         {
-            var wtr = (PacketWriter)Value;
+            var writer = (PacketWriter)Value;
             var key = binder.Name;
-            var val = value.Value;
-            var sub = PacketWriter.GetWriter(wtr.converters, val, 0);
-            var lst = wtr.GetDictionary();
-            lst[key] = sub;
-            var exp = Expression.Constant(val, typeof(object));
-            return new DynamicMetaObject(exp, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
+            var value = metaObject.Value;
+            var childWriter = PacketWriter.GetWriter(writer.converters, value, 0);
+            var dictionary = writer.GetDictionary();
+            dictionary[key] = childWriter;
+            var constant = Expression.Constant(value, typeof(object));
+            return new DynamicMetaObject(constant, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
 
         public override IEnumerable<string> GetDynamicMemberNames()

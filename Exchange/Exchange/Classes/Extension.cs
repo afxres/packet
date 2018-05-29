@@ -103,24 +103,24 @@ namespace Mikodev.Network
 
         internal static void WriteKey(this Stream stream, string key)
         {
-            var buf = Encoding.GetBytes(key);
-            var len = UnmanagedConverter<int>.ToBytes(buf.Length);
-            stream.Write(len, 0, len.Length);
-            stream.Write(buf, 0, buf.Length);
+            var buffer = Encoding.GetBytes(key);
+            var header = UnmanagedConverter<int>.ToBytes(buffer.Length);
+            stream.Write(header, 0, header.Length);
+            stream.Write(buffer, 0, buffer.Length);
         }
 
         internal static void WriteExt(this Stream stream, byte[] buffer)
         {
-            var len = UnmanagedConverter<int>.ToBytes(buffer.Length);
-            stream.Write(len, 0, len.Length);
+            var header = UnmanagedConverter<int>.ToBytes(buffer.Length);
+            stream.Write(header, 0, header.Length);
             stream.Write(buffer, 0, buffer.Length);
         }
 
         internal static void WriteExt(this Stream stream, MemoryStream other)
         {
-            var len = (int)other.Length;
-            var buf = UnmanagedConverter<int>.ToBytes(len);
-            stream.Write(buf, 0, sizeof(int));
+            var length = (int)other.Length;
+            var header = UnmanagedConverter<int>.ToBytes(length);
+            stream.Write(header, 0, sizeof(int));
             other.WriteTo(stream);
         }
 
@@ -144,29 +144,31 @@ namespace Mikodev.Network
 
         internal static void WriteValue(this Stream stream, ConverterDictionary converters, object value, Type type)
         {
-            var con = Cache.GetConverter(converters, type, false);
-            var len = con.Length > 0;
-            if (len)
-                stream.Write(con.GetBytesWrap(value));
+            var converter = Cache.GetConverter(converters, type, false);
+            if (converter.Length > 0)
+                stream.Write(converter.GetBytesWrap(value));
             else
-                stream.WriteExt(con.GetBytesWrap(value));
-            return;
+                stream.WriteExt(converter.GetBytesWrap(value));
         }
 
         internal static void WriteValueGeneric<T>(this Stream stream, ConverterDictionary converters, T value)
         {
-            var con = Cache.GetConverter<T>(converters, false);
-            var len = con.Length > 0;
-            var gen = con as PacketConverter<T>;
-            if (len && gen != null)
-                stream.Write(gen.GetBytesWrap(value));
-            else if (len)
-                stream.Write(con.GetBytesWrap(value));
-            else if (gen != null)
-                stream.WriteExt(gen.GetBytesWrap(value));
+            var converter = Cache.GetConverter<T>(converters, false);
+            var generic = converter as PacketConverter<T>;
+            if (converter.Length > 0)
+            {
+                if (generic != null)
+                    stream.Write(generic.GetBytesWrap(value));
+                else
+                    stream.Write(converter.GetBytesWrap(value));
+            }
             else
-                stream.WriteExt(con.GetBytesWrap(value));
-            return;
+            {
+                if (generic != null)
+                    stream.WriteExt(generic.GetBytesWrap(value));
+                else
+                    stream.WriteExt(converter.GetBytesWrap(value));
+            }
         }
 
         internal static byte[] BorrowOrCopy(byte[] buffer, int offset, int length)

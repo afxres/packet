@@ -6,56 +6,56 @@ namespace Mikodev.Network
     public static partial class PacketConvert
     {
         #region Throw If Argument Error
-        internal static void ThrowIfArgumentError(string key)
+        private static void ThrowIfArgumentError(string key)
         {
             if (key == null)
                 throw new ArgumentNullException(nameof(key));
             return;
         }
 
-        internal static void ThrowIfArgumentError(PacketRawWriter writer)
+        private static void ThrowIfArgumentError(PacketRawWriter writer)
         {
             if (writer == null)
                 throw new ArgumentNullException(nameof(writer));
             return;
         }
 
-        internal static void ThrowIfArgumentError(PacketRawReader reader)
+        private static void ThrowIfArgumentError(PacketRawReader reader)
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
             return;
         }
 
-        internal static void ThrowIfArgumentError(PacketWriter writer)
+        private static void ThrowIfArgumentError(PacketWriter writer)
         {
             if (writer == null)
                 throw new ArgumentNullException(nameof(writer));
             return;
         }
 
-        internal static void ThrowIfArgumentError(PacketReader reader)
+        private static void ThrowIfArgumentError(PacketReader reader)
         {
             if (reader == null)
                 throw new ArgumentNullException(nameof(reader));
             return;
         }
 
-        internal static void ThrowIfArgumentError(Type type)
+        private static void ThrowIfArgumentError(Type type)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
             return;
         }
 
-        internal static void ThrowIfArgumentError(byte[] buffer)
+        private static void ThrowIfArgumentError(byte[] buffer)
         {
             if (buffer == null)
                 throw new ArgumentNullException(nameof(buffer));
             return;
         }
 
-        internal static void ThrowIfArgumentError(byte[] buffer, int offset, int length)
+        private static void ThrowIfArgumentError(byte[] buffer, int offset, int length)
         {
             if (buffer == null)
                 throw new ArgumentNullException(nameof(buffer));
@@ -102,6 +102,7 @@ namespace Mikodev.Network
             return Cache.GetBytesAuto(null, value);
         }
 
+        #region deserialize
         public static object Deserialize(byte[] buffer, Type type, ConverterDictionary converters = null)
         {
             ThrowIfArgumentError(type);
@@ -141,6 +142,7 @@ namespace Mikodev.Network
         {
             return (T)Deserialize(buffer, offset, length, typeof(T), converters);
         }
+        #endregion
 
         public static byte[] Serialize(object value, ConverterDictionary converters = null)
         {

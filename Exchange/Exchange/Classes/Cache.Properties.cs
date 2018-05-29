@@ -7,149 +7,141 @@ namespace Mikodev.Network
 {
     partial class Cache
     {
-        private static GetInfo CreateGetInfo(Type type)
+        private static GetInfo InternalGetGetInfo(Type type)
         {
-            var inf = new List<KeyValuePair<string, Type>>();
-            var met = new List<MethodInfo>();
-            var pro = type.GetProperties();
-            for (int i = 0; i < pro.Length; i++)
+            var propertyList = new List<KeyValuePair<string, Type>>();
+            var methodInfos = new List<MethodInfo>();
+            var properties = type.GetProperties();
+            for (int i = 0; i < properties.Length; i++)
             {
-                var cur = pro[i];
-                var get = cur.GetGetMethod();
-                if (get == null)
+                var current = properties[i];
+                var getter = current.GetGetMethod();
+                if (getter == null)
                     continue;
-                var arg = get.GetParameters();
+                var parameters = getter.GetParameters();
                 // Length != 0 -> indexer
-                if (arg == null || arg.Length != 0)
+                if (parameters == null || parameters.Length != 0)
                     continue;
-                inf.Add(new KeyValuePair<string, Type>(cur.Name, cur.PropertyType));
-                met.Add(get);
+                propertyList.Add(new KeyValuePair<string, Type>(current.Name, current.PropertyType));
+                methodInfos.Add(getter);
             }
 
-            var exp = new List<Expression>();
-            var ipt = Expression.Parameter(typeof(object), "parameter");
-            var arr = Expression.Parameter(typeof(object[]), "array");
-            var val = Expression.Variable(type, "value");
-            var ass = Expression.Assign(val, Expression.Convert(ipt, type));
-            exp.Add(ass);
+            var expressionList = new List<Expression>();
+            var parameter = Expression.Parameter(typeof(object), "parameter");
+            var objectArray = Expression.Parameter(typeof(object[]), "array");
+            var value = Expression.Variable(type, "value");
+            expressionList.Add(Expression.Assign(value, Expression.Convert(parameter, type)));
 
-            for (int i = 0; i < inf.Count; i++)
+            for (int i = 0; i < propertyList.Count; i++)
             {
-                var idx = Expression.ArrayAccess(arr, Expression.Constant(i));
-                var inv = Expression.Call(val, met[i]);
-                var cvt = Expression.Convert(inv, typeof(object));
-                var set = Expression.Assign(idx, cvt);
-                exp.Add(set);
+                var arrayAccess = Expression.ArrayAccess(objectArray, Expression.Constant(i));
+                var result = Expression.Call(value, methodInfos[i]);
+                var convert = Expression.Convert(result, typeof(object));
+                var assign = Expression.Assign(arrayAccess, convert);
+                expressionList.Add(assign);
             }
 
-            var blk = Expression.Block(new[] { val }, exp);
-            var del = Expression.Lambda<Action<object, object[]>>(blk, ipt, arr);
-
-            var res = new GetInfo(inf.ToArray(), del.Compile());
-            return res;
+            var block = Expression.Block(new[] { value }, expressionList);
+            var expression = Expression.Lambda<Action<object, object[]>>(block, parameter, objectArray);
+            return new GetInfo(propertyList.ToArray(), expression.Compile());
         }
 
-        private static SetInfo CreateSetInfoAnonymousType(Type type)
+        private static SetInfo InternalGetSetInfoAnonymousType(Type type)
         {
-            var cts = type.GetConstructors();
-            if (cts.Length != 1)
+            var constructorInfos = type.GetConstructors();
+            if (constructorInfos.Length != 1)
                 return null;
 
-            var con = cts[0];
-            var arg = con.GetParameters();
-            var pro = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            if (pro.Length != arg.Length)
+            var constructorInfo = constructorInfos[0];
+            var constructorParameters = constructorInfo.GetParameters();
+            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            if (properties.Length != constructorParameters.Length)
                 return null;
 
-            for (int i = 0; i < pro.Length; i++)
-                if (pro[i].Name != arg[i].Name || pro[i].PropertyType != arg[i].ParameterType)
+            for (int i = 0; i < properties.Length; i++)
+                if (properties[i].Name != constructorParameters[i].Name || properties[i].PropertyType != constructorParameters[i].ParameterType)
                     return null;
 
-            var ipt = Expression.Parameter(typeof(object[]), "parameters");
-            var arr = new Expression[arg.Length];
-            var inf = new KeyValuePair<string, Type>[arg.Length];
-            for (int i = 0; i < arg.Length; i++)
+            var parameter = Expression.Parameter(typeof(object[]), "parameters");
+            var expressionArray = new Expression[constructorParameters.Length];
+            var propertyList = new KeyValuePair<string, Type>[constructorParameters.Length];
+            for (int i = 0; i < constructorParameters.Length; i++)
             {
-                var cur = arg[i];
-                var idx = Expression.ArrayIndex(ipt, Expression.Constant(i));
-                var cvt = Expression.Convert(idx, cur.ParameterType);
-                arr[i] = cvt;
-                inf[i] = new KeyValuePair<string, Type>(cur.Name, cur.ParameterType);
+                var current = constructorParameters[i];
+                var arrayIndex = Expression.ArrayIndex(parameter, Expression.Constant(i));
+                var convert = Expression.Convert(arrayIndex, current.ParameterType);
+                expressionArray[i] = convert;
+                propertyList[i] = new KeyValuePair<string, Type>(current.Name, current.ParameterType);
             }
 
             // Reference type
-            var ins = Expression.New(con, arr);
-            var del = Expression.Lambda<Func<object[], object>>(ins, ipt);
-            var res = new SetInfo(inf, del.Compile());
-            return res;
+            var instance = Expression.New(constructorInfo, expressionArray);
+            var expression = Expression.Lambda<Func<object[], object>>(instance, parameter);
+            return new SetInfo(propertyList, expression.Compile());
         }
 
-        private static SetInfo CreateSetInfo(Type type, ConstructorInfo constructor)
+        private static SetInfo InternalGetSetInfo(Type type, ConstructorInfo constructor)
         {
-            var pro = type.GetProperties();
-            var ins = (constructor == null) ? Expression.New(type) : Expression.New(constructor);
-            var inf = new List<KeyValuePair<string, Type>>();
-            var met = new List<MethodInfo>();
+            var properties = type.GetProperties();
+            var instance = (constructor == null) ? Expression.New(type) : Expression.New(constructor);
+            var propertyList = new List<KeyValuePair<string, Type>>();
+            var methodInfos = new List<MethodInfo>();
 
-            for (int i = 0; i < pro.Length; i++)
+            for (int i = 0; i < properties.Length; i++)
             {
-                var cur = pro[i];
-                var get = cur.GetGetMethod();
-                var set = cur.GetSetMethod();
-                if (get == null || set == null)
+                var current = properties[i];
+                var getter = current.GetGetMethod();
+                var setter = current.GetSetMethod();
+                if (getter == null || setter == null)
                     continue;
-                var arg = set.GetParameters();
-                if (arg == null || arg.Length != 1)
+                var setterParameters = setter.GetParameters();
+                if (setterParameters == null || setterParameters.Length != 1)
                     continue;
-                inf.Add(new KeyValuePair<string, Type>(cur.Name, cur.PropertyType));
-                met.Add(set);
+                propertyList.Add(new KeyValuePair<string, Type>(current.Name, current.PropertyType));
+                methodInfos.Add(setter);
             }
 
-            var exp = new List<Expression>();
-            var ipt = Expression.Parameter(typeof(object[]), "parameters");
-            var val = Expression.Variable(type, "value");
-            var ass = Expression.Assign(val, ins);
-            exp.Add(ass);
+            var expressionList = new List<Expression>();
+            var parameter = Expression.Parameter(typeof(object[]), "parameters");
+            var value = Expression.Variable(type, "value");
 
-            for (int i = 0; i < inf.Count; i++)
+            expressionList.Add(Expression.Assign(value, instance));
+            for (int i = 0; i < propertyList.Count; i++)
             {
-                var idx = Expression.ArrayIndex(ipt, Expression.Constant(i));
-                var cvt = Expression.Convert(idx, inf[i].Value);
-                var set = Expression.Call(val, met[i], cvt);
-                exp.Add(set);
+                var arrayIndex = Expression.ArrayIndex(parameter, Expression.Constant(i));
+                var convert = Expression.Convert(arrayIndex, propertyList[i].Value);
+                var setValue = Expression.Call(value, methodInfos[i], convert);
+                expressionList.Add(setValue);
             }
+            expressionList.Add(Expression.Convert(value, typeof(object)));
 
-            var cst = Expression.Convert(val, typeof(object));
-            exp.Add(cst);
-
-            var blk = Expression.Block(new[] { val }, exp);
-            var del = Expression.Lambda<Func<object[], object>>(blk, ipt);
-            var res = new SetInfo(inf.ToArray(), del.Compile());
-            return res;
+            var block = Expression.Block(new[] { value }, expressionList);
+            var expression = Expression.Lambda<Func<object[], object>>(block, parameter);
+            return new SetInfo(propertyList.ToArray(), expression.Compile());
         }
 
-        private static SetInfo CreateSetInfo(Type type)
+        private static SetInfo InternalGetSetInfo(Type type)
         {
             if (type.IsValueType)
-                return CreateSetInfo(type, null);
-            var con = type.GetConstructor(Type.EmptyTypes);
-            if (con != null)
-                return CreateSetInfo(type, con);
-            return CreateSetInfoAnonymousType(type);
+                return InternalGetSetInfo(type, null);
+            var constructorInfos = type.GetConstructor(Type.EmptyTypes);
+            if (constructorInfos != null)
+                return InternalGetSetInfo(type, constructorInfos);
+            return InternalGetSetInfoAnonymousType(type);
         }
 
         internal static GetInfo GetGetInfo(Type type)
         {
-            if (GetInfos.TryGetValue(type, out var inf))
-                return inf;
-            return GetInfos.GetOrAdd(type, CreateGetInfo(type));
+            if (GetInfos.TryGetValue(type, out var info))
+                return info;
+            return GetInfos.GetOrAdd(type, InternalGetGetInfo(type));
         }
 
         internal static SetInfo GetSetInfo(Type type)
         {
-            if (SetInfos.TryGetValue(type, out var inf))
-                return inf;
-            return SetInfos.GetOrAdd(type, CreateSetInfo(type));
+            if (SetInfos.TryGetValue(type, out var info))
+                return info;
+            return SetInfos.GetOrAdd(type, InternalGetSetInfo(type));
         }
     }
 }

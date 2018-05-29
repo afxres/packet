@@ -16,9 +16,9 @@ namespace Mikodev.Network
 
         private IEnumerator<KeyValuePair<byte[], object>> Enumerator()
         {
-            if (converter is PacketConverter<TK> gen)
+            if (converter is PacketConverter<TK> generic)
                 foreach (var i in dictionary)
-                    yield return new KeyValuePair<byte[], object>(gen.GetBytesWrap(i.Key), i.Value);
+                    yield return new KeyValuePair<byte[], object>(generic.GetBytesWrap(i.Key), i.Value);
             else
                 foreach (var i in dictionary)
                     yield return new KeyValuePair<byte[], object>(converter.GetBytesWrap(i.Key), i.Value);
