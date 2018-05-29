@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
@@ -148,11 +147,6 @@ namespace Mikodev.Network
             var wtr = PacketWriter.GetWriter(converters, value, 0);
             var buf = wtr.GetBytes();
             return buf;
-        }
-
-        public static byte[] Serialize(IDictionary<string, object> dictionary, ConverterDictionary converters = null)
-        {
-            return Serialize((object)dictionary, converters);
         }
 
         public static void ClearReflectionCache()

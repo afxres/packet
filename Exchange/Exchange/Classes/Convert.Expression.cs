@@ -35,7 +35,7 @@ namespace Mikodev.Network
             return block;
         }
 
-        private static ToCollectionFunction InternalToCollectionFunc(Type elementType, string methodName)
+        private static ToCollectionFunction InternalToCollectionFunc(string methodName, Type elementType)
         {
             var reader = Expression.Parameter(typeof(PacketReader), "reader");
             var converter = Expression.Parameter(typeof(PacketConverter), "converter");
@@ -55,7 +55,9 @@ namespace Mikodev.Network
         {
             var block = ConvertArrayExpression(elementType, out var objectArray);
             var conversion = expressionFunc.Invoke(block);
-            var expression = Expression.Lambda<ToCollectionExtFunction>(expressionFunc.Invoke(block), objectArray);
+            if (conversion.Type != typeof(object))
+                conversion = Expression.Convert(conversion, typeof(object));
+            var expression = Expression.Lambda<ToCollectionExtFunction>(conversion, objectArray);
             return expression.Compile();
         }
 
@@ -68,7 +70,7 @@ namespace Mikodev.Network
 
         private static ConstructorInfo InternalListConstructorInfo(Type elementType) => typeof(List<>).MakeGenericType(elementType).GetConstructor(new[] { typeof(IEnumerable<>).MakeGenericType(elementType) });
 
-        private static FromEnumerableFunction InternalFromEnumerableFunc(Type enumerableType, Type elementType, string methodName)
+        private static FromEnumerableFunction InternalFromEnumerableFunc(string methodName, Type enumerableType, Type elementType)
         {
             var value = Expression.Parameter(typeof(object), "value");
             var converter = Expression.Parameter(typeof(PacketConverter), "converter");
@@ -90,6 +92,9 @@ namespace Mikodev.Network
             var array = Expression.Variable(value.Type, "array");
             var index = Expression.Variable(typeof(int), "index");
             var label = Expression.Label(typeof(object), "result");
+            var arrayAccess = Expression.ArrayAccess(array, Expression.PostIncrementAssign(index)) as Expression;
+            if (arrayAccess.Type != elementType)
+                arrayAccess = Expression.Convert(arrayAccess, elementType);
             var block = Expression.Block(
                 new[] { instance, array, index },
                 Expression.Assign(instance, Expression.New(constructorInfo)),
@@ -98,18 +103,18 @@ namespace Mikodev.Network
                 Expression.Loop(
                     Expression.IfThenElse(
                         Expression.LessThan(index, Expression.ArrayLength(array)),
-                        Expression.Call(instance, addMethodInfo, Expression.ArrayAccess(array, Expression.PostIncrementAssign(index))),
+                        Expression.Call(instance, addMethodInfo, arrayAccess),
                         Expression.Break(label, Expression.Convert(instance, typeof(object)))),
                     label));
             return block;
         }
 
         #region array, list, sequence
-        internal static ToCollectionFunction ToArrayFunc(Type elementType) => InternalToCollectionFunc(elementType, nameof(ToArray));
+        internal static ToCollectionFunction ToArrayFunc(Type elementType) => InternalToCollectionFunc(nameof(ToArray), elementType);
 
-        internal static ToCollectionFunction ToListFunc(Type elementType) => InternalToCollectionFunc(elementType, nameof(ToList));
+        internal static ToCollectionFunction ToListFunc(Type elementType) => InternalToCollectionFunc(nameof(ToList), elementType);
 
-        internal static ToCollectionFunction ToEnumerableFunc(Type elementType) => InternalToCollectionFunc(elementType, nameof(ToEnumerable));
+        internal static ToCollectionFunction ToEnumerableFunc(Type elementType) => InternalToCollectionFunc(nameof(ToEnumerable), elementType);
 
         internal static ToCollectionExtFunction ToArrayExtFunc(Type elementType) => InternalToCollectionExtFunc(elementType, block => block);
 
@@ -117,11 +122,11 @@ namespace Mikodev.Network
 
         internal static ToEnumerableAdapterFunction ToEnumerableAdapterFunc(Type elementType) => InternalCreateDelegate<ToEnumerableAdapterFunction>(nameof(ToEnumerableAdapterExpression), elementType);
 
-        internal static FromEnumerableFunction FromArrayFunc(Type type, Type elementType) => InternalFromEnumerableFunc(type, elementType, nameof(FromArray));
+        internal static FromEnumerableFunction FromArrayFunc(Type type, Type elementType) => InternalFromEnumerableFunc(nameof(FromArray), type, elementType);
 
-        internal static FromEnumerableFunction FromListFunc(Type type, Type elementType) => InternalFromEnumerableFunc(type, elementType, nameof(FromList));
+        internal static FromEnumerableFunction FromListFunc(Type type, Type elementType) => InternalFromEnumerableFunc(nameof(FromList), type, elementType);
 
-        internal static FromEnumerableFunction FromEnumerableFunc(Type type, Type elementType) => InternalFromEnumerableFunc(type, elementType, nameof(FromEnumerable));
+        internal static FromEnumerableFunction FromEnumerableFunc(Type type, Type elementType) => InternalFromEnumerableFunc(nameof(FromEnumerable), type, elementType);
         #endregion
 
         #region dictionary
@@ -190,10 +195,12 @@ namespace Mikodev.Network
                     constructorInfo, addMethodInfo),
                 reader, converter);
             collectionFunc = expression.Compile();
+
+            var objectArray = Expression.Parameter(typeof(object[]), "objectArray");
             var extensionExpression = Expression.Lambda<ToCollectionExtFunction>(
                 ToCollectionByAddExpression(
                     elementType,
-                    ConvertArrayExpression(elementType, out var objectArray),
+                    objectArray,
                     constructorInfo, addMethodInfo),
                 objectArray);
             collectionExtFunc = extensionExpression.Compile();
