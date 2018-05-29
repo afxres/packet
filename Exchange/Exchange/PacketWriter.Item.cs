@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Mikodev.Network
 {
-    public sealed partial class PacketWriter
+    partial class PacketWriter
     {
         internal sealed class Item
         {
