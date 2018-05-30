@@ -35,61 +35,63 @@ namespace Mikodev.Network
 
         internal IEnumerable<string> GetKeys()
         {
-            var itm = item;
-            if (itm.tag == Item.DictionaryPacketWriter)
-                return ((Dictionary<string, PacketWriter>)itm.obj).Keys;
+            var item = this.item;
+            if (item.flag == ItemFlags.Dictionary)
+                return ((Dictionary<string, PacketWriter>)item.value).Keys;
             return System.Linq.Enumerable.Empty<string>();
         }
 
         internal Dictionary<string, PacketWriter> GetDictionary()
         {
-            var itm = item;
-            if (itm.tag == Item.DictionaryPacketWriter)
-                return (Dictionary<string, PacketWriter>)itm.obj;
-            var dic = new Dictionary<string, PacketWriter>();
-            item = new Item(dic);
-            return dic;
+            var item = this.item;
+            if (item.flag == ItemFlags.Dictionary)
+                return (Dictionary<string, PacketWriter>)item.value;
+            var dictionary = new Dictionary<string, PacketWriter>();
+            this.item = new Item(dictionary);
+            return dictionary;
         }
 
         internal static PacketWriter GetWriter(ConverterDictionary converters, object value, int level)
         {
             return new PacketWriter(converters, GetItem(converters, value, level));
         }
-        
+
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicWriter(parameter, this);
 
         public byte[] GetBytes()
         {
-            var itm = item;
-            if (itm.obj == null)
-                return UnmanagedArrayConverter<byte>.EmptyArray;
-            else if (itm.tag == Item.Bytes)
-                return (byte[])itm.obj;
-            else if (itm.tag == Item.MemoryStream)
-                return ((MemoryStream)itm.obj).ToArray();
-
-            var mst = new MemoryStream(Cache.Length);
-            itm.GetBytesMatch(mst, 0);
-            var res = mst.ToArray();
-            return res;
+            var item = this.item;
+            switch (item.flag)
+            {
+                case ItemFlags.None:
+                    return UnmanagedArrayConverter<byte>.EmptyArray;
+                case ItemFlags.Buffer:
+                    return (byte[])item.value;
+                case ItemFlags.Stream:
+                    return ((MemoryStream)item.value).ToArray();
+                default:
+                    var mst = new MemoryStream(Cache.Length);
+                    item.GetBytesMatch(mst, 0);
+                    return mst.ToArray();
+            }
         }
 
         public override string ToString()
         {
-            var obj = item.obj;
-            var stb = new StringBuilder(nameof(PacketWriter));
-            stb.Append(" with ");
-            if (obj == null)
-                stb.Append("none");
-            else if (obj is byte[] buf)
-                stb.AppendFormat("{0} byte(s)", buf.Length);
-            else if (obj is MemoryStream mst)
-                stb.AppendFormat("{0} byte(s)", mst.Length);
-            else if (obj is ICollection col)
-                stb.AppendFormat("{0} node(s)", col.Count);
+            var value = item.value;
+            var builder = new StringBuilder(nameof(PacketWriter));
+            builder.Append(" with ");
+            if (value == null)
+                builder.Append("none");
+            else if (value is byte[] buf)
+                builder.AppendFormat("{0} byte(s)", buf.Length);
+            else if (value is MemoryStream mst)
+                builder.AppendFormat("{0} byte(s)", mst.Length);
+            else if (value is ICollection col)
+                builder.AppendFormat("{0} node(s)", col.Count);
             else
                 throw new ApplicationException();
-            return stb.ToString();
+            return builder.ToString();
         }
 
         public static PacketWriter Serialize(object value, ConverterDictionary converters = null) => GetWriter(converters, value, 0);

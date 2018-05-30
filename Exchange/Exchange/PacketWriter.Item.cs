@@ -8,160 +8,178 @@ namespace Mikodev.Network
     {
         internal sealed class Item
         {
-            internal const int Bytes = 1;
-            internal const int MemoryStream = 2;
-            internal const int ArrayBytes = 3;
-            internal const int ListItem = 4;
-            internal const int DictionaryPacketWriter = 5;
-            internal const int DictionaryBytesBytes = 6;
-            internal const int DictionaryBytesItem = 7;
-
             internal static readonly Item Empty = new Item();
             internal static readonly byte[] ZeroBytes = new byte[sizeof(int)];
 
-            internal readonly object obj;
-            internal readonly int tag;
-            internal readonly int lenone;
-            internal readonly int lentwo;
+            internal readonly object value;
+            internal readonly ItemFlags flag;
+            internal readonly int lengthOne;
+            internal readonly int lengthTwo;
 
             private Item() { }
 
-            internal Item(byte[] buffer)
+            internal Item(byte[] source)
             {
-                obj = buffer;
-                tag = Bytes;
+                if (source == null)
+                    return;
+                value = source;
+                flag = ItemFlags.Buffer;
             }
 
-            internal Item(MemoryStream stream)
+            internal Item(MemoryStream source)
             {
-                obj = stream;
-                tag = MemoryStream;
+                if (source == null)
+                    return;
+                value = source;
+                flag = ItemFlags.Stream;
             }
 
-            internal Item(List<Item> list)
+            internal Item(List<Item> source)
             {
-                obj = list;
-                tag = ListItem;
+                if (source == null)
+                    return;
+                value = source;
+                flag = ItemFlags.ItemList;
             }
 
-            internal Item(Dictionary<string, PacketWriter> dictionary)
+            internal Item(Dictionary<string, PacketWriter> source)
             {
-                obj = dictionary;
-                tag = DictionaryPacketWriter;
+                if (source == null)
+                    return;
+                value = source;
+                flag = ItemFlags.Dictionary;
             }
 
-            internal Item(byte[][] array, int length)
+            internal Item(byte[][] source, int length)
             {
-                obj = array;
-                tag = ArrayBytes;
-                lenone = length;
+                if (source == null)
+                    return;
+                value = source;
+                flag = ItemFlags.BufferArray;
+                lengthOne = length;
             }
 
-            internal Item(List<KeyValuePair<byte[], Item>> dictionary, int length)
+            internal Item(List<KeyValuePair<byte[], Item>> source, int length)
             {
-                obj = dictionary;
-                tag = DictionaryBytesItem;
-                lenone = length;
+                if (source == null)
+                    return;
+                value = source;
+                flag = ItemFlags.DictionaryBufferItem;
+                lengthOne = length;
             }
 
-            internal Item(List<KeyValuePair<byte[], byte[]>> dictionary, int indexLength, int elementLength)
+            internal Item(List<KeyValuePair<byte[], byte[]>> source, int indexLength, int elementLength)
             {
-                obj = dictionary;
-                tag = DictionaryBytesBytes;
-                lenone = indexLength;
-                lentwo = elementLength;
-            }
-
-            internal void GetBytesMatch(Stream stream, int level)
-            {
-                PacketException.VerifyRecursionError(ref level);
-
-                switch (tag)
-                {
-                    case ArrayBytes:
-                        {
-                            var byt = (byte[][])obj;
-                            if (lenone > 0)
-                                for (int i = 0; i < byt.Length; i++)
-                                    stream.Write(byt[i]);
-                            else
-                                for (int i = 0; i < byt.Length; i++)
-                                    stream.WriteExt(byt[i]);
-                            break;
-                        }
-                    case ListItem:
-                        {
-                            var lst = (List<Item>)obj;
-                            for (int i = 0; i < lst.Count; i++)
-                                lst[i].GetBytes(stream, level);
-                            break;
-                        }
-                    case DictionaryPacketWriter:
-                        {
-                            var dic = (Dictionary<string, PacketWriter>)obj;
-                            foreach (var i in dic)
-                            {
-                                stream.WriteKey(i.Key);
-                                i.Value.item.GetBytes(stream, level);
-                            }
-                            break;
-                        }
-                    case DictionaryBytesBytes:
-                        {
-                            var itr = (List<KeyValuePair<byte[], byte[]>>)obj;
-                            for (int i = 0; i < itr.Count; i++)
-                            {
-                                var cur = itr[i];
-                                if (lenone > 0)
-                                    stream.Write(cur.Key, 0, lenone);
-                                else
-                                    stream.WriteExt(cur.Key);
-                                if (lentwo > 0)
-                                    stream.Write(cur.Value, 0, lentwo);
-                                else
-                                    stream.WriteExt(cur.Value);
-                            }
-                            break;
-                        }
-                    case DictionaryBytesItem:
-                        {
-                            var kvp = (List<KeyValuePair<byte[], Item>>)obj;
-                            for (int i = 0; i < kvp.Count; i++)
-                            {
-                                var cur = kvp[i];
-                                if (lenone > 0)
-                                    stream.Write(cur.Key, 0, lenone);
-                                else
-                                    stream.WriteExt(cur.Key);
-                                cur.Value.GetBytes(stream, level);
-                            }
-                            break;
-                        }
-                    default: throw new ApplicationException();
-                }
+                if (source == null)
+                    return;
+                value = source;
+                flag = ItemFlags.DictionaryBuffer;
+                lengthOne = indexLength;
+                lengthTwo = elementLength;
             }
 
             internal void GetBytes(Stream stream, int level)
             {
                 PacketException.VerifyRecursionError(ref level);
+                switch (flag)
+                {
+                    case ItemFlags.None:
+                        stream.Write(ZeroBytes);
+                        break;
+                    case ItemFlags.Buffer:
+                        stream.WriteExt((byte[])value);
+                        break;
+                    case ItemFlags.Stream:
+                        stream.WriteExt((MemoryStream)value);
+                        break;
+                    default:
+                        stream.BeginInternal(out var src);
+                        GetBytesMatch(stream, level);
+                        stream.FinshInternal(src);
+                        break;
+                }
+            }
 
-                if (obj == null)
+            internal void GetBytesMatch(Stream stream, int level)
+            {
+                PacketException.VerifyRecursionError(ref level);
+                switch (flag)
                 {
-                    stream.Write(ZeroBytes, 0, sizeof(int));
+                    case ItemFlags.BufferArray:
+                        GetBytesMatchBufferArray(stream);
+                        break;
+                    case ItemFlags.ItemList:
+                        GetBytesMatchItemList(stream, level);
+                        break;
+                    case ItemFlags.Dictionary:
+                        GetBytesMatchDictionary(stream, level);
+                        break;
+                    case ItemFlags.DictionaryBuffer:
+                        GetBytesMatchDictionaryBuffer(stream);
+                        break;
+                    case ItemFlags.DictionaryBufferItem:
+                        GetBytesMatchDictionaryBufferItem(stream, level);
+                        break;
+                    default: throw new ApplicationException();
                 }
-                else if (tag == Bytes)
-                {
-                    stream.WriteExt((byte[])obj);
-                }
-                else if (tag == MemoryStream)
-                {
-                    stream.WriteExt((MemoryStream)obj);
-                }
+            }
+
+            private void GetBytesMatchBufferArray(Stream stream)
+            {
+                var array = (byte[][])value;
+                if (lengthOne > 0)
+                    for (int i = 0; i < array.Length; i++)
+                        stream.Write(array[i]);
                 else
+                    for (int i = 0; i < array.Length; i++)
+                        stream.WriteExt(array[i]);
+            }
+
+            private void GetBytesMatchItemList(Stream stream, int level)
+            {
+                var list = (List<Item>)value;
+                for (int i = 0; i < list.Count; i++)
+                    list[i].GetBytes(stream, level);
+            }
+
+            private void GetBytesMatchDictionary(Stream stream, int level)
+            {
+                var dictionary = (Dictionary<string, PacketWriter>)value;
+                foreach (var i in dictionary)
                 {
-                    stream.BeginInternal(out var src);
-                    GetBytesMatch(stream, level);
-                    stream.FinshInternal(src);
+                    stream.WriteKey(i.Key);
+                    i.Value.item.GetBytes(stream, level);
+                }
+            }
+
+            private void GetBytesMatchDictionaryBuffer(Stream stream)
+            {
+                var list = (List<KeyValuePair<byte[], byte[]>>)value;
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var current = list[i];
+                    if (lengthOne > 0)
+                        stream.Write(current.Key, 0, lengthOne);
+                    else
+                        stream.WriteExt(current.Key);
+                    if (lengthTwo > 0)
+                        stream.Write(current.Value, 0, lengthTwo);
+                    else
+                        stream.WriteExt(current.Value);
+                }
+            }
+
+            private void GetBytesMatchDictionaryBufferItem(Stream stream, int level)
+            {
+                var list = (List<KeyValuePair<byte[], Item>>)value;
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var current = list[i];
+                    if (lengthOne > 0)
+                        stream.Write(current.Key, 0, lengthOne);
+                    else
+                        stream.WriteExt(current.Key);
+                    current.Value.GetBytes(stream, level);
                 }
             }
         }
