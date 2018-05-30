@@ -6,6 +6,27 @@
 * 单元测试: [`Entrance.cs`](https://github.com/afxres/packet/blob/master/Exchange/Testing/Entrance.cs)
 * NuGet Package: [`Mikodev.Exchange`](https://www.nuget.org/packages/Mikodev.Exchange/)
 
+### 支持的类型 (可自定义类型转换器)
+```
+Byte, SByte, Int16, UInt16, Int32, Uint32, Int64, UInt64
+Single, Double
+String (UTF-8), DateTime (As Int64), TimeSpan (As Int64), Guid
+IPAddress, IPEndPoint
+```
+
+### 支持的集合
+```
+一维数组, List, Dictionary
+实现 IEnumerable 接口, 且含有构造函数参数为 IEnumerable<T> 的类型
+实现 IEnumerable 接口, 且含有 Add(T item) 方法
+实现 IDictionary<T, K> 接口 (仅序列化)
+F# List, F# Map, F# Set
+```
+
+### 其他信息
+* 字节序: 默认为小端, 在大端系统中自动翻转预设类型的字节序 (可通过修改源码中的 Extension.UseLittleEndian 字段来控制字节序)
+* 自定义转换器: 继承 ``` PacketConverter<T> ``` 并实现抽象方法; 若类型字节长度不固定, 将 ``` Length ``` 属性设为 ``` 0 ```
+
 ## 代码示例
 
 引用命名空间
@@ -31,7 +52,7 @@ var reader = new PacketReader(buffer); // 读取数据包
 var id = reader["id"].GetValue<Guid>();
 var name = (string)reader["name"].GetValue(typeof(string)); // 指定类型读取
 var time = reader["data/timestamp"].GetValue<DateTime>(); // 读取子节点
-var tags = reader["data/tags"].GetArray();
+var tags = reader["data/tags"].GetArray<string>();
 ```
 
 动态读写
