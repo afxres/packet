@@ -12,6 +12,7 @@ namespace Mikodev.Network
     {
         internal static readonly Encoding Encoding = Encoding.UTF8;
         internal static readonly char[] Separator = new[] { '/', '\\' };
+        internal static readonly byte[] ZeroBuffer = new byte[sizeof(int)];
         internal static readonly ConverterDictionary Converters;
 
         static Extension()
@@ -124,10 +125,11 @@ namespace Mikodev.Network
             other.WriteTo(stream);
         }
 
-        internal static void BeginInternal(this Stream stream, out long source)
+        internal static long BeginInternal(this Stream stream)
         {
-            source = stream.Position;
-            stream.Position += sizeof(int);
+            var source = stream.Position;
+            stream.Write(ZeroBuffer);
+            return source;
         }
 
         internal static void FinshInternal(this Stream stream, long source)

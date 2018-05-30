@@ -9,7 +9,6 @@ namespace Mikodev.Network
         internal sealed class Item
         {
             internal static readonly Item Empty = new Item();
-            internal static readonly byte[] ZeroBytes = new byte[sizeof(int)];
 
             internal readonly object value;
             internal readonly ItemFlags flag;
@@ -84,7 +83,7 @@ namespace Mikodev.Network
                 switch (flag)
                 {
                     case ItemFlags.None:
-                        stream.Write(ZeroBytes);
+                        stream.Write(Extension.ZeroBuffer);
                         break;
                     case ItemFlags.Buffer:
                         stream.WriteExt((byte[])value);
@@ -93,9 +92,9 @@ namespace Mikodev.Network
                         stream.WriteExt((MemoryStream)value);
                         break;
                     default:
-                        stream.BeginInternal(out var src);
+                        var source = stream.BeginInternal();
                         GetBytesMatch(stream, level);
-                        stream.FinshInternal(src);
+                        stream.FinshInternal(source);
                         break;
                 }
             }
