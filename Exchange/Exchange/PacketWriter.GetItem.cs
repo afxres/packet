@@ -14,7 +14,7 @@ namespace Mikodev.Network
             var type = value.GetType();
             var info = Cache.GetConverterOrInfo(converters, type, out var converter);
             if (info == null)
-                return new Item(converter.GetBytesWrap(value));
+                return NewItem(converter.GetBytesWrap(value));
             return GetItemMatch(converters, value, level, info);
         }
 
@@ -26,11 +26,11 @@ namespace Mikodev.Network
                 case InfoFlags.Writer:
                     return ((PacketWriter)value).item;
                 case InfoFlags.RawWriter:
-                    return new Item(((PacketRawWriter)value).stream);
+                    return NewItem(((PacketRawWriter)value).stream);
                 case InfoFlags.Bytes:
-                    return new Item(((ICollection<byte>)value).ToBytes());
+                    return NewItem(((ICollection<byte>)value).ToBytes());
                 case InfoFlags.SBytes:
-                    return new Item(((ICollection<sbyte>)value).ToBytes());
+                    return NewItem(((ICollection<sbyte>)value).ToBytes());
                 case InfoFlags.Enumerable:
                     return GetItemMatchEnumerable(converters, value, level, valueInfo);
                 case InfoFlags.Dictionary:
@@ -47,12 +47,12 @@ namespace Mikodev.Network
             var ele = valueInfo.ElementType;
             var inf = Cache.GetConverterOrInfo(converters, ele, out var con);
             if (inf == null)
-                return new Item(valueInfo.FromEnumerable(con, value), con.Length);
+                return NewItem(valueInfo.FromEnumerable(con, value), con.Length);
 
             var lst = new List<Item>();
             foreach (var i in ((IEnumerable)value))
                 lst.Add(GetItemMatch(converters, i, level, inf));
-            return new Item(lst);
+            return NewItem(lst);
         }
 
         private static Item GetItemMatchDictionary(ConverterDictionary converters, object value, int level, Info valueInfo)
@@ -63,7 +63,7 @@ namespace Mikodev.Network
             var ele = valueInfo.ElementType;
             var inf = Cache.GetConverterOrInfo(converters, ele, out var con);
             if (inf == null)
-                return new Item(valueInfo.FromDictionary(key, con, value), key.Length, con.Length);
+                return NewItem(valueInfo.FromDictionary(key, con, value), key.Length, con.Length);
 
             var lst = new List<KeyValuePair<byte[], Item>>();
             var kvp = valueInfo.FromDictionaryAdapter(key, value);
@@ -73,7 +73,7 @@ namespace Mikodev.Network
                 var tmp = new KeyValuePair<byte[], Item>(i.Key, res);
                 lst.Add(tmp);
             }
-            return new Item(lst, key.Length);
+            return NewItem(lst, key.Length);
         }
 
         private static Item GetItemMatchExpando(ConverterDictionary converters, object value, int level)
@@ -82,7 +82,7 @@ namespace Mikodev.Network
             var lst = new Dictionary<string, PacketWriter>();
             foreach (var i in dic)
                 lst[i.Key] = GetWriter(converters, i.Value, level);
-            return new Item(lst);
+            return NewItem(lst);
         }
 
         private static Item GetItemMatchDefault(ConverterDictionary converters, object value, int level, Info valueInfo)
@@ -93,7 +93,7 @@ namespace Mikodev.Network
             var arg = get.Arguments;
             for (int i = 0; i < arg.Length; i++)
                 lst[arg[i].Key] = GetWriter(converters, val[i], level);
-            return new Item(lst);
+            return NewItem(lst);
         }
     }
 }

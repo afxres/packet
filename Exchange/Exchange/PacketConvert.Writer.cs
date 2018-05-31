@@ -14,7 +14,7 @@ namespace Mikodev.Network
 
             var val = Cache.GetBytes(type, writer.converters, value);
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer.converters, new PacketWriter.Item(val));
+            itm[key] = new PacketWriter(writer.converters, PacketWriter.NewItem(val));
             return writer;
         }
 
@@ -25,7 +25,7 @@ namespace Mikodev.Network
 
             var val = Cache.GetBytesAuto(writer.converters, value);
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer.converters, new PacketWriter.Item(val));
+            itm[key] = new PacketWriter(writer.converters, PacketWriter.NewItem(val));
             return writer;
         }
 
@@ -36,7 +36,7 @@ namespace Mikodev.Network
 
             var val = value.ToBytes();
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer.converters, new PacketWriter.Item(val));
+            itm[key] = new PacketWriter(writer.converters, PacketWriter.NewItem(val));
             return writer;
         }
 
@@ -47,7 +47,7 @@ namespace Mikodev.Network
 
             var val = value.ToBytes();
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer.converters, new PacketWriter.Item(val));
+            itm[key] = new PacketWriter(writer.converters, PacketWriter.NewItem(val));
             return writer;
         }
 
@@ -59,7 +59,7 @@ namespace Mikodev.Network
 
             var con = Cache.GetConverter(writer.converters, type, false);
             var val = (value == null ? null : Cache.GetBytesFromEnumerableNonGeneric(con, value));
-            var sub = new PacketWriter(writer.converters, new PacketWriter.Item(val, con.Length));
+            var sub = new PacketWriter(writer.converters, PacketWriter.NewItem(val, con.Length));
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
@@ -82,7 +82,7 @@ namespace Mikodev.Network
                     val = Convert.FromEnumerable(con, value);
 
             }
-            var sub = new PacketWriter(writer.converters, new PacketWriter.Item(val, con.Length));
+            var sub = new PacketWriter(writer.converters, PacketWriter.NewItem(val, con.Length));
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
@@ -96,7 +96,7 @@ namespace Mikodev.Network
             var keycon = Cache.GetConverter<TK>(writer.converters, false);
             var valcon = Cache.GetConverter<TV>(writer.converters, false);
             var val = (value == null ? null : Convert.FromDictionary(keycon, valcon, value));
-            var sub = new PacketWriter(writer.converters, new PacketWriter.Item(val, keycon.Length, valcon.Length));
+            var sub = new PacketWriter(writer.converters, PacketWriter.NewItem(val, keycon.Length, valcon.Length));
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;
@@ -118,7 +118,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer.converters, new PacketWriter.Item(raw?.stream));
+            itm[key] = new PacketWriter(writer.converters, PacketWriter.NewItem(raw?.stream));
             return writer;
         }
     }

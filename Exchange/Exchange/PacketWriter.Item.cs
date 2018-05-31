@@ -6,75 +6,56 @@ namespace Mikodev.Network
 {
     partial class PacketWriter
     {
+        #region new item
+        internal static Item NewItem(byte[] data) => new Item(data, ItemFlags.Buffer);
+
+        internal static Item NewItem(MemoryStream data) => new Item(data, ItemFlags.Stream);
+
+        internal static Item NewItem(List<Item> data) => new Item(data, ItemFlags.ItemList);
+
+        internal static Item NewItem(Dictionary<string, PacketWriter> data) => new Item(data, ItemFlags.Dictionary);
+
+        internal static Item NewItem(byte[][] data, int length) => new Item(data, ItemFlags.BufferArray, length);
+
+        internal static Item NewItem(List<KeyValuePair<byte[], Item>> data, int length) => new Item(data, ItemFlags.DictionaryBufferItem, length);
+
+        internal static Item NewItem(List<KeyValuePair<byte[], byte[]>> data, int indexLength, int elementLength) => new Item(data, ItemFlags.DictionaryBuffer, indexLength, elementLength);
+        #endregion
+
         internal sealed class Item
         {
-            internal static readonly Item Empty = new Item();
+            internal static readonly Item Empty = new Item(new object(), ItemFlags.None);
 
-            internal readonly object value;
+            internal readonly object data;
             internal readonly ItemFlags flag;
             internal readonly int lengthOne;
             internal readonly int lengthTwo;
 
-            private Item() { }
-
-            internal Item(byte[] source)
+            internal Item(object data, ItemFlags flag)
             {
-                if (source == null)
+                if (data == null)
                     return;
-                value = source;
-                flag = ItemFlags.Buffer;
+                this.data = data;
+                this.flag = flag;
             }
 
-            internal Item(MemoryStream source)
+            internal Item(object data, ItemFlags flag, int length)
             {
-                if (source == null)
+                if (data == null)
                     return;
-                value = source;
-                flag = ItemFlags.Stream;
-            }
-
-            internal Item(List<Item> source)
-            {
-                if (source == null)
-                    return;
-                value = source;
-                flag = ItemFlags.ItemList;
-            }
-
-            internal Item(Dictionary<string, PacketWriter> source)
-            {
-                if (source == null)
-                    return;
-                value = source;
-                flag = ItemFlags.Dictionary;
-            }
-
-            internal Item(byte[][] source, int length)
-            {
-                if (source == null)
-                    return;
-                value = source;
-                flag = ItemFlags.BufferArray;
+                this.data = data;
+                this.flag = flag;
                 lengthOne = length;
             }
 
-            internal Item(List<KeyValuePair<byte[], Item>> source, int length)
+            internal Item(object data, ItemFlags flag, int one, int two)
             {
-                if (source == null)
+                if (data == null)
                     return;
-                value = source;
-                flag = ItemFlags.DictionaryBufferItem;
-                lengthOne = length;
-            }
-
-            internal Item(List<KeyValuePair<byte[], byte[]>> source, int indexLength, int elementLength)
-            {
-                if (source == null)
-                    return;
-                value = source;
-                flag = ItemFlags.DictionaryBuffer;
-                lengthOne = indexLength;
-                lengthTwo = elementLength;
+                this.data = data;
+                this.flag = flag;
+                lengthOne = one;
+                lengthTwo = two;
             }
 
             internal void GetBytes(Stream stream, int level)
@@ -86,10 +67,10 @@ namespace Mikodev.Network
                         stream.Write(Extension.ZeroBuffer);
                         break;
                     case ItemFlags.Buffer:
-                        stream.WriteExt((byte[])value);
+                        stream.WriteExt((byte[])data);
                         break;
                     case ItemFlags.Stream:
-                        stream.WriteExt((MemoryStream)value);
+                        stream.WriteExt((MemoryStream)data);
                         break;
                     default:
                         var source = stream.BeginInternal();
@@ -125,7 +106,7 @@ namespace Mikodev.Network
 
             private void GetBytesMatchBufferArray(Stream stream)
             {
-                var array = (byte[][])value;
+                var array = (byte[][])data;
                 if (lengthOne > 0)
                     for (int i = 0; i < array.Length; i++)
                         stream.Write(array[i]);
@@ -136,14 +117,14 @@ namespace Mikodev.Network
 
             private void GetBytesMatchItemList(Stream stream, int level)
             {
-                var list = (List<Item>)value;
+                var list = (List<Item>)data;
                 for (int i = 0; i < list.Count; i++)
                     list[i].GetBytes(stream, level);
             }
 
             private void GetBytesMatchDictionary(Stream stream, int level)
             {
-                var dictionary = (Dictionary<string, PacketWriter>)value;
+                var dictionary = (Dictionary<string, PacketWriter>)data;
                 foreach (var i in dictionary)
                 {
                     stream.WriteKey(i.Key);
@@ -153,7 +134,7 @@ namespace Mikodev.Network
 
             private void GetBytesMatchDictionaryBuffer(Stream stream)
             {
-                var list = (List<KeyValuePair<byte[], byte[]>>)value;
+                var list = (List<KeyValuePair<byte[], byte[]>>)data;
                 for (int i = 0; i < list.Count; i++)
                 {
                     var current = list[i];
@@ -170,7 +151,7 @@ namespace Mikodev.Network
 
             private void GetBytesMatchDictionaryBufferItem(Stream stream, int level)
             {
-                var list = (List<KeyValuePair<byte[], Item>>)value;
+                var list = (List<KeyValuePair<byte[], Item>>)data;
                 for (int i = 0; i < list.Count; i++)
                 {
                     var current = list[i];

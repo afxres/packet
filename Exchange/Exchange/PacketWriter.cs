@@ -37,7 +37,7 @@ namespace Mikodev.Network
         {
             var item = this.item;
             if (item.flag == ItemFlags.Dictionary)
-                return ((Dictionary<string, PacketWriter>)item.value).Keys;
+                return ((Dictionary<string, PacketWriter>)item.data).Keys;
             return System.Linq.Enumerable.Empty<string>();
         }
 
@@ -45,9 +45,9 @@ namespace Mikodev.Network
         {
             var item = this.item;
             if (item.flag == ItemFlags.Dictionary)
-                return (Dictionary<string, PacketWriter>)item.value;
+                return (Dictionary<string, PacketWriter>)item.data;
             var dictionary = new Dictionary<string, PacketWriter>();
-            this.item = new Item(dictionary);
+            this.item = NewItem(dictionary);
             return dictionary;
         }
 
@@ -66,9 +66,9 @@ namespace Mikodev.Network
                 case ItemFlags.None:
                     return UnmanagedArrayConverter<byte>.EmptyArray;
                 case ItemFlags.Buffer:
-                    return (byte[])item.value;
+                    return (byte[])item.data;
                 case ItemFlags.Stream:
-                    return ((MemoryStream)item.value).ToArray();
+                    return ((MemoryStream)item.data).ToArray();
                 default:
                     var mst = new MemoryStream(Cache.Length);
                     item.GetBytesMatch(mst, 0);
@@ -78,7 +78,7 @@ namespace Mikodev.Network
 
         public override string ToString()
         {
-            var value = item.value;
+            var value = item.data;
             var builder = new StringBuilder(nameof(PacketWriter));
             builder.Append(" with ");
             if (value == null)
