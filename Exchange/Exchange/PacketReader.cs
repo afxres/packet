@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
@@ -9,15 +10,19 @@ namespace Mikodev.Network
 {
     public sealed partial class PacketReader : IDynamicMetaObjectProvider
     {
-        private const int TagArray = 1;
-        private const int TagDictionary = 2;
+        private enum Flags : int
+        {
+            None = 0,
+            List = 1,
+            Dictionary = 2,
+        }
 
         internal readonly ConverterDictionary converters;
         internal readonly Element element;
 
         private List<PacketReader> list = null;
         private Dictionary<string, PacketReader> dictionary = null;
-        private int tag = 0;
+        private Flags flags = 0;
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
@@ -31,14 +36,17 @@ namespace Mikodev.Network
             this.converters = converters;
         }
 
-        internal Dictionary<string, PacketReader> GetDictionary()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal Dictionary<string, PacketReader> GetDictionary() => dictionary ?? InitializeDictionary();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal List<PacketReader> GetList() => list ?? InitializeList();
+
+        private Dictionary<string, PacketReader> InitializeDictionary()
         {
-            var obj = dictionary;
-            if (obj != null)
-                return obj;
-            if ((tag & TagDictionary) != 0)
+            if ((flags & Flags.Dictionary) != 0)
                 return null;
-            tag |= TagDictionary;
+            flags |= Flags.Dictionary;
 
             var dic = new Dictionary<string, PacketReader>();
             var buf = element.buffer;
@@ -71,14 +79,11 @@ namespace Mikodev.Network
             return dic;
         }
 
-        internal List<PacketReader> GetList()
+        private List<PacketReader> InitializeList()
         {
-            var src = list;
-            if (src != null)
-                return src;
-            if ((tag & TagArray) != 0)
+            if ((flags & Flags.List) != 0)
                 throw PacketException.Overflow();
-            tag |= TagArray;
+            flags |= Flags.List;
 
             var lst = new List<PacketReader>();
             var max = element.Limits;
@@ -121,19 +126,11 @@ namespace Mikodev.Network
             return rdr;
         }
 
-        internal IEnumerable<string> GetKeys()
-        {
-            var dic = GetDictionary();
-            if (dic != null)
-                return dic.Keys;
-            return System.Linq.Enumerable.Empty<string>();
-        }
-
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicReader(parameter, this);
 
         public int Count => GetDictionary()?.Count ?? 0;
 
-        public IEnumerable<string> Keys => GetKeys();
+        public IEnumerable<string> Keys => GetDictionary()?.Keys ?? System.Linq.Enumerable.Empty<string>();
 
         public PacketReader this[string path, bool nothrow = false]
         {

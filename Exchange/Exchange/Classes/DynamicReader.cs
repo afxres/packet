@@ -27,7 +27,7 @@ namespace Mikodev.Network
 
         public override IEnumerable<string> GetDynamicMemberNames()
         {
-            return ((PacketReader)Value).GetKeys();
+            return ((PacketReader)Value).Keys;
         }
     }
 }
