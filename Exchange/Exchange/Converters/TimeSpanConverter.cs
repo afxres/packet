@@ -5,9 +5,9 @@ namespace Mikodev.Network.Converters
     [Converter(typeof(TimeSpan))]
     internal sealed class TimeSpanConverter : PacketConverter<TimeSpan>
     {
-        private static byte[] ToBytes(TimeSpan value) => UnmanagedConverter<long>.ToBytes(value.Ticks);
+        private static byte[] ToBytes(TimeSpan value) => UnmanagedValueConverter<long>.ToBytes(value.Ticks);
 
-        private static TimeSpan ToValue(byte[] buffer, int offset, int length) => new TimeSpan(UnmanagedConverter<long>.ToValue(buffer, offset, length));
+        private static TimeSpan ToValue(byte[] buffer, int offset, int length) => new TimeSpan(UnmanagedValueConverter<long>.ToValue(buffer, offset, length));
 
         public override int Length => sizeof(Int64);
 

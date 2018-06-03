@@ -5,6 +5,7 @@ namespace Mikodev.Network.Converters
 {
     internal class UnmanagedArrayConverter<T> : PacketConverter<T[]> where T : unmanaged
     {
+        internal static readonly bool ReverseEndianness = BitConverter.IsLittleEndian != PacketConvert.UseLittleEndian && Unsafe.SizeOf<T>() != 1;
         internal static readonly T[] EmptyArray = new T[0];
 
         internal static byte[] ToBytes(T[] source)
@@ -14,7 +15,7 @@ namespace Mikodev.Network.Converters
             var targetLength = source.Length * Unsafe.SizeOf<T>();
             var target = new byte[targetLength];
             Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<T, byte>(ref source[0]), (uint)targetLength);
-            if (BitConverter.IsLittleEndian != Extension.UseLittleEndian && Unsafe.SizeOf<T>() != 1)
+            if (ReverseEndianness)
                 Extension.ReverseEndiannessExplicitly<T>(target);
             return target;
         }
@@ -27,7 +28,7 @@ namespace Mikodev.Network.Converters
                 throw PacketException.Overflow();
             var target = new T[length / Unsafe.SizeOf<T>()];
             Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref buffer[offset], (uint)length);
-            if (BitConverter.IsLittleEndian != Extension.UseLittleEndian && Unsafe.SizeOf<T>() != 1)
+            if (ReverseEndianness)
                 Extension.ReverseEndianness(target);
             return target;
         }

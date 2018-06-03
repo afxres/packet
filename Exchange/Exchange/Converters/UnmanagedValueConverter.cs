@@ -3,16 +3,17 @@ using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
-    internal class UnmanagedConverter<T> : PacketConverter<T> where T : unmanaged
+    internal class UnmanagedValueConverter<T> : PacketConverter<T> where T : unmanaged
     {
+        internal static readonly bool ReverseEndianness = BitConverter.IsLittleEndian != PacketConvert.UseLittleEndian && Unsafe.SizeOf<T>() != 1;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static byte[] ToBytes(T value)
         {
+            if (ReverseEndianness)
+                value = Extension.ReverseEndianness(value);
             var buffer = new byte[Unsafe.SizeOf<T>()];
-            if (BitConverter.IsLittleEndian == Extension.UseLittleEndian)
-                Unsafe.WriteUnaligned(ref buffer[0], value);
-            else
-                Unsafe.WriteUnaligned(ref buffer[0], Extension.ReverseEndianness(value));
+            Unsafe.WriteUnaligned(ref buffer[0], value);
             return buffer;
         }
 
@@ -27,10 +28,10 @@ namespace Mikodev.Network.Converters
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static T ToValueUnchecked(ref byte location)
         {
-            if (BitConverter.IsLittleEndian == Extension.UseLittleEndian)
-                return Unsafe.ReadUnaligned<T>(ref location);
-            else
-                return Extension.ReverseEndianness(Unsafe.ReadUnaligned<T>(ref location));
+            var value = Unsafe.ReadUnaligned<T>(ref location);
+            if (ReverseEndianness)
+                value = Extension.ReverseEndianness(value);
+            return value;
         }
 
         public override int Length => Unsafe.SizeOf<T>();

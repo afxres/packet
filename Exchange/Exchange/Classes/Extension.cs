@@ -19,9 +19,9 @@ namespace Mikodev.Network
         {
             var dictionary = new ConverterDictionary();
             var assemblyTypes = typeof(Extension).Assembly.GetTypes();
-            var unmanagedConverterType = typeof(UnmanagedConverter<>);
-            var unmanagedArrayConverterType = typeof(UnmanagedArrayConverter<>);
-            var unmanagedElementTypes = new[]
+            var valueConverterType = typeof(UnmanagedValueConverter<>);
+            var arrayConverterType = typeof(UnmanagedArrayConverter<>);
+            var unmanagedTypes = new[]
             {
                 typeof(sbyte),
                 typeof(char),
@@ -46,19 +46,19 @@ namespace Mikodev.Network
                 var instance = (PacketConverter)Activator.CreateInstance(type);
                 dictionary.Add(elementType, instance);
             }
-            for (int i = 0; i < unmanagedElementTypes.Length; i++)
+            for (int i = 0; i < unmanagedTypes.Length; i++)
             {
-                var elementType = unmanagedElementTypes[i];
+                var elementType = unmanagedTypes[i];
                 var arrayType = elementType.MakeArrayType();
                 if (!dictionary.ContainsKey(elementType))
                 {
-                    var converterType = unmanagedConverterType.MakeGenericType(elementType);
+                    var converterType = valueConverterType.MakeGenericType(elementType);
                     var instance = (PacketConverter)Activator.CreateInstance(converterType);
                     dictionary.Add(elementType, instance);
                 }
                 if (!dictionary.ContainsKey(arrayType))
                 {
-                    var converterType = unmanagedArrayConverterType.MakeGenericType(elementType);
+                    var converterType = arrayConverterType.MakeGenericType(elementType);
                     var instance = (PacketConverter)Activator.CreateInstance(converterType);
                     dictionary.Add(arrayType, instance);
                 }
@@ -71,7 +71,7 @@ namespace Mikodev.Network
             var cursor = offset;
             if (limits - cursor < sizeof(int))
                 return -1;
-            var length = UnmanagedConverter<int>.ToValueUnchecked(ref buffer[cursor]);
+            var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[cursor]);
             cursor += sizeof(int);
             if ((uint)(limits - cursor) < (uint)length)
                 return -1;
@@ -105,14 +105,14 @@ namespace Mikodev.Network
         internal static void WriteKey(this Stream stream, string key)
         {
             var buffer = Encoding.GetBytes(key);
-            var header = UnmanagedConverter<int>.ToBytes(buffer.Length);
+            var header = UnmanagedValueConverter<int>.ToBytes(buffer.Length);
             stream.Write(header, 0, header.Length);
             stream.Write(buffer, 0, buffer.Length);
         }
 
         internal static void WriteExt(this Stream stream, byte[] buffer)
         {
-            var header = UnmanagedConverter<int>.ToBytes(buffer.Length);
+            var header = UnmanagedValueConverter<int>.ToBytes(buffer.Length);
             stream.Write(header, 0, header.Length);
             stream.Write(buffer, 0, buffer.Length);
         }
@@ -120,7 +120,7 @@ namespace Mikodev.Network
         internal static void WriteExt(this Stream stream, MemoryStream other)
         {
             var length = (int)other.Length;
-            var header = UnmanagedConverter<int>.ToBytes(length);
+            var header = UnmanagedValueConverter<int>.ToBytes(length);
             stream.Write(header, 0, sizeof(int));
             other.WriteTo(stream);
         }
@@ -139,7 +139,7 @@ namespace Mikodev.Network
             if (length > int.MaxValue)
                 throw PacketException.Overflow();
             stream.Position = source;
-            var header = UnmanagedConverter<int>.ToBytes((int)length);
+            var header = UnmanagedValueConverter<int>.ToBytes((int)length);
             stream.Write(header, 0, header.Length);
             stream.Position = target;
         }

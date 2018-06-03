@@ -5,6 +5,8 @@ namespace Mikodev.Network
 {
     public static partial class PacketConvert
     {
+        public static readonly bool UseLittleEndian = true;
+
         #region Throw If Argument Error
         private static void ThrowIfArgumentError(string key)
         {

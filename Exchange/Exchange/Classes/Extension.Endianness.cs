@@ -5,9 +5,7 @@ namespace Mikodev.Network
 {
     partial class Extension
     {
-        internal const bool UseLittleEndian = true;
         internal const string UnableToReverseEndianness = "Unable to reverse endianness";
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static UInt16 ReverseEndianness(UInt16 value)

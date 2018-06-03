@@ -5,9 +5,9 @@ namespace Mikodev.Network.Converters
     [Converter(typeof(DateTime))]
     internal sealed class DateTimeConverter : PacketConverter<DateTime>
     {
-        private static byte[] ToBytes(DateTime value) => UnmanagedConverter<long>.ToBytes(value.ToBinary());
+        private static byte[] ToBytes(DateTime value) => UnmanagedValueConverter<long>.ToBytes(value.ToBinary());
 
-        private static DateTime ToValue(byte[] buffer, int offset, int length) => DateTime.FromBinary(UnmanagedConverter<long>.ToValue(buffer, offset, length));
+        private static DateTime ToValue(byte[] buffer, int offset, int length) => DateTime.FromBinary(UnmanagedValueConverter<long>.ToValue(buffer, offset, length));
 
         public override int Length => sizeof(Int64);
 
