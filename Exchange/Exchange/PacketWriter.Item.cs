@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Mikodev.Network
 {
@@ -9,7 +8,7 @@ namespace Mikodev.Network
         #region new item
         internal static Item NewItem(byte[] data) => new Item(data, ItemFlags.Buffer);
 
-        internal static Item NewItem(MemoryStream data) => new Item(data, ItemFlags.Stream);
+        internal static Item NewItem(UnsafeStream data) => new Item(data, ItemFlags.Stream);
 
         internal static Item NewItem(List<Item> data) => new Item(data, ItemFlags.ItemList);
 
@@ -58,7 +57,7 @@ namespace Mikodev.Network
                 lengthTwo = two;
             }
 
-            internal void GetBytes(Stream stream, int level)
+            internal void GetBytes(UnsafeStream stream, int level)
             {
                 PacketException.VerifyRecursionError(ref level);
                 switch (flag)
@@ -70,17 +69,17 @@ namespace Mikodev.Network
                         stream.WriteExt((byte[])data);
                         break;
                     case ItemFlags.Stream:
-                        stream.WriteExt((MemoryStream)data);
+                        stream.WriteExt((UnsafeStream)data);
                         break;
                     default:
-                        var source = stream.BeginInternal();
+                        var source = stream.BeginModify();
                         GetBytesMatch(stream, level);
-                        stream.FinshInternal(source);
+                        stream.EndModify(source);
                         break;
                 }
             }
 
-            internal void GetBytesMatch(Stream stream, int level)
+            internal void GetBytesMatch(UnsafeStream stream, int level)
             {
                 PacketException.VerifyRecursionError(ref level);
                 switch (flag)
@@ -104,7 +103,7 @@ namespace Mikodev.Network
                 }
             }
 
-            private void GetBytesMatchBufferArray(Stream stream)
+            private void GetBytesMatchBufferArray(UnsafeStream stream)
             {
                 var array = (byte[][])data;
                 if (lengthOne > 0)
@@ -115,14 +114,14 @@ namespace Mikodev.Network
                         stream.WriteExt(array[i]);
             }
 
-            private void GetBytesMatchItemList(Stream stream, int level)
+            private void GetBytesMatchItemList(UnsafeStream stream, int level)
             {
                 var list = (List<Item>)data;
                 for (int i = 0; i < list.Count; i++)
                     list[i].GetBytes(stream, level);
             }
 
-            private void GetBytesMatchDictionary(Stream stream, int level)
+            private void GetBytesMatchDictionary(UnsafeStream stream, int level)
             {
                 var dictionary = (Dictionary<string, PacketWriter>)data;
                 foreach (var i in dictionary)
@@ -132,31 +131,31 @@ namespace Mikodev.Network
                 }
             }
 
-            private void GetBytesMatchDictionaryBuffer(Stream stream)
+            private void GetBytesMatchDictionaryBuffer(UnsafeStream stream)
             {
                 var list = (List<KeyValuePair<byte[], byte[]>>)data;
                 for (int i = 0; i < list.Count; i++)
                 {
                     var current = list[i];
                     if (lengthOne > 0)
-                        stream.Write(current.Key, 0, lengthOne);
+                        stream.Write(current.Key);
                     else
                         stream.WriteExt(current.Key);
                     if (lengthTwo > 0)
-                        stream.Write(current.Value, 0, lengthTwo);
+                        stream.Write(current.Value);
                     else
                         stream.WriteExt(current.Value);
                 }
             }
 
-            private void GetBytesMatchDictionaryBufferItem(Stream stream, int level)
+            private void GetBytesMatchDictionaryBufferItem(UnsafeStream stream, int level)
             {
                 var list = (List<KeyValuePair<byte[], Item>>)data;
                 for (int i = 0; i < list.Count; i++)
                 {
                     var current = list[i];
                     if (lengthOne > 0)
-                        stream.Write(current.Key, 0, lengthOne);
+                        stream.Write(current.Key);
                     else
                         stream.WriteExt(current.Key);
                     current.Value.GetBytes(stream, level);

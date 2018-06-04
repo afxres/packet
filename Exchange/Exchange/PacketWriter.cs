@@ -3,7 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
-using System.IO;
 using System.Linq.Expressions;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
@@ -36,9 +35,9 @@ namespace Mikodev.Network
         internal IEnumerable<string> GetKeys()
         {
             var item = this.item;
-            if (item.flag == ItemFlags.Dictionary)
-                return ((Dictionary<string, PacketWriter>)item.data).Keys;
-            return System.Linq.Enumerable.Empty<string>();
+            return item.flag == ItemFlags.Dictionary
+                ? ((Dictionary<string, PacketWriter>)item.data).Keys
+                : System.Linq.Enumerable.Empty<string>();
         }
 
         internal Dictionary<string, PacketWriter> GetDictionary()
@@ -68,11 +67,11 @@ namespace Mikodev.Network
                 case ItemFlags.Buffer:
                     return (byte[])item.data;
                 case ItemFlags.Stream:
-                    return ((MemoryStream)item.data).ToArray();
+                    return ((UnsafeStream)item.data).GetBytes();
                 default:
-                    var mst = new MemoryStream(Cache.Length);
-                    item.GetBytesMatch(mst, 0);
-                    return mst.ToArray();
+                    var stream = new UnsafeStream();
+                    item.GetBytesMatch(stream, 0);
+                    return stream.GetBytes();
             }
         }
 
@@ -85,8 +84,8 @@ namespace Mikodev.Network
                 builder.Append("none");
             else if (value is byte[] buf)
                 builder.AppendFormat("{0} byte(s)", buf.Length);
-            else if (value is MemoryStream mst)
-                builder.AppendFormat("{0} byte(s)", mst.Length);
+            else if (value is UnsafeStream mst)
+                builder.AppendFormat("{0} byte(s)", mst.GetPosition());
             else if (value is ICollection col)
                 builder.AppendFormat("{0} node(s)", col.Count);
             else

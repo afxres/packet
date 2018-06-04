@@ -27,7 +27,6 @@ namespace Mikodev.Network
             return ((UInt64)ReverseEndianness((UInt32)value) << 32) + ReverseEndianness((UInt32)(value >> 32));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static T ReverseEndianness<T>(T value) where T : unmanaged
         {
             switch (Unsafe.SizeOf<T>())

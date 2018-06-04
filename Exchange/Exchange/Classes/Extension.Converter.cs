@@ -19,6 +19,11 @@ namespace Mikodev.Network
         internal static object GetObjectWrap(this PacketConverter converter, Element element, bool check = false) => GetObjectWrap(converter, element.buffer, element.offset, element.length, check);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static T GetValueWrapAuto<T>(this PacketConverter converter, Element element, bool check = false) => GetValueWrapAuto<T>(converter, element.buffer, element.offset, element.length, check);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static T GetValueWrap<T>(this PacketConverter<T> converter, Element element) => GetValueWrap(converter, element.buffer, element.offset, element.length);
+
         internal static object GetObjectWrap(this PacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
         {
             try
@@ -33,10 +38,6 @@ namespace Mikodev.Network
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T GetValueWrapAuto<T>(this PacketConverter converter, Element element, bool check = false) => GetValueWrapAuto<T>(converter, element.buffer, element.offset, element.length, check);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static T GetValueWrapAuto<T>(this PacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
         {
             try
@@ -53,10 +54,6 @@ namespace Mikodev.Network
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T GetValueWrap<T>(this PacketConverter<T> converter, Element element) => GetValueWrap(converter, element.buffer, element.offset, element.length);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static T GetValueWrap<T>(this PacketConverter<T> converter, byte[] buffer, int offset, int length)
         {
             try

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
-    internal class UnmanagedArrayConverter<T> : PacketConverter<T[]> where T : unmanaged
+    internal sealed class UnmanagedArrayConverter<T> : PacketConverter<T[]> where T : unmanaged
     {
         internal static readonly bool ReverseEndianness = BitConverter.IsLittleEndian != PacketConvert.UseLittleEndian && Unsafe.SizeOf<T>() != 1;
         internal static readonly T[] EmptyArray = new T[0];

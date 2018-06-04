@@ -1,7 +1,6 @@
 ﻿using Mikodev.Network.Converters;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
@@ -99,80 +98,6 @@ namespace Mikodev.Network
             throw PacketException.Overflow();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Write(this Stream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
-
-        internal static void WriteKey(this Stream stream, string key)
-        {
-            var buffer = Encoding.GetBytes(key);
-            var header = UnmanagedValueConverter<int>.ToBytes(buffer.Length);
-            stream.Write(header, 0, header.Length);
-            stream.Write(buffer, 0, buffer.Length);
-        }
-
-        internal static void WriteExt(this Stream stream, byte[] buffer)
-        {
-            var header = UnmanagedValueConverter<int>.ToBytes(buffer.Length);
-            stream.Write(header, 0, header.Length);
-            stream.Write(buffer, 0, buffer.Length);
-        }
-
-        internal static void WriteExt(this Stream stream, MemoryStream other)
-        {
-            var length = (int)other.Length;
-            var header = UnmanagedValueConverter<int>.ToBytes(length);
-            stream.Write(header, 0, sizeof(int));
-            other.WriteTo(stream);
-        }
-
-        internal static long BeginInternal(this Stream stream)
-        {
-            var source = stream.Position;
-            stream.Write(ZeroBuffer);
-            return source;
-        }
-
-        internal static void FinshInternal(this Stream stream, long source)
-        {
-            var target = stream.Position;
-            var length = target - source - sizeof(int);
-            if (length > int.MaxValue)
-                throw PacketException.Overflow();
-            stream.Position = source;
-            var header = UnmanagedValueConverter<int>.ToBytes((int)length);
-            stream.Write(header, 0, header.Length);
-            stream.Position = target;
-        }
-
-        internal static void WriteValue(this Stream stream, ConverterDictionary converters, object value, Type type)
-        {
-            var converter = Cache.GetConverter(converters, type, false);
-            if (converter.Length > 0)
-                stream.Write(converter.GetBytesWrap(value));
-            else
-                stream.WriteExt(converter.GetBytesWrap(value));
-        }
-
-        internal static void WriteValueGeneric<T>(this Stream stream, ConverterDictionary converters, T value)
-        {
-            var converter = Cache.GetConverter<T>(converters, false);
-            var generic = converter as PacketConverter<T>;
-            if (converter.Length > 0)
-            {
-                if (generic != null)
-                    stream.Write(generic.GetBytesWrap(value));
-                else
-                    stream.Write(converter.GetBytesWrap(value));
-            }
-            else
-            {
-                if (generic != null)
-                    stream.WriteExt(generic.GetBytesWrap(value));
-                else
-                    stream.WriteExt(converter.GetBytesWrap(value));
-            }
-        }
-
         internal static byte[] BorrowOrCopy(byte[] buffer, int offset, int length)
         {
             if (buffer == null)
@@ -212,5 +137,36 @@ namespace Mikodev.Network
             Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<sbyte, byte>(ref source[0]), (uint)length);
             return target;
         }
+
+        #region builder
+        internal static void WriteValue(this UnsafeStream stream, ConverterDictionary converters, object value, Type type)
+        {
+            var converter = Cache.GetConverter(converters, type, false);
+            if (converter.Length > 0)
+                stream.Write(converter.GetBytesWrap(value));
+            else
+                stream.WriteExt(converter.GetBytesWrap(value));
+        }
+
+        internal static void WriteValueGeneric<T>(this UnsafeStream stream, ConverterDictionary converters, T value)
+        {
+            var converter = Cache.GetConverter<T>(converters, false);
+            var generic = converter as PacketConverter<T>;
+            if (converter.Length > 0)
+            {
+                if (generic != null)
+                    stream.Write(generic.GetBytesWrap(value));
+                else
+                    stream.Write(converter.GetBytesWrap(value));
+            }
+            else
+            {
+                if (generic != null)
+                    stream.WriteExt(generic.GetBytesWrap(value));
+                else
+                    stream.WriteExt(converter.GetBytesWrap(value));
+            }
+        }
+        #endregion
     }
 }

@@ -21,7 +21,7 @@ namespace Mikodev.Test
             };
 
             const int max = 1 << 20;
-            const int loop = 10;
+            const int loop = 6;
 
             var ano = new
             {
@@ -85,8 +85,8 @@ namespace Mikodev.Test
             {
                 var key = i.Key;
                 var val = i.Value;
-                if (val.Count > 6)
-                    val.RemoveRange(0, 4);
+                if (val.Count > 4)
+                    val.RemoveRange(0, 2);
                 var sum = val.Select(r => r.Ticks).Sum();
                 var cir = new TimeSpan(sum / val.Count);
                 var avg = new TimeSpan(1000 * sum / val.Count / max);
