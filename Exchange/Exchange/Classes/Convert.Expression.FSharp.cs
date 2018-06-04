@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using ToCollectionExtFunction = System.Func<object[], object>;
+using ToCollectionExtendFunction = System.Func<object[], object>;
 using ToCollectionFunction = System.Func<Mikodev.Network.PacketReader, Mikodev.Network.PacketConverter, object>;
-using ToDictionaryExtFunction = System.Func<System.Collections.Generic.List<object>, object>;
+using ToDictionaryExtendFunction = System.Func<System.Collections.Generic.List<object>, object>;
 using ToDictionaryFunction = System.Func<Mikodev.Network.PacketReader, Mikodev.Network.PacketConverter, Mikodev.Network.PacketConverter, object>;
 
 namespace Mikodev.Network
@@ -52,12 +52,12 @@ namespace Mikodev.Network
             return false;
         }
 
-        internal static bool ToFSharpListFunc(Type type, Type elementType, out ToCollectionFunction collectionFunc, out ToCollectionExtFunction collectionExtFunc)
+        internal static bool ToFSharpListFunc(Type type, Type elementType, out ToCollectionFunction collectionFunc, out ToCollectionExtendFunction collectionExtendFunc)
         {
             if (InternalIsFSharpList(type) == false)
             {
                 collectionFunc = null;
-                collectionExtFunc = null;
+                collectionExtendFunc = null;
                 return false;
             }
 
@@ -74,28 +74,28 @@ namespace Mikodev.Network
                 reader, converter);
             collectionFunc = expression.Compile();
 
-            var extensionExpression = Expression.Lambda<ToCollectionExtFunction>(
+            var extensionExpression = Expression.Lambda<ToCollectionExtendFunction>(
                 Expression.Convert(
                     Expression.Call(
                         ToFSharpListMethodInfo.MakeGenericMethod(elementType),
                         ConvertArrayExpression(elementType, out var objectArray)),
                     typeof(object)),
                 objectArray);
-            collectionExtFunc = extensionExpression.Compile();
+            collectionExtendFunc = extensionExpression.Compile();
             return true;
         }
 
-        internal static bool ToFSharpMapFunc(Type type, Type[] elementTypes, out ToDictionaryFunction dictionaryFunc, out ToDictionaryExtFunction dictionaryExtFunc)
+        internal static bool ToFSharpMapFunc(Type type, Type[] elementTypes, out ToDictionaryFunction dictionaryFunc, out ToDictionaryExtendFunction dictionaryExtendFunc)
         {
             if (InternalIsFSharpMap(type, elementTypes, out var constructorInfo) == false)
             {
                 dictionaryFunc = null;
-                dictionaryExtFunc = null;
+                dictionaryExtendFunc = null;
                 return false;
             }
 
             var tupleListMothodInfo = typeof(Convert).GetMethod(nameof(ToTupleList), BindingFlags.Static | BindingFlags.NonPublic);
-            var tupleListExtMothodInfo = typeof(Convert).GetMethod(nameof(ToTupleListExt), BindingFlags.Static | BindingFlags.NonPublic);
+            var tupleListExtendMothodInfo = typeof(Convert).GetMethod(nameof(ToTupleListExtend), BindingFlags.Static | BindingFlags.NonPublic);
             var reader = Expression.Parameter(typeof(PacketReader), "reader");
             var indexConverter = Expression.Parameter(typeof(PacketConverter), "index");
             var elementConverter = Expression.Parameter(typeof(PacketConverter), "element");
@@ -111,16 +111,16 @@ namespace Mikodev.Network
             dictionaryFunc = expression.Compile();
 
             var objectList = Expression.Parameter(typeof(List<object>), "objectList");
-            var extensionExpression = Expression.Lambda<ToDictionaryExtFunction>(
+            var extensionExpression = Expression.Lambda<ToDictionaryExtendFunction>(
                 Expression.Convert(
                     Expression.New(
                         constructorInfo,
                         Expression.Call(
-                            tupleListExtMothodInfo.MakeGenericMethod(elementTypes),
+                            tupleListExtendMothodInfo.MakeGenericMethod(elementTypes),
                             objectList)),
                     typeof(object)),
                 objectList);
-            dictionaryExtFunc = extensionExpression.Compile();
+            dictionaryExtendFunc = extensionExpression.Compile();
             return true;
         }
     }

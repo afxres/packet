@@ -50,11 +50,11 @@ namespace Mikodev.Network
             else if (generic && genericArgs.Length == 1)
             {
                 var elementType = genericArgs[0];
-                if (Convert.ToFSharpListFunc(type, elementType, out var collectionFunc, out var collectionExtFunc))
+                if (Convert.ToFSharpListFunc(type, elementType, out var collectionFunc, out var collectionExtendFunc))
                 {
                     info.To = InfoFlags.Collection;
                     info.ToCollection = collectionFunc;
-                    info.ToCollectionExt = collectionExtFunc;
+                    info.ToCollectionExtend = collectionExtendFunc;
                 }
                 else if (genericDefinition == typeof(List<>))
                 {
@@ -62,23 +62,23 @@ namespace Mikodev.Network
                 }
                 else if (interfaces.Contains(typeof(IEnumerable)))
                 {
-                    if (Convert.ToCollectionByConstructorFunc(type, elementType, out collectionFunc, out collectionExtFunc) ||
-                        Convert.ToCollectionByAddFunc(type, elementType, out collectionFunc, out collectionExtFunc))
+                    if (Convert.ToCollectionByConstructorFunc(type, elementType, out collectionFunc, out collectionExtendFunc) ||
+                        Convert.ToCollectionByAddFunc(type, elementType, out collectionFunc, out collectionExtendFunc))
                     {
                         info.ElementType = elementType;
                         info.To = InfoFlags.Collection;
                         info.ToCollection = collectionFunc;
-                        info.ToCollectionExt = collectionExtFunc;
+                        info.ToCollectionExtend = collectionExtendFunc;
                     }
                 }
             }
             else if (generic && genericArgs.Length == 2)
             {
-                if (Convert.ToFSharpMapFunc(type, genericArgs, out var dictionaryFunc, out var dictionaryExtFunc))
+                if (Convert.ToFSharpMapFunc(type, genericArgs, out var dictionaryFunc, out var dictionaryExtendFunc))
                 {
                     info.To = InfoFlags.Dictionary;
                     info.ToDictionary = dictionaryFunc;
-                    info.ToDictionaryExt = dictionaryExtFunc;
+                    info.ToDictionaryExtend = dictionaryExtendFunc;
                 }
                 else if (genericDefinition == typeof(Dictionary<,>))
                 {
@@ -141,7 +141,7 @@ namespace Mikodev.Network
             var baseInfo = GetInfo(baseType);
             info.To = InfoFlags.Dictionary;
             info.ToDictionary = baseInfo.ToDictionary;
-            info.ToDictionaryExt = baseInfo.ToDictionaryExt;
+            info.ToDictionaryExtend = baseInfo.ToDictionaryExtend;
         }
 
         private static Info GetInfoFromIDictionary(Info info, Type[] genericArgs)
@@ -152,7 +152,7 @@ namespace Mikodev.Network
             GetInfoFromDictionary(info, enumerableInfo, genericArgs);
             info.To = InfoFlags.Dictionary;
             info.ToDictionary = Convert.ToDictionaryFunc(genericArgs);
-            info.ToDictionaryExt = Convert.ToDictionaryExtFunc(genericArgs);
+            info.ToDictionaryExtend = Convert.ToDictionaryExtendFunc(genericArgs);
             return info;
         }
 
@@ -162,7 +162,7 @@ namespace Mikodev.Network
             info.ElementType = elementType;
             info.To = InfoFlags.Collection; // to list
             info.ToCollection = Convert.ToListFunc(elementType);
-            info.ToCollectionExt = Convert.ToListExtFunc(elementType);
+            info.ToCollectionExtend = Convert.ToListExtendFunc(elementType);
             return info;
         }
 
@@ -173,7 +173,7 @@ namespace Mikodev.Network
             info.To = InfoFlags.Collection; // to icollection
             var basicArray = GetInfo(elementType.MakeArrayType());
             info.ToCollection = basicArray.ToCollection;
-            info.ToCollectionExt = basicArray.ToCollectionExt;
+            info.ToCollectionExtend = basicArray.ToCollectionExtend;
             return info;
         }
 
@@ -205,7 +205,7 @@ namespace Mikodev.Network
             info.To = InfoFlags.Collection; // to list
             info.FromEnumerable = Convert.FromListFunc(type, elementType);
             info.ToCollection = basicInfo.ToCollection;
-            info.ToCollectionExt = basicInfo.ToCollectionExt;
+            info.ToCollectionExtend = basicInfo.ToCollectionExtend;
         }
 
         private static Type[] GetInfoFromArray(Info info, Type type)
@@ -219,7 +219,7 @@ namespace Mikodev.Network
             info.To = InfoFlags.Collection; // to array
             info.FromEnumerable = Convert.FromArrayFunc(type, elementType);
             info.ToCollection = Convert.ToArrayFunc(elementType);
-            info.ToCollectionExt = Convert.ToArrayExtFunc(elementType);
+            info.ToCollectionExtend = Convert.ToArrayExtendFunc(elementType);
             return new[] { elementType };
         }
 

@@ -44,7 +44,7 @@ namespace Mikodev.Network
             Unsafe.CopyBlockUnaligned(ref stream[offset], ref buffer[0], (uint)buffer.Length);
         }
 
-        internal void WriteExt(UnsafeStream other)
+        internal void WriteExtend(UnsafeStream other)
         {
             var length = other.position;
             var offset = VerifyAvailable(length + sizeof(int));
@@ -54,7 +54,7 @@ namespace Mikodev.Network
             Unsafe.CopyBlockUnaligned(ref stream[offset + sizeof(int)], ref other.stream[0], (uint)length);
         }
 
-        internal void WriteExt(byte[] buffer)
+        internal void WriteExtend(byte[] buffer)
         {
             var offset = VerifyAvailable(buffer.Length + sizeof(int));
             WriteHeader(offset, buffer.Length);
@@ -63,7 +63,7 @@ namespace Mikodev.Network
             Unsafe.CopyBlockUnaligned(ref stream[offset + sizeof(int)], ref buffer[0], (uint)buffer.Length);
         }
 
-        internal void WriteKey(string key) => WriteExt(Extension.Encoding.GetBytes(key));
+        internal void WriteKey(string key) => WriteExtend(Extension.Encoding.GetBytes(key));
 
         internal int BeginModify() => VerifyAvailable(sizeof(int));
 

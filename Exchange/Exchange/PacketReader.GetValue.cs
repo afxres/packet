@@ -44,7 +44,7 @@ namespace Mikodev.Network
             var arr = new object[len];
             for (int i = 0; i < len; i++)
                 arr[i] = lst[i].GetValueMatch(valueInfo.ElementType, level, inf);
-            var res = valueInfo.ToCollectionExt(arr);
+            var res = valueInfo.ToCollectionExtend(arr);
             return res;
         }
 
@@ -86,7 +86,7 @@ namespace Mikodev.Network
                 idx += len;
                 lst.Add(val);
             }
-            return valueInfo.ToDictionaryExt(lst);
+            return valueInfo.ToDictionaryExtend(lst);
         }
 
         private object GetValueMatchDefault(Type valueType, int level)

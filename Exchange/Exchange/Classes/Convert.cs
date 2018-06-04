@@ -82,7 +82,7 @@ namespace Mikodev.Network
             return builder.dictionary;
         }
 
-        internal static Dictionary<TK, TV> ToDictionaryExt<TK, TV>(List<object> list)
+        internal static Dictionary<TK, TV> ToDictionaryExtend<TK, TV>(List<object> list)
         {
             var dictionary = new Dictionary<TK, TV>();
             var index = 0;
@@ -102,7 +102,7 @@ namespace Mikodev.Network
             return builder.tuples;
         }
 
-        internal static List<Tuple<TK, TV>> ToTupleListExt<TK, TV>(List<object> list)
+        internal static List<Tuple<TK, TV>> ToTupleListExtend<TK, TV>(List<object> list)
         {
             var tupleList = new List<Tuple<TK, TV>>();
             var index = 0;

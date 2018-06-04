@@ -66,10 +66,10 @@ namespace Mikodev.Network
                         stream.Write(Extension.ZeroBuffer);
                         break;
                     case ItemFlags.Buffer:
-                        stream.WriteExt((byte[])data);
+                        stream.WriteExtend((byte[])data);
                         break;
                     case ItemFlags.Stream:
-                        stream.WriteExt((UnsafeStream)data);
+                        stream.WriteExtend((UnsafeStream)data);
                         break;
                     default:
                         var source = stream.BeginModify();
@@ -111,7 +111,7 @@ namespace Mikodev.Network
                         stream.Write(array[i]);
                 else
                     for (int i = 0; i < array.Length; i++)
-                        stream.WriteExt(array[i]);
+                        stream.WriteExtend(array[i]);
             }
 
             private void GetBytesMatchItemList(UnsafeStream stream, int level)
@@ -140,11 +140,11 @@ namespace Mikodev.Network
                     if (lengthOne > 0)
                         stream.Write(current.Key);
                     else
-                        stream.WriteExt(current.Key);
+                        stream.WriteExtend(current.Key);
                     if (lengthTwo > 0)
                         stream.Write(current.Value);
                     else
-                        stream.WriteExt(current.Value);
+                        stream.WriteExtend(current.Value);
                 }
             }
 
@@ -157,7 +157,7 @@ namespace Mikodev.Network
                     if (lengthOne > 0)
                         stream.Write(current.Key);
                     else
-                        stream.WriteExt(current.Key);
+                        stream.WriteExtend(current.Key);
                     current.Value.GetBytes(stream, level);
                 }
             }

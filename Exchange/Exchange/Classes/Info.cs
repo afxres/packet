@@ -19,7 +19,7 @@ namespace Mikodev.Network
 
         internal Func<PacketReader, PacketConverter, object> ToCollection { get; set; }
 
-        internal Func<object[], object> ToCollectionExt { get; set; }
+        internal Func<object[], object> ToCollectionExtend { get; set; }
 
         internal Func<PacketReader, PacketConverter, object> ToEnumerable { get; set; }
 
@@ -27,7 +27,7 @@ namespace Mikodev.Network
 
         internal Func<PacketReader, PacketConverter, PacketConverter, object> ToDictionary { get; set; }
 
-        internal Func<List<object>, object> ToDictionaryExt { get; set; }
+        internal Func<List<object>, object> ToDictionaryExtend { get; set; }
 
         internal Func<PacketConverter, object, byte[][]> FromEnumerable { get; set; }
 

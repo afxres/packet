@@ -5,10 +5,10 @@ using System.Reflection;
 using FromDictionaryAdapterFunction = System.Func<Mikodev.Network.PacketConverter, object, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<byte[], object>>>;
 using FromDictionaryFunction = System.Func<Mikodev.Network.PacketConverter, Mikodev.Network.PacketConverter, object, System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<byte[], byte[]>>>;
 using FromEnumerableFunction = System.Func<Mikodev.Network.PacketConverter, object, byte[][]>;
-using ToCollectionExtFunction = System.Func<object[], object>;
+using ToCollectionExtendFunction = System.Func<object[], object>;
 using ToCollectionFunction = System.Func<Mikodev.Network.PacketReader, Mikodev.Network.PacketConverter, object>;
 using ToCollectionSpecialFunction = System.Func<Mikodev.Network.PacketReader, Mikodev.Network.PacketConverter, object>;
-using ToDictionaryExtFunction = System.Func<System.Collections.Generic.List<object>, object>;
+using ToDictionaryExtendFunction = System.Func<System.Collections.Generic.List<object>, object>;
 using ToDictionaryFunction = System.Func<Mikodev.Network.PacketReader, Mikodev.Network.PacketConverter, Mikodev.Network.PacketConverter, object>;
 using ToEnumerableAdapterFunction = System.Func<Mikodev.Network.PacketReader, Mikodev.Network.Info, int, object>;
 
@@ -51,13 +51,13 @@ namespace Mikodev.Network
             return expression.Compile();
         }
 
-        private static ToCollectionExtFunction InternalToCollectionExtFunc(Type elementType, Func<Expression, Expression> expressionFunc)
+        private static ToCollectionExtendFunction InternalToCollectionExtendFunc(Type elementType, Func<Expression, Expression> expressionFunc)
         {
             var block = ConvertArrayExpression(elementType, out var objectArray);
             var conversion = expressionFunc.Invoke(block);
             if (conversion.Type != typeof(object))
                 conversion = Expression.Convert(conversion, typeof(object));
-            var expression = Expression.Lambda<ToCollectionExtFunction>(conversion, objectArray);
+            var expression = Expression.Lambda<ToCollectionExtendFunction>(conversion, objectArray);
             return expression.Compile();
         }
 
@@ -116,9 +116,9 @@ namespace Mikodev.Network
 
         internal static ToCollectionFunction ToEnumerableFunc(Type elementType) => InternalToCollectionFunc(nameof(ToEnumerable), elementType);
 
-        internal static ToCollectionExtFunction ToArrayExtFunc(Type elementType) => InternalToCollectionExtFunc(elementType, block => block);
+        internal static ToCollectionExtendFunction ToArrayExtendFunc(Type elementType) => InternalToCollectionExtendFunc(elementType, block => block);
 
-        internal static ToCollectionExtFunction ToListExtFunc(Type elementType) => InternalToCollectionExtFunc(elementType, block => Expression.New(InternalListConstructorInfo(elementType), block));
+        internal static ToCollectionExtendFunction ToListExtendFunc(Type elementType) => InternalToCollectionExtendFunc(elementType, block => Expression.New(InternalListConstructorInfo(elementType), block));
 
         internal static ToEnumerableAdapterFunction ToEnumerableAdapterFunc(Type elementType) => InternalCreateDelegate<ToEnumerableAdapterFunction>(nameof(ToEnumerableAdapterExpression), elementType);
 
@@ -134,13 +134,13 @@ namespace Mikodev.Network
 
         private static Expression<FromDictionaryAdapterFunction> FromDictionaryAdapterExpression<TK, TV>() => (converter, dictionary) => new DictionaryAdapter<TK, TV>(converter, (IEnumerable<KeyValuePair<TK, TV>>)dictionary);
 
-        private static Expression<ToDictionaryExtFunction> ToDictionaryExtExpression<TK, TV>() => list => ToDictionaryExt<TK, TV>(list);
+        private static Expression<ToDictionaryExtendFunction> ToDictionaryExtendExpression<TK, TV>() => list => ToDictionaryExtend<TK, TV>(list);
 
         private static Expression<ToDictionaryFunction> ToDictionaryExpression<TK, TV>() => (reader, index, element) => ToDictionary<TK, TV>(reader, index, element);
 
         internal static ToDictionaryFunction ToDictionaryFunc(params Type[] types) => InternalCreateDelegate<ToDictionaryFunction>(nameof(ToDictionaryExpression), types);
 
-        internal static ToDictionaryExtFunction ToDictionaryExtFunc(params Type[] types) => InternalCreateDelegate<ToDictionaryExtFunction>(nameof(ToDictionaryExtExpression), types);
+        internal static ToDictionaryExtendFunction ToDictionaryExtendFunc(params Type[] types) => InternalCreateDelegate<ToDictionaryExtendFunction>(nameof(ToDictionaryExtendExpression), types);
 
         internal static FromDictionaryFunction FromDictionaryFunc(params Type[] types) => InternalCreateDelegate<FromDictionaryFunction>(nameof(FromDictionaryExpression), types);
 
@@ -148,14 +148,14 @@ namespace Mikodev.Network
         #endregion
 
         #region to collection
-        internal static bool ToCollectionByConstructorFunc(Type type, Type elementType, out ToCollectionSpecialFunction collectionFunc, out ToCollectionExtFunction collectionExtFunc)
+        internal static bool ToCollectionByConstructorFunc(Type type, Type elementType, out ToCollectionSpecialFunction collectionFunc, out ToCollectionExtendFunction collectionExtendFunc)
         {
             var enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
             var constructorInfo = type.GetConstructor(new[] { enumerableType });
             if (constructorInfo == null)
             {
                 collectionFunc = null;
-                collectionExtFunc = null;
+                collectionExtendFunc = null;
                 return false;
             }
 
@@ -171,18 +171,18 @@ namespace Mikodev.Network
                     typeof(object)),
                 reader, converter);
             collectionFunc = expression.Compile();
-            collectionExtFunc = InternalToCollectionExtFunc(elementType, block => Expression.New(constructorInfo, block));
+            collectionExtendFunc = InternalToCollectionExtendFunc(elementType, block => Expression.New(constructorInfo, block));
             return true;
         }
 
-        internal static bool ToCollectionByAddFunc(Type type, Type elementType, out ToCollectionSpecialFunction collectionFunc, out ToCollectionExtFunction collectionExtFunc)
+        internal static bool ToCollectionByAddFunc(Type type, Type elementType, out ToCollectionSpecialFunction collectionFunc, out ToCollectionExtendFunction collectionExtendFunc)
         {
             var constructorInfo = type.GetConstructor(Type.EmptyTypes);
             var addMethodInfo = type.GetMethod("Add", BindingFlags.Instance | BindingFlags.Public, null, new[] { elementType }, null);
             if (constructorInfo == null || addMethodInfo == null)
             {
                 collectionFunc = null;
-                collectionExtFunc = null;
+                collectionExtendFunc = null;
                 return false;
             }
 
@@ -197,13 +197,13 @@ namespace Mikodev.Network
             collectionFunc = expression.Compile();
 
             var objectArray = Expression.Parameter(typeof(object[]), "objectArray");
-            var extensionExpression = Expression.Lambda<ToCollectionExtFunction>(
+            var extensionExpression = Expression.Lambda<ToCollectionExtendFunction>(
                 ToCollectionByAddExpression(
                     elementType,
                     objectArray,
                     constructorInfo, addMethodInfo),
                 objectArray);
-            collectionExtFunc = extensionExpression.Compile();
+            collectionExtendFunc = extensionExpression.Compile();
             return true;
         }
         #endregion

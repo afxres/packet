@@ -65,16 +65,16 @@ namespace Mikodev.Network
             Converters = dictionary;
         }
 
-        internal static int MoveNext(this byte[] buffer, ref int offset, int limits)
+        internal static int MoveNext(this byte[] buffer, ref int position, int limits)
         {
-            var cursor = offset;
-            if (limits - cursor < sizeof(int))
+            var offset = position;
+            if (limits - offset < sizeof(int))
                 return -1;
-            var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[cursor]);
-            cursor += sizeof(int);
-            if ((uint)(limits - cursor) < (uint)length)
+            var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[offset]);
+            offset += sizeof(int);
+            if ((uint)(limits - offset) < (uint)length)
                 return -1;
-            offset = cursor;
+            position = offset;
             return length;
         }
 
@@ -138,14 +138,14 @@ namespace Mikodev.Network
             return target;
         }
 
-        #region builder
+        #region unsafe stream
         internal static void WriteValue(this UnsafeStream stream, ConverterDictionary converters, object value, Type type)
         {
             var converter = Cache.GetConverter(converters, type, false);
             if (converter.Length > 0)
                 stream.Write(converter.GetBytesWrap(value));
             else
-                stream.WriteExt(converter.GetBytesWrap(value));
+                stream.WriteExtend(converter.GetBytesWrap(value));
         }
 
         internal static void WriteValueGeneric<T>(this UnsafeStream stream, ConverterDictionary converters, T value)
@@ -162,9 +162,9 @@ namespace Mikodev.Network
             else
             {
                 if (generic != null)
-                    stream.WriteExt(generic.GetBytesWrap(value));
+                    stream.WriteExtend(generic.GetBytesWrap(value));
                 else
-                    stream.WriteExt(converter.GetBytesWrap(value));
+                    stream.WriteExtend(converter.GetBytesWrap(value));
             }
         }
         #endregion
