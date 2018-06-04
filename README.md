@@ -9,7 +9,7 @@
 ### 支持的类型 (可自定义类型转换器)
 ```
 Byte, SByte, Int16, UInt16, Int32, Uint32, Int64, UInt64
-Single, Double
+Boolean, Char, Single, Double
 String (UTF-8), DateTime (As Int64), TimeSpan (As Int64), Guid
 IPAddress, IPEndPoint
 ```
@@ -24,7 +24,7 @@ F# List, F# Map, F# Set
 ```
 
 ### 其他信息
-* 字节序: 默认为小端, 在大端系统中自动翻转预设类型的字节序 (可通过修改源码中的 Extension.UseLittleEndian 字段来控制字节序)
+* 字节序: 默认为小端, 在大端系统中自动翻转预设类型的字节序 (可通过修改源码中的 ``` PacketConvert.UseLittleEndian ``` 字段来控制字节序)
 * 自定义转换器: 继承 ``` PacketConverter<T> ``` 并实现抽象方法; 若类型字节长度不固定, 将 ``` Length ``` 属性设为 ``` 0 ```
 
 ## 代码示例
@@ -43,8 +43,7 @@ var packet = new PacketWriter()
     .SetValue("name", "Alice")
     .SetItem("data", new PacketWriter() // 嵌套
         .SetValue("timestamp", DateTime.Now)
-        .SetEnumerable("tags", new[] { "girl", "doctor" }) // 写入集合
-    );
+        .SetEnumerable("tags", new[] { "girl", "doctor" })); // 写入集合
 
 var buffer = packet.GetBytes(); // 生成二进制数据包
 var reader = new PacketReader(buffer); // 读取数据包
@@ -52,7 +51,7 @@ var reader = new PacketReader(buffer); // 读取数据包
 var id = reader["id"].GetValue<Guid>();
 var name = (string)reader["name"].GetValue(typeof(string)); // 指定类型读取
 var time = reader["data/timestamp"].GetValue<DateTime>(); // 读取子节点
-var tags = reader["data/tags"].GetArray<string>();
+var tags = reader["data/tags"].GetArray<string>(); // 读取数组
 ```
 
 动态读写
@@ -103,11 +102,11 @@ public class Person
 
 自定义泛型转换器
 ```csharp
-public class PersonConverter : IPacketConverter<Person>
+public class PersonConverter : PacketConverter<Person>
 {
-    public int Length => 0; // 长度非固定, 返回零
+    public override int Length => 0; // 长度非固定, 返回零
 
-    public byte[] GetBytes(Person value)
+    public override byte[] GetBytes(Person value)
     {
         if (value == null)
             return new byte[0];
@@ -123,7 +122,7 @@ public class PersonConverter : IPacketConverter<Person>
         return raw.GetBytes();
     }
 
-    public Person GetValue(byte[] buffer, int offset, int length)
+    public override Person GetValue(byte[] buffer, int offset, int length)
     {
         var p = new Person();
         // 使用 PacketRawReader, 解析固定格式数据包
@@ -138,12 +137,12 @@ public class PersonConverter : IPacketConverter<Person>
         return p;
     }
 
-    byte[] IPacketConverter.GetBytes(object value)
+    public override byte[] GetBytes(object value)
     {
         return GetBytes((Person)value);
     }
 
-    object IPacketConverter.GetValue(byte[] buffer, int offset, int length)
+    public override object GetObject(byte[] buffer, int offset, int length)
     {
         return GetValue(buffer, offset, length);
     }
@@ -159,7 +158,7 @@ var p = new Person
     Tags = new[] { "cute" },
 };
 
-var customConverters = new Dictionary<Type, IPacketConverter>()
+var customConverters = new Dictionary<Type, PacketConverter>()
 {
     [typeof(Person)] = new PersonConverter(),
 };
