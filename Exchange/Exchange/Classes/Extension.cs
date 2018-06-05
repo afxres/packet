@@ -1,6 +1,7 @@
 ﻿using Mikodev.Network.Converters;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
@@ -134,8 +135,18 @@ namespace Mikodev.Network
             return target;
         }
 
-        #region unsafe stream
-        internal static void WriteValue(this UnsafeStream stream, ConverterDictionary converters, object value, Type type)
+        #region memory stream
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Write(this MemoryStream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
+
+        internal static void WriteExtend(this MemoryStream stream, byte[] buffer)
+        {
+            var header = UnmanagedValueConverter<int>.ToBytes(buffer.Length);
+            stream.Write(header, 0, header.Length);
+            stream.Write(buffer, 0, buffer.Length);
+        }
+
+        internal static void WriteValue(this MemoryStream stream, ConverterDictionary converters, object value, Type type)
         {
             var converter = Cache.GetConverter(converters, type, false);
             if (converter.Length > 0)
@@ -144,7 +155,7 @@ namespace Mikodev.Network
                 stream.WriteExtend(converter.GetBytesWrap(value));
         }
 
-        internal static void WriteValueGeneric<T>(this UnsafeStream stream, ConverterDictionary converters, T value)
+        internal static void WriteValueGeneric<T>(this MemoryStream stream, ConverterDictionary converters, T value)
         {
             var converter = Cache.GetConverter<T>(converters, false);
             var generic = converter as PacketConverter<T>;

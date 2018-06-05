@@ -1,16 +1,17 @@
-﻿using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
+﻿using System.IO;
+using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
 {
     public sealed class PacketRawWriter
     {
         internal readonly ConverterDictionary converters;
-        internal readonly UnsafeStream stream = new UnsafeStream();
+        internal readonly MemoryStream stream = new MemoryStream(256);
 
         public PacketRawWriter(ConverterDictionary converters = null) => this.converters = converters;
 
-        public byte[] GetBytes() => stream.GetBytes();
+        public byte[] GetBytes() => stream.ToArray();
 
-        public override string ToString() => $"{nameof(PacketRawWriter)} with {stream.GetPosition()} byte(s)";
+        public override string ToString() => $"{nameof(PacketRawWriter)} with {stream.Position} byte(s)";
     }
 }

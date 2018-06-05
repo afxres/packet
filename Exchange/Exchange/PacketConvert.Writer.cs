@@ -118,7 +118,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(writer);
 
             var itm = writer.GetDictionary();
-            itm[key] = new PacketWriter(writer.converters, PacketWriter.NewItem(raw?.stream));
+            itm[key] = new PacketWriter(writer.converters, PacketWriter.NewItem(raw?.stream.ToArray()));
             return writer;
         }
     }

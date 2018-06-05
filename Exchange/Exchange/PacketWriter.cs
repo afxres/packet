@@ -66,8 +66,6 @@ namespace Mikodev.Network
                     return UnmanagedArrayConverter<byte>.EmptyArray;
                 case ItemFlags.Buffer:
                     return (byte[])item.data;
-                case ItemFlags.Stream:
-                    return ((UnsafeStream)item.data).GetBytes();
                 default:
                     var stream = new UnsafeStream();
                     item.GetBytesMatch(stream, 0);
@@ -77,17 +75,15 @@ namespace Mikodev.Network
 
         public override string ToString()
         {
-            var value = item.data;
+            var data = item.data;
             var builder = new StringBuilder(nameof(PacketWriter));
             builder.Append(" with ");
-            if (value == null)
+            if (data == null)
                 builder.Append("none");
-            else if (value is byte[] buf)
-                builder.AppendFormat("{0} byte(s)", buf.Length);
-            else if (value is UnsafeStream mst)
-                builder.AppendFormat("{0} byte(s)", mst.GetPosition());
-            else if (value is ICollection col)
-                builder.AppendFormat("{0} node(s)", col.Count);
+            else if (data is byte[] bytes)
+                builder.AppendFormat("{0} byte(s)", bytes.Length);
+            else if (data is ICollection collection)
+                builder.AppendFormat("{0} node(s)", collection.Count);
             else
                 throw new ApplicationException();
             return builder.ToString();

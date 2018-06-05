@@ -8,8 +8,6 @@ namespace Mikodev.Network
         #region new item
         internal static Item NewItem(byte[] data) => new Item(data, ItemFlags.Buffer);
 
-        internal static Item NewItem(UnsafeStream data) => new Item(data, ItemFlags.Stream);
-
         internal static Item NewItem(List<Item> data) => new Item(data, ItemFlags.ItemList);
 
         internal static Item NewItem(Dictionary<string, PacketWriter> data) => new Item(data, ItemFlags.Dictionary);
@@ -67,9 +65,6 @@ namespace Mikodev.Network
                         break;
                     case ItemFlags.Buffer:
                         stream.WriteExtend((byte[])data);
-                        break;
-                    case ItemFlags.Stream:
-                        stream.WriteExtend((UnsafeStream)data);
                         break;
                     default:
                         var source = stream.BeginModify();

@@ -6,7 +6,6 @@
         {
             None = 0,
             Buffer,
-            Stream,
             BufferArray,
             ItemList,
             Dictionary,
