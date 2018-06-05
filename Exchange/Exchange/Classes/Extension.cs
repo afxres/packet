@@ -65,17 +65,13 @@ namespace Mikodev.Network
             Converters = dictionary;
         }
 
-        internal static int MoveNext(this byte[] buffer, ref int position, int limits)
+        internal static int MoveNext(this byte[] buffer, ref int offset, int limits)
         {
-            var offset = position;
             if (limits - offset < sizeof(int))
                 return -1;
             var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[offset]);
             offset += sizeof(int);
-            if ((uint)(limits - offset) < (uint)length)
-                return -1;
-            position = offset;
-            return length;
+            return (uint)(limits - offset) < (uint)length ? -1 : length;
         }
 
         internal static int MoveNextExcept(this byte[] buffer, ref int offset, int limits, int define)

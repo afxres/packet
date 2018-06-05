@@ -48,24 +48,24 @@ namespace Mikodev.Network
                 return null;
             flags |= Flags.Dictionary;
 
-            var dic = new Dictionary<string, PacketReader>();
-            var buf = element.buffer;
-            var max = element.Limits;
-            var idx = element.offset;
-            var len = 0;
+            var collection = new Dictionary<string, PacketReader>();
+            var buffer = element.buffer;
+            var limits = element.Limits;
+            var offset = element.offset;
+            var length = 0;
 
             try
             {
-                while (idx != max)
+                while (offset != limits)
                 {
-                    if ((len = buf.MoveNext(ref idx, max)) < 0)
+                    if ((length = buffer.MoveNext(ref offset, limits)) < 0)
                         return null;
-                    var key = Extension.Encoding.GetString(buf, idx, len);
-                    idx += len;
-                    if ((len = buf.MoveNext(ref idx, max)) < 0)
+                    var key = Extension.Encoding.GetString(buffer, offset, length);
+                    offset += length;
+                    if ((length = buffer.MoveNext(ref offset, limits)) < 0)
                         return null;
-                    dic.Add(key, new PacketReader(buf, idx, len, converters));
-                    idx += len;
+                    collection.Add(key, new PacketReader(buffer, offset, length, converters));
+                    offset += length;
                 }
             }
             catch (ArgumentException)
@@ -75,8 +75,8 @@ namespace Mikodev.Network
                 return null;
             }
 
-            dictionary = dic;
-            return dic;
+            dictionary = collection;
+            return collection;
         }
 
         private List<PacketReader> InitializeList()
@@ -86,16 +86,16 @@ namespace Mikodev.Network
             flags |= Flags.List;
 
             var lst = new List<PacketReader>();
-            var max = element.Limits;
-            var idx = element.offset;
-            var buf = element.buffer;
-            var len = 0;
-            while (idx != max)
+            var limits = element.Limits;
+            var offset = element.offset;
+            var buffer = element.buffer;
+            var length = 0;
+            while (offset != limits)
             {
-                len = buf.MoveNextExcept(ref idx, max, 0);
-                var rea = new PacketReader(buf, idx, len, converters);
+                length = buffer.MoveNextExcept(ref offset, limits, 0);
+                var rea = new PacketReader(buffer, offset, length, converters);
                 lst.Add(rea);
-                idx += len;
+                offset += length;
             }
             list = lst;
             return lst;

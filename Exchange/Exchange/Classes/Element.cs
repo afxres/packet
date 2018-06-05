@@ -54,19 +54,18 @@ namespace Mikodev.Network
             var valgen = elementConverter as PacketConverter<TV>;
             var keydef = indexConverter.Length;
             var valdef = elementConverter.Length;
-            var max = Limits;
             var idx = offset;
             var len = 0;
 
             try
             {
-                while (idx != max)
+                while (idx != Limits)
                 {
-                    len = buffer.MoveNextExcept(ref idx, max, keydef);
+                    len = buffer.MoveNextExcept(ref idx, Limits, keydef);
                     var key = (keygen != null ? keygen.GetValue(buffer, idx, len) : (TK)indexConverter.GetObject(buffer, idx, len));
                     idx += len;
 
-                    len = buffer.MoveNextExcept(ref idx, max, valdef);
+                    len = buffer.MoveNextExcept(ref idx, Limits, valdef);
                     var val = (valgen != null ? valgen.GetValue(buffer, idx, len) : (TV)elementConverter.GetObject(buffer, idx, len));
                     idx += len;
 

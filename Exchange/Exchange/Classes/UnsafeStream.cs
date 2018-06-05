@@ -30,24 +30,22 @@ namespace Mikodev.Network
         {
             var offset = position;
             var buffer = stream;
-            var bound = offset + (uint)require;
-            var value = (long)buffer.Length;
-            if (bound <= value)
-                goto end;
-            while (true)
+            long bound = offset + (uint)require;
+            long value = buffer.Length;
+            if (value < bound)
             {
-                value <<= 2;
-                if (value > 0x4000_0000L)
-                    throw PacketException.Overflow();
-                if (bound <= value)
-                    break;
+                do
+                {
+                    value <<= 2;
+                    if (value > 0x4000_0000L)
+                        throw PacketException.Overflow();
+                }
+                while (value < bound);
+                var target = new byte[(int)value];
+                Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)offset);
+                stream = target;
+                buffer = target;
             }
-            var result = new byte[(int)value];
-            Unsafe.CopyBlockUnaligned(ref result[0], ref buffer[0], (uint)offset);
-            stream = result;
-            buffer = result;
-
-            end:
             position = (int)bound;
             return new VerifyResult(buffer, offset);
         }
@@ -61,11 +59,14 @@ namespace Mikodev.Network
         internal void WriteExtend(UnsafeStream other)
         {
             var length = other.position;
+            var buffer = other.stream;
+            if ((uint)buffer.Length < (uint)length)
+                throw PacketException.Overflow();
             var result = VerifyAvailable(length + sizeof(int));
             UnmanagedValueConverter<int>.ToBytesUnchecked(ref result.Head, length);
             if (length == 0)
                 return;
-            Unsafe.CopyBlockUnaligned(ref result.Tail, ref other.stream[0], (uint)length);
+            Unsafe.CopyBlockUnaligned(ref result.Tail, ref buffer[0], (uint)length);
         }
 
         internal void WriteExtend(byte[] buffer)
@@ -81,17 +82,26 @@ namespace Mikodev.Network
 
         internal int BeginModify() => VerifyAvailable(sizeof(int)).offset;
 
-        internal void EndModify(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref stream[offset], (position - offset - sizeof(int)));
+        internal void EndModify(int offset)
+        {
+            var buffer = stream;
+            if (buffer.Length - offset < sizeof(int))
+                throw PacketException.Overflow();
+            UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], (position - offset - sizeof(int)));
+        }
 
         internal int GetPosition() => position;
 
         internal byte[] GetBytes()
         {
-            var offset = position;
-            var result = new byte[offset];
-            if (offset > 0)
-                Unsafe.CopyBlockUnaligned(ref result[0], ref stream[0], (uint)offset);
-            return result;
+            var length = position;
+            var buffer = stream;
+            if ((uint)buffer.Length < (uint)length)
+                throw PacketException.Overflow();
+            var target = new byte[length];
+            if (length > 0)
+                Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)length);
+            return target;
         }
     }
 }

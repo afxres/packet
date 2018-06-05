@@ -36,16 +36,16 @@ namespace Mikodev.Network
 
         private object GetValueMatchCollection(int level, Info valueInfo)
         {
-            var inf = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
-            if (inf == null)
+            var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
+            if (info == null)
                 return valueInfo.ToCollection(this, con);
-            var lst = GetList();
-            var len = lst.Count;
-            var arr = new object[len];
-            for (int i = 0; i < len; i++)
-                arr[i] = lst[i].GetValueMatch(valueInfo.ElementType, level, inf);
-            var res = valueInfo.ToCollectionExtend(arr);
-            return res;
+            var list = GetList();
+            var length = list.Count;
+            var source = new object[length];
+            for (int i = 0; i < length; i++)
+                source[i] = list[i].GetValueMatch(valueInfo.ElementType, level, info);
+            var result = valueInfo.ToCollectionExtend(source);
+            return result;
         }
 
         private object GetValueMatchEnumerable(int level, Info valueInfo)
@@ -61,32 +61,32 @@ namespace Mikodev.Network
             var keycon = Cache.GetConverter(converters, valueInfo.IndexType, true);
             if (keycon == null)
                 throw PacketException.InvalidKeyType(valueType);
-            var inf = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
-            if (inf == null)
+            var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
+            if (info == null)
                 return valueInfo.ToDictionary(this, keycon, con);
 
-            var max = element.Limits;
-            var idx = element.offset;
-            var buf = element.buffer;
+            var limits = element.Limits;
+            var offset = element.offset;
+            var buffer = element.buffer;
             var keydef = keycon.Length;
-            var len = 0;
+            var length = 0;
 
-            var lst = new List<object>();
-            while (idx != max)
+            var list = new List<object>();
+            while (offset != limits)
             {
-                len = buf.MoveNextExcept(ref idx, max, keydef);
+                length = buffer.MoveNextExcept(ref offset, limits, keydef);
                 // Wrap error non-check
-                var key = keycon.GetObjectWrap(buf, idx, len);
-                idx += len;
-                lst.Add(key);
+                var key = keycon.GetObjectWrap(buffer, offset, length);
+                offset += length;
+                list.Add(key);
 
-                len = buf.MoveNextExcept(ref idx, max, 0);
-                var rea = new PacketReader(buf, idx, len, converters);
-                var val = rea.GetValueMatch(valueInfo.ElementType, level, inf);
-                idx += len;
-                lst.Add(val);
+                length = buffer.MoveNextExcept(ref offset, limits, 0);
+                var rea = new PacketReader(buffer, offset, length, converters);
+                var val = rea.GetValueMatch(valueInfo.ElementType, level, info);
+                offset += length;
+                list.Add(val);
             }
-            return valueInfo.ToDictionaryExtend(lst);
+            return valueInfo.ToDictionaryExtend(list);
         }
 
         private object GetValueMatchDefault(Type valueType, int level)
@@ -95,16 +95,16 @@ namespace Mikodev.Network
             if (set == null)
                 throw PacketException.InvalidType(valueType);
             var arg = set.Arguments;
-            var arr = new object[arg.Length];
+            var source = new object[arg.Length];
             for (int i = 0; i < arg.Length; i++)
             {
-                var rea = GetItem(arg[i].Key, false);
-                var val = rea.GetValue(arg[i].Value, level);
-                arr[i] = val;
+                var reader = GetItem(arg[i].Key, false);
+                var result = reader.GetValue(arg[i].Value, level);
+                source[i] = result;
             }
 
-            var res = set.GetObject(arr);
-            return res;
+            var target = set.GetObject(source);
+            return target;
         }
     }
 }
