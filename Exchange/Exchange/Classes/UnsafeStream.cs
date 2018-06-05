@@ -1,73 +1,87 @@
-﻿using System;
+﻿using Mikodev.Network.Converters;
 using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network
 {
     internal sealed class UnsafeStream
     {
+        private readonly struct VerifyResult
+        {
+            internal readonly byte[] buffer;
+            internal readonly int offset;
+
+            internal ref byte Head => ref buffer[offset];
+
+            internal ref byte Tail => ref buffer[offset + sizeof(int)];
+
+            internal VerifyResult(byte[] buffer, int offset)
+            {
+                this.buffer = buffer;
+                this.offset = offset;
+            }
+        }
+
         private const int InitialLength = 256;
-        private static readonly bool ReverseEndianness = BitConverter.IsLittleEndian != PacketConvert.UseLittleEndian;
 
         private byte[] stream = new byte[InitialLength];
-        private int position = 0;
+        private int position;
 
-        private int VerifyAvailable(int require)
+        private VerifyResult VerifyAvailable(int require)
         {
             var offset = position;
             var buffer = stream;
-            var limits = offset + require;
-            if (limits <= buffer.Length)
-                goto end;
+            var bound = offset + (uint)require;
             var value = (long)buffer.Length;
+            if (bound <= value)
+                goto end;
             while (true)
             {
                 value <<= 2;
                 if (value > 0x4000_0000L)
                     throw PacketException.Overflow();
-                if (limits <= value)
+                if (bound <= value)
                     break;
             }
             var result = new byte[(int)value];
             Unsafe.CopyBlockUnaligned(ref result[0], ref buffer[0], (uint)offset);
             stream = result;
+            buffer = result;
 
             end:
-            position = limits;
-            return offset;
+            position = (int)bound;
+            return new VerifyResult(buffer, offset);
         }
-
-        private void WriteHeader(int offset, int value) => Unsafe.WriteUnaligned(ref stream[offset], (!ReverseEndianness) ? (uint)value : Extension.ReverseEndianness((uint)value));
 
         internal void Write(byte[] buffer)
         {
-            var offset = VerifyAvailable(buffer.Length);
-            Unsafe.CopyBlockUnaligned(ref stream[offset], ref buffer[0], (uint)buffer.Length);
+            var result = VerifyAvailable(buffer.Length);
+            Unsafe.CopyBlockUnaligned(ref result.Head, ref buffer[0], (uint)buffer.Length);
         }
 
         internal void WriteExtend(UnsafeStream other)
         {
             var length = other.position;
-            var offset = VerifyAvailable(length + sizeof(int));
-            WriteHeader(offset, length);
-            if (length < 1)
+            var result = VerifyAvailable(length + sizeof(int));
+            UnmanagedValueConverter<int>.ToBytesUnchecked(ref result.Head, length);
+            if (length == 0)
                 return;
-            Unsafe.CopyBlockUnaligned(ref stream[offset + sizeof(int)], ref other.stream[0], (uint)length);
+            Unsafe.CopyBlockUnaligned(ref result.Tail, ref other.stream[0], (uint)length);
         }
 
         internal void WriteExtend(byte[] buffer)
         {
-            var offset = VerifyAvailable(buffer.Length + sizeof(int));
-            WriteHeader(offset, buffer.Length);
-            if (buffer.Length < 1)
+            var result = VerifyAvailable(buffer.Length + sizeof(int));
+            UnmanagedValueConverter<int>.ToBytesUnchecked(ref result.Head, buffer.Length);
+            if (buffer.Length == 0)
                 return;
-            Unsafe.CopyBlockUnaligned(ref stream[offset + sizeof(int)], ref buffer[0], (uint)buffer.Length);
+            Unsafe.CopyBlockUnaligned(ref result.Tail, ref buffer[0], (uint)buffer.Length);
         }
 
         internal void WriteKey(string key) => WriteExtend(Extension.Encoding.GetBytes(key));
 
-        internal int BeginModify() => VerifyAvailable(sizeof(int));
+        internal int BeginModify() => VerifyAvailable(sizeof(int)).offset;
 
-        internal void EndModify(int offset) => WriteHeader(offset, (position - offset - sizeof(int)));
+        internal void EndModify(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref stream[offset], (position - offset - sizeof(int)));
 
         internal int GetPosition() => position;
 

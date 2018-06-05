@@ -10,7 +10,7 @@ namespace Mikodev.Network.Converters
         internal static byte[] ToBytes(T value)
         {
             var buffer = new byte[Unsafe.SizeOf<T>()];
-            Unsafe.WriteUnaligned(ref buffer[0], (!ReverseEndianness) ? value : Extension.ReverseEndianness(value));
+            ToBytesUnchecked(ref buffer[0], value);
             return buffer;
         }
 
@@ -19,6 +19,12 @@ namespace Mikodev.Network.Converters
             if (buffer == null || offset < 0 || length < Unsafe.SizeOf<T>() || buffer.Length - offset < length)
                 throw PacketException.Overflow();
             return ToValueUnchecked(ref buffer[offset]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void ToBytesUnchecked(ref byte location, T value)
+        {
+            Unsafe.WriteUnaligned(ref location, (!ReverseEndianness) ? value : Extension.ReverseEndianness(value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
