@@ -36,6 +36,8 @@ namespace Mikodev.Network
 
         internal void Write(byte[] buffer)
         {
+            if (buffer.Length == 0)
+                return;
             var offset = VerifyAvailable(buffer.Length);
             Unsafe.CopyBlockUnaligned(ref stream[offset], ref buffer[0], (uint)buffer.Length);
         }

@@ -146,13 +146,13 @@ namespace Mikodev.Network
 
         public override string ToString()
         {
-            var stb = new StringBuilder(nameof(PacketReader));
-            stb.Append(" with ");
-            var dic = GetDictionary();
-            if (dic != null)
-                stb.AppendFormat("{0} node(s), ", dic.Count);
-            stb.AppendFormat("{0} byte(s)", element.length);
-            return stb.ToString();
+            var builder = new StringBuilder(nameof(PacketReader));
+            builder.Append(" with ");
+            var collection = GetDictionary();
+            if (collection != null)
+                builder.AppendFormat("{0} node(s), ", collection.Count);
+            builder.AppendFormat("{0} byte(s)", element.length);
+            return builder.ToString();
         }
 
         public T Deserialize<T>() => (T)GetValue(typeof(T), 0);

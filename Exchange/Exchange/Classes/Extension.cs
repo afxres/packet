@@ -12,7 +12,6 @@ namespace Mikodev.Network
     {
         internal static readonly Encoding Encoding = Encoding.UTF8;
         internal static readonly char[] Separator = new[] { '/', '\\' };
-        internal static readonly byte[] ZeroBuffer = new byte[sizeof(int)];
         internal static readonly ConverterDictionary Converters;
 
         static Extension()

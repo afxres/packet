@@ -1,5 +1,4 @@
 ﻿using Mikodev.Network.Converters;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -78,14 +77,12 @@ namespace Mikodev.Network
             var data = item.data;
             var builder = new StringBuilder(nameof(PacketWriter));
             builder.Append(" with ");
-            if (data == null)
-                builder.Append("none");
-            else if (data is byte[] bytes)
+            if (data is byte[] bytes)
                 builder.AppendFormat("{0} byte(s)", bytes.Length);
             else if (data is ICollection collection)
                 builder.AppendFormat("{0} node(s)", collection.Count);
             else
-                throw new ApplicationException();
+                builder.Append("none");
             return builder.ToString();
         }
 

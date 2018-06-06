@@ -58,20 +58,9 @@ namespace Mikodev.Network
             internal void GetBytes(UnsafeStream stream, int level)
             {
                 PacketException.VerifyRecursionError(ref level);
-                switch (flag)
-                {
-                    case ItemFlags.None:
-                        stream.Write(Extension.ZeroBuffer);
-                        break;
-                    case ItemFlags.Buffer:
-                        stream.WriteExtend((byte[])data);
-                        break;
-                    default:
-                        var source = stream.BeginModify();
-                        GetBytesMatch(stream, level);
-                        stream.EndModify(source);
-                        break;
-                }
+                var source = stream.BeginModify();
+                GetBytesMatch(stream, level);
+                stream.EndModify(source);
             }
 
             internal void GetBytesMatch(UnsafeStream stream, int level)
@@ -79,6 +68,11 @@ namespace Mikodev.Network
                 PacketException.VerifyRecursionError(ref level);
                 switch (flag)
                 {
+                    case ItemFlags.None:
+                        break;
+                    case ItemFlags.Buffer:
+                        stream.Write((byte[])data);
+                        break;
                     case ItemFlags.BufferArray:
                         GetBytesMatchBufferArray(stream);
                         break;
