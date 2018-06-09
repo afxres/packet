@@ -5,11 +5,13 @@ VisualStudioVersion = 15.0.27004.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Exchange", "Exchange\Exchange.csproj", "{540AFED8-390E-49D7-9F54-10A8A8CB8F4A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample", "Sample\Sample.csproj", "{2C2985ED-67CD-4C0F-916E-032D64321FC7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample", "Sample\Sample.csproj", "{2C2985ED-67CD-4C0F-916E-032D64321FC7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testing", "Testing\Testing.csproj", "{42DC9004-EEC2-4FFB-971F-399408C0F714}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharpTest", "FSharpTest\FSharpTest.fsproj", "{AE37B0F3-C5D7-4224-A91D-58153F55CEC2}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharpTest", "FSharpTest\FSharpTest.fsproj", "{AE37B0F3-C5D7-4224-A91D-58153F55CEC2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exchange vNext", "Exchange vNext\Exchange vNext.csproj", "{E0C3C8F9-97AF-4338-970F-E3616CB64080}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{AE37B0F3-C5D7-4224-A91D-58153F55CEC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE37B0F3-C5D7-4224-A91D-58153F55CEC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE37B0F3-C5D7-4224-A91D-58153F55CEC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0C3C8F9-97AF-4338-970F-E3616CB64080}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0C3C8F9-97AF-4338-970F-E3616CB64080}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0C3C8F9-97AF-4338-970F-E3616CB64080}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0C3C8F9-97AF-4338-970F-E3616CB64080}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
