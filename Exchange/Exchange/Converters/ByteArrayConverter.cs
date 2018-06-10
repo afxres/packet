@@ -3,7 +3,7 @@
     [Converter(typeof(byte[]))]
     internal sealed class ByteArrayConverter : PacketConverter<byte[]>
     {
-        public override int Length => 0;
+        public ByteArrayConverter() : base(0) { }
 
         public override byte[] GetBytes(byte[] value) => value ?? UnmanagedArrayConverter<byte>.EmptyArray;
 

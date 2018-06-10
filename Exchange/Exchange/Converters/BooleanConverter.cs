@@ -5,7 +5,7 @@ namespace Mikodev.Network.Converters
     [Converter(typeof(bool))]
     internal sealed class BooleanConverter : PacketConverter<bool>
     {
-        public override int Length => sizeof(bool);
+        public BooleanConverter() : base(sizeof(bool)) { }
 
         public override byte[] GetBytes(bool value) => BitConverter.GetBytes(value);
 

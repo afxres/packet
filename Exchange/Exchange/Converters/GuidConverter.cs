@@ -18,7 +18,7 @@ namespace Mikodev.Network.Converters
             return result;
         }
 
-        public override int Length => SizeOf;
+        public GuidConverter() : base(SizeOf) { }
 
         public override byte[] GetBytes(Guid value) => ToBytes(value);
 

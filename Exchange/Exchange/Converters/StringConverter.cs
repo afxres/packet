@@ -3,7 +3,7 @@
     [Converter(typeof(string))]
     internal sealed class StringConverter : PacketConverter<string>
     {
-        public override int Length => 0;
+        public StringConverter() : base(0) { }
 
         public override byte[] GetBytes(string value) => Extension.Encoding.GetBytes(value);
 

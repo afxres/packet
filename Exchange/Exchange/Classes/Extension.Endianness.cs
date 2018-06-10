@@ -32,14 +32,14 @@ namespace Mikodev.Network
             switch (Unsafe.SizeOf<T>())
             {
                 case sizeof(UInt16):
-                    var bit16 = ReverseEndianness(Unsafe.As<T, UInt16>(ref value));
-                    return Unsafe.As<UInt16, T>(ref bit16);
+                    var uint16 = ReverseEndianness(Unsafe.As<T, UInt16>(ref value));
+                    return Unsafe.As<UInt16, T>(ref uint16);
                 case sizeof(UInt32):
-                    var bit32 = ReverseEndianness(Unsafe.As<T, UInt32>(ref value));
-                    return Unsafe.As<UInt32, T>(ref bit32);
+                    var uint32 = ReverseEndianness(Unsafe.As<T, UInt32>(ref value));
+                    return Unsafe.As<UInt32, T>(ref uint32);
                 case sizeof(UInt64):
-                    var bit64 = ReverseEndianness(Unsafe.As<T, UInt64>(ref value));
-                    return Unsafe.As<UInt64, T>(ref bit64);
+                    var uint64 = ReverseEndianness(Unsafe.As<T, UInt64>(ref value));
+                    return Unsafe.As<UInt64, T>(ref uint64);
                 default:
                     throw new InvalidOperationException(UnableToReverseEndianness);
             }

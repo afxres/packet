@@ -33,7 +33,7 @@ namespace Mikodev.Network.Converters
             return target;
         }
 
-        public override int Length => 0;
+        public UnmanagedArrayConverter() : base(0) { }
 
         public override byte[] GetBytes(T[] value) => ToBytes(value);
 

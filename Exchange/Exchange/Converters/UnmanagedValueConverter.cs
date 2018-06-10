@@ -35,7 +35,7 @@ namespace Mikodev.Network.Converters
                 : Extension.ReverseEndianness(Unsafe.ReadUnaligned<T>(ref location));
         }
 
-        public override int Length => Unsafe.SizeOf<T>();
+        public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }
 
         public override byte[] GetBytes(T value) => ToBytes(value);
 

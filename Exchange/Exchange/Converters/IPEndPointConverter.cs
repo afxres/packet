@@ -27,7 +27,7 @@ namespace Mikodev.Network.Converters
             return new IPEndPoint(address, port);
         }
 
-        public override int Length => 0;
+        public IPEndPointConverter() : base(0) { }
 
         public override byte[] GetBytes(IPEndPoint value) => ToBytes(value);
 
