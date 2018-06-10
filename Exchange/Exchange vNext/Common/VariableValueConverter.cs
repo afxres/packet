@@ -2,14 +2,14 @@
 
 namespace Mikodev.Binary.Common
 {
-    public abstract class VariableValueConverter : ValueConverter { }
-
-    public abstract class VariableValueConverter<T> : VariableValueConverter
+    public abstract class VariableValueConverter<T> : ValueConverter<T>
     {
         internal sealed override Type ValueType => typeof(T);
 
-        public abstract void ToBytes(Allocator allocator, T value);
+        protected VariableValueConverter() : base(0) { }
 
-        public abstract T ToValue(Span<byte> block);
+        public abstract void ToBytes(Allocator allocator, T value);
+        
+        internal sealed override void ToBytes(Allocator allocator, object @object) => ToBytes(allocator, (T)@object);
     }
 }

@@ -2,26 +2,24 @@
 
 namespace Mikodev.Binary.Common
 {
-    public abstract class ConstantValueConverter : ValueConverter
-    {
-        public int Length { get; }
-
-        protected ConstantValueConverter(int length)
-        {
-            if (length < 1)
-                throw new ArgumentOutOfRangeException(nameof(length));
-            Length = length;
-        }
-    }
-
-    public abstract class ConstantValueConverter<T> : ConstantValueConverter
+    public abstract class ConstantValueConverter<T> : ValueConverter<T>
     {
         internal sealed override Type ValueType => typeof(T);
 
-        public ConstantValueConverter(int length) : base(length) { }
+        protected ConstantValueConverter(int length) : base(length)
+        {
+            if (length > 0)
+                return;
+            throw new ArgumentOutOfRangeException(nameof(length));
+        }
 
         public abstract void ToBytes(Span<byte> block, T value);
 
-        public abstract T ToValue(Span<byte> block);
+        internal sealed override void ToBytes(Allocator allocator, object @object)
+        {
+            var value = (T)@object;
+            var block = allocator.Allocate(Length);
+            ToBytes(block, value);
+        }
     }
 }

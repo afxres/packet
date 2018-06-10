@@ -13,7 +13,6 @@ namespace Mikodev.Binary
         private delegate void SerializeFunction<in T>(UnsafeStream stream, T value);
 
         private readonly Dictionary<Type, ValueConverter> valueConverters;
-        private readonly Dictionary<Type, ArrayConverter> arrayConverters;
 
         private readonly ConcurrentDictionary<Type, Delegate> delegates = new ConcurrentDictionary<Type, Delegate>();
 
@@ -22,7 +21,6 @@ namespace Mikodev.Binary
             if (converters is null)
                 throw new ArgumentNullException(nameof(converters));
             valueConverters = converters.OfType<ValueConverter>().ToDictionary(r => r.ValueType);
-            arrayConverters = converters.OfType<ArrayConverter>().ToDictionary(r => r.ArrayType);
         }
 
         #region static
