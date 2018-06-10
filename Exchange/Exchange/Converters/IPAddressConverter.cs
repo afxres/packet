@@ -9,7 +9,7 @@ namespace Mikodev.Network.Converters
 
         private static IPAddress ToValue(byte[] buffer, int offset, int length) => new IPAddress(Extension.BorrowOrCopy(buffer, offset, length));
 
-        public override int Length => 0;
+        public IPAddressConverter() : base(0) { }
 
         public override byte[] GetBytes(IPAddress value) => ToBytes(value);
 

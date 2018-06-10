@@ -9,7 +9,7 @@ namespace Mikodev.Network.Converters
 
         private static DateTime ToValue(byte[] buffer, int offset, int length) => DateTime.FromBinary(UnmanagedValueConverter<long>.ToValue(buffer, offset, length));
 
-        public override int Length => sizeof(Int64);
+        public DateTimeConverter() : base(sizeof(long)) { }
 
         public override byte[] GetBytes(DateTime value) => ToBytes(value);
 

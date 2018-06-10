@@ -21,7 +21,7 @@ namespace Mikodev.Testing
 
         internal static readonly string _ValueErr = Guid.NewGuid().ToString();
 
-        public override int Length => 0;
+        public TestConverter() : base(0) { }
 
         public override byte[] GetBytes(object value) => throw new Exception(_BytesErr);
 
@@ -30,7 +30,7 @@ namespace Mikodev.Testing
 
     internal class TestBadConverter : PacketConverter
     {
-        public override int Length => 4;
+        public TestBadConverter() : base(4) { }
 
         public override byte[] GetBytes(object value)
         {
@@ -72,7 +72,7 @@ namespace Mikodev.Testing
 
     internal class TestTwoConverter : PacketConverter
     {
-        public override int Length => sizeof(int) * 2;
+        public TestTwoConverter() : base(sizeof(int) * 2) { }
 
         public override byte[] GetBytes(object value)
         {
@@ -120,7 +120,7 @@ namespace Mikodev.Testing
 
     internal class TestBoxConverter : PacketConverter
     {
-        public override int Length => 0;
+        public TestBoxConverter() : base(0) { }
 
         public override byte[] GetBytes(object value)
         {

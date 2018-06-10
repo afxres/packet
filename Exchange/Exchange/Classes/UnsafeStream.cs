@@ -8,6 +8,7 @@ namespace Mikodev.Network
         /* 警告: 该类仅应用于单线程环境 */
 
         private const int InitialLength = 256;
+        private const int MaximumLength = 0x4000_0000;
 
         private byte[] stream = new byte[InitialLength];
         private int position;
@@ -19,7 +20,7 @@ namespace Mikodev.Network
             do
             {
                 length <<= 2;
-                if (length > 0x4000_0000L)
+                if (length > MaximumLength)
                     throw PacketException.Overflow();
             }
             while (length < limits);
@@ -30,7 +31,7 @@ namespace Mikodev.Network
 
         private int VerifyAvailable(int require)
         {
-            if ((uint)require > 0x4000_0000U)
+            if ((uint)require > MaximumLength)
                 throw PacketException.Overflow();
             var offset = position;
             if (stream.Length - offset < require)

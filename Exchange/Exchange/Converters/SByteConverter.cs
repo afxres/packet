@@ -3,7 +3,7 @@
     [Converter(typeof(sbyte))]
     internal sealed class SByteConverter : PacketConverter<sbyte>
     {
-        public override int Length => sizeof(sbyte);
+        public SByteConverter() : base(sizeof(sbyte)) { }
 
         public override byte[] GetBytes(sbyte value) => new byte[sizeof(sbyte)] { (byte)value };
 

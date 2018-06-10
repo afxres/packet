@@ -23,7 +23,7 @@ namespace Mikodev.Network.Converters
             return result;
         }
 
-        public override int Length => sizeof(decimal);
+        public DecimalConverter() : base(sizeof(decimal)) { }
 
         public override byte[] GetBytes(decimal value) => ToBytes(value);
 

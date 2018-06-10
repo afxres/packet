@@ -9,7 +9,7 @@ namespace Mikodev.Network.Converters
 
         private static TimeSpan ToValue(byte[] buffer, int offset, int length) => new TimeSpan(UnmanagedValueConverter<long>.ToValue(buffer, offset, length));
 
-        public override int Length => sizeof(Int64);
+        public TimeSpanConverter() : base(sizeof(long)) { }
 
         public override byte[] GetBytes(TimeSpan value) => ToBytes(value);
 
