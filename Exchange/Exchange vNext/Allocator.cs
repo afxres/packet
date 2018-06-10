@@ -12,8 +12,7 @@ namespace Mikodev.Binary
         {
             if (stream == null)
                 throw new InvalidOperationException();
-            var result = stream.VerifyAvailable(length);
-            return new Span<byte>(result.buffer, result.offset, length);
+            return stream.Allocate(length);
         }
 
         public ref byte UnsafeAllocate(int length)

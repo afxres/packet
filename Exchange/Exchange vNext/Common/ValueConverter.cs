@@ -1,4 +1,9 @@
-﻿namespace Mikodev.Binary.Common
+﻿using System;
+
+namespace Mikodev.Binary.Common
 {
-    public abstract class ValueConverter : Converter { }
+    public abstract class ValueConverter : Converter
+    {
+        internal abstract Type ValueType { get; }
+    }
 }
