@@ -58,16 +58,16 @@ namespace Mikodev.Network
 
         internal static T[] ToArray<T>(PacketReader reader, PacketConverter converter)
         {
-            if (converter.Length < 1)
-                return InternalToArray<T>(reader, converter);
-            return reader.element.ToArray<T>(converter);
+            return converter.Length < 1
+                ? InternalToArray<T>(reader, converter)
+                : reader.element.ToArray<T>(converter);
         }
 
         internal static List<T> ToList<T>(PacketReader reader, PacketConverter converter)
         {
-            if (converter.Length < 1)
-                return InternalToList<T>(reader, converter);
-            return reader.element.ToList<T>(converter);
+            return converter.Length < 1
+                ? InternalToList<T>(reader, converter)
+                : reader.element.ToList<T>(converter);
         }
 
         internal static Enumerable<T> ToEnumerable<T>(PacketReader reader, PacketConverter converter)

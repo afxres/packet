@@ -874,5 +874,69 @@ namespace Mikodev.Testing
 
             Assert.AreEqual(rea.Count, 0);
         }
+
+        [TestMethod]
+        public void InvalidType()
+        {
+            try
+            {
+                var list = new HashSet<object> { 1.2F, 3.4D, "5.6M" };
+                var result = PacketConvert.Serialize(list);
+                Assert.Fail();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.InvalidElementType)
+            {
+                // ignore
+            }
+
+            try
+            {
+                var empty = new byte[0];
+                var reader = new PacketReader(empty);
+                var result = reader.Deserialize<Dictionary<object, string>>();
+                Assert.Fail();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.InvalidKeyType)
+            {
+                // ignore
+            }
+
+            try
+            {
+                var empty = new Dictionary<object, string>();
+                var writer = PacketWriter.Serialize(empty);
+                Assert.Fail();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.InvalidKeyType)
+            {
+                // ignore
+            }
+
+            var array = new[] { 0F, -1.1F, 2.2F };
+            var anonymous = new { solution = "Exchange", count = 4 };
+            var collection = new Dictionary<int, object>
+            {
+                [1] = 1,
+                [2] = 2L,
+                [4] = "four",
+                [8] = anonymous,
+                [16] = array,
+            };
+
+            var buffer = PacketConvert.Serialize(collection);
+            var dictionary = PacketConvert.Deserialize<Dictionary<int, object>>(buffer);
+
+            var r1 = ((PacketReader)dictionary[1]).GetValue<int>();
+            var r2 = ((PacketReader)dictionary[2]).GetValue<long>();
+            var r4 = ((PacketReader)dictionary[4]).GetValue<string>();
+            var ro = ((PacketReader)dictionary[8]).Deserialize(anonymous.GetType());
+            var ra = ((PacketReader)dictionary[16]).GetArray<float>();
+            Assert.AreEqual(collection[1], r1);
+            Assert.AreEqual(collection[2], r2);
+            Assert.AreEqual(collection[4], r4);
+
+            Assert.AreEqual(anonymous, ro);
+            ThrowIfNotSequenceEqual(array, ra);
+        }
     }
 }

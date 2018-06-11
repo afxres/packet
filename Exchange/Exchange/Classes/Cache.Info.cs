@@ -9,9 +9,9 @@ namespace Mikodev.Network
     {
         internal static Info GetInfo(Type type)
         {
-            if (Infos.TryGetValue(type, out var inf))
-                return inf;
-            return Infos.GetOrAdd(type, GetInfoFromType(type));
+            return Infos.TryGetValue(type, out var info)
+                ? info
+                : Infos.GetOrAdd(type, GetInfoFromType(type));
         }
 
         private static Info GetInfoFromType(Type type)
@@ -225,10 +225,9 @@ namespace Mikodev.Network
 
         private static void GetInfoFromDictionary(Info info, Info enumerableInfo, params Type[] types)
         {
-            if (types[0] == typeof(string) && types[1] == typeof(object))
-                info.From = InfoFlags.Expando;
-            else
-                info.From = InfoFlags.Dictionary;
+            info.From = types[0] == typeof(string) && types[1] == typeof(object)
+                ? InfoFlags.Expando
+                : InfoFlags.Dictionary;
             info.IndexType = types[0];
             info.ElementType = types[1];
             info.FromDictionary = enumerableInfo.FromDictionary;

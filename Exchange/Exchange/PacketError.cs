@@ -8,6 +8,8 @@
 
         ConversionMismatch,
 
+        InvalidElementType,
+
         InvalidKeyType,
 
         InvalidPath,

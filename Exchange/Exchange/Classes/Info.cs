@@ -34,5 +34,7 @@ namespace Mikodev.Network
         internal Func<PacketConverter, PacketConverter, object, List<KeyValuePair<byte[], byte[]>>> FromDictionary { get; set; }
 
         internal Func<PacketConverter, object, IEnumerable<KeyValuePair<byte[], object>>> FromDictionaryAdapter { get; set; }
+
+        public override string ToString() => $"{nameof(Info)} | type: {Type}, from: {From}, to: {To}";
     }
 }

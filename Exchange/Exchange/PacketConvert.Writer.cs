@@ -70,19 +70,15 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var con = Cache.GetConverter<T>(writer.converters, false);
-            var val = default(byte[][]);
-            if (value != null)
-            {
-                if (value is T[] arr)
-                    val = Convert.FromArray(con, arr);
-                else if (value is List<T> lst)
-                    val = Convert.FromList(con, lst);
-                else
-                    val = Convert.FromEnumerable(con, value);
-
-            }
-            var sub = new PacketWriter(writer.converters, PacketWriter.NewItem(val, con.Length));
+            var converter = Cache.GetConverter<T>(writer.converters, false);
+            var result = (value != null)
+                ? (value is T[] array)
+                    ? Convert.FromArray(converter, array)
+                    : (value is List<T> list)
+                        ? Convert.FromList(converter, list)
+                        : Convert.FromEnumerable(converter, value)
+                : null;
+            var sub = new PacketWriter(writer.converters, PacketWriter.NewItem(result, converter.Length));
             var itm = writer.GetDictionary();
             itm[key] = sub;
             return writer;

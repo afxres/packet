@@ -44,9 +44,9 @@ namespace Mikodev.Network
             {
                 if (check && converter.Length > length)
                     throw PacketException.Overflow();
-                if (converter is PacketConverter<T> res)
-                    return res.GetValue(buffer, offset, length);
-                return (T)converter.GetObject(buffer, offset, length);
+                return converter is PacketConverter<T> generic
+                    ? generic.GetValue(buffer, offset, length)
+                    : (T)converter.GetObject(buffer, offset, length);
             }
             catch (Exception ex) when (PacketException.WrapFilter(ex))
             {

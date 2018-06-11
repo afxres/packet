@@ -25,8 +25,8 @@ namespace Mikodev.Network
 
             internal readonly object data;
             internal readonly ItemFlags flag;
-            internal readonly int lengthOne;
-            internal readonly int lengthTwo;
+            private readonly int indexLength;
+            private readonly int elementLength;
 
             internal Item(object data, ItemFlags flag)
             {
@@ -36,23 +36,23 @@ namespace Mikodev.Network
                 this.flag = flag;
             }
 
-            internal Item(object data, ItemFlags flag, int length)
+            internal Item(object data, ItemFlags flag, int elementLength)
             {
                 if (data == null)
                     return;
                 this.data = data;
                 this.flag = flag;
-                lengthOne = length;
+                this.elementLength = elementLength;
             }
 
-            internal Item(object data, ItemFlags flag, int one, int two)
+            internal Item(object data, ItemFlags flag, int indexLength, int elementLength)
             {
                 if (data == null)
                     return;
                 this.data = data;
                 this.flag = flag;
-                lengthOne = one;
-                lengthTwo = two;
+                this.indexLength = indexLength;
+                this.elementLength = elementLength;
             }
 
             internal void GetBytes(UnsafeStream stream, int level)
@@ -95,7 +95,7 @@ namespace Mikodev.Network
             private void GetBytesMatchBufferArray(UnsafeStream stream)
             {
                 var array = (byte[][])data;
-                if (lengthOne > 0)
+                if (elementLength > 0)
                     for (int i = 0; i < array.Length; i++)
                         stream.Write(array[i]);
                 else
@@ -126,11 +126,11 @@ namespace Mikodev.Network
                 for (int i = 0; i < list.Count; i++)
                 {
                     var current = list[i];
-                    if (lengthOne > 0)
+                    if (indexLength > 0)
                         stream.Write(current.Key);
                     else
                         stream.WriteExtend(current.Key);
-                    if (lengthTwo > 0)
+                    if (elementLength > 0)
                         stream.Write(current.Value);
                     else
                         stream.WriteExtend(current.Value);
@@ -143,13 +143,15 @@ namespace Mikodev.Network
                 for (int i = 0; i < list.Count; i++)
                 {
                     var current = list[i];
-                    if (lengthOne > 0)
+                    if (elementLength > 0)
                         stream.Write(current.Key);
                     else
                         stream.WriteExtend(current.Key);
                     current.Value.GetBytes(stream, level);
                 }
             }
+
+            public override string ToString() => $"{nameof(Item)} | flag: {flag}, index length: {indexLength}, element length: {elementLength}";
         }
     }
 }

@@ -102,9 +102,7 @@ namespace Mikodev.Testing
 
         public override bool Equals(object obj)
         {
-            if (obj is TestBox box)
-                return Name.Equals(box.Name);
-            return false;
+            return obj is TestBox box ? Name.Equals(box.Name) : false;
         }
 
         public override int GetHashCode()
@@ -248,7 +246,7 @@ namespace Mikodev.Testing
             {
                 var res = new PacketRawReader(new byte[4], con).GetValue<TestRef>();
             }
-            catch (Exception ex) when (ex.Message == TestConverter._ValueErr)
+            catch (OutOfMemoryException ex) when (ex.Message == TestConverter._ValueErr)
             {
                 // ignore
             }

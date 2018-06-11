@@ -42,56 +42,57 @@ namespace Mikodev.Network
 
         private static Item GetItemMatchEnumerable(ConverterDictionary converters, object value, int level, Info valueInfo)
         {
-            var ele = valueInfo.ElementType;
-            var inf = Cache.GetConverterOrInfo(converters, ele, out var con);
-            if (inf == null)
-                return NewItem(valueInfo.FromEnumerable(con, value), con.Length);
-
-            var lst = new List<Item>();
+            var elementType = valueInfo.ElementType;
+            var info = Cache.GetConverterOrInfo(converters, elementType, out var converter);
+            if (info == null)
+                return NewItem(valueInfo.FromEnumerable(converter, value), converter.Length);
+            if (valueInfo.ElementType == typeof(object))
+                throw PacketException.InvalidElementType(typeof(object), valueInfo.Type);
+            var list = new List<Item>();
             foreach (var i in ((IEnumerable)value))
-                lst.Add(GetItemMatch(converters, i, level, inf));
-            return NewItem(lst);
+                list.Add(GetItemMatch(converters, i, level, info));
+            return NewItem(list);
         }
 
         private static Item GetItemMatchDictionary(ConverterDictionary converters, object value, int level, Info valueInfo)
         {
             var key = Cache.GetConverter(converters, valueInfo.IndexType, true);
             if (key == null)
-                throw PacketException.InvalidKeyType(valueInfo.IndexType);
-            var ele = valueInfo.ElementType;
-            var inf = Cache.GetConverterOrInfo(converters, ele, out var con);
-            if (inf == null)
-                return NewItem(valueInfo.FromDictionary(key, con, value), key.Length, con.Length);
+                throw PacketException.InvalidKeyType(valueInfo.IndexType, valueInfo.Type);
+            var elementType = valueInfo.ElementType;
+            var info = Cache.GetConverterOrInfo(converters, elementType, out var converter);
+            if (info == null)
+                return NewItem(valueInfo.FromDictionary(key, converter, value), key.Length, converter.Length);
 
-            var lst = new List<KeyValuePair<byte[], Item>>();
-            var kvp = valueInfo.FromDictionaryAdapter(key, value);
-            foreach (var i in kvp)
-            {
-                var res = GetItemMatch(converters, i.Value, level, inf);
-                var tmp = new KeyValuePair<byte[], Item>(i.Key, res);
-                lst.Add(tmp);
-            }
-            return NewItem(lst, key.Length);
+            var list = new List<KeyValuePair<byte[], Item>>();
+            var adapter = valueInfo.FromDictionaryAdapter(key, value);
+            if (valueInfo.ElementType == typeof(object))
+                foreach (var i in adapter)
+                    list.Add(new KeyValuePair<byte[], Item>(i.Key, GetItem(converters, i.Value, level)));
+            else
+                foreach (var i in adapter)
+                    list.Add(new KeyValuePair<byte[], Item>(i.Key, GetItemMatch(converters, i.Value, level, info)));
+            return NewItem(list, key.Length);
         }
 
         private static Item GetItemMatchExpando(ConverterDictionary converters, object value, int level)
         {
-            var dic = (IDictionary<string, object>)value;
-            var lst = new Dictionary<string, PacketWriter>();
-            foreach (var i in dic)
-                lst[i.Key] = GetWriter(converters, i.Value, level);
-            return NewItem(lst);
+            var dictionary = (IDictionary<string, object>)value;
+            var list = new Dictionary<string, PacketWriter>();
+            foreach (var i in dictionary)
+                list[i.Key] = GetWriter(converters, i.Value, level);
+            return NewItem(list);
         }
 
         private static Item GetItemMatchDefault(ConverterDictionary converters, object value, int level, Info valueInfo)
         {
-            var lst = new Dictionary<string, PacketWriter>();
+            var dictionary = new Dictionary<string, PacketWriter>();
             var get = Cache.GetGetInfo(valueInfo.Type);
-            var val = get.GetValues(value);
-            var arg = get.Arguments;
-            for (int i = 0; i < arg.Length; i++)
-                lst[arg[i].Key] = GetWriter(converters, val[i], level);
-            return NewItem(lst);
+            var values = get.GetValues(value);
+            var arguments = get.Arguments;
+            for (int i = 0; i < arguments.Length; i++)
+                dictionary[arguments[i].Key] = GetWriter(converters, values[i], level);
+            return NewItem(dictionary);
         }
     }
 }
