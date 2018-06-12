@@ -4,8 +4,10 @@ using System.Runtime.InteropServices;
 
 namespace Mikodev.Binary.Converters
 {
-    internal class StringConverter : VariableValueConverter<string>
+    internal class StringConverter : ValueConverter<string>
     {
+        public StringConverter() : base(0) { }
+
         public override void ToBytes(Allocator allocator, string value)
         {
             if (string.IsNullOrEmpty(value))

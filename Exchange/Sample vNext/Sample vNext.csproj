@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TraceWatch.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -52,6 +53,10 @@
     <ProjectReference Include="..\Exchange vNext\Exchange vNext.csproj">
       <Project>{e0c3c8f9-97af-4338-970f-e3616cb64080}</Project>
       <Name>Exchange vNext</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Exchange\Exchange.csproj">
+      <Project>{540afed8-390e-49d7-9f54-10a8a8cb8f4a}</Project>
+      <Name>Exchange</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

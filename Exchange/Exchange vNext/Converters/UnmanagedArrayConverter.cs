@@ -4,8 +4,10 @@ using System.Runtime.InteropServices;
 
 namespace Mikodev.Binary.Converters
 {
-    internal class UnmanagedArrayConverter<T> : VariableValueConverter<T[]> where T : unmanaged
+    internal class UnmanagedArrayConverter<T> : ValueConverter<T[]> where T : unmanaged
     {
+        public UnmanagedArrayConverter() : base(0) { }
+
         public override void ToBytes(Allocator allocator, T[] array)
         {
             if (array == null || array.Length == 0)
