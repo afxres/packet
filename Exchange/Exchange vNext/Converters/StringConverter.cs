@@ -1,6 +1,7 @@
 ﻿using Mikodev.Binary.Common;
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Mikodev.Binary.Converters
 {
@@ -12,7 +13,7 @@ namespace Mikodev.Binary.Converters
         {
             if (string.IsNullOrEmpty(value))
                 return;
-            var source = MemoryMarshal.Cast<char, byte>(value.AsSpan());
+            var source = Encoding.UTF8.GetBytes(value);
             var target = allocator.Allocate(source.Length);
             source.CopyTo(target);
         }

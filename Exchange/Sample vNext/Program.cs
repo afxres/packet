@@ -10,6 +10,15 @@ namespace Sample
     {
         static void Main(string[] args)
         {
+            {
+                var c = Enumerable.Range(0, 8).Select(r => new { id = r, text = r.ToString("x4") });
+                var v = new { array = c.ToArray(), list = c.ToList() };
+                var ta = PacketBuilder.Default.Serialize(v);
+                var tb = PacketConvert.Serialize(v);
+                var ra = PacketConvert.Deserialize(ta, v);
+                var rb = PacketConvert.Deserialize(tb, v);
+            }
+
             var dic = new Dictionary<string, List<TimeSpan>>();
             TraceWatch.InstanceDisposed = (tag, span) =>
             {
@@ -29,7 +38,7 @@ namespace Sample
                 sub = new
                 {
                     sum = 2.2D,
-                    // lst = new List<string> { "one", "two", "three" },
+                    lst = new List<string> { "one", "two", "three" },
                 }
             };
 
