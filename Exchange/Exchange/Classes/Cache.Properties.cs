@@ -125,23 +125,17 @@ namespace Mikodev.Network
             if (type.IsValueType)
                 return InternalGetSetInfo(type, null);
             var constructorInfos = type.GetConstructor(Type.EmptyTypes);
-            if (constructorInfos != null)
-                return InternalGetSetInfo(type, constructorInfos);
-            return InternalGetSetInfoAnonymousType(type);
+            return constructorInfos != null ? InternalGetSetInfo(type, constructorInfos) : InternalGetSetInfoAnonymousType(type);
         }
 
         internal static GetInfo GetGetInfo(Type type)
         {
-            if (GetInfos.TryGetValue(type, out var info))
-                return info;
-            return GetInfos.GetOrAdd(type, InternalGetGetInfo(type));
+            return GetInfos.TryGetValue(type, out var info) ? info : GetInfos.GetOrAdd(type, InternalGetGetInfo(type));
         }
 
         internal static SetInfo GetSetInfo(Type type)
         {
-            if (SetInfos.TryGetValue(type, out var info))
-                return info;
-            return SetInfos.GetOrAdd(type, InternalGetSetInfo(type));
+            return SetInfos.TryGetValue(type, out var info) ? info : SetInfos.GetOrAdd(type, InternalGetSetInfo(type));
         }
     }
 }

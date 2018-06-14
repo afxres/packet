@@ -6,29 +6,26 @@ namespace Mikodev.Network
 {
     internal static partial class Convert
     {
+        #region to array, to list
         private static List<T> InternalToList<T>(PacketReader reader, PacketConverter converter)
         {
             var readerList = reader.GetList();
             var count = readerList.Count;
             if (count < 1)
                 return new List<T>();
-            var result = new List<T>(count);
-            var generic = converter as PacketConverter<T>;
 
             try
             {
-                if (generic != null)
-                    for (int i = 0; i < count; i++)
-                        result.Add(generic.GetValue(readerList[i].element));
-                else
-                    for (int i = 0; i < count; i++)
-                        result.Add((T)converter.GetObject(readerList[i].element));
+                var result = new List<T>(count);
+                var generic = (PacketConverter<T>)converter;
+                for (int i = 0; i < count; i++)
+                    result.Add(generic.GetValue(readerList[i].element));
+                return result;
             }
             catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
-            return result;
         }
 
         private static T[] InternalToArray<T>(PacketReader reader, PacketConverter converter)
@@ -37,24 +34,21 @@ namespace Mikodev.Network
             var count = readerList.Count;
             if (count < 1)
                 return new T[0];
-            var result = new T[count];
-            var generic = converter as PacketConverter<T>;
 
             try
             {
-                if (generic != null)
-                    for (int i = 0; i < count; i++)
-                        result[i] = generic.GetValue(readerList[i].element);
-                else
-                    for (int i = 0; i < count; i++)
-                        result[i] = (T)converter.GetObject(readerList[i].element);
+                var result = new T[count];
+                var generic = (PacketConverter<T>)converter;
+                for (int i = 0; i < count; i++)
+                    result[i] = generic.GetValue(readerList[i].element);
+                return result;
             }
             catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
-            return result;
         }
+        #endregion
 
         internal static T[] ToArray<T>(PacketReader reader, PacketConverter converter)
         {
@@ -105,11 +99,10 @@ namespace Mikodev.Network
         internal static List<Tuple<TK, TV>> ToTupleListExtend<TK, TV>(List<object> list)
         {
             var tupleList = new List<Tuple<TK, TV>>();
-            var index = 0;
-            while (index < list.Count)
+            for (int i = 0; i < list.Count; i += 2)
             {
-                var key = (TK)list[index++];
-                var value = (TV)list[index++];
+                var key = (TK)list[i];
+                var value = (TV)list[i + 1];
                 tupleList.Add(new Tuple<TK, TV>(key, value));
             }
             return tupleList;
@@ -117,25 +110,19 @@ namespace Mikodev.Network
 
         internal static byte[][] FromArray<T>(PacketConverter converter, T[] array)
         {
+            var generic = (PacketConverter<T>)converter;
             var result = new byte[array.Length][];
-            if (converter is PacketConverter<T> generic)
-                for (int i = 0; i < array.Length; i++)
-                    result[i] = generic.GetBytesChecked(array[i]);
-            else
-                for (int i = 0; i < array.Length; i++)
-                    result[i] = converter.GetBytesChecked(array[i]);
+            for (int i = 0; i < array.Length; i++)
+                result[i] = generic.GetBytesChecked(array[i]);
             return result;
         }
 
         internal static byte[][] FromList<T>(PacketConverter converter, List<T> list)
         {
+            var generic = (PacketConverter<T>)converter;
             var result = new byte[list.Count][];
-            if (converter is PacketConverter<T> generic)
-                for (int i = 0; i < list.Count; i++)
-                    result[i] = generic.GetBytesChecked(list[i]);
-            else
-                for (int i = 0; i < list.Count; i++)
-                    result[i] = converter.GetBytesChecked(list[i]);
+            for (int i = 0; i < list.Count; i++)
+                result[i] = generic.GetBytesChecked(list[i]);
             return result;
         }
 
@@ -143,29 +130,23 @@ namespace Mikodev.Network
         {
             if (enumerable is ICollection<T> collection && collection.Count > 15)
                 return FromArray(converter, collection.ToArray());
-
+            var generic = (PacketConverter<T>)converter;
             var result = new List<byte[]>();
-            if (converter is PacketConverter<T> generic)
-                foreach (var i in enumerable)
-                    result.Add(generic.GetBytesChecked(i));
-            else
-                foreach (var i in enumerable)
-                    result.Add(converter.GetBytesChecked(i));
+            foreach (var i in enumerable)
+                result.Add(generic.GetBytesChecked(i));
             return result.ToArray();
         }
 
         internal static List<KeyValuePair<byte[], byte[]>> FromDictionary<TK, TV>(PacketConverter indexConverter, PacketConverter elementConverter, IEnumerable<KeyValuePair<TK, TV>> enumerable)
         {
             var result = new List<KeyValuePair<byte[], byte[]>>();
-            var keyGeneric = indexConverter as PacketConverter<TK>;
-            var valGeneric = elementConverter as PacketConverter<TV>;
+            var keyGeneric = (PacketConverter<TK>)indexConverter;
+            var valGeneric = (PacketConverter<TV>)elementConverter;
 
             foreach (var i in enumerable)
             {
-                var key = i.Key;
-                var val = i.Value;
-                var keyBuffer = (keyGeneric != null ? keyGeneric.GetBytesChecked(key) : indexConverter.GetBytesChecked(key));
-                var valBuffer = (valGeneric != null ? valGeneric.GetBytesChecked(val) : elementConverter.GetBytesChecked(val));
+                var keyBuffer = keyGeneric.GetBytesChecked(i.Key);
+                var valBuffer = valGeneric.GetBytesChecked(i.Value);
                 result.Add(new KeyValuePair<byte[], byte[]>(keyBuffer, valBuffer));
             }
             return result;

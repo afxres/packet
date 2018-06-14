@@ -30,7 +30,7 @@ namespace Mikodev.Network
 
         internal object Next(PacketConverter converter) => element.Next(ref index, converter);
 
-        internal T NextAuto<T>(PacketConverter converter) => element.NextAuto<T>(ref index, converter);
+        internal T Next<T>(PacketConverter<T> converter) => element.Next(ref index, converter);
 
         public bool Any => index < element.Limits;
 

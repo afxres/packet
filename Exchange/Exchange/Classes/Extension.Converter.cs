@@ -19,10 +19,7 @@ namespace Mikodev.Network
         internal static object GetObjectChecked(this PacketConverter converter, Element element, bool check = false) => GetObjectChecked(converter, element.buffer, element.offset, element.length, check);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T GetValueCheckedAuto<T>(this PacketConverter converter, Element element, bool check = false) => GetValueCheckedAuto<T>(converter, element.buffer, element.offset, element.length, check);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T GetValueChecked<T>(this PacketConverter<T> converter, Element element) => GetValueChecked(converter, element.buffer, element.offset, element.length);
+        internal static T GetValueChecked<T>(this PacketConverter<T> converter, Element element, bool check = false) => GetValueChecked(converter, element.buffer, element.offset, element.length, check);
 
         internal static object GetObjectChecked(this PacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
         {
@@ -38,26 +35,12 @@ namespace Mikodev.Network
             }
         }
 
-        internal static T GetValueCheckedAuto<T>(this PacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
+        internal static T GetValueChecked<T>(this PacketConverter<T> converter, byte[] buffer, int offset, int length, bool check = false)
         {
             try
             {
                 if (check && converter.Length > length)
                     throw PacketException.Overflow();
-                return converter is PacketConverter<T> generic
-                    ? generic.GetValue(buffer, offset, length)
-                    : (T)converter.GetObject(buffer, offset, length);
-            }
-            catch (Exception ex) when (PacketException.ReThrowFilter(ex))
-            {
-                throw PacketException.ConversionError(ex);
-            }
-        }
-
-        internal static T GetValueChecked<T>(this PacketConverter<T> converter, byte[] buffer, int offset, int length)
-        {
-            try
-            {
                 return converter.GetValue(buffer, offset, length);
             }
             catch (Exception ex) when (PacketException.ReThrowFilter(ex))

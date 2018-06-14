@@ -3,9 +3,7 @@
     internal enum InfoFlags : int
     {
         None = 0,
-        Enum = 4,
-
-        Reader = 16,
+        Reader,
         RawReader,
         Collection,
         Enumerable,

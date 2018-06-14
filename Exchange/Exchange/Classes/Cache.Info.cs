@@ -194,13 +194,13 @@ namespace Mikodev.Network
 
         private static void GetInfoFromList(Info info, Type elementType, Type type)
         {
-            var basicInfo = GetInfo(typeof(IList<>).MakeGenericType(elementType));
+            var basicList = GetInfo(typeof(IList<>).MakeGenericType(elementType));
             info.ElementType = elementType;
             info.From = InfoFlags.Enumerable;
             info.To = InfoFlags.Collection; // to list
             info.FromEnumerable = Convert.FromListFunc(type, elementType);
-            info.ToCollection = basicInfo.ToCollection;
-            info.ToCollectionExtend = basicInfo.ToCollectionExtend;
+            info.ToCollection = basicList.ToCollection;
+            info.ToCollectionExtend = basicList.ToCollectionExtend;
         }
 
         private static Type[] GetInfoFromArray(Info info, Type type)

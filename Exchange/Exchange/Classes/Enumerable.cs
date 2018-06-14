@@ -46,22 +46,16 @@ namespace Mikodev.Network
 
         private static IEnumerator<T> Enumerator(byte[] buffer, int offset, int count, int define, PacketConverter converter)
         {
-            if (converter is PacketConverter<T> generic)
-                for (int i = 0; i < count; i++)
-                    yield return generic.GetValueChecked(buffer, offset + define * i, define);
-            else
-                for (int i = 0; i < count; i++)
-                    yield return (T)converter.GetObjectChecked(buffer, offset + define * i, define);
+            var generic = (PacketConverter<T>)converter;
+            for (int i = 0; i < count; i++)
+                yield return generic.GetValueChecked(buffer, offset + define * i, define);
         }
 
         private static IEnumerator<T> Enumerator(List<PacketReader> list, PacketConverter converter)
         {
-            if (converter is PacketConverter<T> generic)
-                for (int i = 0; i < list.Count; i++)
-                    yield return generic.GetValueChecked(list[i].element);
-            else
-                for (int i = 0; i < list.Count; i++)
-                    yield return (T)converter.GetObjectChecked(list[i].element);
+            var generic = (PacketConverter<T>)converter;
+            for (int i = 0; i < list.Count; i++)
+                yield return generic.GetValueChecked(list[i].element);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()

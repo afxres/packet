@@ -18,8 +18,8 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(reader);
 
-            var con = Cache.GetConverter<T>(reader.converters, false);
-            var val = reader.NextAuto<T>(con);
+            var con = (PacketConverter<T>)Cache.GetConverter<T>(reader.converters, false);
+            var val = reader.Next<T>(con);
             return val;
         }
 

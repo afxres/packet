@@ -27,18 +27,12 @@ namespace Mikodev.Network
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
-            if (converters != null && converters.TryGetValue(type, out var converter))
-                if (converter == null)
-                    goto fail;
-                else return converter;
-            if (Extension.Converters.TryGetValue(type, out converter))
+            if ((converters != null && converters.TryGetValue(type, out var converter)) || Extension.Converters.TryGetValue(type, out converter))
                 return converter;
-
             var info = GetInfo(type);
             if ((converter = info.Converter) != null)
                 return converter;
 
-            fail:
             if (nothrow == true)
                 return null;
             throw PacketException.InvalidType(type);
@@ -46,14 +40,10 @@ namespace Mikodev.Network
 
         internal static Info GetConverterOrInfo(ConverterDictionary converters, Type type, out PacketConverter converter)
         {
-            if (converters != null && converters.TryGetValue(type, out converter))
-                return null;
-            if (Extension.Converters.TryGetValue(type, out converter))
+            if ((converters != null && converters.TryGetValue(type, out converter)) || Extension.Converters.TryGetValue(type, out converter))
                 return null;
             var info = GetInfo(type);
-            if ((converter = info.Converter) == null)
-                return info;
-            return null;
+            return (converter = info.Converter) == null ? info : null;
         }
 
         #region get bytes
@@ -64,13 +54,7 @@ namespace Mikodev.Network
             return buffer;
         }
 
-        internal static byte[] GetBytesAuto<T>(ConverterDictionary converters, T value)
-        {
-            var converter = GetConverter<T>(converters, false);
-            return converter is PacketConverter<T> generic
-                ? generic.GetBytesChecked(value)
-                : converter.GetBytesChecked(value);
-        }
+        internal static byte[] GetBytes<T>(ConverterDictionary converters, T value) => GetConverter<T>(converters, false).GetBytesChecked(value);
 
         internal static byte[][] GetBytesFromEnumerableNonGeneric(PacketConverter converter, IEnumerable enumerable)
         {
