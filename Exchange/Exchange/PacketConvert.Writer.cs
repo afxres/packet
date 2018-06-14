@@ -23,7 +23,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(writer);
 
-            var val = Cache.GetBytesAuto(writer.converters, value);
+            var val = Cache.GetBytes(writer.converters, value);
             var itm = writer.GetDictionary();
             itm[key] = new PacketWriter(writer.converters, PacketWriter.NewItem(val));
             return writer;

@@ -64,13 +64,7 @@ namespace Mikodev.Network
             return buffer;
         }
 
-        internal static byte[] GetBytesAuto<T>(ConverterDictionary converters, T value)
-        {
-            var converter = GetConverter<T>(converters, false);
-            return converter is PacketConverter<T> generic
-                ? generic.GetBytesChecked(value)
-                : converter.GetBytesChecked(value);
-        }
+        internal static byte[] GetBytes<T>(ConverterDictionary converters, T value) => GetConverter<T>(converters, false).GetBytesChecked(value);
 
         internal static byte[][] GetBytesFromEnumerableNonGeneric(PacketConverter converter, IEnumerable enumerable)
         {

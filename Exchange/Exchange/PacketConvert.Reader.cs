@@ -18,8 +18,8 @@ namespace Mikodev.Network
         public static T GetValue<T>(this PacketReader reader)
         {
             ThrowIfArgumentError(reader);
-            var con = Cache.GetConverter<T>(reader.converters, false);
-            var val = con.GetValueCheckedAuto<T>(reader.element, true);
+            var generic = (PacketConverter<T>)Cache.GetConverter<T>(reader.converters, false);
+            var val = generic.GetValueChecked(reader.element, true);
             return val;
         }
 

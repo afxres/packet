@@ -84,7 +84,7 @@ namespace Mikodev.Network
         public static object GetValue<T>(byte[] buffer)
         {
             ThrowIfArgumentError(buffer);
-            return Cache.GetConverter<T>(null, false).GetValueCheckedAuto<T>(buffer, 0, buffer.Length, true);
+            return ((PacketConverter<T>)Cache.GetConverter<T>(null, false)).GetValueChecked<T>(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue<T>(byte[] buffer, int offset, int length)
@@ -101,7 +101,7 @@ namespace Mikodev.Network
 
         public static byte[] GetBytes<T>(T value)
         {
-            return Cache.GetBytesAuto(null, value);
+            return Cache.GetBytes<T>(null, value);
         }
 
         #region deserialize

@@ -37,11 +37,11 @@ namespace Mikodev.Network
             return result;
         }
 
-        internal T NextAuto<T>(ref int index, PacketConverter converter)
+        internal T Next<T>(ref int index, PacketConverter<T> converter)
         {
             var offset = index;
             var length = buffer.MoveNextExcept(ref offset, Limits, converter.Length);
-            var result = converter.GetValueCheckedAuto<T>(buffer, offset, length);
+            var result = converter.GetValueChecked<T>(buffer, offset, length);
             index = offset + length;
             return result;
         }
@@ -50,8 +50,8 @@ namespace Mikodev.Network
         {
             if (length == 0)
                 return;
-            var keygen = indexConverter as PacketConverter<TK>;
-            var valgen = elementConverter as PacketConverter<TV>;
+            var keygen = (PacketConverter<TK>)indexConverter;
+            var valgen = (PacketConverter<TV>)elementConverter;
             var keydef = indexConverter.Length;
             var valdef = elementConverter.Length;
             var idx = offset;
@@ -62,11 +62,11 @@ namespace Mikodev.Network
                 while (idx != Limits)
                 {
                     len = buffer.MoveNextExcept(ref idx, Limits, keydef);
-                    var key = (keygen != null ? keygen.GetValue(buffer, idx, len) : (TK)indexConverter.GetObject(buffer, idx, len));
+                    var key = keygen.GetValue(buffer, idx, len);
                     idx += len;
 
                     len = buffer.MoveNextExcept(ref idx, Limits, valdef);
-                    var val = (valgen != null ? valgen.GetValue(buffer, idx, len) : (TV)elementConverter.GetObject(buffer, idx, len));
+                    var val = valgen.GetValue(buffer, idx, len);
                     idx += len;
 
                     dictionary.Add(key, val);
@@ -87,27 +87,23 @@ namespace Mikodev.Network
             else if (typeof(T) == typeof(sbyte))
                 return (T[])(object)UnmanagedArrayConverter<sbyte>.ToValue(buffer, offset, length);
 
-            var def = converter.Length;
-            var sum = Math.DivRem(length, def, out var rem);
-            if (rem != 0)
+            var define = converter.Length;
+            var quotient = Math.DivRem(length, define, out var remainder);
+            if (remainder != 0)
                 throw PacketException.Overflow();
-            var arr = new T[sum];
-            var gen = converter as PacketConverter<T>;
 
             try
             {
-                if (gen != null)
-                    for (int idx = 0; idx < sum; idx++)
-                        arr[idx] = gen.GetValue(buffer, offset + idx * def, def);
-                else
-                    for (int idx = 0; idx < sum; idx++)
-                        arr[idx] = (T)converter.GetObject(buffer, offset + idx * def, def);
+                var target = new T[quotient];
+                var generic = (PacketConverter<T>)converter;
+                for (int i = 0; i < quotient; i++)
+                    target[i] = generic.GetValue(buffer, offset + i * define, define);
+                return target;
             }
             catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
-            return arr;
         }
 
         internal List<T> ToList<T>(PacketConverter converter)
@@ -119,27 +115,23 @@ namespace Mikodev.Network
             else if (typeof(T) == typeof(sbyte))
                 return new List<T>((T[])(object)UnmanagedArrayConverter<sbyte>.ToValue(buffer, offset, length));
 
-            var def = converter.Length;
-            var sum = Math.DivRem(length, def, out var rem);
-            if (rem != 0)
+            var define = converter.Length;
+            var quotient = Math.DivRem(length, define, out var remainder);
+            if (remainder != 0)
                 throw PacketException.Overflow();
-            var lst = new List<T>(sum);
-            var gen = converter as PacketConverter<T>;
 
             try
             {
-                if (gen != null)
-                    for (int idx = 0; idx < sum; idx++)
-                        lst.Add(gen.GetValue(buffer, offset + idx * def, def));
-                else
-                    for (int idx = 0; idx < sum; idx++)
-                        lst.Add((T)converter.GetObject(buffer, offset + idx * def, def));
+                var list = new List<T>(quotient);
+                var generic = (PacketConverter<T>)converter;
+                for (int i = 0; i < quotient; i++)
+                    list.Add(generic.GetValue(buffer, offset + i * define, define));
+                return list;
             }
             catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
-            return lst;
         }
     }
 }
