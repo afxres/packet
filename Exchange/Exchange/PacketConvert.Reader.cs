@@ -11,7 +11,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(reader);
             var con = Cache.GetConverter(reader.converters, type, false);
-            var val = con.GetObjectWrap(reader.element, true);
+            var val = con.GetObjectChecked(reader.element, true);
             return val;
         }
 
@@ -19,7 +19,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(reader);
             var con = Cache.GetConverter<T>(reader.converters, false);
-            var val = con.GetValueWrapAuto<T>(reader.element, true);
+            var val = con.GetValueCheckedAuto<T>(reader.element, true);
             return val;
         }
 

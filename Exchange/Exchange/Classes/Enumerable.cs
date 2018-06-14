@@ -18,13 +18,13 @@ namespace Mikodev.Network
         private static IEnumerator Enumerator(byte[] buffer, int offset, int count, int define, PacketConverter converter)
         {
             for (int i = 0; i < count; i++)
-                yield return converter.GetObjectWrap(buffer, offset + define * i, define);
+                yield return converter.GetObjectChecked(buffer, offset + define * i, define);
         }
 
         private static IEnumerator Enumerator(List<PacketReader> list, PacketConverter converter)
         {
             for (int i = 0; i < list.Count; i++)
-                yield return converter.GetObjectWrap(list[i].element);
+                yield return converter.GetObjectChecked(list[i].element);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -48,20 +48,20 @@ namespace Mikodev.Network
         {
             if (converter is PacketConverter<T> generic)
                 for (int i = 0; i < count; i++)
-                    yield return generic.GetValueWrap(buffer, offset + define * i, define);
+                    yield return generic.GetValueChecked(buffer, offset + define * i, define);
             else
                 for (int i = 0; i < count; i++)
-                    yield return (T)converter.GetObjectWrap(buffer, offset + define * i, define);
+                    yield return (T)converter.GetObjectChecked(buffer, offset + define * i, define);
         }
 
         private static IEnumerator<T> Enumerator(List<PacketReader> list, PacketConverter converter)
         {
             if (converter is PacketConverter<T> generic)
                 for (int i = 0; i < list.Count; i++)
-                    yield return generic.GetValueWrap(list[i].element);
+                    yield return generic.GetValueChecked(list[i].element);
             else
                 for (int i = 0; i < list.Count; i++)
-                    yield return (T)converter.GetObjectWrap(list[i].element);
+                    yield return (T)converter.GetObjectChecked(list[i].element);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()

@@ -10,7 +10,7 @@ namespace Mikodev.Network
             PacketException.VerifyRecursionError(ref level);
             var info = Cache.GetConverterOrInfo(converters, type, out var converter);
             return info == null
-                ? converter.GetObjectWrap(element, true)
+                ? converter.GetObjectChecked(element, true)
                 : GetValueMatch(type, level, info);
         }
 
@@ -76,7 +76,7 @@ namespace Mikodev.Network
             {
                 length = buffer.MoveNextExcept(ref offset, limits, keydef);
                 // Wrap error non-check
-                var key = keycon.GetObjectWrap(buffer, offset, length);
+                var key = keycon.GetObjectChecked(buffer, offset, length);
                 offset += length;
                 list.Add(key);
 

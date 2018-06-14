@@ -6,7 +6,7 @@ namespace Mikodev.Network
     {
         public int Length { get; }
 
-        protected PacketConverter(int length)
+        internal PacketConverter(int length)
         {
             if (length < 0)
                 throw new ArgumentOutOfRangeException(nameof(length));
@@ -25,5 +25,9 @@ namespace Mikodev.Network
         public abstract byte[] GetBytes(T value);
 
         public abstract T GetValue(byte[] buffer, int offset, int length);
+
+        public override byte[] GetBytes(object value) => GetBytes((T)value);
+
+        public override object GetObject(byte[] buffer, int offset, int length) => GetValue(buffer, offset, length);
     }
 }

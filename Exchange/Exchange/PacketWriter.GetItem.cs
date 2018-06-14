@@ -13,7 +13,7 @@ namespace Mikodev.Network
                 return Item.Empty;
             var type = value.GetType();
             var info = Cache.GetConverterOrInfo(converters, type, out var converter);
-            return info == null ? NewItem(converter.GetBytesWrap(value)) : GetItemMatch(converters, value, level, info);
+            return info == null ? NewItem(converter.GetBytesChecked(value)) : GetItemMatch(converters, value, level, info);
         }
 
         private static Item GetItemMatch(ConverterDictionary converters, object value, int level, Info valueInfo)

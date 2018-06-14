@@ -24,7 +24,7 @@ namespace Mikodev.Network
                     for (int i = 0; i < count; i++)
                         result.Add((T)converter.GetObject(readerList[i].element));
             }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
@@ -49,7 +49,7 @@ namespace Mikodev.Network
                     for (int i = 0; i < count; i++)
                         result[i] = (T)converter.GetObject(readerList[i].element);
             }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
@@ -120,10 +120,10 @@ namespace Mikodev.Network
             var result = new byte[array.Length][];
             if (converter is PacketConverter<T> generic)
                 for (int i = 0; i < array.Length; i++)
-                    result[i] = generic.GetBytesWrap(array[i]);
+                    result[i] = generic.GetBytesChecked(array[i]);
             else
                 for (int i = 0; i < array.Length; i++)
-                    result[i] = converter.GetBytesWrap(array[i]);
+                    result[i] = converter.GetBytesChecked(array[i]);
             return result;
         }
 
@@ -132,10 +132,10 @@ namespace Mikodev.Network
             var result = new byte[list.Count][];
             if (converter is PacketConverter<T> generic)
                 for (int i = 0; i < list.Count; i++)
-                    result[i] = generic.GetBytesWrap(list[i]);
+                    result[i] = generic.GetBytesChecked(list[i]);
             else
                 for (int i = 0; i < list.Count; i++)
-                    result[i] = converter.GetBytesWrap(list[i]);
+                    result[i] = converter.GetBytesChecked(list[i]);
             return result;
         }
 
@@ -147,10 +147,10 @@ namespace Mikodev.Network
             var result = new List<byte[]>();
             if (converter is PacketConverter<T> generic)
                 foreach (var i in enumerable)
-                    result.Add(generic.GetBytesWrap(i));
+                    result.Add(generic.GetBytesChecked(i));
             else
                 foreach (var i in enumerable)
-                    result.Add(converter.GetBytesWrap(i));
+                    result.Add(converter.GetBytesChecked(i));
             return result.ToArray();
         }
 
@@ -164,8 +164,8 @@ namespace Mikodev.Network
             {
                 var key = i.Key;
                 var val = i.Value;
-                var keyBuffer = (keyGeneric != null ? keyGeneric.GetBytesWrap(key) : indexConverter.GetBytesWrap(key));
-                var valBuffer = (valGeneric != null ? valGeneric.GetBytesWrap(val) : elementConverter.GetBytesWrap(val));
+                var keyBuffer = (keyGeneric != null ? keyGeneric.GetBytesChecked(key) : indexConverter.GetBytesChecked(key));
+                var valBuffer = (valGeneric != null ? valGeneric.GetBytesChecked(val) : elementConverter.GetBytesChecked(val));
                 result.Add(new KeyValuePair<byte[], byte[]>(keyBuffer, valBuffer));
             }
             return result;

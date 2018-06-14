@@ -87,7 +87,7 @@ namespace Mikodev.Network
             level++;
         }
 
-        internal static bool WrapFilter(Exception exception)
+        internal static bool ReThrowFilter(Exception exception)
         {
             return !(exception is PacketException || exception is OutOfMemoryException || exception is StackOverflowException || exception is ThreadAbortException);
         }

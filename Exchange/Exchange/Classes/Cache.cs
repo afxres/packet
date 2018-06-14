@@ -27,16 +27,16 @@ namespace Mikodev.Network
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
-            if (converters != null && converters.TryGetValue(type, out var value))
-                if (value == null)
+            if (converters != null && converters.TryGetValue(type, out var converter))
+                if (converter == null)
                     goto fail;
-                else return value;
-            if (Extension.Converters.TryGetValue(type, out value))
-                return value;
+                else return converter;
+            if (Extension.Converters.TryGetValue(type, out converter))
+                return converter;
 
             var info = GetInfo(type);
-            if (info.Flag == InfoFlags.Enum)
-                return Extension.Converters[info.ElementType];
+            if ((converter = info.Converter) != null)
+                return converter;
 
             fail:
             if (nothrow == true)
@@ -51,9 +51,8 @@ namespace Mikodev.Network
             if (Extension.Converters.TryGetValue(type, out converter))
                 return null;
             var info = GetInfo(type);
-            if (info.Flag != InfoFlags.Enum)
+            if ((converter = info.Converter) == null)
                 return info;
-            converter = Extension.Converters[info.ElementType];
             return null;
         }
 
@@ -61,7 +60,7 @@ namespace Mikodev.Network
         internal static byte[] GetBytes(Type type, ConverterDictionary converters, object value)
         {
             var converter = GetConverter(converters, type, false);
-            var buffer = converter.GetBytesWrap(value);
+            var buffer = converter.GetBytesChecked(value);
             return buffer;
         }
 
@@ -69,15 +68,15 @@ namespace Mikodev.Network
         {
             var converter = GetConverter<T>(converters, false);
             return converter is PacketConverter<T> generic
-                ? generic.GetBytesWrap(value)
-                : converter.GetBytesWrap(value);
+                ? generic.GetBytesChecked(value)
+                : converter.GetBytesChecked(value);
         }
 
         internal static byte[][] GetBytesFromEnumerableNonGeneric(PacketConverter converter, IEnumerable enumerable)
         {
             var result = new List<byte[]>();
             foreach (var i in enumerable)
-                result.Add(converter.GetBytesWrap(i));
+                result.Add(converter.GetBytesChecked(i));
             return result.ToArray();
         }
         #endregion

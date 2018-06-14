@@ -32,7 +32,7 @@ namespace Mikodev.Network
         {
             var offset = index;
             var length = buffer.MoveNextExcept(ref offset, Limits, converter.Length);
-            var result = converter.GetObjectWrap(buffer, offset, length);
+            var result = converter.GetObjectChecked(buffer, offset, length);
             index = offset + length;
             return result;
         }
@@ -41,7 +41,7 @@ namespace Mikodev.Network
         {
             var offset = index;
             var length = buffer.MoveNextExcept(ref offset, Limits, converter.Length);
-            var result = converter.GetValueWrapAuto<T>(buffer, offset, length);
+            var result = converter.GetValueCheckedAuto<T>(buffer, offset, length);
             index = offset + length;
             return result;
         }
@@ -72,7 +72,7 @@ namespace Mikodev.Network
                     dictionary.Add(key, val);
                 }
             }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
@@ -103,7 +103,7 @@ namespace Mikodev.Network
                     for (int idx = 0; idx < sum; idx++)
                         arr[idx] = (T)converter.GetObject(buffer, offset + idx * def, def);
             }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
@@ -135,7 +135,7 @@ namespace Mikodev.Network
                     for (int idx = 0; idx < sum; idx++)
                         lst.Add((T)converter.GetObject(buffer, offset + idx * def, def));
             }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
