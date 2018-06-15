@@ -11,8 +11,8 @@ namespace Mikodev.Network
         private PacketWriter GetItem(PacketWriter writer, string key)
         {
             var dictionary = writer.GetDictionary();
-            if (dictionary.TryGetValue(key, out var value) && value is PacketWriter packetWriter)
-                return packetWriter;
+            if (dictionary.TryGetValue(key, out var value))
+                return value;
             var childWriter = new PacketWriter(writer.converters);
             dictionary[key] = childWriter;
             return childWriter;

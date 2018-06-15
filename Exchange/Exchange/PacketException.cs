@@ -59,9 +59,14 @@ namespace Mikodev.Network
             return new PacketException(PacketError.ConversionMismatch, $"Converter should return a byte array of length {length}");
         }
 
-        internal static PacketException InvalidKeyType(Type type)
+        internal static PacketException InvalidElementType(Type type, Type collectionType)
         {
-            return new PacketException(PacketError.InvalidKeyType, $"Invalid dictionary key type: {type}");
+            return new PacketException(PacketError.InvalidElementType, $"Invalid collection element type: {type} (collection type: {collectionType})");
+        }
+
+        internal static PacketException InvalidKeyType(Type type, Type dictionaryType)
+        {
+            return new PacketException(PacketError.InvalidKeyType, $"Invalid dictionary key type: {type} (dictionary type: {dictionaryType})");
         }
 
         internal static PacketException InvalidType(Type type)
@@ -82,11 +87,9 @@ namespace Mikodev.Network
             level++;
         }
 
-        internal static bool WrapFilter(Exception exception)
+        internal static bool ReThrowFilter(Exception exception)
         {
-            if (exception is PacketException || exception is OutOfMemoryException || exception is StackOverflowException || exception is ThreadAbortException)
-                return false;
-            return true;
+            return !(exception is PacketException || exception is OutOfMemoryException || exception is StackOverflowException || exception is ThreadAbortException);
         }
     }
 }

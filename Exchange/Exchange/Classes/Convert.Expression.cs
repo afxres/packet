@@ -92,7 +92,7 @@ namespace Mikodev.Network
             var array = Expression.Variable(value.Type, "array");
             var index = Expression.Variable(typeof(int), "index");
             var label = Expression.Label(typeof(object), "result");
-            var arrayAccess = Expression.ArrayAccess(array, Expression.PostIncrementAssign(index)) as Expression;
+            var arrayAccess = (Expression)Expression.ArrayAccess(array, Expression.PostIncrementAssign(index));
             if (arrayAccess.Type != elementType)
                 arrayAccess = Expression.Convert(arrayAccess, elementType);
             var block = Expression.Block(

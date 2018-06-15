@@ -15,7 +15,7 @@ namespace Mikodev.Testing
 
     internal class TestRef { }
 
-    internal class TestConverter : PacketConverter
+    internal class TestConverter : PacketConverter<TestRef>
     {
         internal static readonly string _BytesErr = Guid.NewGuid().ToString();
 
@@ -23,23 +23,23 @@ namespace Mikodev.Testing
 
         public TestConverter() : base(0) { }
 
-        public override byte[] GetBytes(object value) => throw new Exception(_BytesErr);
+        public override byte[] GetBytes(TestRef value) => throw new Exception(_BytesErr);
 
-        public override object GetObject(byte[] buffer, int offset, int length) => throw new OutOfMemoryException(_ValueErr);
+        public override TestRef GetValue(byte[] buffer, int offset, int length) => throw new OutOfMemoryException(_ValueErr);
     }
 
-    internal class TestBadConverter : PacketConverter
+    internal class TestBadConverter : PacketConverter<TestRef>
     {
         public TestBadConverter() : base(4) { }
 
-        public override byte[] GetBytes(object value)
+        public override byte[] GetBytes(TestRef value)
         {
             return null;
         }
 
-        public override object GetObject(byte[] buffer, int offset, int length)
+        public override TestRef GetValue(byte[] buffer, int offset, int length)
         {
-            return new byte[1];
+            return null;
         }
     }
 
@@ -70,11 +70,11 @@ namespace Mikodev.Testing
         }
     }
 
-    internal class TestTwoConverter : PacketConverter
+    internal class TestTwoConverter : PacketConverter<TestTwo>
     {
         public TestTwoConverter() : base(sizeof(int) * 2) { }
 
-        public override byte[] GetBytes(object value)
+        public override byte[] GetBytes(TestTwo value)
         {
             var two = (TestTwo)value;
             var buf = new byte[sizeof(int) * 2];
@@ -85,7 +85,7 @@ namespace Mikodev.Testing
             return buf;
         }
 
-        public override object GetObject(byte[] buffer, int offset, int length)
+        public override TestTwo GetValue(byte[] buffer, int offset, int length)
         {
             if (length < (sizeof(int) * 2))
                 throw new ArgumentOutOfRangeException(nameof(length));
@@ -102,9 +102,7 @@ namespace Mikodev.Testing
 
         public override bool Equals(object obj)
         {
-            if (obj is TestBox box)
-                return Name.Equals(box.Name);
-            return false;
+            return obj is TestBox box ? Name.Equals(box.Name) : false;
         }
 
         public override int GetHashCode()
@@ -118,16 +116,16 @@ namespace Mikodev.Testing
         }
     }
 
-    internal class TestBoxConverter : PacketConverter
+    internal class TestBoxConverter : PacketConverter<TestBox>
     {
         public TestBoxConverter() : base(0) { }
 
-        public override byte[] GetBytes(object value)
+        public override byte[] GetBytes(TestBox value)
         {
             return Encoding.UTF8.GetBytes(((TestBox)value).Name);
         }
 
-        public override object GetObject(byte[] buffer, int offset, int length)
+        public override TestBox GetValue(byte[] buffer, int offset, int length)
         {
             return new TestBox { Name = Encoding.UTF8.GetString(buffer, offset, length) };
         }
@@ -248,7 +246,7 @@ namespace Mikodev.Testing
             {
                 var res = new PacketRawReader(new byte[4], con).GetValue<TestRef>();
             }
-            catch (Exception ex) when (ex.Message == TestConverter._ValueErr)
+            catch (OutOfMemoryException ex) when (ex.Message == TestConverter._ValueErr)
             {
                 // ignore
             }
@@ -492,7 +490,7 @@ namespace Mikodev.Testing
 
 
         [TestMethod]
-        public void LegacyConverter()
+        public void CustomConverter()
         {
             var con = new Dictionary<Type, PacketConverter>()
             {

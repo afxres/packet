@@ -71,26 +71,26 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer);
-            return Cache.GetConverter(null, type, false).GetObjectWrap(buffer, 0, buffer.Length, true);
+            return Cache.GetConverter(null, type, false).GetObjectChecked(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue(byte[] buffer, int offset, int length, Type type)
         {
             ThrowIfArgumentError(type);
             ThrowIfArgumentError(buffer, offset, length);
-            return Cache.GetConverter(null, type, false).GetObjectWrap(buffer, offset, length, true);
+            return Cache.GetConverter(null, type, false).GetObjectChecked(buffer, offset, length, true);
         }
 
         public static object GetValue<T>(byte[] buffer)
         {
             ThrowIfArgumentError(buffer);
-            return Cache.GetConverter<T>(null, false).GetValueWrapAuto<T>(buffer, 0, buffer.Length, true);
+            return ((PacketConverter<T>)Cache.GetConverter<T>(null, false)).GetValueChecked<T>(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue<T>(byte[] buffer, int offset, int length)
         {
             ThrowIfArgumentError(buffer, offset, length);
-            return Cache.GetConverter<T>(null, false).GetObjectWrap(buffer, offset, length, true);
+            return Cache.GetConverter<T>(null, false).GetObjectChecked(buffer, offset, length, true);
         }
 
         public static byte[] GetBytes(object value, Type type)
@@ -101,7 +101,7 @@ namespace Mikodev.Network
 
         public static byte[] GetBytes<T>(T value)
         {
-            return Cache.GetBytesAuto(null, value);
+            return Cache.GetBytes(null, value);
         }
 
         #region deserialize

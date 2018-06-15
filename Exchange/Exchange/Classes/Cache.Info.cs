@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Network.Converters;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,22 +10,16 @@ namespace Mikodev.Network
     {
         internal static Info GetInfo(Type type)
         {
-            if (Infos.TryGetValue(type, out var inf))
-                return inf;
-            return Infos.GetOrAdd(type, GetInfoFromType(type));
+            return Infos.TryGetValue(type, out var info)
+                ? info
+                : Infos.GetOrAdd(type, GetInfoFromType(type));
         }
 
         private static Info GetInfoFromType(Type type)
         {
             var info = new Info() { Type = type };
-            if (IsBasicType(info, type))
+            if (IsBasicTypeOrEnum(info, type))
                 return info;
-            if (type.IsEnum)
-            {
-                info.Flag = InfoFlags.Enum;
-                info.ElementType = Enum.GetUnderlyingType(type);
-                return info;
-            }
 
             var generic = type.IsGenericType;
             var genericArgs = generic ? type.GetGenericArguments() : null;
@@ -199,13 +194,13 @@ namespace Mikodev.Network
 
         private static void GetInfoFromList(Info info, Type elementType, Type type)
         {
-            var basicInfo = GetInfo(typeof(IList<>).MakeGenericType(elementType));
+            var basicList = GetInfo(typeof(IList<>).MakeGenericType(elementType));
             info.ElementType = elementType;
             info.From = InfoFlags.Enumerable;
             info.To = InfoFlags.Collection; // to list
             info.FromEnumerable = Convert.FromListFunc(type, elementType);
-            info.ToCollection = basicInfo.ToCollection;
-            info.ToCollectionExtend = basicInfo.ToCollectionExtend;
+            info.ToCollection = basicList.ToCollection;
+            info.ToCollectionExtend = basicList.ToCollectionExtend;
         }
 
         private static Type[] GetInfoFromArray(Info info, Type type)
@@ -213,29 +208,34 @@ namespace Mikodev.Network
             if (type.GetArrayRank() != 1)
                 throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
             var elementType = type.GetElementType();
-            info.ElementType = elementType;
-
-            info.From = InfoFlags.Enumerable;
-            info.To = InfoFlags.Collection; // to array
-            info.FromEnumerable = Convert.FromArrayFunc(type, elementType);
-            info.ToCollection = Convert.ToArrayFunc(elementType);
-            info.ToCollectionExtend = Convert.ToArrayExtendFunc(elementType);
+            if (elementType.IsEnum)
+            {
+                info.Converter = (PacketConverter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(elementType));
+            }
+            else
+            {
+                info.ElementType = elementType;
+                info.From = InfoFlags.Enumerable;
+                info.To = InfoFlags.Collection; // to array
+                info.FromEnumerable = Convert.FromArrayFunc(type, elementType);
+                info.ToCollection = Convert.ToArrayFunc(elementType);
+                info.ToCollectionExtend = Convert.ToArrayExtendFunc(elementType);
+            }
             return new[] { elementType };
         }
 
         private static void GetInfoFromDictionary(Info info, Info enumerableInfo, params Type[] types)
         {
-            if (types[0] == typeof(string) && types[1] == typeof(object))
-                info.From = InfoFlags.Expando;
-            else
-                info.From = InfoFlags.Dictionary;
+            info.From = types[0] == typeof(string) && types[1] == typeof(object)
+                ? InfoFlags.Expando
+                : InfoFlags.Dictionary;
             info.IndexType = types[0];
             info.ElementType = types[1];
             info.FromDictionary = enumerableInfo.FromDictionary;
             info.FromDictionaryAdapter = enumerableInfo.FromDictionaryAdapter;
         }
 
-        private static bool IsBasicType(Info info, Type type)
+        private static bool IsBasicTypeOrEnum(Info info, Type type)
         {
             if (type == typeof(PacketWriter))
                 info.From = InfoFlags.Writer;
@@ -245,6 +245,8 @@ namespace Mikodev.Network
                 info.To = InfoFlags.Reader;
             else if (type == typeof(PacketRawReader))
                 info.To = InfoFlags.RawReader;
+            else if (type.IsEnum)
+                info.Converter = (PacketConverter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(type));
             else
                 return false;
             return true;

@@ -9,9 +9,9 @@ namespace Mikodev.Network
         {
             PacketException.VerifyRecursionError(ref level);
             var info = Cache.GetConverterOrInfo(converters, type, out var converter);
-            if (info == null)
-                return converter.GetObjectWrap(element, true);
-            return GetValueMatch(type, level, info);
+            return info == null
+                ? converter.GetObjectChecked(element, true)
+                : GetValueMatch(type, level, info);
         }
 
         internal object GetValueMatch(Type valueType, int level, Info valueInfo)
@@ -28,7 +28,7 @@ namespace Mikodev.Network
                 case InfoFlags.Enumerable:
                     return GetValueMatchEnumerable(level, valueInfo);
                 case InfoFlags.Dictionary:
-                    return GetValueMatchDictionary(valueType, level, valueInfo);
+                    return GetValueMatchDictionary(level, valueInfo);
                 default:
                     return GetValueMatchDefault(valueType, level);
             }
@@ -50,17 +50,17 @@ namespace Mikodev.Network
 
         private object GetValueMatchEnumerable(int level, Info valueInfo)
         {
-            var inf = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
-            if (inf == null)
-                return valueInfo.ToEnumerable(this, con);
-            return valueInfo.ToEnumerableAdapter(this, inf, level);
+            var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var converter);
+            return info == null
+                ? valueInfo.ToEnumerable(this, converter)
+                : valueInfo.ToEnumerableAdapter(this, info, level);
         }
 
-        private object GetValueMatchDictionary(Type valueType, int level, Info valueInfo)
+        private object GetValueMatchDictionary(int level, Info valueInfo)
         {
             var keycon = Cache.GetConverter(converters, valueInfo.IndexType, true);
             if (keycon == null)
-                throw PacketException.InvalidKeyType(valueType);
+                throw PacketException.InvalidKeyType(valueInfo.IndexType, valueInfo.Type);
             var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
             if (info == null)
                 return valueInfo.ToDictionary(this, keycon, con);
@@ -76,7 +76,7 @@ namespace Mikodev.Network
             {
                 length = buffer.MoveNextExcept(ref offset, limits, keydef);
                 // Wrap error non-check
-                var key = keycon.GetObjectWrap(buffer, offset, length);
+                var key = keycon.GetObjectChecked(buffer, offset, length);
                 offset += length;
                 list.Add(key);
 
@@ -94,15 +94,14 @@ namespace Mikodev.Network
             var set = Cache.GetSetInfo(valueType);
             if (set == null)
                 throw PacketException.InvalidType(valueType);
-            var arg = set.Arguments;
-            var source = new object[arg.Length];
-            for (int i = 0; i < arg.Length; i++)
+            var arguments = set.Arguments;
+            var source = new object[arguments.Length];
+            for (int i = 0; i < arguments.Length; i++)
             {
-                var reader = GetItem(arg[i].Key, false);
-                var result = reader.GetValue(arg[i].Value, level);
+                var reader = GetItem(arguments[i].Key, false);
+                var result = reader.GetValue(arguments[i].Value, level);
                 source[i] = result;
             }
-
             var target = set.GetObject(source);
             return target;
         }

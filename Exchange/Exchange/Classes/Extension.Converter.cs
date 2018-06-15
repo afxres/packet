@@ -16,15 +16,12 @@ namespace Mikodev.Network
 
         #region bytes -> object
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static object GetObjectWrap(this PacketConverter converter, Element element, bool check = false) => GetObjectWrap(converter, element.buffer, element.offset, element.length, check);
+        internal static object GetObjectChecked(this PacketConverter converter, Element element, bool check = false) => GetObjectChecked(converter, element.buffer, element.offset, element.length, check);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T GetValueWrapAuto<T>(this PacketConverter converter, Element element, bool check = false) => GetValueWrapAuto<T>(converter, element.buffer, element.offset, element.length, check);
+        internal static T GetValueChecked<T>(this PacketConverter<T> converter, Element element, bool check = false) => GetValueChecked(converter, element.buffer, element.offset, element.length, check);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T GetValueWrap<T>(this PacketConverter<T> converter, Element element) => GetValueWrap(converter, element.buffer, element.offset, element.length);
-
-        internal static object GetObjectWrap(this PacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
+        internal static object GetObjectChecked(this PacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
         {
             try
             {
@@ -32,35 +29,21 @@ namespace Mikodev.Network
                     throw PacketException.Overflow();
                 return converter.GetObject(buffer, offset, length);
             }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
         }
 
-        internal static T GetValueWrapAuto<T>(this PacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
+        internal static T GetValueChecked<T>(this PacketConverter<T> converter, byte[] buffer, int offset, int length, bool check = false)
         {
             try
             {
                 if (check && converter.Length > length)
                     throw PacketException.Overflow();
-                if (converter is PacketConverter<T> res)
-                    return res.GetValue(buffer, offset, length);
-                return (T)converter.GetObject(buffer, offset, length);
-            }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
-            {
-                throw PacketException.ConversionError(ex);
-            }
-        }
-
-        internal static T GetValueWrap<T>(this PacketConverter<T> converter, byte[] buffer, int offset, int length)
-        {
-            try
-            {
                 return converter.GetValue(buffer, offset, length);
             }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
@@ -68,7 +51,7 @@ namespace Mikodev.Network
         #endregion
 
         #region object -> bytes
-        internal static byte[] GetBytesWrap(this PacketConverter converter, object value)
+        internal static byte[] GetBytesChecked(this PacketConverter converter, object value)
         {
             try
             {
@@ -80,13 +63,13 @@ namespace Mikodev.Network
                     throw PacketException.ConversionMismatch(define);
                 return buffer;
             }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }
         }
 
-        internal static byte[] GetBytesWrap<T>(this PacketConverter<T> converter, T value)
+        internal static byte[] GetBytesChecked<T>(this PacketConverter<T> converter, T value)
         {
             try
             {
@@ -98,7 +81,7 @@ namespace Mikodev.Network
                     throw PacketException.ConversionMismatch(define);
                 return buffer;
             }
-            catch (Exception ex) when (PacketException.WrapFilter(ex))
+            catch (Exception ex) when (PacketException.ReThrowFilter(ex))
             {
                 throw PacketException.ConversionError(ex);
             }

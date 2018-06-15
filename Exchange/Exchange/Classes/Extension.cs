@@ -149,29 +149,18 @@ namespace Mikodev.Network
         {
             var converter = Cache.GetConverter(converters, type, false);
             if (converter.Length > 0)
-                stream.Write(converter.GetBytesWrap(value));
+                stream.Write(converter.GetBytesChecked(value));
             else
-                stream.WriteExtend(converter.GetBytesWrap(value));
+                stream.WriteExtend(converter.GetBytesChecked(value));
         }
 
         internal static void WriteValueGeneric<T>(this MemoryStream stream, ConverterDictionary converters, T value)
         {
-            var converter = Cache.GetConverter<T>(converters, false);
-            var generic = converter as PacketConverter<T>;
-            if (converter.Length > 0)
-            {
-                if (generic != null)
-                    stream.Write(generic.GetBytesWrap(value));
-                else
-                    stream.Write(converter.GetBytesWrap(value));
-            }
+            var generic = Cache.GetConverter<T>(converters, false);
+            if (generic.Length > 0)
+                stream.Write(generic.GetBytesChecked(value));
             else
-            {
-                if (generic != null)
-                    stream.WriteExtend(generic.GetBytesWrap(value));
-                else
-                    stream.WriteExtend(converter.GetBytesWrap(value));
-            }
+                stream.WriteExtend(generic.GetBytesChecked(value));
         }
         #endregion
     }
