@@ -1,6 +1,5 @@
 ﻿using Mikodev.Binary.Common;
-using System;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Mikodev.Binary.Converters
@@ -14,13 +13,13 @@ namespace Mikodev.Binary.Converters
             if (string.IsNullOrEmpty(value))
                 return;
             var source = Encoding.UTF8.GetBytes(value);
-            var target = allocator.Allocate(source.Length);
-            source.CopyTo(target);
+            var allocation = allocator.Allocate(source.Length);
+            Unsafe.CopyBlockUnaligned(ref allocation.Location, ref source[0], (uint)allocation.Length);
         }
 
-        public override string ToValue(Span<byte> block)
+        public override string ToValue(Allocation allocation)
         {
-            return block.IsEmpty ? string.Empty : MemoryMarshal.Cast<byte, char>(block).ToString();
+            return allocation.IsEmpty ? string.Empty : Encoding.UTF8.GetString(allocation.Buffer, allocation.Offset, allocation.Length);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Mikodev.Binary.Common;
 using System;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary.Converters
 {
@@ -12,18 +12,18 @@ namespace Mikodev.Binary.Converters
         {
             if (array == null || array.Length == 0)
                 return;
-            var source = MemoryMarshal.Cast<T, byte>(array.AsSpan());
-            var target = allocator.Allocate(source.Length);
-            source.CopyTo(target);
+            var allocation = allocator.Allocate(array.Length * Unsafe.SizeOf<T>());
+            Unsafe.CopyBlockUnaligned(ref allocation.Location, ref Unsafe.As<T, byte>(ref array[0]), (uint)allocation.Length);
         }
 
-        public override T[] ToValue(Span<byte> block)
+        public override T[] ToValue(Allocation allocation)
         {
-            if (block.IsEmpty)
+            if (allocation.IsEmpty)
                 return Array.Empty<T>();
-            var source = MemoryMarshal.Cast<byte, T>(block);
-            var target = new T[source.Length];
-            source.CopyTo(target);
+            if (allocation.Length % Unsafe.SizeOf<T>() != 0)
+                throw new OverflowException();
+            var target = new T[allocation.Length / Unsafe.SizeOf<T>()];
+            Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref allocation.Location, (uint)allocation.Length);
             return target;
         }
     }

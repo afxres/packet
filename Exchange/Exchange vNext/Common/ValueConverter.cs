@@ -17,7 +17,7 @@ namespace Mikodev.Binary.Common
 
         internal abstract void ToBytes(Allocator allocator, object @object);
 
-        internal abstract object ToObject(Span<byte> block);
+        internal abstract object ToObject(Allocation allocation);
     }
 
     public abstract class ValueConverter<T> : ValueConverter
@@ -26,19 +26,19 @@ namespace Mikodev.Binary.Common
 
         protected ValueConverter(int length) : base(length) { }
 
-        public abstract T ToValue(Span<byte> block);
+        public abstract T ToValue(Allocation allocation);
 
         public abstract void ToBytes(Allocator allocator, T value);
 
-        internal sealed override object ToObject(Span<byte> block) => ToValue(block);
+        internal sealed override object ToObject(Allocation allocation) => ToValue(allocation);
 
         internal sealed override void ToBytes(Allocator allocator, object @object) => ToBytes(allocator, (T)@object);
 
         internal void ToBytesExtend(Allocator allocator, T value)
         {
-            var offset = allocator.BeginModify();
+            var offset = allocator.stream.BeginModify();
             ToBytes(allocator, value);
-            allocator.EndModify(offset);
+            allocator.stream.EndModify(offset);
         }
     }
 }

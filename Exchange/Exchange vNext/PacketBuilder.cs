@@ -54,11 +54,11 @@ namespace Mikodev.Binary
 
         #region static
 
-        private static readonly MethodInfo WriteExtendMethodInfo = typeof(Allocator).GetMethod(nameof(Allocator.WriteExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo WriteExtendMethodInfo = typeof(UnsafeStream).GetMethod(nameof(UnsafeStream.WriteExtend), BindingFlags.Instance | BindingFlags.NonPublic);
 
-        private static readonly MethodInfo BeginModifyMethodInfo = typeof(Allocator).GetMethod(nameof(Allocator.BeginModify), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo BeginModifyMethodInfo = typeof(UnsafeStream).GetMethod(nameof(UnsafeStream.BeginModify), BindingFlags.Instance | BindingFlags.NonPublic);
 
-        private static readonly MethodInfo EndModifyMethodInfo = typeof(Allocator).GetMethod(nameof(Allocator.EndModify), BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo EndModifyMethodInfo = typeof(UnsafeStream).GetMethod(nameof(UnsafeStream.EndModify), BindingFlags.Instance | BindingFlags.NonPublic);
 
         private static LambdaExpression InvokeExpression<T>(Func<ValueConverter<object>, Action<Allocator, object>, Expression<Action<Allocator, T>>> func, Type type, params object[] parameters)
         {
@@ -98,9 +98,9 @@ namespace Mikodev.Binary
                 return;
             for (int i = 0; i < list.Count; i++)
             {
-                var source = allocator.BeginModify();
+                var source = allocator.stream.BeginModify();
                 action.Invoke(allocator, list[i]);
-                allocator.EndModify(source);
+                allocator.stream.EndModify(source);
             }
         }
 
@@ -137,9 +137,9 @@ namespace Mikodev.Binary
                 return;
             for (int i = 0; i < array.Length; i++)
             {
-                var source = allocator.BeginModify();
+                var source = allocator.stream.BeginModify();
                 action.Invoke(allocator, array[i]);
-                allocator.EndModify(source);
+                allocator.stream.EndModify(source);
             }
         }
 
@@ -160,10 +160,7 @@ namespace Mikodev.Binary
         private Delegate GetOrCreateDelegate(Type type)
         {
             if (!delegates.TryGetValue(type, out var @delegate))
-            {
-                @delegate = CreateDelegate(type);
-                delegates.TryAdd(type, @delegate);
-            }
+                delegates.TryAdd(type, (@delegate = CreateDelegate(type)));
             return @delegate;
         }
 
@@ -187,7 +184,7 @@ namespace Mikodev.Binary
                     goto fail;
                 var @delegate = valueConverters.TryGetValue(elementType, out var converter)
                     ? null
-                    : CreateDelegate(elementType);
+                    : GetOrCreateDelegate(elementType);
                 var expression = ArrayToBytesLambdaExpression(elementType, converter, @delegate);
                 return expression.Compile();
             }
@@ -200,7 +197,7 @@ namespace Mikodev.Binary
                     goto fail;
                 var @delegate = valueConverters.TryGetValue(elementType, out var converter)
                     ? null
-                    : CreateDelegate(elementType);
+                    : GetOrCreateDelegate(elementType);
                 var expression = ListToBytesLambdaExpression(elementType, converter, @delegate);
                 return expression.Compile();
             }
@@ -215,6 +212,7 @@ namespace Mikodev.Binary
             var properties = type.GetProperties();
             var instance = Expression.Parameter(type, "instance");
             var allocator = Expression.Parameter(typeof(Allocator), "allocator");
+            var stream = Expression.Field(allocator, nameof(Allocator.stream));
             var list = new List<Expression>();
             var position = default(ParameterExpression);
             var variableList = new List<ParameterExpression>();
@@ -225,7 +223,7 @@ namespace Mikodev.Binary
                     continue;
                 var propertyType = i.PropertyType;
                 var buffer = GetOrCache(i.Name);
-                list.Add(Expression.Call(allocator, WriteExtendMethodInfo, Expression.Constant(buffer)));
+                list.Add(Expression.Call(stream, WriteExtendMethodInfo, Expression.Constant(buffer)));
                 var propertyValue = Expression.Call(instance, getMethod);
                 if (valueConverters.TryGetValue(propertyType, out var converter))
                 {
@@ -235,13 +233,13 @@ namespace Mikodev.Binary
                 }
                 else
                 {
-                    var @delegate = CreateDelegate(propertyType);
+                    var @delegate = GetOrCreateDelegate(propertyType);
                     var delegateType = typeof(Action<,>).MakeGenericType(typeof(Allocator), propertyType);
                     if (position == null)
                         variableList.Add(position = Expression.Variable(typeof(int), "position"));
-                    list.Add(Expression.Assign(position, Expression.Call(allocator, BeginModifyMethodInfo)));
+                    list.Add(Expression.Assign(position, Expression.Call(stream, BeginModifyMethodInfo)));
                     list.Add(Expression.Call(Expression.Constant(@delegate, delegateType), delegateType.GetMethod("Invoke"), allocator, propertyValue));
-                    list.Add(Expression.Call(allocator, EndModifyMethodInfo, position));
+                    list.Add(Expression.Call(stream, EndModifyMethodInfo, position));
                 }
             }
             var block = Expression.Block(variableList, list);
@@ -251,10 +249,11 @@ namespace Mikodev.Binary
 
         public byte[] Serialize<T>(T value)
         {
-            var allocator = new Allocator();
+            var stream = new UnsafeStream();
+            var allocator = new Allocator(stream);
             var function = (Action<Allocator, T>)GetOrCreateDelegate(typeof(T));
             function.Invoke(allocator, value);
-            return allocator.GetBytes();
+            return stream.GetBytes();
         }
     }
 }

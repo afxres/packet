@@ -1,5 +1,4 @@
 ﻿using Mikodev.Binary.Common;
-using System;
 using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary.Converters
@@ -8,8 +7,8 @@ namespace Mikodev.Binary.Converters
     {
         public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }
 
-        public override void ToBytes(Allocator allocator, T value) => Unsafe.WriteUnaligned(ref allocator.Allocate(Unsafe.SizeOf<T>())[0], value);
+        public override void ToBytes(Allocator allocator, T value) => Unsafe.WriteUnaligned(ref allocator.Allocate(Unsafe.SizeOf<T>()).Location, value);
 
-        public override T ToValue(Span<byte> block) => Unsafe.ReadUnaligned<T>(ref block[0]);
+        public override T ToValue(Allocation allocation) => Unsafe.ReadUnaligned<T>(ref allocation.Location);
     }
 }
