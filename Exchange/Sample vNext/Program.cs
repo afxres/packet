@@ -10,10 +10,11 @@ namespace Sample
     {
         static void Main(string[] args)
         {
+            var builder = new PacketCache();
             {
                 var c = Enumerable.Range(0, 8).Select(r => new { id = r, text = r.ToString("x4") });
                 var v = new { array = c.ToArray(), list = c.ToList() };
-                var ta = PacketBuilder.Default.Serialize(v);
+                var ta = builder.Serialize(v);
                 var tb = PacketConvert.Serialize(v);
                 var ra = PacketConvert.Deserialize(ta, v);
                 var rb = PacketConvert.Deserialize(tb, v);
@@ -48,7 +49,7 @@ namespace Sample
                 {
                     for (int i = 0; i < max; i++)
                     {
-                        var buffer = PacketBuilder.Default.Serialize(anonymous);
+                        var buffer = builder.Serialize(anonymous);
                     }
                 }
 

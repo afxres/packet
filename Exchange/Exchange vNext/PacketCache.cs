@@ -10,17 +10,15 @@ using System.Text;
 
 namespace Mikodev.Binary
 {
-    public class PacketBuilder
+    public class PacketCache
     {
+        private static readonly IReadOnlyList<Converter> defaultConverters;
+
         private readonly Dictionary<Type, ValueConverter> valueConverters;
-
         private readonly ConcurrentDictionary<Type, Delegate> delegates = new ConcurrentDictionary<Type, Delegate>();
-
         private readonly ConcurrentDictionary<string, byte[]> stringCache = new ConcurrentDictionary<string, byte[]>();
 
-        public static PacketBuilder Default { get; }
-
-        static PacketBuilder()
+        static PacketCache()
         {
             var unmanagedTypes = new[]
             {
@@ -42,22 +40,22 @@ namespace Mikodev.Binary
             converters.AddRange(valueConverters);
             converters.AddRange(arrayConverters);
             converters.Add(new StringConverter());
-            Default = new PacketBuilder(converters);
+            defaultConverters = converters;
         }
 
-        public PacketBuilder(IEnumerable<Converter> converters)
+        public PacketCache(IEnumerable<Converter> converters = null)
         {
-            if (converters is null)
-                throw new ArgumentNullException(nameof(converters));
-            valueConverters = converters.OfType<ValueConverter>().ToDictionary(r => r.ValueType);
+            var dictionary = defaultConverters.OfType<ValueConverter>().ToDictionary(r => r.ValueType);
+            if (converters != null)
+                foreach (var i in converters.OfType<ValueConverter>())
+                    dictionary[i.ValueType] = i;
+            valueConverters = dictionary;
         }
 
         #region static
 
         private static readonly MethodInfo WriteExtendMethodInfo = typeof(UnsafeStream).GetMethod(nameof(UnsafeStream.WriteExtend), BindingFlags.Instance | BindingFlags.NonPublic);
-
         private static readonly MethodInfo BeginModifyMethodInfo = typeof(UnsafeStream).GetMethod(nameof(UnsafeStream.BeginModify), BindingFlags.Instance | BindingFlags.NonPublic);
-
         private static readonly MethodInfo EndModifyMethodInfo = typeof(UnsafeStream).GetMethod(nameof(UnsafeStream.EndModify), BindingFlags.Instance | BindingFlags.NonPublic);
 
         private static LambdaExpression InvokeExpression<T>(Func<ValueConverter<object>, Action<Allocator, object>, Expression<Action<Allocator, T>>> func, Type type, params object[] parameters)
