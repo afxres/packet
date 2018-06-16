@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Mikodev.Binary.Converters
 {
-    internal class StringConverter : ValueConverter<string>
+    internal class StringConverter : Converter<string>
     {
         public StringConverter() : base(0) { }
 

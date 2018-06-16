@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary.Converters
 {
-    internal class UnmanagedValueConverter<T> : ValueConverter<T> where T : unmanaged
+    internal class UnmanagedValueConverter<T> : Converter<T> where T : unmanaged
     {
         public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }
 

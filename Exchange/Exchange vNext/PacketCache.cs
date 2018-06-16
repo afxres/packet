@@ -1,22 +1,19 @@
-﻿using Mikodev.Binary.Common;
+﻿using Mikodev.Binary.CacheConverters;
+using Mikodev.Binary.Common;
 using Mikodev.Binary.Converters;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Text;
 
 namespace Mikodev.Binary
 {
     public class PacketCache
     {
+        #region static
         private static readonly IReadOnlyList<Converter> defaultConverters;
-
-        private readonly Dictionary<Type, ValueConverter> valueConverters;
-        private readonly ConcurrentDictionary<Type, Delegate> delegates = new ConcurrentDictionary<Type, Delegate>();
-        private readonly ConcurrentDictionary<string, byte[]> stringCache = new ConcurrentDictionary<string, byte[]>();
 
         static PacketCache()
         {
@@ -34,29 +31,28 @@ namespace Mikodev.Binary
                 typeof(float),
                 typeof(double),
             };
-            var valueConverters = unmanagedTypes.Select(r => (ValueConverter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(r)));
-            var arrayConverters = unmanagedTypes.Select(r => (ValueConverter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(r)));
+            var valueConverters = unmanagedTypes.Select(r => (Converter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(r)));
+            var arrayConverters = unmanagedTypes.Select(r => (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(r)));
             var converters = new List<Converter>();
             converters.AddRange(valueConverters);
             converters.AddRange(arrayConverters);
             converters.Add(new StringConverter());
             defaultConverters = converters;
         }
+        #endregion
+
+        private readonly ConcurrentDictionary<Type, Converter> converters;
+        private readonly ConcurrentDictionary<string, byte[]> stringCache = new ConcurrentDictionary<string, byte[]>();
 
         public PacketCache(IEnumerable<Converter> converters = null)
         {
-            var dictionary = defaultConverters.OfType<ValueConverter>().ToDictionary(r => r.ValueType);
+            var dictionary = new ConcurrentDictionary<Type, Converter>();
             if (converters != null)
-                foreach (var i in converters.OfType<ValueConverter>())
-                    dictionary[i.ValueType] = i;
-            valueConverters = dictionary;
-        }
-
-        private Delegate GetOrCreateToBytesDelegate(Type type)
-        {
-            if (!delegates.TryGetValue(type, out var @delegate))
-                delegates.TryAdd(type, (@delegate = ToBytesDelegate(type)));
-            return @delegate;
+                foreach (var i in converters)
+                    dictionary.TryAdd(i.ValueType, i);
+            foreach (var i in defaultConverters)
+                dictionary.TryAdd(i.ValueType, i);
+            this.converters = dictionary;
         }
 
         private byte[] GetOrCache(string key)
@@ -66,10 +62,25 @@ namespace Mikodev.Binary
             return bytes;
         }
 
-        private Delegate ToBytesDelegate(Type type)
+        private Converter GetOrCreateConverter(Type type)
         {
-            if (valueConverters.TryGetValue(type, out var valueConverter))
-                return Convert.ValueToBytesExpression(type, valueConverter).Compile();
+            if (!converters.TryGetValue(type, out var converter))
+                converters.TryAdd(type, (converter = CreateConverter(type)));
+            return converter;
+        }
+
+        private Converter CreateConverter(Type type)
+        {
+            Converter CreateConverter(Type converterType, Type elementType, params object[] parameters)
+            {
+                return (Converter)Activator.CreateInstance(converterType.MakeGenericType(elementType), parameters);
+            }
+
+            if (type.IsEnum)
+            {
+                return CreateConverter(typeof(UnmanagedValueConverter<>), type); // enum
+            }
+
             if (type.IsArray)
             {
                 if (type.GetArrayRank() != 1)
@@ -77,11 +88,10 @@ namespace Mikodev.Binary
                 var elementType = type.GetElementType();
                 if (elementType == typeof(object))
                     goto fail;
-                var @delegate = valueConverters.TryGetValue(elementType, out var converter)
-                    ? null
-                    : GetOrCreateToBytesDelegate(elementType);
-                var expression = Convert.ArrayToBytesLambdaExpression(elementType, converter, @delegate);
-                return expression.Compile();
+                if (elementType.IsEnum)
+                    return CreateConverter(typeof(UnmanagedArrayConverter<>), elementType); // enum array
+                var converter = GetOrCreateConverter(elementType);
+                return CreateConverter(typeof(ArrayConverter<>), elementType, converter);
             }
 
             var definition = type.IsGenericType ? type.GetGenericTypeDefinition() : null;
@@ -90,14 +100,11 @@ namespace Mikodev.Binary
                 var elementType = type.GetGenericArguments().Single();
                 if (elementType == typeof(object))
                     goto fail;
-                var @delegate = valueConverters.TryGetValue(elementType, out var converter)
-                    ? null
-                    : GetOrCreateToBytesDelegate(elementType);
-                var expression = Convert.ListToBytesLambdaExpression(elementType, converter, @delegate);
-                return expression.Compile();
+                var converter = GetOrCreateConverter(elementType);
+                return CreateConverter(typeof(ListConverter<>), elementType, converter);
             }
-            return ToBytesDelegateFromProperties(type);
 
+            return CreateConverter(typeof(ByPropertiesConverter<>), type, ToBytesDelegateFromProperties(type));
             fail:
             throw new InvalidOperationException($"Invalid collection type: {type}");
         }
@@ -120,22 +127,15 @@ namespace Mikodev.Binary
                 var buffer = GetOrCache(i.Name);
                 list.Add(Expression.Call(stream, UnsafeStream.WriteExtendMethodInfo, Expression.Constant(buffer)));
                 var propertyValue = Expression.Call(instance, getMethod);
-                if (valueConverters.TryGetValue(propertyType, out var converter))
-                {
-                    var converterType = typeof(ValueConverter<>).MakeGenericType(propertyType);
-                    var toBytesExtend = converterType.GetMethod("ToBytesExtend", BindingFlags.Instance | BindingFlags.NonPublic);
-                    list.Add(Expression.Call(Expression.Constant(converter, converterType), toBytesExtend, allocator, propertyValue));
-                }
-                else
-                {
-                    var @delegate = GetOrCreateToBytesDelegate(propertyType);
-                    var delegateType = typeof(Action<,>).MakeGenericType(typeof(Allocator), propertyType);
-                    if (position == null)
-                        variableList.Add(position = Expression.Variable(typeof(int), "position"));
-                    list.Add(Expression.Assign(position, Expression.Call(stream, UnsafeStream.BeginModifyMethodInfo)));
-                    list.Add(Expression.Call(Expression.Constant(@delegate, delegateType), delegateType.GetMethod("Invoke"), allocator, propertyValue));
-                    list.Add(Expression.Call(stream, UnsafeStream.EndModifyMethodInfo, position));
-                }
+                if (position == null)
+                    variableList.Add(position = Expression.Variable(typeof(int), "position"));
+                list.Add(Expression.Assign(position, Expression.Call(stream, UnsafeStream.BeginModifyMethodInfo)));
+                var converter = GetOrCreateConverter(propertyType);
+                list.Add(Expression.Call(
+                    Expression.Constant(converter),
+                    converter.ToBytesDelegate.Method,
+                    allocator, propertyValue));
+                list.Add(Expression.Call(stream, UnsafeStream.EndModifyMethodInfo, position));
             }
             var block = Expression.Block(variableList, list);
             var expression = Expression.Lambda(block, allocator, instance);
@@ -146,8 +146,8 @@ namespace Mikodev.Binary
         {
             var stream = new UnsafeStream();
             var allocator = new Allocator(stream);
-            var function = (Action<Allocator, T>)GetOrCreateToBytesDelegate(typeof(T));
-            function.Invoke(allocator, value);
+            var converter = (Converter<T>)GetOrCreateConverter(typeof(T));
+            converter.ToBytes(allocator, value);
             return stream.GetBytes();
         }
     }
