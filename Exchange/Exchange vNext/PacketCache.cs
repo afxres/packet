@@ -52,113 +52,10 @@ namespace Mikodev.Binary
             valueConverters = dictionary;
         }
 
-        #region static
-
-        private static readonly MethodInfo WriteExtendMethodInfo = typeof(UnsafeStream).GetMethod(nameof(UnsafeStream.WriteExtend), BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo BeginModifyMethodInfo = typeof(UnsafeStream).GetMethod(nameof(UnsafeStream.BeginModify), BindingFlags.Instance | BindingFlags.NonPublic);
-        private static readonly MethodInfo EndModifyMethodInfo = typeof(UnsafeStream).GetMethod(nameof(UnsafeStream.EndModify), BindingFlags.Instance | BindingFlags.NonPublic);
-
-        private static LambdaExpression InvokeExpression<T>(Func<ValueConverter<object>, Action<Allocator, object>, Expression<Action<Allocator, T>>> func, Type type, params object[] parameters)
-        {
-            var delegateMethodInfo = func.Method;
-            var methodInfo = delegateMethodInfo.GetGenericMethodDefinition();
-            var result = methodInfo.MakeGenericMethod(type).Invoke(func.Target, parameters);
-            return (LambdaExpression)result;
-        }
-
-        #region value to bytes
-        private static LambdaExpression ValueToBytesExpression(Type type, ValueConverter valueConverter)
-        {
-            Expression<Action<Allocator, T>> Lambda<T>(ValueConverter<T> converter, Action<Allocator, T> _) =>
-                (allocator, value) => converter.ToBytes(allocator, value);
-            return InvokeExpression(Lambda, type, valueConverter, null);
-        }
-        #endregion
-
-        #region list to bytes
-        private static void ListToBytes<T>(Allocator allocator, List<T> list, ValueConverter<T> converter)
-        {
-            if (list != null)
-                for (int i = 0; i < list.Count; i++)
-                    converter.ToBytes(allocator, list[i]);
-        }
-
-        private static void ListToBytesExtend<T>(Allocator allocator, List<T> list, ValueConverter<T> converter)
-        {
-            if (list != null)
-                for (int i = 0; i < list.Count; i++)
-                    converter.ToBytesExtend(allocator, list[i]);
-        }
-
-        private static void ListToBytesExtend<T>(Allocator allocator, List<T> list, Action<Allocator, T> action)
-        {
-            if (list == null)
-                return;
-            for (int i = 0; i < list.Count; i++)
-            {
-                var source = allocator.stream.BeginModify();
-                action.Invoke(allocator, list[i]);
-                allocator.stream.EndModify(source);
-            }
-        }
-
-        private static LambdaExpression ListToBytesLambdaExpression(Type type, ValueConverter valueConverter, Delegate @delegate)
-        {
-            Expression<Action<Allocator, List<T>>> Lambda<T>(ValueConverter<T> converter, Action<Allocator, T> action) =>
-                action == null
-                    ? converter.Length > 0
-                        ? ((allocator, list) => ListToBytes(allocator, list, converter))
-                        : (Expression<Action<Allocator, List<T>>>)((allocator, list) => ListToBytesExtend(allocator, list, converter))
-                    : (allocator, list) => ListToBytesExtend(allocator, list, action);
-            return InvokeExpression(Lambda, type, valueConverter, @delegate);
-        }
-        #endregion
-
-        #region array to bytes
-        private static void ArrayToBytes<T>(Allocator allocator, T[] array, ValueConverter<T> converter)
-        {
-            if (array != null)
-                for (int i = 0; i < array.Length; i++)
-                    converter.ToBytes(allocator, array[i]);
-        }
-
-        private static void ArrayToBytesExtend<T>(Allocator allocator, T[] array, ValueConverter<T> converter)
-        {
-            if (array != null)
-                for (int i = 0; i < array.Length; i++)
-                    converter.ToBytesExtend(allocator, array[i]);
-        }
-
-        private static void ArrayToBytesExtend<T>(Allocator allocator, T[] array, Action<Allocator, T> action)
-        {
-            if (array == null)
-                return;
-            for (int i = 0; i < array.Length; i++)
-            {
-                var source = allocator.stream.BeginModify();
-                action.Invoke(allocator, array[i]);
-                allocator.stream.EndModify(source);
-            }
-        }
-
-        private static LambdaExpression ArrayToBytesLambdaExpression(Type type, ValueConverter valueConverter, Delegate @delegate)
-        {
-            Expression<Action<Allocator, T[]>> Lambda<T>(ValueConverter<T> converter, Action<Allocator, T> action) =>
-                action == null
-                    ? converter.Length > 0
-                        ? ((allocator, array) => ArrayToBytes(allocator, array, converter))
-                        : (Expression<Action<Allocator, T[]>>)((allocator, array) => ArrayToBytesExtend(allocator, array, converter))
-                    : (allocator, array) => ArrayToBytesExtend(allocator, array, action);
-            return InvokeExpression(Lambda, type, valueConverter, @delegate);
-        }
-        #endregion
-
-        #endregion
-
-        private Delegate GetOrCreateDelegate(Type type)
+        private Delegate GetOrCreateToBytesDelegate(Type type)
         {
             if (!delegates.TryGetValue(type, out var @delegate))
-                delegates.TryAdd(type, (@delegate = CreateDelegate(type)));
+                delegates.TryAdd(type, (@delegate = ToBytesDelegate(type)));
             return @delegate;
         }
 
@@ -169,10 +66,10 @@ namespace Mikodev.Binary
             return bytes;
         }
 
-        private Delegate CreateDelegate(Type type)
+        private Delegate ToBytesDelegate(Type type)
         {
             if (valueConverters.TryGetValue(type, out var valueConverter))
-                return ValueToBytesExpression(type, valueConverter).Compile();
+                return Convert.ValueToBytesExpression(type, valueConverter).Compile();
             if (type.IsArray)
             {
                 if (type.GetArrayRank() != 1)
@@ -182,8 +79,8 @@ namespace Mikodev.Binary
                     goto fail;
                 var @delegate = valueConverters.TryGetValue(elementType, out var converter)
                     ? null
-                    : GetOrCreateDelegate(elementType);
-                var expression = ArrayToBytesLambdaExpression(elementType, converter, @delegate);
+                    : GetOrCreateToBytesDelegate(elementType);
+                var expression = Convert.ArrayToBytesLambdaExpression(elementType, converter, @delegate);
                 return expression.Compile();
             }
 
@@ -195,17 +92,17 @@ namespace Mikodev.Binary
                     goto fail;
                 var @delegate = valueConverters.TryGetValue(elementType, out var converter)
                     ? null
-                    : GetOrCreateDelegate(elementType);
-                var expression = ListToBytesLambdaExpression(elementType, converter, @delegate);
+                    : GetOrCreateToBytesDelegate(elementType);
+                var expression = Convert.ListToBytesLambdaExpression(elementType, converter, @delegate);
                 return expression.Compile();
             }
-            return CreateDelegateFromProperties(type);
+            return ToBytesDelegateFromProperties(type);
 
             fail:
-            throw new PacketException($"Invalid collection type: {type}");
+            throw new InvalidOperationException($"Invalid collection type: {type}");
         }
 
-        private Delegate CreateDelegateFromProperties(Type type)
+        private Delegate ToBytesDelegateFromProperties(Type type)
         {
             var properties = type.GetProperties();
             var instance = Expression.Parameter(type, "instance");
@@ -221,7 +118,7 @@ namespace Mikodev.Binary
                     continue;
                 var propertyType = i.PropertyType;
                 var buffer = GetOrCache(i.Name);
-                list.Add(Expression.Call(stream, WriteExtendMethodInfo, Expression.Constant(buffer)));
+                list.Add(Expression.Call(stream, UnsafeStream.WriteExtendMethodInfo, Expression.Constant(buffer)));
                 var propertyValue = Expression.Call(instance, getMethod);
                 if (valueConverters.TryGetValue(propertyType, out var converter))
                 {
@@ -231,13 +128,13 @@ namespace Mikodev.Binary
                 }
                 else
                 {
-                    var @delegate = GetOrCreateDelegate(propertyType);
+                    var @delegate = GetOrCreateToBytesDelegate(propertyType);
                     var delegateType = typeof(Action<,>).MakeGenericType(typeof(Allocator), propertyType);
                     if (position == null)
                         variableList.Add(position = Expression.Variable(typeof(int), "position"));
-                    list.Add(Expression.Assign(position, Expression.Call(stream, BeginModifyMethodInfo)));
+                    list.Add(Expression.Assign(position, Expression.Call(stream, UnsafeStream.BeginModifyMethodInfo)));
                     list.Add(Expression.Call(Expression.Constant(@delegate, delegateType), delegateType.GetMethod("Invoke"), allocator, propertyValue));
-                    list.Add(Expression.Call(stream, EndModifyMethodInfo, position));
+                    list.Add(Expression.Call(stream, UnsafeStream.EndModifyMethodInfo, position));
                 }
             }
             var block = Expression.Block(variableList, list);
@@ -249,7 +146,7 @@ namespace Mikodev.Binary
         {
             var stream = new UnsafeStream();
             var allocator = new Allocator(stream);
-            var function = (Action<Allocator, T>)GetOrCreateDelegate(typeof(T));
+            var function = (Action<Allocator, T>)GetOrCreateToBytesDelegate(typeof(T));
             function.Invoke(allocator, value);
             return stream.GetBytes();
         }

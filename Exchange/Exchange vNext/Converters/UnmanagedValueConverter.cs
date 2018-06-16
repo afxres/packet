@@ -9,6 +9,6 @@ namespace Mikodev.Binary.Converters
 
         public override void ToBytes(Allocator allocator, T value) => Unsafe.WriteUnaligned(ref allocator.Allocate(Unsafe.SizeOf<T>()).Location, value);
 
-        public override T ToValue(Allocation allocation) => Unsafe.ReadUnaligned<T>(ref allocation.Location);
+        public override T ToValue(Block block) => Unsafe.ReadUnaligned<T>(ref block.Location);
     }
 }

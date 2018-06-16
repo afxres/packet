@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -11,6 +12,10 @@ namespace Mikodev.Binary
 
         internal byte[] stream = new byte[InitialLength];
         internal int position;
+
+        internal static readonly MethodInfo WriteExtendMethodInfo = typeof(UnsafeStream).GetMethod(nameof(WriteExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static readonly MethodInfo BeginModifyMethodInfo = typeof(UnsafeStream).GetMethod(nameof(BeginModify), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static readonly MethodInfo EndModifyMethodInfo = typeof(UnsafeStream).GetMethod(nameof(EndModify), BindingFlags.Instance | BindingFlags.NonPublic);
 
         private void ReAllocate(int require, int offset)
         {

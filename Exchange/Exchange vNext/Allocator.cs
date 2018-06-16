@@ -9,12 +9,12 @@ namespace Mikodev.Binary
 
         internal Allocator(UnsafeStream stream) => this.stream = stream;
 
-        public Allocation Allocate(int length)
+        public Block Allocate(int length)
         {
             if (stream == null)
                 throw new InvalidOperationException();
             var offset = stream.VerifyAvailable(length);
-            return new Allocation(stream.stream, offset, length);
+            return new Block(stream.stream, offset, length);
         }
 
         #region override

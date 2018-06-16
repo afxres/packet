@@ -13,13 +13,13 @@ namespace Mikodev.Binary.Converters
             if (string.IsNullOrEmpty(value))
                 return;
             var source = Encoding.UTF8.GetBytes(value);
-            var allocation = allocator.Allocate(source.Length);
-            Unsafe.CopyBlockUnaligned(ref allocation.Location, ref source[0], (uint)allocation.Length);
+            var block = allocator.Allocate(source.Length);
+            Unsafe.CopyBlockUnaligned(ref block.Location, ref source[0], (uint)block.Length);
         }
 
-        public override string ToValue(Allocation allocation)
+        public override string ToValue(Block block)
         {
-            return allocation.IsEmpty ? string.Empty : Encoding.UTF8.GetString(allocation.Buffer, allocation.Offset, allocation.Length);
+            return block.IsEmpty ? string.Empty : Encoding.UTF8.GetString(block.Buffer, block.Offset, block.Length);
         }
     }
 }

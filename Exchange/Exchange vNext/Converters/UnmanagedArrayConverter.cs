@@ -12,18 +12,18 @@ namespace Mikodev.Binary.Converters
         {
             if (array == null || array.Length == 0)
                 return;
-            var allocation = allocator.Allocate(array.Length * Unsafe.SizeOf<T>());
-            Unsafe.CopyBlockUnaligned(ref allocation.Location, ref Unsafe.As<T, byte>(ref array[0]), (uint)allocation.Length);
+            var block = allocator.Allocate(array.Length * Unsafe.SizeOf<T>());
+            Unsafe.CopyBlockUnaligned(ref block.Location, ref Unsafe.As<T, byte>(ref array[0]), (uint)block.Length);
         }
 
-        public override T[] ToValue(Allocation allocation)
+        public override T[] ToValue(Block block)
         {
-            if (allocation.IsEmpty)
+            if (block.IsEmpty)
                 return Array.Empty<T>();
-            if (allocation.Length % Unsafe.SizeOf<T>() != 0)
+            if (block.Length % Unsafe.SizeOf<T>() != 0)
                 throw new OverflowException();
-            var target = new T[allocation.Length / Unsafe.SizeOf<T>()];
-            Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref allocation.Location, (uint)allocation.Length);
+            var target = new T[block.Length / Unsafe.SizeOf<T>()];
+            Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref block.Location, (uint)block.Length);
             return target;
         }
     }

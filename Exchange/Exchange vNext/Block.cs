@@ -3,13 +3,13 @@ using System.ComponentModel;
 
 namespace Mikodev.Binary
 {
-    public readonly struct Allocation
+    public readonly struct Block
     {
         private readonly byte[] buffer;
         private readonly int offset;
         private readonly int length;
 
-        internal Allocation(byte[] buffer, int offset, int length)
+        internal Block(byte[] buffer, int offset, int length)
         {
             if (buffer == null)
             {
@@ -53,7 +53,7 @@ namespace Mikodev.Binary
         public override int GetHashCode() => throw new InvalidOperationException();
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public override string ToString() => $"{nameof(Allocation)} with {length} byte(s)";
+        public override string ToString() => $"{nameof(Block)} with {length} byte(s)";
         #endregion
     }
 }
