@@ -9,6 +9,20 @@ namespace Mikodev.Binary
         private readonly int offset;
         private readonly int length;
 
+        internal Block(byte[] buffer)
+        {
+            if (buffer == null)
+            {
+                this = default;
+            }
+            else
+            {
+                this.buffer = buffer;
+                offset = 0;
+                length = buffer.Length;
+            }
+        }
+
         internal Block(byte[] buffer, int offset, int length)
         {
             if (buffer == null)

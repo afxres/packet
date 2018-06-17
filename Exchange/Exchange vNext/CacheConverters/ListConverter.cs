@@ -12,12 +12,13 @@ namespace Mikodev.Binary.CacheConverters
             {
                 if (converter.Length == 0)
                 {
+                    int offset;
                     var stream = allocator.stream;
                     for (int i = 0; i < value.Count; i++)
                     {
-                        var source = stream.BeginModify();
+                        offset = stream.BeginModify();
                         converter.ToBytes(allocator, value[i]);
-                        stream.EndModify(source);
+                        stream.EndModify(offset);
                     }
                 }
                 else
@@ -30,15 +31,36 @@ namespace Mikodev.Binary.CacheConverters
             }
         }
 
+        internal static List<T> ToValue(Block block, Converter<T> converter)
+        {
+            if (block.IsEmpty)
+                return new List<T>();
+            if (converter.Length == 0)
+            {
+                var list = new List<T>();
+                var vernier = new Vernier(block);
+                while (vernier.Any)
+                    list.Add(converter.ToValue(vernier.FlushBlock()));
+                return list;
+            }
+            else
+            {
+                var quotient = Math.DivRem(block.Length, converter.Length, out var reminder);
+                if (reminder != 0)
+                    throw new OverflowException();
+                var list = new List<T>(quotient);
+                for (int i = 0; i < quotient; i++)
+                    list.Add(converter.ToValue(new Block(block.Buffer, block.Offset + i * converter.Length, converter.Length)));
+                return list;
+            }
+        }
+
         private readonly Converter<T> converter;
 
         public ListConverter(Converter<T> converter) : base(0) => this.converter = converter;
 
         public override void ToBytes(Allocator allocator, List<T> value) => ToBytes(allocator, value, converter);
 
-        public override List<T> ToValue(Block block)
-        {
-            throw new NotImplementedException();
-        }
+        public override List<T> ToValue(Block block) => ToValue(block, converter);
     }
 }

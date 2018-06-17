@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace Mikodev.Binary
@@ -111,7 +112,7 @@ namespace Mikodev.Binary
                 if (elementType == typeof(object))
                     goto fail;
                 var converter = GetOrCreateConverter(elementType);
-                return (Converter)Activator.CreateInstance(typeof(ICollectionConverter<>).MakeGenericType(elementType), converter);
+                return (Converter)Activator.CreateInstance(typeof(ICollectionConverter<,>).MakeGenericType(type, elementType), converter);
             }
 
             var enumerable = interfaces.Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>)).ToArray();
@@ -123,17 +124,17 @@ namespace Mikodev.Binary
                 if (elementType == typeof(object))
                     goto fail;
                 var converter = GetOrCreateConverter(elementType);
-                return (Converter)Activator.CreateInstance(typeof(IEnumerableConverter<>).MakeGenericType(elementType), converter);
+                return (Converter)Activator.CreateInstance(typeof(IEnumerableConverter<,>).MakeGenericType(type, elementType), converter);
             }
 
-            return (Converter)Activator.CreateInstance(typeof(ByPropertiesConverter<>).MakeGenericType(type), ToBytesDelegateFromProperties(type));
+            return (Converter)Activator.CreateInstance(typeof(InstanceConverter<>).MakeGenericType(type), ToBytesDelegate(type), ToValueDelegate(type, out var capacity), capacity);
             fail:
             throw new InvalidOperationException($"Invalid collection type: {type}");
         }
 
-        private Delegate ToBytesDelegateFromProperties(Type type)
+        private Delegate ToBytesDelegate(Type type)
         {
-            var properties = type.GetProperties();
+            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             var instance = Expression.Parameter(type, "instance");
             var allocator = Expression.Parameter(typeof(Allocator), "allocator");
             var stream = Expression.Variable(typeof(UnsafeStream), "stream");
@@ -164,13 +165,104 @@ namespace Mikodev.Binary
             return expression.Compile();
         }
 
+        private Delegate ToValueDelegateAnonymous(Type type, out int capacity)
+        {
+            var constructors = type.GetConstructors();
+            if (constructors.Length != 1)
+                goto fail;
+
+            var constructorInfo = constructors[0];
+            var constructorParameters = constructorInfo.GetParameters();
+            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            if (properties.Length != constructorParameters.Length)
+                goto fail;
+
+            for (int i = 0; i < properties.Length; i++)
+                if (properties[i].Name != constructorParameters[i].Name || properties[i].PropertyType != constructorParameters[i].ParameterType)
+                    goto fail;
+
+            var dictionary = Expression.Parameter(typeof(Dictionary<string, Block>), "dictionary");
+            var indexerMethod = typeof(Dictionary<string, Block>).GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Single(r => r.PropertyType == typeof(Block) && r.GetIndexParameters().Select(x => x.ParameterType).SequenceEqual(new[] { typeof(string) }))
+                .GetGetMethod();
+            var expressionArray = new Expression[properties.Length];
+            for (int i = 0; i < properties.Length; i++)
+            {
+                var current = properties[i];
+                var converter = GetOrCreateConverter(current.PropertyType);
+                var block = Expression.Call(dictionary, indexerMethod, Expression.Constant(current.Name));
+                var value = Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, block);
+                expressionArray[i] = value;
+            }
+            var lambda = Expression.Lambda(Expression.New(constructorInfo, expressionArray), dictionary);
+            capacity = properties.Length;
+            return lambda.Compile();
+
+            fail:
+            capacity = 0;
+            return null;
+        }
+
+        private Delegate ToValueDelegateProperties(Type type, out int capacity)
+        {
+            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            var propertyList = new List<PropertyInfo>();
+            for (int i = 0; i < properties.Length; i++)
+            {
+                var current = properties[i];
+                var getter = current.GetGetMethod();
+                var setter = current.GetSetMethod();
+                if (getter == null || setter == null)
+                    continue;
+                var setterParameters = setter.GetParameters();
+                if (setterParameters == null || setterParameters.Length != 1)
+                    continue;
+                propertyList.Add(current);
+            }
+            var dictionary = Expression.Parameter(typeof(Dictionary<string, Block>), "dictionary");
+            var indexerMethod = typeof(Dictionary<string, Block>).GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Single(r => r.PropertyType == typeof(Block) && r.GetIndexParameters().Select(x => x.ParameterType).SequenceEqual(new[] { typeof(string) }))
+                .GetGetMethod();
+            var instance = Expression.Variable(type, "instance");
+            var expressionList = new List<Expression> { Expression.Assign(instance, Expression.New(type)) };
+            foreach (var i in propertyList)
+            {
+                var converter = GetOrCreateConverter(i.PropertyType);
+                var block = Expression.Call(dictionary, indexerMethod, Expression.Constant(i.Name));
+                var value = Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, block);
+                expressionList.Add(Expression.Call(instance, i.GetSetMethod(), value));
+            }
+            expressionList.Add(instance);
+            var lambda = Expression.Lambda(Expression.Block(new[] { instance }, expressionList), dictionary);
+            capacity = propertyList.Count;
+            return lambda.Compile();
+        }
+
+        private Delegate ToValueDelegate(Type type, out int capacity)
+        {
+            if (type.IsValueType)
+                return ToValueDelegateProperties(type, out capacity);
+            var constructorInfo = type.GetConstructor(Type.EmptyTypes);
+            return constructorInfo != null ? ToValueDelegateProperties(type, out capacity) : ToValueDelegateAnonymous(type, out capacity);
+        }
+
         public byte[] Serialize<T>(T value)
         {
+            var converter = (Converter<T>)GetOrCreateConverter(typeof(T));
             var stream = new UnsafeStream();
             var allocator = new Allocator(stream);
-            var converter = (Converter<T>)GetOrCreateConverter(typeof(T));
             converter.ToBytes(allocator, value);
             return stream.GetBytes();
         }
+
+        public T Deserialize<T>(byte[] buffer)
+        {
+            var converter = (Converter<T>)GetOrCreateConverter(typeof(T));
+            var block = new Block(buffer);
+            var value = converter.ToValue(block);
+            return value;
+        }
+
+        public T Deserialize<T>(byte[] buffer, T anonymous) => Deserialize<T>(buffer);
     }
 }

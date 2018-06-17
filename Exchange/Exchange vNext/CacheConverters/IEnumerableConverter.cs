@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace Mikodev.Binary.CacheConverters
 {
-    internal sealed class IEnumerableConverter<T> : Converter<IEnumerable<T>>
+    internal sealed class IEnumerableConverter<E, V> : Converter<E> where E : IEnumerable<V>
     {
-        private readonly Converter<T> converter;
+        private readonly Converter<V> converter;
 
-        public IEnumerableConverter(Converter<T> converter) : base(0) => this.converter = converter;
+        public IEnumerableConverter(Converter<V> converter) : base(0) => this.converter = converter;
 
-        public override void ToBytes(Allocator allocator, IEnumerable<T> value)
+        public override void ToBytes(Allocator allocator, E value)
         {
             if (value != null)
             {
@@ -33,7 +33,7 @@ namespace Mikodev.Binary.CacheConverters
             }
         }
 
-        public override IEnumerable<T> ToValue(Block block)
+        public override E ToValue(Block block)
         {
             throw new System.NotImplementedException();
         }

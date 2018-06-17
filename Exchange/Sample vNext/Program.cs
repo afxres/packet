@@ -6,15 +6,22 @@ using System.Linq;
 
 namespace Sample
 {
+    class OneTwo<TOne, TTwo>
+    {
+        public TOne One { get; set; }
+
+        public TTwo Two { get; set; }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            var builder = new PacketCache();
+            var cache = new PacketCache();
             {
-                var c = Enumerable.Range(0, 8).Select(r => new { id = r, text = r.ToString("x4") });
+                var c = Enumerable.Range(0, 8).Select(r => new OneTwo<int, string> { One = r, Two = r.ToString("x4") });
                 var v = new { array = c.ToArray(), list = c.ToList(), set = c.ToHashSet(), enumerable = c };
-                var ta = builder.Serialize(v);
+                var ta = cache.Serialize(v);
                 var tb = PacketConvert.Serialize(v);
                 var ra = PacketConvert.Deserialize(ta, v);
                 var rb = PacketConvert.Deserialize(tb, v);
@@ -42,14 +49,18 @@ namespace Sample
                     lst = new List<string> { "one", "two", "three" },
                 }
             };
+            var tx = PacketConvert.Serialize(anonymous);
+            var ty = cache.Serialize(anonymous);
+            var rx = PacketConvert.Deserialize(tx, anonymous);
+            var ry = cache.Deserialize(ty, anonymous);
 
             for (int k = 0; k < loop; k++)
             {
-                using (new TraceWatch("PacketBuilder"))
+                using (new TraceWatch("PacketCache Serialize"))
                 {
                     for (int i = 0; i < max; i++)
                     {
-                        var buffer = builder.Serialize(anonymous);
+                        var buffer = cache.Serialize(anonymous);
                     }
                 }
 
@@ -58,6 +69,22 @@ namespace Sample
                     for (int i = 0; i < max; i++)
                     {
                         var buffer = PacketConvert.Serialize(anonymous);
+                    }
+                }
+
+                using (new TraceWatch("PacketCache Deserialize"))
+                {
+                    for (int i = 0; i < max; i++)
+                    {
+                        var _ = cache.Deserialize(tx, anonymous);
+                    }
+                }
+
+                using (new TraceWatch("PacketReader"))
+                {
+                    for (int i = 0; i < max; i++)
+                    {
+                        var _ = PacketConvert.Deserialize(tx, anonymous);
                     }
                 }
             }
