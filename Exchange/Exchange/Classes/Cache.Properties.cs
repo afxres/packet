@@ -11,7 +11,7 @@ namespace Mikodev.Network
         {
             var propertyList = new List<KeyValuePair<string, Type>>();
             var methodInfos = new List<MethodInfo>();
-            var properties = type.GetProperties();
+            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             for (int i = 0; i < properties.Length; i++)
             {
                 var current = properties[i];
@@ -80,10 +80,9 @@ namespace Mikodev.Network
             return new SetInfo(propertyList, expression.Compile());
         }
 
-        private static SetInfo InternalGetSetInfo(Type type, ConstructorInfo constructor)
+        private static SetInfo InternalGetSetInfoProperties(Type type)
         {
-            var properties = type.GetProperties();
-            var instance = (constructor == null) ? Expression.New(type) : Expression.New(constructor);
+            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             var propertyList = new List<KeyValuePair<string, Type>>();
             var methodInfos = new List<MethodInfo>();
 
@@ -103,19 +102,19 @@ namespace Mikodev.Network
 
             var expressionList = new List<Expression>();
             var parameter = Expression.Parameter(typeof(object[]), "parameters");
-            var value = Expression.Variable(type, "value");
+            var instance = Expression.Variable(type, "instance");
 
-            expressionList.Add(Expression.Assign(value, instance));
+            expressionList.Add(Expression.Assign(instance, Expression.New(type)));
             for (int i = 0; i < propertyList.Count; i++)
             {
                 var arrayIndex = Expression.ArrayIndex(parameter, Expression.Constant(i));
                 var convert = Expression.Convert(arrayIndex, propertyList[i].Value);
-                var setValue = Expression.Call(value, methodInfos[i], convert);
+                var setValue = Expression.Call(instance, methodInfos[i], convert);
                 expressionList.Add(setValue);
             }
-            expressionList.Add(Expression.Convert(value, typeof(object)));
+            expressionList.Add(Expression.Convert(instance, typeof(object)));
 
-            var block = Expression.Block(new[] { value }, expressionList);
+            var block = Expression.Block(new[] { instance }, expressionList);
             var expression = Expression.Lambda<Func<object[], object>>(block, parameter);
             return new SetInfo(propertyList.ToArray(), expression.Compile());
         }
@@ -123,9 +122,9 @@ namespace Mikodev.Network
         private static SetInfo InternalGetSetInfo(Type type)
         {
             if (type.IsValueType)
-                return InternalGetSetInfo(type, null);
+                return InternalGetSetInfoProperties(type);
             var constructorInfos = type.GetConstructor(Type.EmptyTypes);
-            return constructorInfos != null ? InternalGetSetInfo(type, constructorInfos) : InternalGetSetInfoAnonymousType(type);
+            return constructorInfos != null ? InternalGetSetInfoProperties(type) : InternalGetSetInfoAnonymousType(type);
         }
 
         internal static GetInfo GetGetInfo(Type type)

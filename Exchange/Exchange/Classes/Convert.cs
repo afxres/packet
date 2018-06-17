@@ -78,12 +78,11 @@ namespace Mikodev.Network
 
         internal static Dictionary<TK, TV> ToDictionaryExtend<TK, TV>(List<object> list)
         {
-            var dictionary = new Dictionary<TK, TV>();
-            var index = 0;
-            while (index < list.Count)
+            var dictionary = new Dictionary<TK, TV>(list.Count >> 1);
+            for (int i = 0; i < list.Count; i += 2)
             {
-                var key = (TK)list[index++];
-                var value = (TV)list[index++];
+                var key = (TK)list[i];
+                var value = (TV)list[i + 1];
                 dictionary.Add(key, value);
             }
             return dictionary;
