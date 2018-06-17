@@ -5,11 +5,7 @@ namespace Mikodev.Binary.CacheConverters
 {
     internal sealed class ArrayConverter<T> : Converter<T[]>
     {
-        private readonly Converter<T> converter;
-
-        public ArrayConverter(Converter<T> converter) : base(0) => this.converter = converter;
-
-        public override void ToBytes(Allocator allocator, T[] value)
+        internal static void ToBytes(Allocator allocator, T[] value, Converter<T> converter)
         {
             if (value != null && value.Length != 0)
             {
@@ -32,6 +28,12 @@ namespace Mikodev.Binary.CacheConverters
                 }
             }
         }
+
+        private readonly Converter<T> converter;
+
+        public ArrayConverter(Converter<T> converter) : base(0) => this.converter = converter;
+
+        public override void ToBytes(Allocator allocator, T[] value) => ToBytes(allocator, value, converter);
 
         public override T[] ToValue(Block block)
         {

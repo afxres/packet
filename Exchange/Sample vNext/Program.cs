@@ -11,14 +11,14 @@ namespace Sample
         static void Main(string[] args)
         {
             var builder = new PacketCache();
-            //{
-            //    var c = Enumerable.Range(0, 8).Select(r => new { id = r, text = r.ToString("x4") });
-            //    var v = new { array = c.ToArray(), list = c.ToList() };
-            //    var ta = builder.Serialize(v);
-            //    var tb = PacketConvert.Serialize(v);
-            //    var ra = PacketConvert.Deserialize(ta, v);
-            //    var rb = PacketConvert.Deserialize(tb, v);
-            //}
+            {
+                var c = Enumerable.Range(0, 8).Select(r => new { id = r, text = r.ToString("x4") });
+                var v = new { array = c.ToArray(), list = c.ToList(), set = c.ToHashSet(), enumerable = c };
+                var ta = builder.Serialize(v);
+                var tb = PacketConvert.Serialize(v);
+                var ra = PacketConvert.Deserialize(ta, v);
+                var rb = PacketConvert.Deserialize(tb, v);
+            }
 
             var dic = new Dictionary<string, List<TimeSpan>>();
             TraceWatch.InstanceDisposed = (tag, span) =>
@@ -53,13 +53,13 @@ namespace Sample
                     }
                 }
 
-                //using (new TraceWatch("PacketWriter"))
-                //{
-                //    for (int i = 0; i < max; i++)
-                //    {
-                //        var buffer = PacketConvert.Serialize(anonymous);
-                //    }
-                //}
+                using (new TraceWatch("PacketWriter"))
+                {
+                    for (int i = 0; i < max; i++)
+                    {
+                        var buffer = PacketConvert.Serialize(anonymous);
+                    }
+                }
             }
 
             foreach (var i in dic)
@@ -77,5 +77,10 @@ namespace Sample
                     $"avg: {avg.TotalMilliseconds,10:0.0000} ns");
             }
         }
+    }
+
+    static class Extension
+    {
+        internal static HashSet<T> ToHashSet<T>(this IEnumerable<T> enumerable) => new HashSet<T>(enumerable);
     }
 }

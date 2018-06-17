@@ -6,11 +6,7 @@ namespace Mikodev.Binary.CacheConverters
 {
     internal sealed class ListConverter<T> : Converter<List<T>>
     {
-        private readonly Converter<T> converter;
-
-        public ListConverter(Converter<T> converter) : base(0) => this.converter = converter;
-
-        public override void ToBytes(Allocator allocator, List<T> value)
+        internal static void ToBytes(Allocator allocator, List<T> value, Converter<T> converter)
         {
             if (value != null && value.Count != 0)
             {
@@ -33,6 +29,12 @@ namespace Mikodev.Binary.CacheConverters
                 }
             }
         }
+
+        private readonly Converter<T> converter;
+
+        public ListConverter(Converter<T> converter) : base(0) => this.converter = converter;
+
+        public override void ToBytes(Allocator allocator, List<T> value) => ToBytes(allocator, value, converter);
 
         public override List<T> ToValue(Block block)
         {

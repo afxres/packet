@@ -71,14 +71,9 @@ namespace Mikodev.Binary
 
         private Converter CreateConverter(Type type)
         {
-            Converter CreateConverter(Type converterType, Type elementType, params object[] parameters)
-            {
-                return (Converter)Activator.CreateInstance(converterType.MakeGenericType(elementType), parameters);
-            }
-
             if (type.IsEnum)
             {
-                return CreateConverter(typeof(UnmanagedValueConverter<>), type); // enum
+                return (Converter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(type)); // enum
             }
 
             if (type.IsArray)
@@ -89,9 +84,9 @@ namespace Mikodev.Binary
                 if (elementType == typeof(object))
                     goto fail;
                 if (elementType.IsEnum)
-                    return CreateConverter(typeof(UnmanagedArrayConverter<>), elementType); // enum array
+                    return (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(elementType)); // enum array
                 var converter = GetOrCreateConverter(elementType);
-                return CreateConverter(typeof(ArrayConverter<>), elementType, converter);
+                return (Converter)Activator.CreateInstance(typeof(ArrayConverter<>).MakeGenericType(elementType), converter);
             }
 
             var definition = type.IsGenericType ? type.GetGenericTypeDefinition() : null;
@@ -101,10 +96,37 @@ namespace Mikodev.Binary
                 if (elementType == typeof(object))
                     goto fail;
                 var converter = GetOrCreateConverter(elementType);
-                return CreateConverter(typeof(ListConverter<>), elementType, converter);
+                return (Converter)Activator.CreateInstance(typeof(ListConverter<>).MakeGenericType(elementType), converter);
             }
 
-            return CreateConverter(typeof(ByPropertiesConverter<>), type, ToBytesDelegateFromProperties(type));
+            var interfaces = type.IsInterface
+                ? type.GetInterfaces().Concat(new[] { type }).ToArray()
+                : type.GetInterfaces();
+            var collection = interfaces.Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(ICollection<>)).ToArray();
+            if (collection.Length > 1)
+                goto fail;
+            if (collection.Length == 1)
+            {
+                var elementType = collection[0].GetGenericArguments().Single();
+                if (elementType == typeof(object))
+                    goto fail;
+                var converter = GetOrCreateConverter(elementType);
+                return (Converter)Activator.CreateInstance(typeof(ICollectionConverter<>).MakeGenericType(elementType), converter);
+            }
+
+            var enumerable = interfaces.Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>)).ToArray();
+            if (enumerable.Length > 1)
+                goto fail;
+            if (enumerable.Length == 1)
+            {
+                var elementType = enumerable[0].GetGenericArguments().Single();
+                if (elementType == typeof(object))
+                    goto fail;
+                var converter = GetOrCreateConverter(elementType);
+                return (Converter)Activator.CreateInstance(typeof(IEnumerableConverter<>).MakeGenericType(elementType), converter);
+            }
+
+            return (Converter)Activator.CreateInstance(typeof(ByPropertiesConverter<>).MakeGenericType(type), ToBytesDelegateFromProperties(type));
             fail:
             throw new InvalidOperationException($"Invalid collection type: {type}");
         }
@@ -114,10 +136,10 @@ namespace Mikodev.Binary
             var properties = type.GetProperties();
             var instance = Expression.Parameter(type, "instance");
             var allocator = Expression.Parameter(typeof(Allocator), "allocator");
-            var stream = Expression.Field(allocator, nameof(Allocator.stream));
-            var list = new List<Expression>();
+            var stream = Expression.Variable(typeof(UnsafeStream), "stream");
             var position = default(ParameterExpression);
-            var variableList = new List<ParameterExpression>();
+            var variableList = new List<ParameterExpression> { stream };
+            var list = new List<Expression> { Expression.Assign(stream, Expression.Field(allocator, nameof(Allocator.stream))) };
             foreach (var i in properties)
             {
                 var getMethod = i.GetGetMethod();

@@ -5,14 +5,14 @@ namespace Mikodev.Binary.CacheConverters
 {
     internal sealed class ByPropertiesConverter<T> : Converter<T>
     {
-        private readonly Action<Allocator, T> toBytesAction;
+        private readonly Action<Allocator, T> toBytes;
 
-        public ByPropertiesConverter(Action<Allocator, T> toBytesAction) : base(0)
+        public ByPropertiesConverter(Action<Allocator, T> toBytes) : base(0)
         {
-            this.toBytesAction = toBytesAction;
+            this.toBytes = toBytes;
         }
 
-        public override void ToBytes(Allocator allocator, T value) => toBytesAction.Invoke(allocator, value);
+        public override void ToBytes(Allocator allocator, T value) => toBytes.Invoke(allocator, value);
 
         public override T ToValue(Block block)
         {
