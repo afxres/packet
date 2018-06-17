@@ -78,7 +78,7 @@ namespace Mikodev.Network
         private static Item GetItemMatchExpando(ConverterDictionary converters, object value, int level)
         {
             var dictionary = (IDictionary<string, object>)value;
-            var list = new Dictionary<string, PacketWriter>();
+            var list = new Dictionary<string, PacketWriter>(dictionary.Count);
             foreach (var i in dictionary)
                 list[i.Key] = GetWriter(converters, i.Value, level);
             return NewItem(list);
@@ -86,10 +86,10 @@ namespace Mikodev.Network
 
         private static Item GetItemMatchDefault(ConverterDictionary converters, object value, int level, Info valueInfo)
         {
-            var dictionary = new Dictionary<string, PacketWriter>();
             var get = Cache.GetGetInfo(valueInfo.Type);
             var values = get.GetValues(value);
             var arguments = get.Arguments;
+            var dictionary = new Dictionary<string, PacketWriter>(arguments.Length);
             for (int i = 0; i < arguments.Length; i++)
                 dictionary[arguments[i].Key] = GetWriter(converters, values[i], level);
             return NewItem(dictionary);

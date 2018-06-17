@@ -48,7 +48,7 @@ namespace Mikodev.Network
                 return null;
             flags |= Flags.Dictionary;
 
-            var collection = new Dictionary<string, PacketReader>();
+            var collection = new Dictionary<string, PacketReader>(Extension.DictionaryCapacity);
             var buffer = element.buffer;
             var limits = element.Limits;
             var offset = element.offset;
