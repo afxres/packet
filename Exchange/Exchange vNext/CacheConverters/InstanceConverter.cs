@@ -30,8 +30,8 @@ namespace Mikodev.Binary.CacheConverters
             {
                 vernier.Flush();
                 var key = Encoding.UTF8.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
-                var value = vernier.FlushBlock();
-                dictionary.Add(key, value);
+                vernier.Flush();
+                dictionary.Add(key, new Block(vernier));
             }
             return toValue.Invoke(dictionary);
         }

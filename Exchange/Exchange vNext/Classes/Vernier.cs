@@ -10,15 +10,15 @@ namespace Mikodev.Binary
         private int offset;
         private int length;
 
-        public byte[] Buffer => buffer;
+        internal byte[] Buffer => buffer;
 
-        public int Offset => offset;
+        internal int Offset => offset;
 
-        public int Length => length;
+        internal int Length => length;
 
-        public bool Any => limits - offset != length;
+        internal bool Any => limits - offset != length;
 
-        public Vernier(Block block)
+        internal Vernier(Block block)
         {
             buffer = block.Buffer;
             offset = block.Offset;
@@ -26,7 +26,7 @@ namespace Mikodev.Binary
             length = 0;
         }
 
-        public void Flush()
+        internal void Flush()
         {
             offset += this.length;
             if ((uint)(limits - offset) < sizeof(int))
@@ -42,10 +42,19 @@ namespace Mikodev.Binary
             throw new OverflowException();
         }
 
-        public Block FlushBlock()
+        internal void FlushExcept(int define)
         {
-            Flush();
-            return new Block(buffer, offset, length);
+            if (define > 0)
+            {
+                offset += length;
+                if ((uint)(limits - offset) < (uint)define)
+                    throw new OverflowException();
+                length = define;
+            }
+            else
+            {
+                Flush();
+            }
         }
     }
 }

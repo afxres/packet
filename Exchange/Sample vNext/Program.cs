@@ -11,6 +11,8 @@ namespace Sample
         public TOne One { get; set; }
 
         public TTwo Two { get; set; }
+
+        public override string ToString() => $"one : {One}, two : {Two}";
     }
 
     class Program
@@ -20,11 +22,17 @@ namespace Sample
             var cache = new PacketCache();
             {
                 var c = Enumerable.Range(0, 8).Select(r => new OneTwo<int, string> { One = r, Two = r.ToString("x4") });
-                var v = new { array = c.ToArray(), list = c.ToList(), set = c.ToHashSet(), enumerable = c };
+                var v = new { array = c.ToArray(), list = c.ToList(), set = c.ToHashSet(), enumerable = c, dictionary = c.ToDictionary(r => (-r.One)) };
                 var ta = cache.Serialize(v);
                 var tb = PacketConvert.Serialize(v);
-                var ra = PacketConvert.Deserialize(ta, v);
+                var ra = cache.Deserialize(ta, v);
                 var rb = PacketConvert.Deserialize(tb, v);
+
+                var obj = (object)new { id = 1024, name = "sharp", data = (object)new { age = 18 } };
+                var tc = cache.Serialize(obj);
+                var td = PacketConvert.Serialize(obj);
+                var rc = new PacketReader(tc);
+                var rd = new PacketReader(td);
             }
 
             var dic = new Dictionary<string, List<TimeSpan>>();
@@ -56,7 +64,7 @@ namespace Sample
 
             for (int k = 0; k < loop; k++)
             {
-                using (new TraceWatch("PacketCache Serialize"))
+                using (new TraceWatch("PacketCache Serialize")) // 830.489 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -64,7 +72,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketWriter"))
+                using (new TraceWatch("PacketWriter")) // 1783.173 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -72,7 +80,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketCache Deserialize"))
+                using (new TraceWatch("PacketCache Deserialize")) // 1057.535 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -80,7 +88,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketReader"))
+                using (new TraceWatch("PacketReader")) // 1579.233 ms
                 {
                     for (int i = 0; i < max; i++)
                     {

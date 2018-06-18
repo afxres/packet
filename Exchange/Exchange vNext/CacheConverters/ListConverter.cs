@@ -40,7 +40,10 @@ namespace Mikodev.Binary.CacheConverters
                 var list = new List<T>();
                 var vernier = new Vernier(block);
                 while (vernier.Any)
-                    list.Add(converter.ToValue(vernier.FlushBlock()));
+                {
+                    vernier.Flush();
+                    list.Add(converter.ToValue(new Block(vernier)));
+                }
                 return list;
             }
             else

@@ -9,6 +9,13 @@ namespace Mikodev.Binary
         private readonly int offset;
         private readonly int length;
 
+        internal Block(Vernier vernier)
+        {
+            buffer = vernier.Buffer;
+            offset = vernier.Offset;
+            length = vernier.Length;
+        }
+
         internal Block(byte[] buffer)
         {
             if (buffer == null)

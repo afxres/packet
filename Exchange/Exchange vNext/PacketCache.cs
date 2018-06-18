@@ -53,7 +53,15 @@ namespace Mikodev.Binary
                     dictionary.TryAdd(i.ValueType, i);
             foreach (var i in defaultConverters)
                 dictionary.TryAdd(i.ValueType, i);
+            dictionary[typeof(object)] = new ObjectConverter(this);
             this.converters = dictionary;
+        }
+
+        internal Converter GetOrCreateConverter(Type type)
+        {
+            if (!converters.TryGetValue(type, out var converter))
+                converters.TryAdd(type, (converter = CreateConverter(type)));
+            return converter;
         }
 
         private byte[] GetOrCache(string key)
@@ -61,13 +69,6 @@ namespace Mikodev.Binary
             if (!stringCache.TryGetValue(key, out var bytes))
                 stringCache.TryAdd(key, (bytes = Encoding.UTF8.GetBytes(key)));
             return bytes;
-        }
-
-        private Converter GetOrCreateConverter(Type type)
-        {
-            if (!converters.TryGetValue(type, out var converter))
-                converters.TryAdd(type, (converter = CreateConverter(type)));
-            return converter;
         }
 
         private Converter CreateConverter(Type type)
@@ -99,22 +100,19 @@ namespace Mikodev.Binary
                 var converter = GetOrCreateConverter(elementType);
                 return (Converter)Activator.CreateInstance(typeof(ListConverter<>).MakeGenericType(elementType), converter);
             }
+            else if (definition == typeof(Dictionary<,>))
+            {
+                var elementTypes = type.GetGenericArguments();
+                if (elementTypes[0] == typeof(object))
+                    goto fail;
+                var keyConverter = GetOrCreateConverter(elementTypes[0]);
+                var valueConverter = GetOrCreateConverter(elementTypes[1]);
+                return (Converter)Activator.CreateInstance(typeof(DictionaryConverter<,>).MakeGenericType(elementTypes), keyConverter, valueConverter);
+            }
 
             var interfaces = type.IsInterface
                 ? type.GetInterfaces().Concat(new[] { type }).ToArray()
                 : type.GetInterfaces();
-            var collection = interfaces.Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(ICollection<>)).ToArray();
-            if (collection.Length > 1)
-                goto fail;
-            if (collection.Length == 1)
-            {
-                var elementType = collection[0].GetGenericArguments().Single();
-                if (elementType == typeof(object))
-                    goto fail;
-                var converter = GetOrCreateConverter(elementType);
-                return (Converter)Activator.CreateInstance(typeof(ICollectionConverter<,>).MakeGenericType(type, elementType), converter);
-            }
-
             var enumerable = interfaces.Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>)).ToArray();
             if (enumerable.Length > 1)
                 goto fail;
@@ -124,12 +122,31 @@ namespace Mikodev.Binary
                 if (elementType == typeof(object))
                     goto fail;
                 var converter = GetOrCreateConverter(elementType);
-                return (Converter)Activator.CreateInstance(typeof(IEnumerableConverter<,>).MakeGenericType(type, elementType), converter);
+                return (Converter)Activator.CreateInstance(typeof(EnumerableConverter<,>).MakeGenericType(type, elementType), converter, ToCollectionDelegate(type, elementType));
             }
 
             return (Converter)Activator.CreateInstance(typeof(InstanceConverter<>).MakeGenericType(type), ToBytesDelegate(type), ToValueDelegate(type, out var capacity), capacity);
             fail:
             throw new InvalidOperationException($"Invalid collection type: {type}");
+        }
+
+        private Delegate ToCollectionDelegate(Type type, Type elementType)
+        {
+            var array = Expression.Parameter(elementType.MakeArrayType(), "array");
+            var lambda = default(LambdaExpression);
+            if (type.IsAssignableFrom(elementType.MakeArrayType()))
+            {
+                lambda = Expression.Lambda(Expression.Convert(array, type), array);
+            }
+            else
+            {
+                var enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
+                var constructorInfo = type.GetConstructor(new[] { enumerableType });
+                if (constructorInfo == null)
+                    return null;
+                lambda = Expression.Lambda(Expression.New(constructorInfo, array), array);
+            }
+            return lambda.Compile();
         }
 
         private Delegate ToBytesDelegate(Type type)
@@ -246,6 +263,33 @@ namespace Mikodev.Binary
             return constructorInfo != null ? ToValueDelegateProperties(type, out capacity) : ToValueDelegateAnonymous(type, out capacity);
         }
 
+        #region export
+        private T Deserialize<T>(Block block)
+        {
+            var converter = (Converter<T>)GetOrCreateConverter(typeof(T));
+            var value = converter.ToValue(block);
+            return value;
+        }
+
+        private object Deserialize(Type type, Block block)
+        {
+            var converter = GetOrCreateConverter(type);
+            var value = converter.ToValueNonGeneric(block);
+            return value;
+        }
+
+        public T Deserialize<T>(byte[] buffer) => Deserialize<T>(new Block(buffer));
+
+        public T Deserialize<T>(byte[] buffer, T anonymous) => Deserialize<T>(buffer);
+
+        public T Deserialize<T>(byte[] buffer, int offset, int length) => Deserialize<T>(new Block(buffer, offset, length));
+
+        public T Deserialize<T>(byte[] buffer, int offset, int length, T anonymous) => Deserialize<T>(buffer, offset, length);
+
+        public object Deserialize(byte[] buffer, Type type) => Deserialize(type, new Block(buffer));
+
+        public object Deserialize(byte[] buffer, int offset, int length, Type type) => Deserialize(type, new Block(buffer, offset, length));
+
         public byte[] Serialize<T>(T value)
         {
             var converter = (Converter<T>)GetOrCreateConverter(typeof(T));
@@ -255,14 +299,16 @@ namespace Mikodev.Binary
             return stream.GetBytes();
         }
 
-        public T Deserialize<T>(byte[] buffer)
+        public byte[] Serialize(object value)
         {
-            var converter = (Converter<T>)GetOrCreateConverter(typeof(T));
-            var block = new Block(buffer);
-            var value = converter.ToValue(block);
-            return value;
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+            var converter = GetOrCreateConverter(value.GetType());
+            var stream = new UnsafeStream();
+            var allocator = new Allocator(stream);
+            converter.ToBytesNonGeneric(allocator, value);
+            return stream.GetBytes();
         }
-
-        public T Deserialize<T>(byte[] buffer, T anonymous) => Deserialize<T>(buffer);
+        #endregion
     }
 }
