@@ -61,7 +61,7 @@ namespace Mikodev.Network
         {
             if (buffer == null)
                 throw new ArgumentNullException(nameof(buffer));
-            if (offset < 0 || length < 0 || buffer.Length - offset < length)
+            if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
                 throw new ArgumentOutOfRangeException();
             return;
         }

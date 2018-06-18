@@ -10,7 +10,7 @@ namespace Mikodev.Network
             PacketException.VerifyRecursionError(ref level);
             var info = Cache.GetConverterOrInfo(converters, type, out var converter);
             return info == null
-                ? converter.GetObjectChecked(element, true)
+                ? converter.GetObjectChecked(block, true)
                 : GetValueMatch(type, level, info);
         }
 
@@ -58,35 +58,27 @@ namespace Mikodev.Network
 
         private object GetValueMatchDictionary(int level, Info valueInfo)
         {
-            var keycon = Cache.GetConverter(converters, valueInfo.IndexType, true);
-            if (keycon == null)
+            var indexConverter = Cache.GetConverter(converters, valueInfo.IndexType, true);
+            if (indexConverter == null)
                 throw PacketException.InvalidKeyType(valueInfo.IndexType, valueInfo.Type);
-            var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
+            var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var elementConverter);
             if (info == null)
-                return valueInfo.ToDictionary(this, keycon, con);
+                return valueInfo.ToDictionary(this, indexConverter, elementConverter);
 
-            var limits = element.Limits;
-            var offset = element.offset;
-            var buffer = element.buffer;
-            var keydef = keycon.Length;
-            var length = 0;
-
-            var list = new List<object>();
-            while (offset != limits)
+            var collection = new List<object>();
+            var vernier = new Vernier(block);
+            while (vernier.Any)
             {
-                length = buffer.MoveNextExcept(ref offset, limits, keydef);
+                vernier.FlushExcept(indexConverter.Length);
                 // Wrap error non-check
-                var key = keycon.GetObjectChecked(buffer, offset, length);
-                offset += length;
-                list.Add(key);
-
-                length = buffer.MoveNextExcept(ref offset, limits, 0);
-                var rea = new PacketReader(buffer, offset, length, converters);
-                var val = rea.GetValueMatch(valueInfo.ElementType, level, info);
-                offset += length;
-                list.Add(val);
+                var key = indexConverter.GetObjectChecked(vernier.Buffer, vernier.Offset, vernier.Length);
+                vernier.Flush();
+                var reader = new PacketReader(new Block(vernier), converters);
+                var value = reader.GetValueMatch(valueInfo.ElementType, level, info);
+                collection.Add(key);
+                collection.Add(value);
             }
-            return valueInfo.ToDictionaryExtend(list);
+            return valueInfo.ToDictionaryExtend(collection);
         }
 
         private object GetValueMatchDefault(Type valueType, int level)

@@ -19,7 +19,7 @@ namespace Mikodev.Network
                 var result = new List<T>(count);
                 var generic = (PacketConverter<T>)converter;
                 for (int i = 0; i < count; i++)
-                    result.Add(generic.GetValue(readerList[i].element));
+                    result.Add(generic.GetValue(readerList[i].block));
                 return result;
             }
             catch (Exception ex) when (PacketException.ReThrowFilter(ex))
@@ -40,7 +40,7 @@ namespace Mikodev.Network
                 var result = new T[count];
                 var generic = (PacketConverter<T>)converter;
                 for (int i = 0; i < count; i++)
-                    result[i] = generic.GetValue(readerList[i].element);
+                    result[i] = generic.GetValue(readerList[i].block);
                 return result;
             }
             catch (Exception ex) when (PacketException.ReThrowFilter(ex))
@@ -54,14 +54,14 @@ namespace Mikodev.Network
         {
             return converter.Length < 1
                 ? InternalToArray<T>(reader, converter)
-                : reader.element.ToArray<T>(converter);
+                : reader.block.ToArray<T>(converter);
         }
 
         internal static List<T> ToList<T>(PacketReader reader, PacketConverter converter)
         {
             return converter.Length < 1
                 ? InternalToList<T>(reader, converter)
-                : reader.element.ToList<T>(converter);
+                : reader.block.ToList<T>(converter);
         }
 
         internal static Enumerable<T> ToEnumerable<T>(PacketReader reader, PacketConverter converter)
@@ -72,7 +72,7 @@ namespace Mikodev.Network
         internal static Dictionary<TK, TV> ToDictionary<TK, TV>(PacketReader reader, PacketConverter indexConverter, PacketConverter elementConverter)
         {
             var builder = new DictionaryBuilder<TK, TV>();
-            reader.element.ToDictionary(indexConverter, elementConverter, builder);
+            reader.block.ToDictionary(indexConverter, elementConverter, builder);
             return builder.dictionary;
         }
 
@@ -91,7 +91,7 @@ namespace Mikodev.Network
         internal static List<Tuple<TK, TV>> ToTupleList<TK, TV>(PacketReader reader, PacketConverter indexConverter, PacketConverter elementConverter)
         {
             var builder = new TupleListBuilder<TK, TV>();
-            reader.element.ToDictionary(indexConverter, elementConverter, builder);
+            reader.block.ToDictionary(indexConverter, elementConverter, builder);
             return builder.tuples;
         }
 
