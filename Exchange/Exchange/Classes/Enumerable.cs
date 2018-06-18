@@ -24,7 +24,7 @@ namespace Mikodev.Network
         private static IEnumerator Enumerator(List<PacketReader> list, PacketConverter converter)
         {
             for (int i = 0; i < list.Count; i++)
-                yield return converter.GetObjectChecked(list[i].element);
+                yield return converter.GetObjectChecked(list[i].block);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -32,11 +32,11 @@ namespace Mikodev.Network
             var define = converter.Length;
             if (define < 1)
                 return Enumerator(reader.GetList(), converter);
-            var element = reader.element;
-            var quotient = Math.DivRem(element.length, define, out var remainder);
+            var block = reader.block;
+            var quotient = Math.DivRem(block.Length, define, out var remainder);
             if (remainder != 0)
                 throw PacketException.Overflow();
-            return Enumerator(element.buffer, element.offset, quotient, define, converter);
+            return Enumerator(block.Buffer, block.Offset, quotient, define, converter);
         }
     }
 
@@ -55,7 +55,7 @@ namespace Mikodev.Network
         {
             var generic = (PacketConverter<T>)converter;
             for (int i = 0; i < list.Count; i++)
-                yield return generic.GetValueChecked(list[i].element);
+                yield return generic.GetValueChecked(list[i].block);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
@@ -63,11 +63,11 @@ namespace Mikodev.Network
             var define = converter.Length;
             if (define < 1)
                 return Enumerator(reader.GetList(), converter);
-            var element = reader.element;
-            var quotient = Math.DivRem(element.length, define, out var remainder);
+            var block = reader.block;
+            var quotient = Math.DivRem(block.Length, define, out var remainder);
             if (remainder != 0)
                 throw PacketException.Overflow();
-            else return Enumerator(element.buffer, element.offset, quotient, define, converter);
+            else return Enumerator(block.Buffer, block.Offset, quotient, define, converter);
         }
     }
 }

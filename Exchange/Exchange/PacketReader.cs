@@ -18,21 +18,27 @@ namespace Mikodev.Network
         }
 
         internal readonly ConverterDictionary converters;
-        internal readonly Element element;
+        internal readonly Block block;
 
-        private List<PacketReader> list = null;
-        private Dictionary<string, PacketReader> dictionary = null;
-        private Flags flags = 0;
+        private List<PacketReader> list;
+        private Dictionary<string, PacketReader> dictionary;
+        private Flags flags;
+
+        internal PacketReader(Block block, ConverterDictionary converters)
+        {
+            this.block = block;
+            this.converters = converters;
+        }
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
-            element = new Element(buffer);
+            block = new Block(buffer);
             this.converters = converters;
         }
 
         public PacketReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
-            element = new Element(buffer, offset, length);
+            block = new Block(buffer, offset, length);
             this.converters = converters;
         }
 
@@ -49,32 +55,23 @@ namespace Mikodev.Network
             flags |= Flags.Dictionary;
 
             var collection = new Dictionary<string, PacketReader>(Extension.DictionaryCapacity);
-            var buffer = element.buffer;
-            var limits = element.Limits;
-            var offset = element.offset;
-            var length = 0;
-
+            var vernier = new Vernier(block);
             try
             {
-                while (offset != limits)
+                while (vernier.Any)
                 {
-                    if ((length = buffer.MoveNext(ref offset, limits)) < 0)
+                    if (!vernier.TryFlush())
                         return null;
-                    var key = Extension.Encoding.GetString(buffer, offset, length);
-                    offset += length;
-                    if ((length = buffer.MoveNext(ref offset, limits)) < 0)
+                    var key = Extension.Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
+                    if (!vernier.TryFlush())
                         return null;
-                    collection.Add(key, new PacketReader(buffer, offset, length, converters));
-                    offset += length;
+                    collection.Add(key, new PacketReader(new Block(vernier), converters));
                 }
             }
             catch (ArgumentException)
             {
-                // duplicate key
-                dictionary = null;
                 return null;
             }
-
             dictionary = collection;
             return collection;
         }
@@ -85,20 +82,15 @@ namespace Mikodev.Network
                 throw PacketException.Overflow();
             flags |= Flags.List;
 
-            var lst = new List<PacketReader>();
-            var limits = element.Limits;
-            var offset = element.offset;
-            var buffer = element.buffer;
-            var length = 0;
-            while (offset != limits)
+            var collection = new List<PacketReader>();
+            var vernier = new Vernier(block);
+            while (vernier.Any)
             {
-                length = buffer.MoveNextExcept(ref offset, limits, 0);
-                var rea = new PacketReader(buffer, offset, length, converters);
-                lst.Add(rea);
-                offset += length;
+                vernier.Flush();
+                collection.Add(new PacketReader(new Block(vernier), converters));
             }
-            list = lst;
-            return lst;
+            list = collection;
+            return collection;
         }
 
         /// <summary>
@@ -151,7 +143,7 @@ namespace Mikodev.Network
             var collection = GetDictionary();
             if (collection != null)
                 builder.AppendFormat("{0} node(s), ", collection.Count);
-            builder.AppendFormat("{0} byte(s)", element.length);
+            builder.AppendFormat("{0} byte(s)", block.Length);
             return builder.ToString();
         }
 

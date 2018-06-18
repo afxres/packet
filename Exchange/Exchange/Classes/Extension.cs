@@ -66,42 +66,13 @@ namespace Mikodev.Network
             Converters = dictionary;
         }
 
-        internal static int MoveNext(this byte[] buffer, ref int offset, int limits)
-        {
-            if (limits - offset < sizeof(int))
-                return -1;
-            var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[offset]);
-            offset += sizeof(int);
-            return (uint)(limits - offset) < (uint)length ? -1 : length;
-        }
-
-        internal static int MoveNextExcept(this byte[] buffer, ref int offset, int limits, int define)
-        {
-            if (define > 0)
-            {
-                if (limits - offset < define)
-                    goto fail;
-                return define;
-            }
-            else
-            {
-                var length = MoveNext(buffer, ref offset, limits);
-                if (length < 0)
-                    goto fail;
-                return length;
-            }
-
-            fail:
-            throw PacketException.Overflow();
-        }
-
         internal static byte[] BorrowOrCopy(byte[] buffer, int offset, int length)
         {
             if (buffer == null)
                 goto fail;
             if (offset == 0 && length == buffer.Length)
                 return buffer;
-            if (offset < 0 || length < 0 || buffer.Length - offset < length)
+            if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
                 goto fail;
             if (length == 0)
                 return UnmanagedArrayConverter<byte>.EmptyArray;
