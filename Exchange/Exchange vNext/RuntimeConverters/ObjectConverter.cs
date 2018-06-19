@@ -1,13 +1,13 @@
 ﻿using Mikodev.Binary.Common;
 using System;
 
-namespace Mikodev.Binary.CacheConverters
+namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class ObjectConverter : Converter<object>
     {
-        private readonly PacketCache packetCache;
+        private readonly Cache packetCache;
 
-        public ObjectConverter(PacketCache packetCache) : base(0) => this.packetCache = packetCache;
+        public ObjectConverter(Cache packetCache) : base(0) => this.packetCache = packetCache;
 
         public override void ToBytes(Allocator allocator, object value)
         {

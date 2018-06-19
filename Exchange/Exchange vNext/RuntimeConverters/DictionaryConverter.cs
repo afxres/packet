@@ -1,7 +1,7 @@
 ﻿using Mikodev.Binary.Common;
 using System.Collections.Generic;
 
-namespace Mikodev.Binary.CacheConverters
+namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class DictionaryConverter<TK, TV> : Converter<Dictionary<TK, TV>>
     {
@@ -18,30 +18,10 @@ namespace Mikodev.Binary.CacheConverters
         {
             if (value == null || value.Count == 0)
                 return;
-            int offset;
-            var stream = allocator.stream;
             foreach (var i in value)
             {
-                if (keyConverter.Length == 0)
-                {
-                    offset = stream.BeginModify();
-                    keyConverter.ToBytes(allocator, i.Key);
-                    stream.EndModify(offset);
-                }
-                else
-                {
-                    keyConverter.ToBytes(allocator, i.Key);
-                }
-                if (valueConverter.Length == 0)
-                {
-                    offset = stream.BeginModify();
-                    valueConverter.ToBytes(allocator, i.Value);
-                    stream.EndModify(offset);
-                }
-                else
-                {
-                    valueConverter.ToBytes(allocator, i.Value);
-                }
+                keyConverter.ToBytesExcept(allocator, i.Key);
+                valueConverter.ToBytesExcept(allocator, i.Value);
             }
         }
 

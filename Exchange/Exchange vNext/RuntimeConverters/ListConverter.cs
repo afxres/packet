@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Mikodev.Binary.CacheConverters
+namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class ListConverter<T> : Converter<List<T>>
     {

@@ -1,4 +1,4 @@
-﻿using Mikodev.Binary.CacheConverters;
+﻿using Mikodev.Binary.RuntimeConverters;
 using Mikodev.Binary.Common;
 using Mikodev.Binary.Converters;
 using System;
@@ -11,12 +11,12 @@ using System.Text;
 
 namespace Mikodev.Binary
 {
-    public class PacketCache
+    public class Cache
     {
         #region static
         private static readonly IReadOnlyList<Converter> defaultConverters;
 
-        static PacketCache()
+        static Cache()
         {
             var unmanagedTypes = new[]
             {
@@ -45,7 +45,7 @@ namespace Mikodev.Binary
         private readonly ConcurrentDictionary<Type, Converter> converters;
         private readonly ConcurrentDictionary<string, byte[]> stringCache = new ConcurrentDictionary<string, byte[]>();
 
-        public PacketCache(IEnumerable<Converter> converters = null)
+        public Cache(IEnumerable<Converter> converters = null)
         {
             var dictionary = new ConcurrentDictionary<Type, Converter>();
             if (converters != null)
@@ -67,7 +67,7 @@ namespace Mikodev.Binary
         private byte[] GetOrCache(string key)
         {
             if (!stringCache.TryGetValue(key, out var bytes))
-                stringCache.TryAdd(key, (bytes = Encoding.UTF8.GetBytes(key)));
+                stringCache.TryAdd(key, (bytes = Extension.Encoding.GetBytes(key)));
             return bytes;
         }
 
@@ -92,7 +92,14 @@ namespace Mikodev.Binary
             }
 
             var definition = type.IsGenericType ? type.GetGenericTypeDefinition() : null;
-            if (definition == typeof(List<>))
+            if (definition == typeof(KeyValuePair<,>))
+            {
+                var elementTypes = type.GetGenericArguments();
+                var keyConverter = GetOrCreateConverter(elementTypes[0]);
+                var valueConverter = GetOrCreateConverter(elementTypes[1]);
+                return (Converter)Activator.CreateInstance(typeof(KeyValuePairConverter<,>).MakeGenericType(elementTypes), keyConverter, valueConverter);
+            }
+            else if (definition == typeof(List<>))
             {
                 var elementType = type.GetGenericArguments().Single();
                 if (elementType == typeof(object))
@@ -122,7 +129,7 @@ namespace Mikodev.Binary
                 if (elementType == typeof(object))
                     goto fail;
                 var converter = GetOrCreateConverter(elementType);
-                return (Converter)Activator.CreateInstance(typeof(EnumerableConverter<,>).MakeGenericType(type, elementType), converter, ToCollectionDelegate(type, elementType));
+                return (Converter)Activator.CreateInstance(typeof(EnumerableConverter<,>).MakeGenericType(type, elementType), converter, ToCollectionDelegate(type, elementType) ?? ToCollectionDelegateImplementation(type, elementType));
             }
 
             return (Converter)Activator.CreateInstance(typeof(InstanceConverter<>).MakeGenericType(type), ToBytesDelegate(type), ToValueDelegate(type, out var capacity), capacity);
@@ -132,11 +139,12 @@ namespace Mikodev.Binary
 
         private Delegate ToCollectionDelegate(Type type, Type elementType)
         {
-            var array = Expression.Parameter(elementType.MakeArrayType(), "array");
+            var listType = typeof(List<>).MakeGenericType(elementType);
+            var list = Expression.Parameter(listType, "collection");
             var lambda = default(LambdaExpression);
-            if (type.IsAssignableFrom(elementType.MakeArrayType()))
+            if (type.IsAssignableFrom(listType))
             {
-                lambda = Expression.Lambda(Expression.Convert(array, type), array);
+                lambda = Expression.Lambda(Expression.Convert(list, type), list);
             }
             else
             {
@@ -144,9 +152,18 @@ namespace Mikodev.Binary
                 var constructorInfo = type.GetConstructor(new[] { enumerableType });
                 if (constructorInfo == null)
                     return null;
-                lambda = Expression.Lambda(Expression.New(constructorInfo, array), array);
+                lambda = Expression.Lambda(Expression.New(constructorInfo, list), list);
             }
             return lambda.Compile();
+        }
+
+        private Delegate ToCollectionDelegateImplementation(Type type, Type elementType)
+        {
+            // ISet<T> 的默认实现采用 HashSet<T>
+            var collectionType = typeof(HashSet<>).MakeGenericType(elementType);
+            return type.IsAssignableFrom(collectionType) && GetOrCreateConverter(collectionType) is IEnumerableConverter enumerableConverter
+                ? enumerableConverter.ToValueFunction
+                : null;
         }
 
         private Delegate ToBytesDelegate(Type type)

@@ -2,14 +2,21 @@
 using System;
 using System.Collections.Generic;
 
-namespace Mikodev.Binary.CacheConverters
+namespace Mikodev.Binary.RuntimeConverters
 {
-    internal sealed class EnumerableConverter<TE, TV> : Converter<TE> where TE : IEnumerable<TV>
+    internal interface IEnumerableConverter
+    {
+        Delegate ToValueFunction { get; }
+    }
+
+    internal sealed class EnumerableConverter<TE, TV> : Converter<TE>, IEnumerableConverter where TE : IEnumerable<TV>
     {
         private readonly Converter<TV> converter;
-        private readonly Func<TV[], TE> toValue;
+        private readonly Func<List<TV>, TE> toValue;
 
-        public EnumerableConverter(Converter<TV> converter, Func<TV[], TE> toValue) : base(0)
+        public Delegate ToValueFunction => toValue;
+
+        public EnumerableConverter(Converter<TV> converter, Func<List<TV>, TE> toValue) : base(0)
         {
             this.converter = converter;
             this.toValue = toValue;
@@ -52,8 +59,8 @@ namespace Mikodev.Binary.CacheConverters
         {
             if (toValue == null)
                 throw new InvalidOperationException();
-            var array = ArrayConverter<TV>.ToValue(block, converter);
-            return toValue.Invoke(array);
+            var list = ListConverter<TV>.ToValue(block, converter);
+            return toValue.Invoke(list);
         }
     }
 }

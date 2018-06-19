@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Mikodev.Binary.CacheConverters
+namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class InstanceConverter<T> : Converter<T>
     {
@@ -29,7 +29,7 @@ namespace Mikodev.Binary.CacheConverters
             while (vernier.Any)
             {
                 vernier.Flush();
-                var key = Encoding.UTF8.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
+                var key = Extension.Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
                 vernier.Flush();
                 dictionary.Add(key, new Block(vernier));
             }

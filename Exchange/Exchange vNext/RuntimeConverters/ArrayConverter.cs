@@ -1,7 +1,7 @@
 ﻿using Mikodev.Binary.Common;
 using System;
 
-namespace Mikodev.Binary.CacheConverters
+namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class ArrayConverter<T> : Converter<T[]>
     {

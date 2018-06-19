@@ -45,5 +45,19 @@ namespace Mikodev.Binary.Common
         internal sealed override Delegate ToBytesDelegate { get; }
 
         internal sealed override Delegate ToValueDelegate { get; }
+
+        internal void ToBytesExcept(Allocator allocator, T value)
+        {
+            if (Length == 0)
+            {
+                var offset = allocator.stream.BeginModify();
+                ToBytes(allocator, value);
+                allocator.stream.EndModify(offset);
+            }
+            else
+            {
+                ToBytes(allocator, value);
+            }
+        }
     }
 }

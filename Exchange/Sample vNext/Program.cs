@@ -19,10 +19,18 @@ namespace Sample
     {
         static void Main(string[] args)
         {
-            var cache = new PacketCache();
+            var cache = new Cache();
             {
                 var c = Enumerable.Range(0, 8).Select(r => new OneTwo<int, string> { One = r, Two = r.ToString("x4") });
-                var v = new { array = c.ToArray(), list = c.ToList(), set = c.ToHashSet(), enumerable = c, dictionary = c.ToDictionary(r => (-r.One)) };
+                var v = new
+                {
+                    array = c.ToArray(),
+                    list = c.ToList(),
+                    set = (ISet<OneTwo<int, string>>)c.ToHashSet(),
+                    enumerable = c,
+                    dictionary = c.ToDictionary(r => (-r.One)),
+                    pairs = c.Select(r => new KeyValuePair<int, string>(r.One, r.Two))
+                };
                 var ta = cache.Serialize(v);
                 var tb = PacketConvert.Serialize(v);
                 var ra = cache.Deserialize(ta, v);
