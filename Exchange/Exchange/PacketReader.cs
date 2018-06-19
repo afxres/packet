@@ -54,7 +54,7 @@ namespace Mikodev.Network
                 return null;
             flags |= Flags.Dictionary;
 
-            var collection = new Dictionary<string, PacketReader>(Extension.DictionaryCapacity);
+            var collection = new Dictionary<string, PacketReader>(Extension.Capacity);
             var vernier = new Vernier(block);
             try
             {

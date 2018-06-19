@@ -19,6 +19,8 @@ namespace Mikodev.Network
             PacketException.VerifyRecursionError(ref level);
             switch (valueInfo.To)
             {
+                case InfoFlags.Invalid:
+                    throw PacketException.InvalidType(valueType);
                 case InfoFlags.Reader:
                     return this;
                 case InfoFlags.RawReader:

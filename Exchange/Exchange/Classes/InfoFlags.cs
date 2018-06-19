@@ -3,6 +3,7 @@
     internal enum InfoFlags : int
     {
         None = 0,
+        Invalid, // throw invalid type
         Reader,
         RawReader,
         Collection,

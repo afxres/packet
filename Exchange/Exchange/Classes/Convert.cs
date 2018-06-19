@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -97,7 +98,7 @@ namespace Mikodev.Network
 
         internal static List<Tuple<TK, TV>> ToTupleListExtend<TK, TV>(List<object> list)
         {
-            var tupleList = new List<Tuple<TK, TV>>();
+            var tupleList = new List<Tuple<TK, TV>>(list.Count >> 1);
             for (int i = 0; i < list.Count; i += 2)
             {
                 var key = (TK)list[i];
@@ -138,7 +139,8 @@ namespace Mikodev.Network
 
         internal static List<KeyValuePair<byte[], byte[]>> FromDictionary<TK, TV>(PacketConverter indexConverter, PacketConverter elementConverter, IEnumerable<KeyValuePair<TK, TV>> enumerable)
         {
-            var result = new List<KeyValuePair<byte[], byte[]>>();
+            var capacity = enumerable is ICollection collection ? collection.Count : Extension.Capacity;
+            var result = new List<KeyValuePair<byte[], byte[]>>(capacity);
             var keyGeneric = (PacketConverter<TK>)indexConverter;
             var valGeneric = (PacketConverter<TV>)elementConverter;
 
