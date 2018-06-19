@@ -44,7 +44,7 @@ namespace Mikodev.Network
             var item = this.item;
             if (item.flag == ItemFlags.Dictionary)
                 return (Dictionary<string, PacketWriter>)item.data;
-            var dictionary = new Dictionary<string, PacketWriter>(Extension.DictionaryCapacity);
+            var dictionary = new Dictionary<string, PacketWriter>(Extension.Capacity);
             this.item = NewItem(dictionary);
             return dictionary;
         }

@@ -479,15 +479,19 @@ namespace Mikodev.Testing
         [TestMethod]
         public void ISet()
         {
-            var set = new HashSet<int>() { 1, 2, 3, 4 };
+            var random = new Random();
+            var set = new HashSet<int>(Enumerable.Range(0, 16).Select(_ => random.Next()));
             var buf = PacketConvert.Serialize(set);
             var res = PacketConvert.Deserialize<HashSet<int>>(buf);
-            var val = set.SetEquals(res);
             Assert.AreEqual(set.Count, res.Count);
-            Assert.AreEqual(val, true);
-            return;
-        }
+            Assert.IsTrue(set.SetEquals(res));
 
+            var obj = new { set = (ISet<string>)new HashSet<string>(Enumerable.Range(0, 16).Select(_ => random.Next().ToString())) };
+            var ta = PacketConvert.Serialize(obj);
+            var rea = new PacketReader(ta);
+            var ra = rea["set"].Deserialize<ISet<string>>();
+            ThrowIfNotEqual(obj.set, ra);
+        }
 
         [TestMethod]
         public void CustomConverter()

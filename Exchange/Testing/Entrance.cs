@@ -938,5 +938,27 @@ namespace Mikodev.Testing
             Assert.AreEqual(anonymous, ro);
             ThrowIfNotSequenceEqual(array, ra);
         }
+
+        [TestMethod]
+        public void KeyValueCollection()
+        {
+            var collection = Enumerable.Range(0, 8).Select(r => new KeyValuePair<int, string>(r, r.ToString()));
+            var buffer = PacketConvert.Serialize(collection);
+            var reader = new PacketReader(buffer);
+
+            try
+            {
+                var result = reader.Deserialize<List<KeyValuePair<int, string>>>();
+                Assert.Fail();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.InvalidType)
+            {
+                // ignore
+            }
+
+            var origin = collection.ToDictionary(r => r.Key, r => r.Value);
+            var dictionary = reader.Deserialize<IDictionary<int, string>>();
+            ThrowIfNotEqual(origin, dictionary);
+        }
     }
 }
