@@ -8,10 +8,12 @@ namespace Mikodev.Binary
     {
         internal static MethodInfo FlushExceptMethodInfo { get; } = typeof(Vernier).GetMethod(nameof(FlushExcept), BindingFlags.Instance | BindingFlags.NonPublic);
 
+        #region fields
         private readonly byte[] buffer;
         private readonly int limits;
         private int offset;
         private int length;
+        #endregion
 
         internal byte[] Buffer => buffer;
 

@@ -5,9 +5,29 @@ namespace Mikodev.Binary
 {
     public readonly struct Block
     {
+        #region fields
         private readonly byte[] buffer;
         private readonly int offset;
         private readonly int length;
+        #endregion
+
+        public bool IsEmpty => length == 0;
+
+        public byte[] Buffer => buffer;
+
+        public int Offset => offset;
+
+        public int Length => length;
+
+        public ref byte Location
+        {
+            get
+            {
+                if (length == 0)
+                    throw new InvalidOperationException();
+                return ref buffer[offset];
+            }
+        }
 
         internal Block(Vernier vernier)
         {
@@ -45,24 +65,6 @@ namespace Mikodev.Binary
                 this.buffer = buffer;
                 this.offset = offset;
                 this.length = length;
-            }
-        }
-
-        public bool IsEmpty => length == 0;
-
-        public byte[] Buffer => buffer;
-
-        public int Offset => offset;
-
-        public int Length => length;
-
-        public ref byte Location
-        {
-            get
-            {
-                if (length == 0)
-                    throw new InvalidOperationException();
-                return ref buffer[offset];
             }
         }
 

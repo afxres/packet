@@ -6,7 +6,7 @@ namespace Mikodev.Binary
 {
     public readonly struct Allocator
     {
-        internal static FieldInfo FileInfo { get; } = typeof(Allocator).GetField(nameof(stream), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static FieldInfo FieldInfo { get; } = typeof(Allocator).GetField(nameof(stream), BindingFlags.Instance | BindingFlags.NonPublic);
 
         internal readonly UnsafeStream stream;
 

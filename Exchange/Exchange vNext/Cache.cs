@@ -42,7 +42,7 @@ namespace Mikodev.Binary
         #endregion
 
         private readonly ConcurrentDictionary<Type, Converter> converters;
-        private readonly ConcurrentDictionary<string, byte[]> stringCache = new ConcurrentDictionary<string, byte[]>();
+        private readonly ConcurrentDictionary<string, byte[]> encodingCache = new ConcurrentDictionary<string, byte[]>();
 
         public Cache(IEnumerable<Converter> converters = null)
         {
@@ -65,8 +65,8 @@ namespace Mikodev.Binary
 
         private byte[] GetOrCache(string key)
         {
-            if (!stringCache.TryGetValue(key, out var bytes))
-                stringCache.TryAdd(key, (bytes = Extension.Encoding.GetBytes(key)));
+            if (!encodingCache.TryGetValue(key, out var bytes))
+                encodingCache.TryAdd(key, (bytes = Extension.Encoding.GetBytes(key)));
             return bytes;
         }
 
@@ -116,7 +116,7 @@ namespace Mikodev.Binary
                 {
                     bytesVariables.Add(offset = Expression.Variable(typeof(int), "offset"));
                     bytesVariables.Add(stream = Expression.Variable(typeof(UnsafeStream), "stream"));
-                    bytesExpressions.Add(Expression.Assign(stream, Expression.Field(allocator, Allocator.FileInfo)));
+                    bytesExpressions.Add(Expression.Assign(stream, Expression.Field(allocator, Allocator.FieldInfo)));
                 }
                 for (int i = 0; i < tupleTypeCount; i++)
                 {
@@ -230,7 +230,7 @@ namespace Mikodev.Binary
             var stream = Expression.Variable(typeof(UnsafeStream), "stream");
             var position = default(ParameterExpression);
             var variableList = new List<ParameterExpression> { stream };
-            var list = new List<Expression> { Expression.Assign(stream, Expression.Field(allocator, Allocator.FileInfo)) };
+            var list = new List<Expression> { Expression.Assign(stream, Expression.Field(allocator, Allocator.FieldInfo)) };
             foreach (var i in properties)
             {
                 var getMethod = i.GetGetMethod();
