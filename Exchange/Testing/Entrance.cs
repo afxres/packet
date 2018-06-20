@@ -942,13 +942,10 @@ namespace Mikodev.Testing
         [TestMethod]
         public void KeyValueCollection()
         {
-            var collection = Enumerable.Range(0, 8).Select(r => new KeyValuePair<int, string>(r, r.ToString()));
-            var buffer = PacketConvert.Serialize(collection);
-            var reader = new PacketReader(buffer);
-
             try
             {
-                var result = reader.Deserialize<List<KeyValuePair<int, string>>>();
+                var collection = Enumerable.Range(0, 8).Select(r => new KeyValuePair<int, string>(r, r.ToString()));
+                var buffer = PacketConvert.Serialize(collection);
                 Assert.Fail();
             }
             catch (PacketException ex) when (ex.ErrorCode == PacketError.InvalidType)
@@ -956,9 +953,16 @@ namespace Mikodev.Testing
                 // ignore
             }
 
-            var origin = collection.ToDictionary(r => r.Key, r => r.Value);
-            var dictionary = reader.Deserialize<IDictionary<int, string>>();
-            ThrowIfNotEqual(origin, dictionary);
+            try
+            {
+                var kvp = new KeyValuePair<string, double>("one", 1.0);
+                var buffer = PacketConvert.Serialize(kvp);
+                Assert.Fail();
+            }
+            catch (PacketException ex) when (ex.ErrorCode == PacketError.InvalidType)
+            {
+                // ignore
+            }
         }
     }
 }
