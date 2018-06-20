@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Mikodev.Binary.Common
+namespace Mikodev.Binary
 {
     public abstract class Converter
     {

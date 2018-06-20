@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace Mikodev.Binary.Common
+namespace Mikodev.Binary
 {
     internal static class Extension
     {

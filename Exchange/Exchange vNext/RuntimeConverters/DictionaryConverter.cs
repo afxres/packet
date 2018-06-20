@@ -1,5 +1,4 @@
-﻿using Mikodev.Binary.Common;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Mikodev.Binary.RuntimeConverters
 {

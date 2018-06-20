@@ -62,6 +62,19 @@ namespace Mikodev.Binary
             }
         }
 
+        internal bool TryFlush()
+        {
+            offset += this.length;
+            if ((uint)(limits - offset) < sizeof(int))
+                return false;
+            var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[offset]);
+            offset += sizeof(int);
+            if ((uint)(limits - offset) < (uint)length)
+                return false;
+            this.length = length;
+            return true;
+        }
+
         public static explicit operator Block(Vernier vernier) => new Block(vernier);
 
         public static explicit operator Vernier(Block vernier) => new Vernier(vernier);

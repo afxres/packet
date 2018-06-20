@@ -1,5 +1,4 @@
-﻿using Mikodev.Binary.Common;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary.Converters

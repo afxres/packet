@@ -49,6 +49,9 @@ namespace Sample
                 };
                 var te = cache.Serialize(tup);
                 var re = cache.Deserialize(te, tup);
+                var token = cache.NewToken(te);
+                var rea = token["a"].As<ValueTuple<string, int[]>>();
+                var reb = token["b"].As<Tuple<double, string>>();
             }
 
             var dic = new Dictionary<string, List<TimeSpan>>();

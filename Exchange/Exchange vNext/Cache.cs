@@ -1,5 +1,4 @@
-﻿using Mikodev.Binary.Common;
-using Mikodev.Binary.Converters;
+﻿using Mikodev.Binary.Converters;
 using Mikodev.Binary.RuntimeConverters;
 using System;
 using System.Collections.Concurrent;
@@ -382,6 +381,10 @@ namespace Mikodev.Binary
             converter.ToBytesNonGeneric(allocator, value);
             return stream.GetBytes();
         }
+
+        public Token NewToken(byte[] buffer) => new Token(this, new Block(buffer));
+
+        public Token NewToken(byte[] buffer, int offset, int length) => new Token(this, new Block(buffer, offset, length));
         #endregion
     }
 }
