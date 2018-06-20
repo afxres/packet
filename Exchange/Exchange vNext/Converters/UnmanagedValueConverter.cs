@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary.Converters
 {
-    internal class UnmanagedValueConverter<T> : Converter<T> where T : unmanaged
+    internal sealed class UnmanagedValueConverter<T> : Converter<T> where T : unmanaged
     {
         internal static T ToValueUnchecked(ref byte location) => Unsafe.ReadUnaligned<T>(ref location);
 

@@ -29,7 +29,6 @@ namespace Sample
                     set = (ISet<OneTwo<int, string>>)c.ToHashSet(),
                     enumerable = c,
                     dictionary = c.ToDictionary(r => (-r.One)),
-                    pairs = c.Select(r => new KeyValuePair<int, string>(r.One, r.Two))
                 };
                 var ta = cache.Serialize(v);
                 var tb = PacketConvert.Serialize(v);
@@ -41,6 +40,15 @@ namespace Sample
                 var td = PacketConvert.Serialize(obj);
                 var rc = new PacketReader(tc);
                 var rd = new PacketReader(td);
+
+                var tup = new
+                {
+                    a = Tuple.Create("empty", Array.Empty<int>()),
+                    b = ValueTuple.Create(1.1, "one dot one"),
+                    c = ValueTuple.Create(1, 2L, 3.0F, 4.0D),
+                };
+                var te = cache.Serialize(tup);
+                var re = cache.Deserialize(te, tup);
             }
 
             var dic = new Dictionary<string, List<TimeSpan>>();

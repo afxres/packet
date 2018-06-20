@@ -1,10 +1,13 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Reflection;
 
 namespace Mikodev.Binary
 {
     public readonly struct Allocator
     {
+        internal static FieldInfo FileInfo { get; } = typeof(Allocator).GetField(nameof(stream), BindingFlags.Instance | BindingFlags.NonPublic);
+
         internal readonly UnsafeStream stream;
 
         internal Allocator(UnsafeStream stream) => this.stream = stream;

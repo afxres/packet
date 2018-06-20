@@ -18,10 +18,30 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (value == null || value.Count == 0)
                 return;
+            int offset;
+            var stream = allocator.stream;
             foreach (var i in value)
             {
-                keyConverter.ToBytesExcept(allocator, i.Key);
-                valueConverter.ToBytesExcept(allocator, i.Value);
+                if (keyConverter.Length == 0)
+                {
+                    offset = stream.BeginModify();
+                    keyConverter.ToBytes(allocator, i.Key);
+                    stream.EndModify(offset);
+                }
+                else
+                {
+                    keyConverter.ToBytes(allocator, i.Key);
+                }
+                if (valueConverter.Length == 0)
+                {
+                    offset = stream.BeginModify();
+                    valueConverter.ToBytes(allocator, i.Value);
+                    stream.EndModify(offset);
+                }
+                else
+                {
+                    valueConverter.ToBytes(allocator, i.Value);
+                }
             }
         }
 
@@ -30,13 +50,13 @@ namespace Mikodev.Binary.RuntimeConverters
             if (block.IsEmpty)
                 return new Dictionary<TK, TV>();
             var dictionary = new Dictionary<TK, TV>(8);
-            var vernier = new Vernier(block);
+            var vernier = (Vernier)block;
             while (vernier.Any)
             {
                 vernier.FlushExcept(keyConverter.Length);
-                var key = keyConverter.ToValue(new Block(vernier));
+                var key = keyConverter.ToValue((Block)vernier);
                 vernier.FlushExcept(valueConverter.Length);
-                var value = valueConverter.ToValue(new Block(vernier));
+                var value = valueConverter.ToValue((Block)vernier);
                 dictionary.Add(key, value);
             }
             return dictionary;

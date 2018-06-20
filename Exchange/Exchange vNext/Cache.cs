@@ -1,17 +1,16 @@
-﻿using Mikodev.Binary.RuntimeConverters;
-using Mikodev.Binary.Common;
+﻿using Mikodev.Binary.Common;
 using Mikodev.Binary.Converters;
+using Mikodev.Binary.RuntimeConverters;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace Mikodev.Binary
 {
-    public class Cache
+    public sealed class Cache
     {
         #region static
         private static readonly IReadOnlyList<Converter> defaultConverters;
@@ -93,13 +92,69 @@ namespace Mikodev.Binary
 
             var definition = type.IsGenericType ? type.GetGenericTypeDefinition() : null;
             if (definition == typeof(KeyValuePair<,>))
+                throw new InvalidOperationException();
+
+            #region tuple
+            var typeName = type.Name;
+            if (type.Namespace == "System" && type.IsValueType ? typeName.StartsWith("ValueTuple`") : !type.IsAbstract && typeName.StartsWith("Tuple`"))
             {
-                var elementTypes = type.GetGenericArguments();
-                var keyConverter = GetOrCreateConverter(elementTypes[0]);
-                var valueConverter = GetOrCreateConverter(elementTypes[1]);
-                return (Converter)Activator.CreateInstance(typeof(KeyValuePairConverter<,>).MakeGenericType(elementTypes), keyConverter, valueConverter);
+                var tupleTypeCount = int.Parse(typeName.Substring(typeName.LastIndexOf('`') + 1));
+                var tupleTypes = default(Type[]);
+                var tupleConstructor = type.GetConstructors().Single(r => (tupleTypes = r.GetParameters().Select(x => x.ParameterType).ToArray()).Length == tupleTypeCount);
+                var converters = tupleTypes.Select(r => GetOrCreateConverter(r)).ToArray();
+                var tupleLength = converters.Any(r => r.Length == 0) ? 0 : converters.Sum(r => r.Length);
+
+                #region bytes
+                var allocator = Expression.Parameter(typeof(Allocator), "allocator");
+                var tuple = Expression.Parameter(type, "tuple");
+                var offset = default(ParameterExpression);
+                var stream = default(ParameterExpression);
+                var bytesVariables = new List<ParameterExpression>();
+                var bytesExpressions = new List<Expression>();
+                var bytesItems = Enumerable.Range(0, tupleTypeCount).Select(r => Expression.PropertyOrField(tuple, "Item" + (r + 1))).ToArray();
+                if (tupleLength == 0)
+                {
+                    bytesVariables.Add(offset = Expression.Variable(typeof(int), "offset"));
+                    bytesVariables.Add(stream = Expression.Variable(typeof(UnsafeStream), "stream"));
+                    bytesExpressions.Add(Expression.Assign(stream, Expression.Field(allocator, Allocator.FileInfo)));
+                }
+                for (int i = 0; i < tupleTypeCount; i++)
+                {
+                    var converter = converters[i];
+                    var toBytesExpression = Expression.Call(Expression.Constant(converter), converter.ToBytesDelegate.Method, allocator, bytesItems[i]);
+                    if (converter.Length == 0)
+                    {
+                        bytesExpressions.Add(Expression.Assign(offset, Expression.Call(stream, UnsafeStream.BeginModifyMethodInfo)));
+                        bytesExpressions.Add(toBytesExpression);
+                        bytesExpressions.Add(Expression.Call(stream, UnsafeStream.EndModifyMethodInfo, offset));
+                    }
+                    else
+                    {
+                        bytesExpressions.Add(toBytesExpression);
+                    }
+                }
+                var bytesLambda = Expression.Lambda(Expression.Block(bytesVariables, bytesExpressions), allocator, tuple);
+                #endregion
+
+                #region value
+                var block = Expression.Parameter(typeof(Block), "block");
+                var vernier = Expression.Variable(typeof(Vernier), "vernier");
+                var parameters = Enumerable.Range(0, tupleTypeCount).Select(r => Expression.Variable(tupleTypes[r], "item" + (r + 1))).ToArray();
+                var valueExpressions = new List<Expression> { Expression.Assign(vernier, Expression.Convert(block, typeof(Vernier))) };
+                for (int i = 0; i < tupleTypeCount; i++)
+                {
+                    var converter = converters[i];
+                    valueExpressions.Add(Expression.Call(vernier, Vernier.FlushExceptMethodInfo, Expression.Constant(converter.Length)));
+                    valueExpressions.Add(Expression.Assign(parameters[i], Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, Expression.Convert(vernier, typeof(Block)))));
+                }
+                valueExpressions.Add(Expression.New(tupleConstructor, parameters));
+                var valueLambda = Expression.Lambda(Expression.Block(new[] { vernier }.Concat(parameters), valueExpressions), block);
+                #endregion
+                return (Converter)Activator.CreateInstance(typeof(DelegateConverter<>).MakeGenericType(type), bytesLambda.Compile(), valueLambda.Compile(), tupleLength);
             }
-            else if (definition == typeof(List<>))
+            #endregion
+
+            if (definition == typeof(List<>))
             {
                 var elementType = type.GetGenericArguments().Single();
                 if (elementType == typeof(object))
@@ -107,7 +162,8 @@ namespace Mikodev.Binary
                 var converter = GetOrCreateConverter(elementType);
                 return (Converter)Activator.CreateInstance(typeof(ListConverter<>).MakeGenericType(elementType), converter);
             }
-            else if (definition == typeof(Dictionary<,>))
+
+            if (definition == typeof(Dictionary<,>))
             {
                 var elementTypes = type.GetGenericArguments();
                 if (elementTypes[0] == typeof(object))
@@ -132,7 +188,7 @@ namespace Mikodev.Binary
                 return (Converter)Activator.CreateInstance(typeof(EnumerableConverter<,>).MakeGenericType(type, elementType), converter, ToCollectionDelegate(type, elementType) ?? ToCollectionDelegateImplementation(type, elementType));
             }
 
-            return (Converter)Activator.CreateInstance(typeof(InstanceConverter<>).MakeGenericType(type), ToBytesDelegate(type), ToValueDelegate(type, out var capacity), capacity);
+            return (Converter)Activator.CreateInstance(typeof(ExpandoConverter<>).MakeGenericType(type), ToBytesDelegate(type), ToValueDelegate(type, out var capacity), capacity);
             fail:
             throw new InvalidOperationException($"Invalid collection type: {type}");
         }
@@ -174,7 +230,7 @@ namespace Mikodev.Binary
             var stream = Expression.Variable(typeof(UnsafeStream), "stream");
             var position = default(ParameterExpression);
             var variableList = new List<ParameterExpression> { stream };
-            var list = new List<Expression> { Expression.Assign(stream, Expression.Field(allocator, nameof(Allocator.stream))) };
+            var list = new List<Expression> { Expression.Assign(stream, Expression.Field(allocator, Allocator.FileInfo)) };
             foreach (var i in properties)
             {
                 var getMethod = i.GetGetMethod();

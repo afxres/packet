@@ -1,10 +1,9 @@
 ﻿using Mikodev.Binary.Common;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Mikodev.Binary.Converters
 {
-    internal class StringConverter : Converter<string>
+    internal sealed class StringConverter : Converter<string>
     {
         public StringConverter() : base(0) { }
 

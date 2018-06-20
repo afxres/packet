@@ -38,11 +38,11 @@ namespace Mikodev.Binary.RuntimeConverters
             if (converter.Length == 0)
             {
                 var list = new List<T>();
-                var vernier = new Vernier(block);
+                var vernier = (Vernier)block;
                 while (vernier.Any)
                 {
                     vernier.Flush();
-                    list.Add(converter.ToValue(new Block(vernier)));
+                    list.Add(converter.ToValue((Block)vernier));
                 }
                 return list;
             }

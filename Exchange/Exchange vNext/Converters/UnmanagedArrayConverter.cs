@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary.Converters
 {
-    internal class UnmanagedArrayConverter<T> : Converter<T[]> where T : unmanaged
+    internal sealed class UnmanagedArrayConverter<T> : Converter<T[]> where T : unmanaged
     {
         public UnmanagedArrayConverter() : base(0) { }
 

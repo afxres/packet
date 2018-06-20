@@ -7,15 +7,17 @@ namespace Mikodev.Binary
 {
     internal sealed class UnsafeStream
     {
+        internal static MethodInfo WriteExtendMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(WriteExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+
+        internal static MethodInfo BeginModifyMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(BeginModify), BindingFlags.Instance | BindingFlags.NonPublic);
+
+        internal static MethodInfo EndModifyMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(EndModify), BindingFlags.Instance | BindingFlags.NonPublic);
+
         private const int InitialLength = 256;
         private const int MaximumLength = 0x4000_0000;
 
         internal byte[] stream = new byte[InitialLength];
         internal int position;
-
-        internal static readonly MethodInfo WriteExtendMethodInfo = typeof(UnsafeStream).GetMethod(nameof(WriteExtend), BindingFlags.Instance | BindingFlags.NonPublic);
-        internal static readonly MethodInfo BeginModifyMethodInfo = typeof(UnsafeStream).GetMethod(nameof(BeginModify), BindingFlags.Instance | BindingFlags.NonPublic);
-        internal static readonly MethodInfo EndModifyMethodInfo = typeof(UnsafeStream).GetMethod(nameof(EndModify), BindingFlags.Instance | BindingFlags.NonPublic);
 
         private void ReAllocate(int require, int offset)
         {

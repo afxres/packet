@@ -1,10 +1,13 @@
 ﻿using Mikodev.Binary.Converters;
 using System;
+using System.Reflection;
 
 namespace Mikodev.Binary
 {
     internal struct Vernier
     {
+        internal static MethodInfo FlushExceptMethodInfo { get; } = typeof(Vernier).GetMethod(nameof(FlushExcept), BindingFlags.Instance | BindingFlags.NonPublic);
+
         private readonly byte[] buffer;
         private readonly int limits;
         private int offset;
@@ -56,5 +59,9 @@ namespace Mikodev.Binary
                 Flush();
             }
         }
+
+        public static explicit operator Block(Vernier vernier) => new Block(vernier);
+
+        public static explicit operator Vernier(Block vernier) => new Vernier(vernier);
     }
 }
