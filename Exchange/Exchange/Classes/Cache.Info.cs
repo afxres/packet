@@ -40,6 +40,8 @@ namespace Mikodev.Network
             var genericDefinition = generic ? type.GetGenericTypeDefinition() : null;
 
             #region dictionary, map...
+            if (genericDefinition == typeof(KeyValuePair<,>))
+                throw PacketException.InvalidType(type);
             if (Convert.ToFSharpMapFunc(type, genericArguments, out var dictionaryFunc, out var dictionaryExtendFunc))
             {
                 info.To = InfoFlags.Dictionary;
@@ -69,14 +71,14 @@ namespace Mikodev.Network
                 var argument = enumerableTypes[0].GetGenericArguments().Single();
                 if (argument.IsGenericType && argument.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
                 {
+                    if (info.To != InfoFlags.Dictionary)
+                        throw PacketException.InvalidType(type);
                     var arguments = argument.GetGenericArguments();
                     info.IndexType = arguments[0];
                     info.ElementType = arguments[1];
                     info.From = (arguments[0] == typeof(string) && arguments[1] == typeof(object)) ? InfoFlags.Expando : InfoFlags.Dictionary;
                     info.FromDictionary = Convert.FromDictionaryFunc(arguments);
                     info.FromDictionaryAdapter = Convert.FromDictionaryAdapterFunc(arguments);
-                    if (info.To == InfoFlags.None)
-                        info.To = InfoFlags.Invalid;
                     return info;
                 }
             }

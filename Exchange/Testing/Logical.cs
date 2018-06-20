@@ -167,19 +167,6 @@ namespace Mikodev.Testing
         public string Two { get; set; }
     }
 
-    internal class TestTuple : IEnumerable<KeyValuePair<int, string>>
-    {
-        public IEnumerator<KeyValuePair<int, string>> GetEnumerator()
-        {
-            for (int i = 0; i < 8; i++)
-            {
-                yield return new KeyValuePair<int, string>(i, i.ToString());
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    }
-
     internal class TestIndex : IEquatable<TestIndex>
     {
         public int Id { get; set; }
@@ -515,14 +502,8 @@ namespace Mikodev.Testing
             var rea = new PacketReader(buf, con);
             var itr = rea["a"].GetEnumerable<TestTwo>();
 
-            var oc = new TestTuple();
-            var c = oc.ToDictionary(r => r.Key, r => r.Value);
-            var kvp = PacketWriter.Serialize(oc);
-            var tc = kvp.GetBytes();
-
             var ra = itr.ToList();
             var rb = rea["b"].GetDictionary<string, TestTwo>();
-            var rc = PacketConvert.Deserialize<IDictionary<int, string>>(tc);
             var rx = rea["x"].Deserialize<TestBox[][]>();
 
             var od = new[] { new TestBox { Name = "one" }, new TestBox { Name = "Loooooooooooooong name!" }, new TestBox { Name = "what?" } };
@@ -534,7 +515,6 @@ namespace Mikodev.Testing
             var rax = rea["a"].Deserialize<TestTwo[]>();
             var ray = rea["a"].Deserialize<List<TestTwo>>();
 
-            ThrowIfNotEqual(c, rc);
             ThrowIfNotSequenceEqual(od, rd);
             ThrowIfNotSequenceEqual(od, rdx);
             ThrowIfNotSequenceEqual(od, rdy);
