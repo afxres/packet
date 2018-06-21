@@ -39,6 +39,7 @@ namespace Mikodev.Binary
             converters.Add(new StringConverter());
             converters.Add(new DateTimeConverter());
             converters.Add(new TimeSpanConverter());
+            converters.Add(new GuidConverter());
             defaultConverters = converters;
         }
         #endregion
@@ -75,10 +76,9 @@ namespace Mikodev.Binary
 
         private Converter CreateConverter(Type type)
         {
+            // enum
             if (type.IsEnum)
-            {
-                return (Converter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(type)); // enum
-            }
+                return (Converter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(type));
 
             if (type.IsArray)
             {
@@ -87,13 +87,25 @@ namespace Mikodev.Binary
                 var elementType = type.GetElementType();
                 if (elementType == typeof(object))
                     goto fail;
+                // enum array
                 if (elementType.IsEnum)
-                    return (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(elementType)); // enum array
+                    return (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(elementType));
                 var converter = GetOrCreateConverter(elementType);
                 return (Converter)Activator.CreateInstance(typeof(ArrayConverter<>).MakeGenericType(elementType), converter);
             }
 
             var definition = type.IsGenericType ? type.GetGenericTypeDefinition() : null;
+            if (definition == typeof(Dictionary<,>) || definition == typeof(IDictionary<,>))
+            {
+                var elementTypes = type.GetGenericArguments();
+                if (elementTypes[0] == typeof(object))
+                    goto fail;
+                var keyConverter = GetOrCreateConverter(elementTypes[0]);
+                var valueConverter = GetOrCreateConverter(elementTypes[1]);
+                var converterDefinition = definition == typeof(Dictionary<,>) ? typeof(DictionaryConverter<,>) : typeof(IDictionaryConverter<,>);
+                return (Converter)Activator.CreateInstance(converterDefinition.MakeGenericType(elementTypes), keyConverter, valueConverter);
+            }
+
             if (definition == typeof(KeyValuePair<,>))
                 throw new InvalidOperationException();
 
@@ -166,19 +178,7 @@ namespace Mikodev.Binary
                 return (Converter)Activator.CreateInstance(typeof(ListConverter<>).MakeGenericType(elementType), converter);
             }
 
-            if (definition == typeof(Dictionary<,>))
-            {
-                var elementTypes = type.GetGenericArguments();
-                if (elementTypes[0] == typeof(object))
-                    goto fail;
-                var keyConverter = GetOrCreateConverter(elementTypes[0]);
-                var valueConverter = GetOrCreateConverter(elementTypes[1]);
-                return (Converter)Activator.CreateInstance(typeof(DictionaryConverter<,>).MakeGenericType(elementTypes), keyConverter, valueConverter);
-            }
-
-            var interfaces = type.IsInterface
-                ? type.GetInterfaces().Concat(new[] { type }).ToArray()
-                : type.GetInterfaces();
+            var interfaces = type.IsInterface ? type.GetInterfaces().Concat(new[] { type }).ToArray() : type.GetInterfaces();
             var enumerable = interfaces.Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>)).ToArray();
             if (enumerable.Length > 1)
                 goto fail;

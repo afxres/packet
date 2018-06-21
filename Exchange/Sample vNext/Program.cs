@@ -48,6 +48,7 @@ namespace Sample
                     c = ValueTuple.Create(1, 2L, 3.0F, 4.0D),
                     timestamp = DateTime.Now,
                     timespan = DateTime.Now - new DateTime(1999, 12, 31),
+                    guid = Guid.NewGuid(),
                 };
                 var te = cache.Serialize(tup);
                 var re = cache.Deserialize(te, tup);
