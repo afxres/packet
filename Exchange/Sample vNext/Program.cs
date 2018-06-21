@@ -46,6 +46,8 @@ namespace Sample
                     a = Tuple.Create("empty", Array.Empty<int>()),
                     b = ValueTuple.Create(1.1, "one dot one"),
                     c = ValueTuple.Create(1, 2L, 3.0F, 4.0D),
+                    timestamp = DateTime.Now,
+                    timespan = DateTime.Now - new DateTime(1999, 12, 31),
                 };
                 var te = cache.Serialize(tup);
                 var re = cache.Deserialize(te, tup);

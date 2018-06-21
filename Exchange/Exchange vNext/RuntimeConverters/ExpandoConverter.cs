@@ -27,7 +27,7 @@ namespace Mikodev.Binary.RuntimeConverters
             while (vernier.Any)
             {
                 vernier.Flush();
-                var key = Extension.Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
+                var key = Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
                 vernier.Flush();
                 dictionary.Add(key, (Block)vernier);
             }

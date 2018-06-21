@@ -18,6 +18,7 @@ namespace Mikodev.Binary
         {
             var unmanagedTypes = new[]
             {
+                typeof(bool),
                 typeof(byte),
                 typeof(sbyte),
                 typeof(char),
@@ -36,6 +37,8 @@ namespace Mikodev.Binary
             converters.AddRange(valueConverters);
             converters.AddRange(arrayConverters);
             converters.Add(new StringConverter());
+            converters.Add(new DateTimeConverter());
+            converters.Add(new TimeSpanConverter());
             defaultConverters = converters;
         }
         #endregion
@@ -55,18 +58,19 @@ namespace Mikodev.Binary
             this.converters = dictionary;
         }
 
+        #region reflection
+        private byte[] GetOrCache(string key)
+        {
+            if (!encodingCache.TryGetValue(key, out var bytes))
+                encodingCache.TryAdd(key, (bytes = Converter.Encoding.GetBytes(key)));
+            return bytes;
+        }
+
         internal Converter GetOrCreateConverter(Type type)
         {
             if (!converters.TryGetValue(type, out var converter))
                 converters.TryAdd(type, (converter = CreateConverter(type)));
             return converter;
-        }
-
-        private byte[] GetOrCache(string key)
-        {
-            if (!encodingCache.TryGetValue(key, out var bytes))
-                encodingCache.TryAdd(key, (bytes = Extension.Encoding.GetBytes(key)));
-            return bytes;
         }
 
         private Converter CreateConverter(Type type)
@@ -334,6 +338,7 @@ namespace Mikodev.Binary
             var constructorInfo = type.GetConstructor(Type.EmptyTypes);
             return constructorInfo != null ? ToValueDelegateProperties(type, out capacity) : ToValueDelegateAnonymous(type, out capacity);
         }
+        #endregion
 
         #region export
         private T Deserialize<T>(Block block)

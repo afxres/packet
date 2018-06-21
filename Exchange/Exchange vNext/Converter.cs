@@ -1,9 +1,16 @@
 ﻿using System;
+using System.Text;
 
 namespace Mikodev.Binary
 {
     public abstract class Converter
     {
+        #region define
+        public static readonly Encoding Encoding = Encoding.UTF8;
+
+        public static readonly bool UseLittleEndian = true;
+        #endregion
+
         internal int Length { get; }
 
         internal abstract Type ValueType { get; }

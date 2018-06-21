@@ -5,6 +5,8 @@ namespace Mikodev.Binary.Converters
 {
     internal sealed class UnmanagedArrayConverter<T> : Converter<T[]> where T : unmanaged
     {
+        private static readonly bool reverse = BitConverter.IsLittleEndian != UseLittleEndian && Unsafe.SizeOf<T>() != 1;
+
         public UnmanagedArrayConverter() : base(0) { }
 
         public override void ToBytes(Allocator allocator, T[] array)
@@ -13,6 +15,9 @@ namespace Mikodev.Binary.Converters
                 return;
             var block = allocator.Allocate(array.Length * Unsafe.SizeOf<T>());
             Unsafe.CopyBlockUnaligned(ref block.Location, ref Unsafe.As<T, byte>(ref array[0]), (uint)block.Length);
+            if (reverse)
+                Extension.ReverseEndianness<T>(block);
+            return;
         }
 
         public override T[] ToValue(Block block)
@@ -23,6 +28,8 @@ namespace Mikodev.Binary.Converters
                 throw new OverflowException();
             var target = new T[block.Length / Unsafe.SizeOf<T>()];
             Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref block.Location, (uint)block.Length);
+            if (reverse)
+                Extension.ReverseEndianness(target);
             return target;
         }
     }

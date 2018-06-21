@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
+using System.Linq.Expressions;
 
 namespace Mikodev.Binary
 {
-    public sealed class Token
+    public sealed class Token : IDynamicMetaObjectProvider
     {
         private static readonly Dictionary<string, Token> empty = new Dictionary<string, Token>();
 
         private readonly Cache cache;
         private readonly Block block;
         private Dictionary<string, Token> dictionary;
+
+        internal Dictionary<string, Token> Tokens => dictionary ?? GetDictionary();
 
         internal Token(Cache cache, Block block)
         {
@@ -19,17 +23,15 @@ namespace Mikodev.Binary
 
         private Dictionary<string, Token> GetDictionary()
         {
-            var map = dictionary;
-            if (map != null)
-                return map;
             try
             {
+                var map = default(Dictionary<string, Token>);
                 var vernier = new Vernier(block);
                 while (vernier.Any)
                 {
                     if (!vernier.TryFlush())
                         goto fail;
-                    var key = Extension.Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
+                    var key = Converter.Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
                     if (!vernier.TryFlush())
                         goto fail;
                     var value = new Token(cache, (Block)vernier);
@@ -47,7 +49,9 @@ namespace Mikodev.Binary
             return empty;
         }
 
-        public Token this[string key] => GetDictionary()[key];
+        DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicToken(parameter, this);
+
+        public Token this[string key] => Tokens[key];
 
         public T As<T>()
         {

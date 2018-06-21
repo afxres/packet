@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Binary.Converters;
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -51,7 +52,7 @@ namespace Mikodev.Binary
         internal void WriteExtend(byte[] buffer)
         {
             var offset = VerifyAvailable(buffer.Length + sizeof(int));
-            Unsafe.WriteUnaligned(ref stream[offset], buffer.Length);
+            UnmanagedValueConverter<int>.ToBytesUnchecked(ref stream[offset], buffer.Length);
             if (buffer.Length == 0)
                 return;
             Unsafe.CopyBlockUnaligned(ref stream[offset + sizeof(int)], ref buffer[0], (uint)buffer.Length);
@@ -64,7 +65,7 @@ namespace Mikodev.Binary
             var buffer = stream;
             if (buffer.Length - offset < sizeof(int))
                 throw new ArgumentOutOfRangeException();
-            Unsafe.WriteUnaligned(ref buffer[offset], position - offset - sizeof(int));
+            UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], position - offset - sizeof(int));
         }
 
         internal byte[] GetBytes()
