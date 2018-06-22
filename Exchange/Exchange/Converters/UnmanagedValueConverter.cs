@@ -5,7 +5,7 @@ namespace Mikodev.Network.Converters
 {
     internal sealed class UnmanagedValueConverter<T> : PacketConverter<T> where T : unmanaged
     {
-        internal static readonly bool ReverseEndianness = BitConverter.IsLittleEndian != PacketConvert.UseLittleEndian && Unsafe.SizeOf<T>() != 1;
+        private static readonly bool origin = BitConverter.IsLittleEndian == PacketConvert.UseLittleEndian || Unsafe.SizeOf<T>() == 1;
 
         internal static byte[] ToBytes(T value)
         {
@@ -24,13 +24,13 @@ namespace Mikodev.Network.Converters
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void ToBytesUnchecked(ref byte location, T value)
         {
-            Unsafe.WriteUnaligned(ref location, (!ReverseEndianness) ? value : Extension.ReverseEndianness(value));
+            Unsafe.WriteUnaligned(ref location, origin ? value : Extension.ReverseEndianness(value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static T ToValueUnchecked(ref byte location)
         {
-            return (!ReverseEndianness)
+            return origin
                 ? Unsafe.ReadUnaligned<T>(ref location)
                 : Extension.ReverseEndianness(Unsafe.ReadUnaligned<T>(ref location));
         }

@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
@@ -11,7 +10,6 @@ namespace Mikodev.Network
     internal static partial class Extension
     {
         internal const int Capacity = 8;
-        internal static readonly Encoding Encoding = Encoding.UTF8;
         internal static readonly char[] Separator = new[] { '/', '\\' };
         internal static readonly ConverterDictionary Converters;
 
@@ -75,7 +73,7 @@ namespace Mikodev.Network
             if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
                 goto fail;
             if (length == 0)
-                return UnmanagedArrayConverter<byte>.EmptyArray;
+                return Extension.EmptyArray<byte>();
             var result = new byte[length];
             Unsafe.CopyBlockUnaligned(ref result[0], ref buffer[offset], (uint)length);
             return result;
@@ -88,7 +86,7 @@ namespace Mikodev.Network
         {
             var length = collection?.Count ?? 0;
             if (length == 0)
-                return UnmanagedArrayConverter<byte>.EmptyArray;
+                return Extension.EmptyArray<byte>();
             var target = new byte[length];
             collection.CopyTo(target, 0);
             return target;
@@ -98,7 +96,7 @@ namespace Mikodev.Network
         {
             var length = collection?.Count ?? 0;
             if (length == 0)
-                return UnmanagedArrayConverter<byte>.EmptyArray;
+                return Extension.EmptyArray<byte>();
             var target = new byte[length];
             var source = new sbyte[length];
             collection.CopyTo(source, 0);

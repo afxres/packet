@@ -12,21 +12,21 @@ namespace Mikodev.Network
         {
             converters = source.converters;
             block = source.block;
-            vernier = new Vernier(block);
+            vernier = (Vernier)block;
         }
 
         public PacketRawReader(byte[] buffer, ConverterDictionary converters = null)
         {
             this.converters = converters;
             block = new Block(buffer);
-            vernier = new Vernier(block);
+            vernier = (Vernier)block;
         }
 
         public PacketRawReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
             this.converters = converters;
             block = new Block(buffer, offset, length);
-            vernier = new Vernier(block);
+            vernier = (Vernier)block;
         }
 
         internal object Next(PacketConverter converter)
@@ -44,7 +44,7 @@ namespace Mikodev.Network
 
         public bool Any => vernier.Any;
 
-        public void Reset() => vernier = new Vernier(block);
+        public void Reset() => vernier = (Vernier)block;
 
         public override string ToString() => $"{nameof(PacketRawReader)} with {block.Length} byte(s)";
     }

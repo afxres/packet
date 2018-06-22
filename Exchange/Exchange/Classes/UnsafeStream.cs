@@ -57,7 +57,7 @@ namespace Mikodev.Network
             Unsafe.CopyBlockUnaligned(ref stream[offset + sizeof(int)], ref buffer[0], (uint)buffer.Length);
         }
 
-        internal void WriteKey(string key) => WriteExtend(Extension.Encoding.GetBytes(key));
+        internal void WriteKey(string key) => WriteExtend(PacketConvert.Encoding.GetBytes(key));
 
         internal int BeginModify() => VerifyAvailable(sizeof(int));
 
@@ -67,7 +67,7 @@ namespace Mikodev.Network
         {
             var length = position;
             if (length == 0)
-                return UnmanagedArrayConverter<byte>.EmptyArray;
+                return Extension.EmptyArray<byte>();
             var target = new byte[length];
             Unsafe.CopyBlockUnaligned(ref target[0], ref stream[0], (uint)length);
             return target;

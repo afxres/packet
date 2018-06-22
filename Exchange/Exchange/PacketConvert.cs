@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Text;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
 {
     public static partial class PacketConvert
     {
+        public static readonly Encoding Encoding = Encoding.UTF8;
+
         public static readonly bool UseLittleEndian = true;
 
         #region Throw If Argument Error

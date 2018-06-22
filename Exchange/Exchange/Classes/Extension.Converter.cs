@@ -54,7 +54,7 @@ namespace Mikodev.Network
             {
                 var buffer = converter.GetBytes(value);
                 if (buffer == null)
-                    buffer = UnmanagedArrayConverter<byte>.EmptyArray;
+                    buffer = Extension.EmptyArray<byte>();
                 var define = converter.Length;
                 if (define > 0 && define != buffer.Length)
                     throw PacketException.ConversionMismatch(define);
@@ -72,7 +72,7 @@ namespace Mikodev.Network
             {
                 var buffer = converter.GetBytes(value);
                 if (buffer == null)
-                    buffer = UnmanagedArrayConverter<byte>.EmptyArray;
+                    buffer = Extension.EmptyArray<byte>();
                 var define = converter.Length;
                 if (define > 0 && define != buffer.Length)
                     throw PacketException.ConversionMismatch(define);
