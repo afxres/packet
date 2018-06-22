@@ -66,14 +66,14 @@ namespace Mikodev.Network
                 return valueInfo.ToDictionary(this, indexConverter, elementConverter);
 
             var collection = new List<object>();
-            var vernier = new Vernier(block);
+            var vernier = (Vernier)block;
             while (vernier.Any)
             {
                 vernier.FlushExcept(indexConverter.Length);
                 // Wrap error non-check
                 var key = indexConverter.GetObjectChecked(vernier.Buffer, vernier.Offset, vernier.Length);
                 vernier.Flush();
-                var reader = new PacketReader(new Block(vernier), converters);
+                var reader = new PacketReader((Block)vernier, converters);
                 var value = reader.GetValueMatch(valueInfo.ElementType, level, info);
                 collection.Add(key);
                 collection.Add(value);

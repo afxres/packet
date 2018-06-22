@@ -55,17 +55,17 @@ namespace Mikodev.Network
             flags |= Flags.Dictionary;
 
             var collection = new Dictionary<string, PacketReader>(Extension.Capacity);
-            var vernier = new Vernier(block);
+            var vernier = (Vernier)block;
             try
             {
                 while (vernier.Any)
                 {
                     if (!vernier.TryFlush())
                         return null;
-                    var key = Extension.Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
+                    var key = PacketConvert.Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
                     if (!vernier.TryFlush())
                         return null;
-                    collection.Add(key, new PacketReader(new Block(vernier), converters));
+                    collection.Add(key, new PacketReader((Block)vernier, converters));
                 }
             }
             catch (ArgumentException)
@@ -83,11 +83,11 @@ namespace Mikodev.Network
             flags |= Flags.List;
 
             var collection = new List<PacketReader>();
-            var vernier = new Vernier(block);
+            var vernier = (Vernier)block;
             while (vernier.Any)
             {
                 vernier.Flush();
-                collection.Add(new PacketReader(new Block(vernier), converters));
+                collection.Add(new PacketReader((Block)vernier, converters));
             }
             list = collection;
             return collection;

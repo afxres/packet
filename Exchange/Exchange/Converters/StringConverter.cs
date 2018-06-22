@@ -5,12 +5,12 @@
     {
         public StringConverter() : base(0) { }
 
-        public override byte[] GetBytes(string value) => Extension.Encoding.GetBytes(value);
+        public override byte[] GetBytes(string value) => PacketConvert.Encoding.GetBytes(value);
 
-        public override string GetValue(byte[] buffer, int offset, int length) => Extension.Encoding.GetString(buffer, offset, length);
+        public override string GetValue(byte[] buffer, int offset, int length) => PacketConvert.Encoding.GetString(buffer, offset, length);
 
-        public override byte[] GetBytes(object value) => Extension.Encoding.GetBytes((string)value);
+        public override byte[] GetBytes(object value) => PacketConvert.Encoding.GetBytes((string)value);
 
-        public override object GetObject(byte[] buffer, int offset, int length) => Extension.Encoding.GetString(buffer, offset, length);
+        public override object GetObject(byte[] buffer, int offset, int length) => PacketConvert.Encoding.GetString(buffer, offset, length);
     }
 }

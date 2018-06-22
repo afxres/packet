@@ -48,7 +48,7 @@ namespace Mikodev.Network
                 return;
             var indexGeneric = (PacketConverter<TK>)indexConverter;
             var elementGeneric = (PacketConverter<TV>)elementConverter;
-            var vernier = new Vernier(this);
+            var vernier = (Vernier)this;
 
             try
             {

@@ -68,5 +68,9 @@ namespace Mikodev.Network
             this.length = length;
             return true;
         }
+
+        public static explicit operator Block(Vernier vernier) => new Block(vernier);
+
+        public static explicit operator Vernier(Block block) => new Vernier(block);
     }
 }

@@ -62,7 +62,7 @@ namespace Mikodev.Network
             switch (item.flag)
             {
                 case ItemFlags.None:
-                    return UnmanagedArrayConverter<byte>.EmptyArray;
+                    return Extension.EmptyArray<byte>();
                 case ItemFlags.Buffer:
                     return (byte[])item.data;
                 default:
