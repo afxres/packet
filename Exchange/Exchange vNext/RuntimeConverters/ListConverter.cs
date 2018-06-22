@@ -5,7 +5,7 @@ namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class ListConverter<T> : Converter<List<T>>
     {
-        internal static void ToBytes(Allocator allocator, List<T> value, Converter<T> converter)
+        internal static void Bytes(Allocator allocator, List<T> value, Converter<T> converter)
         {
             if (value != null && value.Count != 0)
             {
@@ -30,7 +30,7 @@ namespace Mikodev.Binary.RuntimeConverters
             }
         }
 
-        internal static List<T> ToValue(Block block, Converter<T> converter)
+        internal static List<T> Value(Block block, Converter<T> converter)
         {
             if (block.IsEmpty)
                 return new List<T>();
@@ -61,8 +61,8 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public ListConverter(Converter<T> converter) : base(0) => this.converter = converter;
 
-        public override void ToBytes(Allocator allocator, List<T> value) => ToBytes(allocator, value, converter);
+        public override void ToBytes(Allocator allocator, List<T> value) => Bytes(allocator, value, converter);
 
-        public override List<T> ToValue(Block block) => ToValue(block, converter);
+        public override List<T> ToValue(Block block) => Value(block, converter);
     }
 }

@@ -60,7 +60,7 @@ namespace Mikodev.Binary
             }
 
             if (definition == typeof(KeyValuePair<,>))
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Use tuple instead of key-value pair");
             // tuple
             if (IsTuple(type))
                 return TupleConverter(type);

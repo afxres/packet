@@ -19,12 +19,12 @@ namespace Mikodev.Binary.Converters
                 : Extension.ReverseEndianness(Unsafe.ReadUnaligned<T>(ref location));
         }
 
-        internal static void ToBytesNormal(Allocator allocator, T value)
+        internal static void Bytes(Allocator allocator, T value)
         {
             ToBytesUnchecked(ref allocator.Allocate(Unsafe.SizeOf<T>()).Location, value);
         }
 
-        internal static T ToValueNormal(Block block)
+        internal static T Value(Block block)
         {
             if (block.Length < Unsafe.SizeOf<T>())
                 throw new ArgumentException();
@@ -33,8 +33,8 @@ namespace Mikodev.Binary.Converters
 
         public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }
 
-        public override void ToBytes(Allocator allocator, T value) => ToBytesNormal(allocator, value);
+        public override void ToBytes(Allocator allocator, T value) => Bytes(allocator, value);
 
-        public override T ToValue(Block block) => ToValueNormal(block);
+        public override T ToValue(Block block) => Value(block);
     }
 }

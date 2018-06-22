@@ -8,7 +8,7 @@ namespace Mikodev.Binary.RuntimeConverters
         private readonly Converter<TV> converter;
         private readonly Func<List<TV>, TE> toValue;
 
-        public Delegate ToBytesFunction => throw new InvalidOperationException();
+        public Delegate ToBytesFunction => null;
 
         public Delegate ToValueFunction => toValue;
 
@@ -45,8 +45,8 @@ namespace Mikodev.Binary.RuntimeConverters
         public override TE ToValue(Block block)
         {
             if (toValue == null)
-                throw new InvalidOperationException();
-            var list = ListConverter<TV>.ToValue(block, converter);
+                throw new InvalidOperationException($"Unable to get collection, type : {typeof(TE)}");
+            var list = ListConverter<TV>.Value(block, converter);
             return toValue.Invoke(list);
         }
     }

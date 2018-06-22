@@ -23,7 +23,7 @@ namespace Mikodev.Binary.Converters
         public override T[] ToValue(Block block)
         {
             if (block.IsEmpty)
-                return Array.Empty<T>();
+                return Extension.EmptyArray<T>();
             if (block.Length % Unsafe.SizeOf<T>() != 0)
                 throw new OverflowException();
             var target = new T[block.Length / Unsafe.SizeOf<T>()];

@@ -4,7 +4,7 @@ namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class ArrayConverter<T> : Converter<T[]>
     {
-        internal static void ToBytes(Allocator allocator, T[] value, Converter<T> converter)
+        internal static void Bytes(Allocator allocator, T[] value, Converter<T> converter)
         {
             if (value == null || value.Length == 0)
                 return;
@@ -29,12 +29,12 @@ namespace Mikodev.Binary.RuntimeConverters
             }
         }
 
-        internal static T[] ToValue(Block block, Converter<T> converter)
+        internal static T[] Value(Block block, Converter<T> converter)
         {
             if (block.IsEmpty)
-                return Array.Empty<T>();
+                return Extension.EmptyArray<T>();
             if (converter.Length == 0)
-                return ListConverter<T>.ToValue(block, converter).ToArray();
+                return ListConverter<T>.Value(block, converter).ToArray();
 
             var quotient = Math.DivRem(block.Length, converter.Length, out var reminder);
             if (reminder != 0)
@@ -49,8 +49,8 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public ArrayConverter(Converter<T> converter) : base(0) => this.converter = converter;
 
-        public override void ToBytes(Allocator allocator, T[] value) => ToBytes(allocator, value, converter);
+        public override void ToBytes(Allocator allocator, T[] value) => Bytes(allocator, value, converter);
 
-        public override T[] ToValue(Block block) => ToValue(block, converter);
+        public override T[] ToValue(Block block) => Value(block, converter);
     }
 }

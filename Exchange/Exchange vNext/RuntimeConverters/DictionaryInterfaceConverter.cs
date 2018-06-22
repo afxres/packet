@@ -8,8 +8,8 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public DictionaryInterfaceConverter(Converter<TK> keyConverter, Converter<TV> valueConverter) : base(0) => adapter = new DictionaryAdapter<TK, TV>(keyConverter, valueConverter);
 
-        public override void ToBytes(Allocator allocator, IDictionary<TK, TV> value) => adapter.ToBytes(allocator, value);
+        public override void ToBytes(Allocator allocator, IDictionary<TK, TV> value) => adapter.Bytes(allocator, value);
 
-        public override IDictionary<TK, TV> ToValue(Block block) => adapter.ToValue(block);
+        public override IDictionary<TK, TV> ToValue(Block block) => adapter.Value(block);
     }
 }

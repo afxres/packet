@@ -13,7 +13,7 @@ namespace Mikodev.Binary.RuntimeConverters
             this.valueConverter = valueConverter;
         }
 
-        internal void ToBytes(Allocator allocator, IDictionary<TK, TV> value)
+        internal void Bytes(Allocator allocator, IDictionary<TK, TV> value)
         {
             if (value == null || value.Count == 0)
                 return;
@@ -24,7 +24,7 @@ namespace Mikodev.Binary.RuntimeConverters
             }
         }
 
-        internal Dictionary<TK, TV> ToValue(Block block)
+        internal Dictionary<TK, TV> Value(Block block)
         {
             if (block.IsEmpty)
                 return new Dictionary<TK, TV>();

@@ -8,8 +8,8 @@ namespace Mikodev.Binary.Converters
     {
         public DateTimeConverter() : base(Unsafe.SizeOf<T>()) { }
 
-        public override void ToBytes(Allocator allocator, DateTime value) => UnmanagedValueConverter<T>.ToBytesNormal(allocator, value.ToBinary());
+        public override void ToBytes(Allocator allocator, DateTime value) => UnmanagedValueConverter<T>.Bytes(allocator, value.ToBinary());
 
-        public override DateTime ToValue(Block block) => DateTime.FromBinary(UnmanagedValueConverter<T>.ToValueNormal(block));
+        public override DateTime ToValue(Block block) => DateTime.FromBinary(UnmanagedValueConverter<T>.Value(block));
     }
 }

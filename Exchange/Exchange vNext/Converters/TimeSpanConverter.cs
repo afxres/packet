@@ -8,8 +8,8 @@ namespace Mikodev.Binary.Converters
     {
         public TimeSpanConverter() : base(Unsafe.SizeOf<T>()) { }
 
-        public override void ToBytes(Allocator allocator, TimeSpan value) => UnmanagedValueConverter<T>.ToBytesNormal(allocator, value.Ticks);
+        public override void ToBytes(Allocator allocator, TimeSpan value) => UnmanagedValueConverter<T>.Bytes(allocator, value.Ticks);
 
-        public override TimeSpan ToValue(Block block) => new TimeSpan(UnmanagedValueConverter<T>.ToValueNormal(block));
+        public override TimeSpan ToValue(Block block) => new TimeSpan(UnmanagedValueConverter<T>.Value(block));
     }
 }

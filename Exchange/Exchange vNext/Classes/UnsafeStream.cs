@@ -72,7 +72,7 @@ namespace Mikodev.Binary
         {
             var offset = Volatile.Read(ref position);
             if (offset == 0)
-                return Array.Empty<byte>();
+                return Extension.EmptyArray<byte>();
             var buffer = stream;
             var target = new byte[offset];
             Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)offset);
