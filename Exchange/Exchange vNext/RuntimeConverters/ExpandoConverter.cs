@@ -7,13 +7,13 @@ namespace Mikodev.Binary.RuntimeConverters
     {
         private readonly Action<Allocator, T> toBytes;
         private readonly Func<Dictionary<string, Block>, T> toValue;
-        private readonly int toValueCapacity;
+        private readonly int capacity;
 
         public ExpandoConverter(Action<Allocator, T> toBytes, Func<Dictionary<string, Block>, T> toValue, int toValueCapacity) : base(0)
         {
             this.toBytes = toBytes;
             this.toValue = toValue;
-            this.toValueCapacity = toValueCapacity;
+            this.capacity = toValueCapacity;
         }
 
         public override void ToBytes(Allocator allocator, T value) => toBytes.Invoke(allocator, value);
@@ -23,7 +23,7 @@ namespace Mikodev.Binary.RuntimeConverters
             if (toValue == null)
                 throw new InvalidOperationException();
             var vernier = (Vernier)block;
-            var dictionary = new Dictionary<string, Block>(toValueCapacity);
+            var dictionary = new Dictionary<string, Block>(capacity);
             while (vernier.Any)
             {
                 vernier.Flush();

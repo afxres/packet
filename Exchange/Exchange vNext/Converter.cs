@@ -35,6 +35,10 @@ namespace Mikodev.Binary
     {
         internal sealed override Type ValueType => typeof(T);
 
+        internal sealed override Delegate ToBytesDelegate { get; }
+
+        internal sealed override Delegate ToValueDelegate { get; }
+
         protected Converter(int length) : base(length)
         {
             ToBytesDelegate = (Action<Allocator, T>)ToBytes;
@@ -49,8 +53,18 @@ namespace Mikodev.Binary
 
         internal sealed override object ToValueNonGeneric(Block block) => ToValue(block);
 
-        internal sealed override Delegate ToBytesDelegate { get; }
-
-        internal sealed override Delegate ToValueDelegate { get; }
+        internal void ToBytesAuto(Allocator allocator, T value)
+        {
+            if (Length == 0)
+            {
+                var offset = allocator.stream.BeginModify();
+                ToBytes(allocator, value);
+                allocator.stream.EndModify(offset);
+            }
+            else
+            {
+                ToBytes(allocator, value);
+            }
+        }
     }
 }

@@ -4,17 +4,12 @@ namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class DictionaryConverter<TK, TV> : Converter<Dictionary<TK, TV>>
     {
-        private readonly Converter<TK> keyConverter;
-        private readonly Converter<TV> valueConverter;
+        private readonly DictionaryAdapter<TK, TV> adapter;
 
-        public DictionaryConverter(Converter<TK> keyConverter, Converter<TV> valueConverter) : base(0)
-        {
-            this.keyConverter = keyConverter;
-            this.valueConverter = valueConverter;
-        }
+        public DictionaryConverter(Converter<TK> keyConverter, Converter<TV> valueConverter) : base(0) => adapter = new DictionaryAdapter<TK, TV>(keyConverter, valueConverter);
 
-        public override void ToBytes(Allocator allocator, Dictionary<TK, TV> value) => IDictionaryConverter<TK, TV>.ToBytesNormal(allocator, value, keyConverter, valueConverter);
+        public override void ToBytes(Allocator allocator, Dictionary<TK, TV> value) => adapter.ToBytes(allocator, value);
 
-        public override Dictionary<TK, TV> ToValue(Block block) => IDictionaryConverter<TK, TV>.ToValueNormal(block, keyConverter, valueConverter);
+        public override Dictionary<TK, TV> ToValue(Block block) => adapter.ToValue(block);
     }
 }

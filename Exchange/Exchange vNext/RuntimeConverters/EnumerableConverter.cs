@@ -3,15 +3,12 @@ using System.Collections.Generic;
 
 namespace Mikodev.Binary.RuntimeConverters
 {
-    internal interface IEnumerableConverter
-    {
-        Delegate ToValueFunction { get; }
-    }
-
-    internal sealed class EnumerableConverter<TE, TV> : Converter<TE>, IEnumerableConverter where TE : IEnumerable<TV>
+    internal sealed class EnumerableConverter<TE, TV> : Converter<TE>, IDelegateConverter where TE : IEnumerable<TV>
     {
         private readonly Converter<TV> converter;
         private readonly Func<List<TV>, TE> toValue;
+
+        public Delegate ToBytesFunction => throw new InvalidOperationException();
 
         public Delegate ToValueFunction => toValue;
 
@@ -25,16 +22,7 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (value == null)
                 return;
-            if (value is ICollection<TV> collection)
-            {
-                var count = collection.Count;
-                if (count == 0)
-                    return;
-                var array = new TV[count];
-                collection.CopyTo(array, 0);
-                ArrayConverter<TV>.ToBytes(allocator, array, converter);
-            }
-            else if (converter.Length == 0)
+            if (converter.Length == 0)
             {
                 int offset;
                 var stream = allocator.stream;

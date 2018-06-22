@@ -2,10 +2,14 @@
 
 namespace Mikodev.Binary.RuntimeConverters
 {
-    internal sealed class DelegateConverter<T> : Converter<T>
+    internal sealed class DelegateConverter<T> : Converter<T>, IDelegateConverter
     {
         private readonly Action<Allocator, T> toBytes;
         private readonly Func<Block, T> toValue;
+
+        public Delegate ToBytesFunction => toBytes;
+
+        public Delegate ToValueFunction => toValue;
 
         public DelegateConverter(Action<Allocator, T> toBytes, Func<Block, T> toValue, int length) : base(length)
         {
