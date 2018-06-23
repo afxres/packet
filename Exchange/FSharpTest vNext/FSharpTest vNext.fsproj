@@ -1,14 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>FSharpTest_vNext</RootNamespace>
 
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="Collections.fs" />
-    <Compile Include="Integers.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Exchange vNext\Exchange vNext.csproj" />
     <ProjectReference Include="..\Exchange\Exchange.csproj" />
   </ItemGroup>
 

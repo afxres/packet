@@ -52,19 +52,5 @@ namespace Mikodev.Binary
         internal sealed override void ToBytesNonGeneric(Allocator allocator, object @object) => ToBytes(allocator, (T)@object);
 
         internal sealed override object ToValueNonGeneric(Block block) => ToValue(block);
-
-        internal void ToBytesAuto(Allocator allocator, T value)
-        {
-            if (Length == 0)
-            {
-                var offset = allocator.stream.BeginModify();
-                ToBytes(allocator, value);
-                allocator.stream.EndModify(offset);
-            }
-            else
-            {
-                ToBytes(allocator, value);
-            }
-        }
     }
 }

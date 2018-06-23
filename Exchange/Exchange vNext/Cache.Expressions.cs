@@ -10,6 +10,9 @@ namespace Mikodev.Binary
 {
     partial class Cache
     {
+        private static readonly string fsNamespace = "Microsoft.FSharp.Collections";
+        private static MethodInfo fsToListMethodInfo;
+
         private byte[] GetOrCache(string key)
         {
             if (!encodingCache.TryGetValue(key, out var bytes))
@@ -17,6 +20,22 @@ namespace Mikodev.Binary
             return bytes;
         }
 
+        private DictionaryAdapter GetOrCreateDictionaryAdapter(params Type[] elementTypes)
+        {
+            var adapterType = typeof(DictionaryAdapter<,>).MakeGenericType(elementTypes);
+            if (!adapters.TryGetValue(adapterType, out var adapter))
+            {
+                if (elementTypes[0] == typeof(object))
+                    throw new InvalidOperationException("Invalid dictionary key type");
+                var keyConverter = GetOrCreateConverter(elementTypes[0]);
+                var valueConverter = GetOrCreateConverter(elementTypes[1]);
+                adapter = (Adapter)Activator.CreateInstance(adapterType, keyConverter, valueConverter);
+                adapters.TryAdd(adapterType, adapter);
+            }
+            return (DictionaryAdapter)adapter;
+        }
+
+        #region is ...
         private bool IsTuple(Type type)
         {
             if (type.IsAbstract || type.IsGenericType == false || type.Namespace != "System")
@@ -25,73 +44,121 @@ namespace Mikodev.Binary
             return type.IsValueType ? name.StartsWith("ValueTuple`") : name.StartsWith("Tuple`");
         }
 
+        private bool IsFSharpList(Type type)
+        {
+            if (type.Name != "FSharpList`1" || type.Namespace != fsNamespace)
+                return false;
+            var methodInfo = fsToListMethodInfo;
+            if (methodInfo == null)
+            {
+                try
+                {
+                    var moduleType = type.Assembly.GetType($"{fsNamespace}.SeqModule", true);
+                    var methodInfos = moduleType.GetMethods();
+                    methodInfo = methodInfos.Where(r => r.Name == "ToList").Single();
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("No valid F# toList method detected", ex);
+                }
+            }
+            fsToListMethodInfo = methodInfo;
+            return true;
+        }
+
+        private static bool IsFSharpMap(Type type, out ConstructorInfo constructorInfo)
+        {
+            if (type.IsGenericType == false || type.Name != "FSharpMap`2" || type.Namespace != fsNamespace)
+                goto fail;
+            var genericArguments = type.GetGenericArguments();
+            var enumerableType = typeof(IEnumerable<>).MakeGenericType(typeof(Tuple<,>).MakeGenericType(genericArguments));
+            constructorInfo = type.GetConstructor(new[] { enumerableType });
+            return constructorInfo != null;
+
+            fail:
+            constructorInfo = null;
+            return false;
+        }
+        #endregion
+
         private Converter CreateConverter(Type type)
         {
+            if (reserveTypes.Contains(type))
+                throw new InvalidOperationException($"Invalid type : {type}");
             // enum
             if (type.IsEnum)
                 return (Converter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(type));
+            // tuple
+            if (IsTuple(type))
+                return TupleConverter(type);
+
+            var definition = type.IsGenericType ? type.GetGenericTypeDefinition() : null;
+            if (definition == typeof(KeyValuePair<,>))
+                throw new InvalidOperationException("Use tuple instead of key-value pair");
 
             if (type.IsArray)
             {
                 // array
                 if (type.GetArrayRank() != 1)
                     throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
-                var elementType = type.GetElementType();
-                if (elementType == typeof(object))
-                    goto fail;
+                var element = type.GetElementType();
+                if (element == typeof(object))
+                    throw new InvalidOperationException($"Invalid array type : {type}");
                 // enum array
-                if (elementType.IsEnum)
-                    return (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(elementType));
-                var converter = GetOrCreateConverter(elementType);
-                return (Converter)Activator.CreateInstance(typeof(ArrayConverter<>).MakeGenericType(elementType), converter);
-            }
-
-            var definition = type.IsGenericType ? type.GetGenericTypeDefinition() : null;
-            if (definition == typeof(Dictionary<,>) || definition == typeof(IDictionary<,>))
-            {
-                // dictionary
-                var elementTypes = type.GetGenericArguments();
-                if (elementTypes[0] == typeof(object))
-                    goto fail;
-                var keyConverter = GetOrCreateConverter(elementTypes[0]);
-                var valueConverter = GetOrCreateConverter(elementTypes[1]);
-                var converterDefinition = definition == typeof(Dictionary<,>) ? typeof(DictionaryConverter<,>) : typeof(DictionaryInterfaceConverter<,>);
-                return (Converter)Activator.CreateInstance(converterDefinition.MakeGenericType(elementTypes), keyConverter, valueConverter);
-            }
-
-            if (definition == typeof(KeyValuePair<,>))
-                throw new InvalidOperationException("Use tuple instead of key-value pair");
-            // tuple
-            if (IsTuple(type))
-                return TupleConverter(type);
-
-            if (definition == typeof(List<>))
-            {
-                var elementType = type.GetGenericArguments().Single();
-                if (elementType == typeof(object))
-                    goto fail;
-                var converter = GetOrCreateConverter(elementType);
-                return (Converter)Activator.CreateInstance(typeof(ListConverter<>).MakeGenericType(elementType), converter);
+                return element.IsEnum
+                    ? (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(element))
+                    : (Converter)Activator.CreateInstance(typeof(ArrayConverter<>).MakeGenericType(element), GetOrCreateConverter(element));
             }
 
             var interfaces = type.IsInterface ? type.GetInterfaces().Concat(new[] { type }).ToArray() : type.GetInterfaces();
-            var enumerable = interfaces.Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>)).ToArray();
-            if (enumerable.Length > 1)
-                goto fail;
-            if (enumerable.Length == 1)
-            {
-                // collection
-                var elementType = enumerable[0].GetGenericArguments().Single();
-                if (elementType == typeof(object))
-                    goto fail;
-                var converter = GetOrCreateConverter(elementType);
-                var converterType = typeof(EnumerableConverter<,>).MakeGenericType(type, elementType);
-                return (Converter)Activator.CreateInstance(converterType, converter, ToCollectionDelegate(type, elementType) ?? ToCollectionDelegateImplementation(type, elementType));
-            }
-            return (Converter)Activator.CreateInstance(typeof(ExpandoConverter<>).MakeGenericType(type), ToBytesDelegate(type), ToValueDelegate(type, out var capacity), capacity);
+            var enumerableTypes = interfaces.Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>)).ToArray();
+            if (enumerableTypes.Length > 1)
+                throw new InvalidOperationException($"Multiple IEnumerable implementations, type : {type}");
+            // converter via properties
+            return enumerableTypes.Length == 0
+                ? (Converter)Activator.CreateInstance(typeof(ExpandoConverter<>).MakeGenericType(type), ToBytesDelegate(type), ToValueDelegate(type, out var capacity), capacity)
+                : CreateCollectionConverter(type, enumerableTypes[0]);
+        }
 
-            fail:
-            throw new InvalidOperationException($"Invalid collection type: {type}");
+        private Converter CreateCollectionConverter(Type type, Type enumerableType)
+        {
+            var elementType = enumerableType.GetGenericArguments().Single();
+            if (elementType == typeof(object))
+                throw new InvalidOperationException($"Invalid collection type : {type}");
+
+            if (elementType.IsGenericType && elementType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+            {
+                var elementTypes = elementType.GetGenericArguments();
+                var adapter = GetOrCreateDictionaryAdapter(elementTypes);
+                if (IsFSharpMap(type, out var constructorInfo))
+                {
+                    // fs map
+                    var block = Expression.Parameter(typeof(Block), "block");
+                    var lambda = Expression.Lambda(Expression.New(constructorInfo, Expression.Call(Expression.Constant(adapter), adapter.TupleDelegate.Method, block)), block);
+                    return (Converter)Activator.CreateInstance(typeof(DelegateConverter<>).MakeGenericType(type), adapter.BytesDelegate, lambda.Compile(), 0);
+                }
+
+                var dictionaryType = typeof(Dictionary<,>).MakeGenericType(elementTypes);
+                if (!type.IsAssignableFrom(dictionaryType))
+                    throw new InvalidOperationException($"Invalid key-value pair collection type : {type}");
+                // dictionary
+                return (Converter)Activator.CreateInstance(typeof(DelegateConverter<>).MakeGenericType(type), adapter.BytesDelegate, adapter.ValueDelegate, 0);
+            }
+
+            var converter = GetOrCreateConverter(elementType);
+            // list
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+                return (Converter)Activator.CreateInstance(typeof(ListConverter<>).MakeGenericType(elementType), converter);
+            var converterType = typeof(EnumerableConverter<,>).MakeGenericType(type, elementType);
+            if (IsFSharpList(type))
+            {
+                // fs list
+                var enumerable = Expression.Parameter(enumerableType, "enumerable");
+                var lambda = Expression.Lambda(Expression.Call(fsToListMethodInfo.MakeGenericMethod(elementType), enumerable), enumerable);
+                return (Converter)Activator.CreateInstance(converterType, converter, lambda.Compile());
+            }
+            // other collections
+            return (Converter)Activator.CreateInstance(converterType, converter, ToCollectionDelegate(type, elementType) ?? ToCollectionDelegateImplementation(type, elementType));
         }
 
         #region tuple
@@ -160,39 +227,39 @@ namespace Mikodev.Binary
         }
         #endregion
 
+        #region collection
         private Delegate ToCollectionDelegate(Type type, Type elementType)
         {
-            var listType = typeof(List<>).MakeGenericType(elementType);
-            var list = Expression.Parameter(listType, "list");
-            var lambda = default(LambdaExpression);
-            if (type.IsAssignableFrom(listType))
-            {
-                lambda = Expression.Lambda(Expression.Convert(list, type), list);
-            }
-            else
-            {
-                var enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
-                var constructorInfo = type.GetConstructor(new[] { enumerableType });
-                if (constructorInfo == null)
-                    return null;
-                lambda = Expression.Lambda(Expression.New(constructorInfo, list), list);
-            }
+            var enumerable = Expression.Parameter(typeof(IEnumerable<>).MakeGenericType(elementType), "enumerable");
+            var enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
+            var constructorInfo = type.GetConstructor(new[] { enumerableType });
+            if (constructorInfo == null)
+                return null;
+            var lambda = Expression.Lambda(Expression.New(constructorInfo, enumerable), enumerable);
             return lambda.Compile();
         }
 
         private Delegate ToCollectionDelegateImplementation(Type type, Type elementType)
         {
-            // ISet<T> 的默认实现采用 HashSet<T>
-            var collectionType = typeof(HashSet<>).MakeGenericType(elementType);
-            return type.IsAssignableFrom(collectionType) && GetOrCreateConverter(collectionType) is IDelegateConverter enumerableConverter
-                ? enumerableConverter.ToValueFunction
-                : null;
+            var arrayType = elementType.MakeArrayType();
+            var listType = typeof(List<>).MakeGenericType(elementType);
+            if (type.IsAssignableFrom(arrayType) && type.IsAssignableFrom(listType))
+            {
+                var @object = Expression.Parameter(typeof(object), "object");
+                var lambda = Expression.Lambda(Expression.Convert(@object, type), @object);
+                return lambda.Compile();
+            }
+            var setType = typeof(HashSet<>).MakeGenericType(elementType);
+            return type.IsAssignableFrom(setType) ? ((IDelegateConverter)GetOrCreateConverter(setType)).ToValueFunction : null;
         }
+        #endregion
 
         #region anonymous type or via properties
         private Delegate ToBytesDelegate(Type type)
         {
             var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            if (properties.Length == 0 && type.IsValueType)
+                throw new InvalidOperationException($"Invalid value type : {type}");
             var instance = Expression.Parameter(type, "instance");
             var allocator = Expression.Parameter(typeof(Allocator), "allocator");
             var stream = Expression.Variable(typeof(UnsafeStream), "stream");
@@ -272,6 +339,8 @@ namespace Mikodev.Binary
         private Delegate ToValueDelegateProperties(Type type, out int capacity)
         {
             var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            if (properties.Length == 0 && type.IsValueType)
+                throw new InvalidOperationException($"Invalid value type : {type}");
             var propertyList = new List<PropertyInfo>();
             for (int i = 0; i < properties.Length; i++)
             {

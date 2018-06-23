@@ -119,5 +119,55 @@ namespace Mikodev.Testing
                 Assert.IsTrue(anonymous.d3.SequenceEqual(legacy.d3));
             }
         }
+
+        [TestMethod]
+        public void ArrayAndList()
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                var anonymous = new
+                {
+                    int32arr = Enumerable.Range(0, 16).Select(r => random.Next()).ToArray(),
+                    float64list = Enumerable.Range(0, 16).Select(r => random.NextDouble()).ToList(),
+                    textarr = Enumerable.Range(0, 8).Select(r => $"{random.Next():x}").ToArray(),
+                    textlist = Enumerable.Range(0, 8).Select(r => $"{random.NextDouble()}").ToList(),
+                };
+                var buffer = cache.Serialize(anonymous);
+                var result = cache.Deserialize(buffer, anonymous);
+                var legacy = PacketConvert.Deserialize(buffer, anonymous);
+                Assert.IsFalse(ReferenceEquals(anonymous, result));
+                Assert.IsFalse(ReferenceEquals(anonymous, legacy));
+
+                Assert.IsTrue(anonymous.int32arr.SequenceEqual(result.int32arr));
+                Assert.IsTrue(anonymous.float64list.SequenceEqual(result.float64list));
+                Assert.IsTrue(anonymous.textarr.SequenceEqual(result.textarr));
+                Assert.IsTrue(anonymous.textlist.SequenceEqual(result.textlist));
+
+                Assert.IsTrue(anonymous.int32arr.SequenceEqual(legacy.int32arr));
+                Assert.IsTrue(anonymous.float64list.SequenceEqual(legacy.float64list));
+                Assert.IsTrue(anonymous.textarr.SequenceEqual(legacy.textarr));
+                Assert.IsTrue(anonymous.textlist.SequenceEqual(legacy.textlist));
+            }
+        }
+
+        [TestMethod]
+        public void CollectionTest()
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                var anonymous = new
+                {
+                    set = new HashSet<int>(Enumerable.Range(0, 16).Select(r => random.Next())),
+                    iset = (ISet<string>)new HashSet<string>(Enumerable.Range(0, 16).Select(r => random.Next().ToString())),
+                    ilist = (IList<int>)Enumerable.Range(0, 16).Select(r => random.Next()).ToList(),
+                    collection = (ICollection<string>)Enumerable.Range(0, 16).Select(r => random.Next().ToString()).ToList(),
+                    readonlyList = (IReadOnlyList<int>)Enumerable.Range(0, 16).Select(r => random.Next()).ToList(),
+                    enumerable = (IEnumerable<int>)Enumerable.Range(0, 16).Select(r => random.Next()).ToList(),
+                };
+                var buffer = cache.Serialize(anonymous);
+                var result = cache.Deserialize(buffer, anonymous);
+                var legacy = PacketConvert.Deserialize(buffer, anonymous);
+            }
+        }
     }
 }

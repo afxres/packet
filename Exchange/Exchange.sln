@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample vNext", "Sample vNex
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testing vNext", "Testing vNext\Testing vNext.csproj", "{7A676699-3895-4CCE-93ED-1F59EEE5F0D7}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharpTest vNext", "FSharpTest vNext\FSharpTest vNext.fsproj", "{3B9ADD50-5AA9-4842-9D02-AA8F46D7D720}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{7A676699-3895-4CCE-93ED-1F59EEE5F0D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A676699-3895-4CCE-93ED-1F59EEE5F0D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A676699-3895-4CCE-93ED-1F59EEE5F0D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B9ADD50-5AA9-4842-9D02-AA8F46D7D720}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B9ADD50-5AA9-4842-9D02-AA8F46D7D720}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B9ADD50-5AA9-4842-9D02-AA8F46D7D720}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B9ADD50-5AA9-4842-9D02-AA8F46D7D720}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

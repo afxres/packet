@@ -10,7 +10,8 @@ namespace Mikodev.Binary
     public sealed partial class Cache
     {
         #region static
-        private static readonly IReadOnlyList<Converter> defaultConverters;
+        private static readonly List<Converter> defaultConverters;
+        private static readonly HashSet<Type> reserveTypes = new HashSet<Type>(typeof(Cache).Assembly.GetTypes());
 
         static Cache()
         {
@@ -31,18 +32,20 @@ namespace Mikodev.Binary
             };
             var valueConverters = unmanagedTypes.Select(r => (Converter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(r)));
             var arrayConverters = unmanagedTypes.Select(r => (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(r)));
-            var converters = new List<Converter>();
+            var converters = new List<Converter>(32);
             converters.AddRange(valueConverters);
             converters.AddRange(arrayConverters);
             converters.Add(new StringConverter());
             converters.Add(new DateTimeConverter());
             converters.Add(new TimeSpanConverter());
             converters.Add(new GuidConverter());
+            converters.Add(new DecimalConverter());
             defaultConverters = converters;
         }
         #endregion
 
         private readonly ConcurrentDictionary<Type, Converter> converters;
+        private readonly ConcurrentDictionary<Type, Adapter> adapters = new ConcurrentDictionary<Type, Adapter>();
         private readonly ConcurrentDictionary<string, byte[]> encodingCache = new ConcurrentDictionary<string, byte[]>();
 
         public Cache(IEnumerable<Converter> converters = null)

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Mikodev.Binary.RuntimeConverters
+﻿namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class ObjectConverter : Converter<object>
     {
@@ -16,6 +14,6 @@ namespace Mikodev.Binary.RuntimeConverters
             converter.ToBytesNonGeneric(allocator, value);
         }
 
-        public override object ToValue(Block block) => throw new InvalidOperationException("Unable to get object");
+        public override object ToValue(Block block) => new Token(packetCache, block);
     }
 }

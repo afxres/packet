@@ -36,7 +36,7 @@ namespace Mikodev.Binary.RuntimeConverters
                 return new List<T>();
             if (converter.Length == 0)
             {
-                var list = new List<T>();
+                var list = new List<T>(8);
                 var vernier = (Vernier)block;
                 while (vernier.Any)
                 {
