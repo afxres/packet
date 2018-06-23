@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Binary.Converters;
+using System;
 using System.Collections.Generic;
 
 namespace Mikodev.Binary.RuntimeConverters
@@ -33,7 +34,7 @@ namespace Mikodev.Binary.RuntimeConverters
         internal static List<T> Value(Block block, Converter<T> converter)
         {
             if (block.IsEmpty)
-                return new List<T>();
+                return new List<T>(0);
             if (converter.Length == 0)
             {
                 var list = new List<T>(8);
@@ -58,11 +59,17 @@ namespace Mikodev.Binary.RuntimeConverters
         }
 
         private readonly Converter<T> converter;
+        private readonly Converter<T[]> arrayConverter;
 
-        public ListConverter(Converter<T> converter) : base(0) => this.converter = converter;
+        public ListConverter(Converter<T> converter, Converter<T[]> arrayConverter) : base(0)
+        {
+            var type = arrayConverter.GetType();
+            this.converter = converter;
+            this.arrayConverter = (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(UnmanagedArrayConverter<>)) ? arrayConverter : null;
+        }
 
         public override void ToBytes(Allocator allocator, List<T> value) => Bytes(allocator, value, converter);
 
-        public override List<T> ToValue(Block block) => Value(block, converter);
+        public override List<T> ToValue(Block block) => arrayConverter == null ? Value(block, converter) : new List<T>(arrayConverter.ToValue(block));
     }
 }

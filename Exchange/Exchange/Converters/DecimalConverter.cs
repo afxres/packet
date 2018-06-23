@@ -1,13 +1,18 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
     [Converter(typeof(decimal))]
     internal sealed class DecimalConverter : PacketConverter<decimal>
     {
+        private static readonly bool reverse = BitConverter.IsLittleEndian != PacketConvert.UseLittleEndian;
+
         private static byte[] ToBytes(decimal value)
         {
             var source = decimal.GetBits(value);
+            if (reverse)
+                Extension.ReverseEndianness(source);
             var target = new byte[sizeof(decimal)];
             Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<int, byte>(ref source[0]), sizeof(decimal));
             return target;
@@ -19,6 +24,8 @@ namespace Mikodev.Network.Converters
                 throw PacketException.Overflow();
             var target = new int[sizeof(decimal) / sizeof(int)];
             Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref target[0]), ref buffer[offset], sizeof(decimal));
+            if (reverse)
+                Extension.ReverseEndianness(target);
             var result = new decimal(target);
             return result;
         }

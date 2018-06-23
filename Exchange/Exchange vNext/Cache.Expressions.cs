@@ -101,13 +101,13 @@ namespace Mikodev.Binary
                 // array
                 if (type.GetArrayRank() != 1)
                     throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
-                var element = type.GetElementType();
-                if (element == typeof(object))
+                var elementType = type.GetElementType();
+                if (elementType == typeof(object))
                     throw new InvalidOperationException($"Invalid array type : {type}");
                 // enum array
-                return element.IsEnum
-                    ? (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(element))
-                    : (Converter)Activator.CreateInstance(typeof(ArrayConverter<>).MakeGenericType(element), GetOrCreateConverter(element));
+                return elementType.IsEnum
+                    ? (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(elementType))
+                    : (Converter)Activator.CreateInstance(typeof(ArrayConverter<>).MakeGenericType(elementType), GetOrCreateConverter(elementType));
             }
 
             var interfaces = type.IsInterface ? type.GetInterfaces().Concat(new[] { type }).ToArray() : type.GetInterfaces();
@@ -148,7 +148,7 @@ namespace Mikodev.Binary
             var converter = GetOrCreateConverter(elementType);
             // list
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
-                return (Converter)Activator.CreateInstance(typeof(ListConverter<>).MakeGenericType(elementType), converter);
+                return (Converter)Activator.CreateInstance(typeof(ListConverter<>).MakeGenericType(elementType), converter, GetOrCreateConverter(elementType.MakeArrayType()));
             var converterType = typeof(EnumerableConverter<,>).MakeGenericType(type, elementType);
             if (IsFSharpList(type))
             {

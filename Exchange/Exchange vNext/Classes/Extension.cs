@@ -70,19 +70,19 @@ namespace Mikodev.Binary
         internal static void ReverseEndianness<T>(Block block) where T : unmanaged
         {
             var buffer = block.Buffer;
-            var length = block.Length;
+            var limits = block.Offset + block.Length;
             switch (Unsafe.SizeOf<T>())
             {
                 case sizeof(UInt16):
-                    for (int i = block.Offset; i < length; i += sizeof(UInt16))
+                    for (int i = block.Offset; i < limits; i += sizeof(UInt16))
                         Unsafe.As<byte, UInt16>(ref buffer[i]) = ReverseEndianness(Unsafe.As<byte, UInt16>(ref buffer[i]));
                     break;
                 case sizeof(UInt32):
-                    for (int i = block.Offset; i < length; i += sizeof(UInt32))
+                    for (int i = block.Offset; i < limits; i += sizeof(UInt32))
                         Unsafe.As<byte, UInt32>(ref buffer[i]) = ReverseEndianness(Unsafe.As<byte, UInt32>(ref buffer[i]));
                     break;
                 case sizeof(UInt64):
-                    for (int i = block.Offset; i < length; i += sizeof(UInt64))
+                    for (int i = block.Offset; i < limits; i += sizeof(UInt64))
                         Unsafe.As<byte, UInt64>(ref buffer[i]) = ReverseEndianness(Unsafe.As<byte, UInt64>(ref buffer[i]));
                     break;
                 default:
