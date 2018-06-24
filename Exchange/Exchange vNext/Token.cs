@@ -79,7 +79,7 @@ namespace Mikodev.Binary
         public override int GetHashCode() => throw new InvalidOperationException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override string ToString() => nameof(Token);
+        public override string ToString() => $"{nameof(Token)} item count : {Tokens.Count}, byte length : {block.Length}";
         #endregion
     }
 }
