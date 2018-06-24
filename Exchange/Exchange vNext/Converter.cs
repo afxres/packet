@@ -29,6 +29,17 @@ namespace Mikodev.Binary
         internal abstract Delegate ToBytesDelegate { get; }
 
         internal abstract Delegate ToValueDelegate { get; }
+
+        #region override
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override bool Equals(object obj) => throw new InvalidOperationException();
+
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override int GetHashCode() => throw new InvalidOperationException();
+
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override string ToString() => $"{nameof(Converter)} type : {ValueType}, byte length : {Length}";
+        #endregion
     }
 
     public abstract class Converter<T> : Converter

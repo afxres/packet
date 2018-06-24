@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 
 namespace Mikodev.Binary
 {
@@ -24,7 +23,7 @@ namespace Mikodev.Binary
             get
             {
                 if (length == 0)
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException("Block is empty");
                 return ref buffer[offset];
             }
         }
@@ -38,45 +37,31 @@ namespace Mikodev.Binary
 
         internal Block(byte[] buffer)
         {
-            if (buffer == null)
-            {
-                this = default;
-            }
-            else
-            {
-                this.buffer = buffer;
-                offset = 0;
-                length = buffer.Length;
-            }
+            this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            offset = 0;
+            length = buffer.Length;
         }
 
         internal Block(byte[] buffer, int offset, int length)
         {
             if (buffer == null)
-            {
-                if (length != 0)
-                    throw new ArgumentOutOfRangeException();
-                this = default;
-            }
-            else
-            {
-                if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
-                    throw new ArgumentOutOfRangeException();
-                this.buffer = buffer;
-                this.offset = offset;
-                this.length = length;
-            }
+                throw new ArgumentNullException(nameof(buffer));
+            if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
+                throw new ArgumentOutOfRangeException();
+            this.buffer = buffer;
+            this.offset = offset;
+            this.length = length;
         }
 
         #region override
-        [EditorBrowsable(EditorBrowsableState.Never)]
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public override bool Equals(object obj) => throw new InvalidOperationException();
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public override int GetHashCode() => throw new InvalidOperationException();
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public override string ToString() => $"{nameof(Block)} with {length} byte(s)";
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override string ToString() => $"{nameof(Block)} byte length : {length}";
         #endregion
     }
 }

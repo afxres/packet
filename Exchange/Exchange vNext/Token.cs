@@ -70,5 +70,16 @@ namespace Mikodev.Binary
             var value = converter.ToValueNonGeneric(block);
             return value;
         }
+
+        #region override
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override bool Equals(object obj) => throw new InvalidOperationException();
+
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override int GetHashCode() => throw new InvalidOperationException();
+
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override string ToString() => nameof(Token);
+        #endregion
     }
 }

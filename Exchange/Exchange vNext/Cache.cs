@@ -118,5 +118,16 @@ namespace Mikodev.Binary
 
         public Token NewToken(byte[] buffer, int offset, int length) => new Token(this, new Block(buffer, offset, length));
         #endregion
+
+        #region override
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override bool Equals(object obj) => throw new InvalidOperationException();
+
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override int GetHashCode() => throw new InvalidOperationException();
+
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override string ToString() => nameof(Cache);
+        #endregion
     }
 }
