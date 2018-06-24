@@ -3,6 +3,7 @@ using Mikodev.Binary;
 using Mikodev.Network;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 
 namespace Mikodev.Testing
@@ -168,6 +169,33 @@ namespace Mikodev.Testing
                 var result = cache.Deserialize(buffer, anonymous);
                 var legacy = PacketConvert.Deserialize(buffer, anonymous);
             }
+        }
+
+        [TestMethod]
+        public void DynamicTest()
+        {
+            var anonymous = new
+            {
+                id = random.Next(),
+                name = $"{random.Next()}",
+                guid = Guid.NewGuid(),
+            };
+            var t1 = cache.Serialize(anonymous);
+            var token = cache.NewToken(t1);
+            var d = (dynamic)token;
+            var r1 = (Token)d;
+            var r2 = (object)d;
+            var r3 = (IDynamicMetaObjectProvider)d;
+            var id = (int)d.id;
+            var name = (string)d.name;
+            var guid = (Guid)d.guid;
+
+            Assert.IsTrue(ReferenceEquals(token, r1));
+            Assert.IsTrue(ReferenceEquals(token, r2));
+            Assert.IsTrue(ReferenceEquals(token, r3));
+            Assert.AreEqual(anonymous.id, id);
+            Assert.AreEqual(anonymous.name, name);
+            Assert.AreEqual(anonymous.guid, guid);
         }
     }
 }
