@@ -5,10 +5,6 @@ namespace Mikodev.Binary.Converters
 {
     internal sealed class GuidConverter : Converter<Guid>
     {
-        private const int X1 = sizeof(uint);
-        private const int X2 = X1 + sizeof(ushort);
-        private const int X3 = X2 + sizeof(ushort);
-        private const int L4 = 8;
         private static readonly bool origin = BitConverter.IsLittleEndian == UseLittleEndian;
 
         public GuidConverter() : base(Unsafe.SizeOf<Guid>()) { }
@@ -26,9 +22,9 @@ namespace Mikodev.Binary.Converters
                 var offset = block.Offset;
                 ref var source = ref Unsafe.As<Guid, byte>(ref value);
                 Unsafe.WriteUnaligned(ref buffer[offset], Extension.ReverseEndianness(Unsafe.As<byte, uint>(ref source)));
-                Unsafe.WriteUnaligned(ref buffer[offset + X1], Extension.ReverseEndianness(Unsafe.As<byte, ushort>(ref Unsafe.AddByteOffset(ref source, (IntPtr)X1))));
-                Unsafe.WriteUnaligned(ref buffer[offset + X2], Extension.ReverseEndianness(Unsafe.As<byte, ushort>(ref Unsafe.AddByteOffset(ref source, (IntPtr)X2))));
-                Unsafe.CopyBlockUnaligned(ref buffer[offset + X3], ref Unsafe.AddByteOffset(ref source, (IntPtr)X3), L4);
+                Unsafe.WriteUnaligned(ref buffer[offset + 4], Extension.ReverseEndianness(Unsafe.As<byte, ushort>(ref Unsafe.AddByteOffset(ref source, (IntPtr)4))));
+                Unsafe.WriteUnaligned(ref buffer[offset + 6], Extension.ReverseEndianness(Unsafe.As<byte, ushort>(ref Unsafe.AddByteOffset(ref source, (IntPtr)6))));
+                Unsafe.WriteUnaligned(ref buffer[offset + 8], Unsafe.As<byte, ulong>(ref Unsafe.AddByteOffset(ref source, (IntPtr)8)));
             }
         }
 
@@ -47,9 +43,9 @@ namespace Mikodev.Binary.Converters
                 var value = default(Guid);
                 ref var target = ref Unsafe.As<Guid, byte>(ref value);
                 Unsafe.WriteUnaligned(ref target, Extension.ReverseEndianness(Unsafe.As<byte, uint>(ref buffer[offset])));
-                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)X1), Extension.ReverseEndianness(Unsafe.As<byte, ushort>(ref buffer[offset + X1])));
-                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)X2), Extension.ReverseEndianness(Unsafe.As<byte, ushort>(ref buffer[offset + X2])));
-                Unsafe.CopyBlockUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)X3), ref buffer[offset + X3], L4);
+                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)4), Extension.ReverseEndianness(Unsafe.As<byte, ushort>(ref buffer[offset + 4])));
+                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)6), Extension.ReverseEndianness(Unsafe.As<byte, ushort>(ref buffer[offset + 6])));
+                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)8), Unsafe.As<byte, ulong>(ref buffer[offset + 8]));
                 return value;
             }
         }

@@ -29,26 +29,40 @@ namespace Mikodev.Testing
         [TestMethod]
         public void GuidTest()
         {
-            var sourceValue = Guid.NewGuid();
-            var buffer = cache.Serialize(sourceValue);
-            var resultValue = cache.Deserialize<Guid>(buffer);
-            if (BitConverter.IsLittleEndian == Converter.UseLittleEndian)
+            for (int i = 0; i < 8; i++)
             {
-                // native endian
-                var array = sourceValue.ToByteArray();
-                Assert.IsTrue(array.SequenceEqual(buffer));
+                var anonymous = new
+                {
+                    a = random.Next(),
+                    b = Guid.NewGuid(),
+                    c = random.Next().ToString(),
+                    d = Guid.NewGuid(),
+                    e = random.NextDouble(),
+                };
+                var t = cache.Serialize(anonymous);
+                var r = cache.Deserialize(t, anonymous);
+                var token = cache.NewToken(t);
+                Assert.IsFalse(ReferenceEquals(anonymous, r));
+                if (BitConverter.IsLittleEndian == Converter.UseLittleEndian)
+                {
+                    // native endian
+                    var arr = anonymous.b.ToByteArray();
+                    var tmp = token["b"].As<byte[]>();
+                    Assert.IsTrue(arr.SequenceEqual(tmp));
+                }
+                if (Converter.UseLittleEndian == false)
+                {
+                    // always use big endian
+                    var hex = anonymous.d.ToString("N");
+                    var arr = Enumerable.Range(0, hex.Length)
+                         .Where(x => x % 2 == 0)
+                         .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
+                         .ToArray();
+                    var tmp = token["d"].As<byte[]>();
+                    Assert.IsTrue(arr.SequenceEqual(tmp));
+                }
+                Assert.AreEqual(anonymous, r);
             }
-            if (Converter.UseLittleEndian == false)
-            {
-                // always use big endian
-                var hex = sourceValue.ToString("N");
-                var array = Enumerable.Range(0, hex.Length)
-                     .Where(x => x % 2 == 0)
-                     .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
-                     .ToArray();
-                Assert.IsTrue(array.SequenceEqual(buffer));
-            }
-            Assert.AreEqual(sourceValue, resultValue);
         }
 
         [TestMethod]
