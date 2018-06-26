@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>Sample</RootNamespace>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -18,7 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Exchange\Exchange.csproj" />
+    <ProjectReference Include="..\..\Exchange\Exchange vNext\Exchange vNext.csproj" />
+    <ProjectReference Include="..\..\Exchange\Exchange\Exchange.csproj" />
   </ItemGroup>
 
   <ItemGroup>
