@@ -2,7 +2,6 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading;
 
 namespace Mikodev.Binary
 {
@@ -70,12 +69,12 @@ namespace Mikodev.Binary
 
         internal byte[] GetBytes()
         {
-            var offset = Volatile.Read(ref position);
-            if (offset == 0)
+            var length = position;
+            if (length == 0)
                 return Empty.Array<byte>();
             var buffer = stream;
-            var target = new byte[offset];
-            Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)offset);
+            var target = new byte[length];
+            Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)length);
             return target;
         }
     }
