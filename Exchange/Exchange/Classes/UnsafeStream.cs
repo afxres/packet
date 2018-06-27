@@ -11,7 +11,7 @@ namespace Mikodev.Network
         private const int MaximumLength = 0x4000_0000;
 
         private byte[] buffer = new byte[InitialLength];
-        private int position;
+        private int position = 0;
 
         private void ReAllocate(int offset, int require)
         {
@@ -38,7 +38,7 @@ namespace Mikodev.Network
         private int VerifyAvailable(int require)
         {
             var offset = position;
-            if ((uint)require > MaximumLength || buffer.Length - offset < require)
+            if ((uint)require > (uint)(buffer.Length - offset))
                 ReAllocate(offset, require);
             position = offset + require;
             return offset;

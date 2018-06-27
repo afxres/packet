@@ -8,13 +8,13 @@ namespace Mikodev.Binary.Converters
         private static readonly bool origin = BitConverter.IsLittleEndian == UseLittleEndian || Unsafe.SizeOf<T>() == 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void BytesUnchecked(ref byte location, T value)
+        internal static void ToBytesUnchecked(ref byte location, T value)
         {
             Unsafe.WriteUnaligned(ref location, origin ? value : Endian.Reverse(value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T ValueUnchecked(ref byte location)
+        internal static T ToValueUnchecked(ref byte location)
         {
             var value = Unsafe.ReadUnaligned<T>(ref location);
             return origin ? value : Endian.Reverse(value);
@@ -22,14 +22,14 @@ namespace Mikodev.Binary.Converters
 
         internal static void Bytes(Allocator allocator, T value)
         {
-            BytesUnchecked(ref allocator.Allocate(Unsafe.SizeOf<T>()).Location, value);
+            ToBytesUnchecked(ref allocator.Allocate(Unsafe.SizeOf<T>()).Location, value);
         }
 
         internal static T Value(Block block)
         {
             if (block.Length < Unsafe.SizeOf<T>())
                 throw new ArgumentException();
-            return ValueUnchecked(ref block.Location);
+            return ToValueUnchecked(ref block.Location);
         }
 
         public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }
