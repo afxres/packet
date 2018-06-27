@@ -15,7 +15,7 @@ namespace Mikodev.Network.Converters
             var target = new byte[targetLength];
             Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<T, byte>(ref source[0]), (uint)targetLength);
             if (reverse)
-                Extension.ReverseEndiannessExplicitly<T>(target);
+                Endian.ReverseBlock<T>(target);
             return target;
         }
 
@@ -28,7 +28,7 @@ namespace Mikodev.Network.Converters
             var target = new T[length / Unsafe.SizeOf<T>()];
             Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref buffer[offset], (uint)length);
             if (reverse)
-                Extension.ReverseEndianness(target);
+                Endian.ReverseArray(target);
             return target;
         }
 

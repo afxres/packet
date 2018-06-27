@@ -16,55 +16,59 @@ namespace Mikodev.Binary
         private const int InitialLength = 256;
         private const int MaximumLength = 0x4000_0000;
 
-        internal byte[] stream = new byte[InitialLength];
+        internal byte[] buffer = new byte[InitialLength];
         internal int position;
 
-        private void ReAllocate(int require, int offset)
+        private void ReAllocate(int offset, int require)
         {
+            if ((uint)require > MaximumLength)
+                goto fail;
             long limits = offset + require;
-            long length = stream.Length;
+            long length = buffer.Length;
             do
             {
                 length <<= 2;
                 if (length > MaximumLength)
-                    throw new OverflowException();
+                    goto fail;
             }
             while (length < limits);
             var target = new byte[(int)length];
-            Unsafe.CopyBlockUnaligned(ref target[0], ref stream[0], (uint)offset);
-            stream = target;
+            Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)offset);
+            buffer = target;
+            return;
+
+            fail:
+            throw new OverflowException("Data length overflow!");
         }
 
         internal int VerifyAvailable(int require)
         {
-            if ((uint)require > MaximumLength)
-                throw new OverflowException();
             var offset = position;
-            if (stream.Length - offset < require)
-                ReAllocate(require, offset);
+            if ((uint)require > MaximumLength || buffer.Length - offset < require)
+                ReAllocate(offset, require);
             position = offset + require;
             return offset;
         }
 
         internal UnsafeStream() { }
 
-        internal void WriteExtend(byte[] buffer)
+        internal void WriteExtend(byte[] source)
         {
-            var offset = VerifyAvailable(buffer.Length + sizeof(int));
-            UnmanagedValueConverter<int>.BytesUnchecked(ref stream[offset], buffer.Length);
-            if (buffer.Length == 0)
+            var offset = VerifyAvailable(source.Length + sizeof(int));
+            UnmanagedValueConverter<int>.BytesUnchecked(ref buffer[offset], source.Length);
+            if (source.Length == 0)
                 return;
-            Unsafe.CopyBlockUnaligned(ref stream[offset + sizeof(int)], ref buffer[0], (uint)buffer.Length);
+            Unsafe.CopyBlockUnaligned(ref buffer[offset + sizeof(int)], ref source[0], (uint)source.Length);
         }
 
         internal int BeginModify() => VerifyAvailable(sizeof(int));
 
         internal void EndModify(int offset)
         {
-            var buffer = stream;
-            if (buffer.Length - offset < sizeof(int))
+            var target = buffer;
+            if (target.Length - offset < sizeof(int))
                 throw new ArgumentOutOfRangeException();
-            UnmanagedValueConverter<int>.BytesUnchecked(ref buffer[offset], position - offset - sizeof(int));
+            UnmanagedValueConverter<int>.BytesUnchecked(ref target[offset], position - offset - sizeof(int));
         }
 
         internal byte[] GetBytes()
@@ -72,7 +76,6 @@ namespace Mikodev.Binary
             var length = position;
             if (length == 0)
                 return Empty.Array<byte>();
-            var buffer = stream;
             var target = new byte[length];
             Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)length);
             return target;

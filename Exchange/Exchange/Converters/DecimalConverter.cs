@@ -12,7 +12,7 @@ namespace Mikodev.Network.Converters
         {
             var source = decimal.GetBits(value);
             if (reverse)
-                Extension.ReverseEndianness(source);
+                Endian.ReverseArray(source);
             var target = new byte[sizeof(decimal)];
             Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<int, byte>(ref source[0]), sizeof(decimal));
             return target;
@@ -25,7 +25,7 @@ namespace Mikodev.Network.Converters
             var target = new int[sizeof(decimal) / sizeof(int)];
             Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref target[0]), ref buffer[offset], sizeof(decimal));
             if (reverse)
-                Extension.ReverseEndianness(target);
+                Endian.ReverseArray(target);
             var result = new decimal(target);
             return result;
         }

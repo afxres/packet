@@ -16,7 +16,7 @@ namespace Mikodev.Binary
             if (stream == null)
                 throw new InvalidOperationException();
             var offset = stream.VerifyAvailable(length);
-            return new Block(stream.stream, offset, length);
+            return new Block(stream.buffer, offset, length);
         }
 
         #region override

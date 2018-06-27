@@ -10,58 +10,62 @@ namespace Mikodev.Network
         private const int InitialLength = 256;
         private const int MaximumLength = 0x4000_0000;
 
-        private byte[] stream = new byte[InitialLength];
+        private byte[] buffer = new byte[InitialLength];
         private int position;
 
-        private void ReAllocate(int require, int offset)
+        private void ReAllocate(int offset, int require)
         {
+            if ((uint)require > MaximumLength)
+                goto fail;
             long limits = offset + require;
-            long length = stream.Length;
+            long length = buffer.Length;
             do
             {
                 length <<= 2;
                 if (length > MaximumLength)
-                    throw PacketException.Overflow();
+                    goto fail;
             }
             while (length < limits);
             var target = new byte[(int)length];
-            Unsafe.CopyBlockUnaligned(ref target[0], ref stream[0], (uint)offset);
-            stream = target;
+            Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)offset);
+            buffer = target;
+            return;
+
+            fail:
+            throw PacketException.Overflow();
         }
 
         private int VerifyAvailable(int require)
         {
-            if ((uint)require > MaximumLength)
-                throw PacketException.Overflow();
             var offset = position;
-            if (stream.Length - offset < require)
-                ReAllocate(require, offset);
+            if ((uint)require > MaximumLength || buffer.Length - offset < require)
+                ReAllocate(offset, require);
             position = offset + require;
             return offset;
         }
 
-        internal void Write(byte[] buffer)
+        internal void Write(byte[] source)
         {
-            if (buffer.Length == 0)
+            if (source.Length == 0)
                 return;
-            var offset = VerifyAvailable(buffer.Length);
-            Unsafe.CopyBlockUnaligned(ref stream[offset], ref buffer[0], (uint)buffer.Length);
+            var offset = VerifyAvailable(source.Length);
+            Unsafe.CopyBlockUnaligned(ref buffer[offset], ref source[0], (uint)source.Length);
         }
 
-        internal void WriteExtend(byte[] buffer)
+        internal void WriteExtend(byte[] source)
         {
-            var offset = VerifyAvailable(buffer.Length + sizeof(int));
-            UnmanagedValueConverter<int>.ToBytesUnchecked(ref stream[offset], buffer.Length);
-            if (buffer.Length == 0)
+            var offset = VerifyAvailable(source.Length + sizeof(int));
+            UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], source.Length);
+            if (source.Length == 0)
                 return;
-            Unsafe.CopyBlockUnaligned(ref stream[offset + sizeof(int)], ref buffer[0], (uint)buffer.Length);
+            Unsafe.CopyBlockUnaligned(ref buffer[offset + sizeof(int)], ref source[0], (uint)source.Length);
         }
 
         internal void WriteKey(string key) => WriteExtend(PacketConvert.Encoding.GetBytes(key));
 
         internal int BeginModify() => VerifyAvailable(sizeof(int));
 
-        internal void EndModify(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref stream[offset], (position - offset - sizeof(int)));
+        internal void EndModify(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], (position - offset - sizeof(int)));
 
         internal byte[] GetBytes()
         {
@@ -69,7 +73,7 @@ namespace Mikodev.Network
             if (length == 0)
                 return Extension.EmptyArray<byte>();
             var target = new byte[length];
-            Unsafe.CopyBlockUnaligned(ref target[0], ref stream[0], (uint)length);
+            Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)length);
             return target;
         }
     }

@@ -24,15 +24,14 @@ namespace Mikodev.Network.Converters
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void ToBytesUnchecked(ref byte location, T value)
         {
-            Unsafe.WriteUnaligned(ref location, origin ? value : Extension.ReverseEndianness(value));
+            Unsafe.WriteUnaligned(ref location, origin ? value : Endian.Reverse(value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static T ToValueUnchecked(ref byte location)
         {
-            return origin
-                ? Unsafe.ReadUnaligned<T>(ref location)
-                : Extension.ReverseEndianness(Unsafe.ReadUnaligned<T>(ref location));
+            var value = Unsafe.ReadUnaligned<T>(ref location);
+            return origin ? value : Endian.Reverse(value);
         }
 
         public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }
