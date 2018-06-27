@@ -17,7 +17,7 @@ namespace Mikodev.Binary
         private const int MaximumLength = 0x4000_0000;
 
         internal byte[] buffer = new byte[InitialLength];
-        internal int position;
+        internal int position = 0;
 
         private void ReAllocate(int offset, int require)
         {
@@ -44,18 +44,16 @@ namespace Mikodev.Binary
         internal int VerifyAvailable(int require)
         {
             var offset = position;
-            if ((uint)require > MaximumLength || buffer.Length - offset < require)
+            if ((uint)require > (uint)(buffer.Length - offset))
                 ReAllocate(offset, require);
             position = offset + require;
             return offset;
         }
 
-        internal UnsafeStream() { }
-
         internal void WriteExtend(byte[] source)
         {
             var offset = VerifyAvailable(source.Length + sizeof(int));
-            UnmanagedValueConverter<int>.BytesUnchecked(ref buffer[offset], source.Length);
+            UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], source.Length);
             if (source.Length == 0)
                 return;
             Unsafe.CopyBlockUnaligned(ref buffer[offset + sizeof(int)], ref source[0], (uint)source.Length);
@@ -63,13 +61,7 @@ namespace Mikodev.Binary
 
         internal int BeginModify() => VerifyAvailable(sizeof(int));
 
-        internal void EndModify(int offset)
-        {
-            var target = buffer;
-            if (target.Length - offset < sizeof(int))
-                throw new ArgumentOutOfRangeException();
-            UnmanagedValueConverter<int>.BytesUnchecked(ref target[offset], position - offset - sizeof(int));
-        }
+        internal void EndModify(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], position - offset - sizeof(int));
 
         internal byte[] GetBytes()
         {

@@ -36,7 +36,7 @@ namespace Mikodev.Binary
             offset += this.length;
             if ((uint)(limits - offset) < sizeof(int))
                 goto fail;
-            var length = UnmanagedValueConverter<int>.ValueUnchecked(ref buffer[offset]);
+            var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[offset]);
             offset += sizeof(int);
             if ((uint)(limits - offset) < (uint)length)
                 goto fail;
@@ -67,7 +67,7 @@ namespace Mikodev.Binary
             offset += this.length;
             if ((uint)(limits - offset) < sizeof(int))
                 return false;
-            var length = UnmanagedValueConverter<int>.ValueUnchecked(ref buffer[offset]);
+            var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[offset]);
             offset += sizeof(int);
             if ((uint)(limits - offset) < (uint)length)
                 return false;
