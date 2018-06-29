@@ -41,6 +41,7 @@ namespace Mikodev.Binary
             converters.Add(new GuidConverter());
             converters.Add(new DecimalConverter());
             converters.Add(new IPAddressConverter());
+            converters.Add(new IPEndPointConverter());
             defaultConverters = converters;
         }
         #endregion
@@ -106,8 +107,8 @@ namespace Mikodev.Binary
 
         public byte[] Serialize(object value)
         {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
+            if (value is null)
+                ThrowHelper.ThrowArgumentNull();
             var converter = GetOrCreateConverter(value.GetType());
             var stream = new UnsafeStream();
             var allocator = new Allocator(stream);

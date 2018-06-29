@@ -18,7 +18,7 @@ namespace Mikodev.Binary
         internal Converter(int length)
         {
             if (length < 0)
-                throw new ArgumentOutOfRangeException(nameof(length));
+                ThrowHelper.ThrowArgumentOutOfRange();
             Length = length;
         }
 

@@ -29,6 +29,16 @@ namespace Mikodev.Binary
             }
         }
 
+        public ref byte this[int index]
+        {
+            get
+            {
+                if ((uint)index > (uint)length)
+                    ThrowHelper.ThrowArgumentOutOfRange();
+                return ref buffer[offset + index];
+            }
+        }
+
         internal Block(Vernier vernier)
         {
             buffer = vernier.Buffer;
@@ -38,21 +48,27 @@ namespace Mikodev.Binary
 
         public Block(byte[] buffer)
         {
-            this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            if (buffer is null)
+                ThrowHelper.ThrowArgumentNull();
+            this.buffer = buffer;
             offset = 0;
             length = buffer.Length;
         }
 
         public Block(byte[] buffer, int offset, int length)
         {
-            if (buffer == null)
-                throw new ArgumentNullException(nameof(buffer));
+            if (buffer is null)
+                ThrowHelper.ThrowArgumentNull();
             if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
-                throw new ArgumentOutOfRangeException();
+                ThrowHelper.ThrowArgumentOutOfRange();
             this.buffer = buffer;
             this.offset = offset;
             this.length = length;
         }
+
+        public Block Slice(int start) => new Block(buffer, offset + start, length - start);
+
+        public Block Slice(int start, int length) => new Block(buffer, offset + start, length);
 
         public byte[] ToArray()
         {

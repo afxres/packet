@@ -221,6 +221,7 @@ namespace Mikodev.Testing
                 name = "sharp",
                 address = IPAddress.Parse("192.168.16.32"),
                 addressV6 = IPAddress.Parse("fe80::3c03:feef:ec25:e40d"),
+                endpoint = new IPEndPoint(IPAddress.Loopback, (ushort)random.Next()),
                 status = "ok",
             };
             var b1 = cache.Serialize(anonymous);

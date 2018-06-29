@@ -65,7 +65,7 @@ namespace Mikodev.Binary
         public object As(Type type)
         {
             if (type is null)
-                throw new ArgumentNullException(nameof(type));
+                ThrowHelper.ThrowArgumentNull();
             var converter = cache.GetOrCreateConverter(type);
             var value = converter.ToValueNonGeneric(block);
             return value;
