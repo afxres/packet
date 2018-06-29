@@ -14,9 +14,23 @@ namespace Mikodev.Binary
         public Block Allocate(int length)
         {
             if (stream == null)
-                throw new InvalidOperationException();
+                ThrowHelper.ThrowEmptyAllocator();
             var offset = stream.VerifyAvailable(length);
             return new Block(stream.buffer, offset, length);
+        }
+
+        public void Append(byte[] source)
+        {
+            if (stream == null)
+                ThrowHelper.ThrowEmptyAllocator();
+            stream.Append(source);
+        }
+
+        public void Append(string source)
+        {
+            if (stream == null)
+                ThrowHelper.ThrowEmptyAllocator();
+            stream.Append(source);
         }
 
         #region override

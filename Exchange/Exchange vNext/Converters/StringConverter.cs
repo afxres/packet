@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Mikodev.Binary.Converters
+﻿namespace Mikodev.Binary.Converters
 {
     internal sealed class StringConverter : Converter<string>
     {
@@ -8,11 +6,7 @@ namespace Mikodev.Binary.Converters
 
         public override void ToBytes(Allocator allocator, string value)
         {
-            if (string.IsNullOrEmpty(value))
-                return;
-            var source = Encoding.GetBytes(value);
-            var block = allocator.Allocate(source.Length);
-            Unsafe.CopyBlockUnaligned(ref block.Location, ref source[0], (uint)block.Length);
+            allocator.Append(value);
         }
 
         public override string ToValue(Block block)

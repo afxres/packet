@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary
 {
@@ -23,7 +24,7 @@ namespace Mikodev.Binary
             get
             {
                 if (length == 0)
-                    throw new InvalidOperationException("Block is empty");
+                    ThrowHelper.ThrowEmptyBlock();
                 return ref buffer[offset];
             }
         }
@@ -35,14 +36,14 @@ namespace Mikodev.Binary
             length = vernier.Length;
         }
 
-        internal Block(byte[] buffer)
+        public Block(byte[] buffer)
         {
             this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
             offset = 0;
             length = buffer.Length;
         }
 
-        internal Block(byte[] buffer, int offset, int length)
+        public Block(byte[] buffer, int offset, int length)
         {
             if (buffer == null)
                 throw new ArgumentNullException(nameof(buffer));
@@ -52,6 +53,19 @@ namespace Mikodev.Binary
             this.offset = offset;
             this.length = length;
         }
+
+        public byte[] ToArray()
+        {
+            if (length == 0)
+                return Empty.Array<byte>();
+            var target = new byte[length];
+            Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[offset], (uint)length);
+            return target;
+        }
+
+        public static implicit operator ArraySegment<byte>(Block block) => new ArraySegment<byte>(block.buffer, block.offset, block.length);
+
+        public static explicit operator Block(ArraySegment<byte> segment) => new Block(segment.Array, segment.Offset, segment.Count);
 
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

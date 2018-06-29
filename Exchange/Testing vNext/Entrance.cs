@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Net;
 
 namespace Mikodev.Testing
 {
@@ -210,6 +211,27 @@ namespace Mikodev.Testing
             Assert.AreEqual(anonymous.id, id);
             Assert.AreEqual(anonymous.name, name);
             Assert.AreEqual(anonymous.guid, guid);
+        }
+
+        [TestMethod]
+        public void IPAddressTest()
+        {
+            var anonymous = new
+            {
+                name = "sharp",
+                address = IPAddress.Parse("192.168.16.32"),
+                addressV6 = IPAddress.Parse("fe80::3c03:feef:ec25:e40d"),
+                status = "ok",
+            };
+            var b1 = cache.Serialize(anonymous);
+            var b2 = PacketConvert.Serialize(anonymous);
+            var r1 = cache.Deserialize(b2, anonymous);
+            var r2 = PacketConvert.Deserialize(b1, anonymous);
+
+            Assert.IsFalse(ReferenceEquals(anonymous, r1));
+            Assert.IsFalse(ReferenceEquals(anonymous, r2));
+            Assert.AreEqual(anonymous, r1);
+            Assert.AreEqual(anonymous, r2);
         }
     }
 }

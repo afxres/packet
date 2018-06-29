@@ -7,11 +7,11 @@ namespace Mikodev.Binary
 {
     internal sealed class UnsafeStream
     {
-        internal static MethodInfo WriteExtendMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(WriteExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static MethodInfo AppendExtendMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(AppendExtend), BindingFlags.Instance | BindingFlags.NonPublic);
 
-        internal static MethodInfo BeginModifyMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(BeginModify), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static MethodInfo BeginExtendMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(BeginExtend), BindingFlags.Instance | BindingFlags.NonPublic);
 
-        internal static MethodInfo EndModifyMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(EndModify), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static MethodInfo EndExtendMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(EndExtend), BindingFlags.Instance | BindingFlags.NonPublic);
 
         private const int InitialLength = 256;
         private const int MaximumLength = 0x4000_0000;
@@ -50,7 +50,7 @@ namespace Mikodev.Binary
             return offset;
         }
 
-        internal void WriteExtend(byte[] source)
+        internal void AppendExtend(byte[] source)
         {
             var offset = VerifyAvailable(source.Length + sizeof(int));
             UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], source.Length);
@@ -59,9 +59,39 @@ namespace Mikodev.Binary
             Unsafe.CopyBlockUnaligned(ref buffer[offset + sizeof(int)], ref source[0], (uint)source.Length);
         }
 
-        internal int BeginModify() => VerifyAvailable(sizeof(int));
+        internal void Append(byte[] source)
+        {
+            if (source is null || source.Length == 0)
+                return;
+            var offset = VerifyAvailable(source.Length);
+            Unsafe.CopyBlockUnaligned(ref buffer[offset], ref source[0], (uint)source.Length);
+        }
 
-        internal void EndModify(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], position - offset - sizeof(int));
+        internal void Append(string text)
+        {
+            int length;
+            if (text is null || (length = text.Length) == 0)
+                return;
+            var encoding = Converter.Encoding;
+            var offset = position;
+            var cursor = 0;
+            var single = Math.Max((length >> 3) + 1, 32);
+            do
+            {
+                single = Math.Min(single, length - cursor);
+                var maxCount = encoding.GetMaxByteCount(single);
+                if ((uint)maxCount > (uint)(buffer.Length - offset))
+                    ReAllocate(offset, maxCount);
+                offset += encoding.GetBytes(text, cursor, single, buffer, offset);
+                cursor += single;
+            }
+            while (cursor != length);
+            position = offset;
+        }
+
+        internal int BeginExtend() => VerifyAvailable(sizeof(int));
+
+        internal void EndExtend(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], position - offset - sizeof(int));
 
         internal byte[] GetBytes()
         {

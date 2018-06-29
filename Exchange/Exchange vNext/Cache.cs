@@ -40,6 +40,7 @@ namespace Mikodev.Binary
             converters.Add(new TimeSpanConverter());
             converters.Add(new GuidConverter());
             converters.Add(new DecimalConverter());
+            converters.Add(new IPAddressConverter());
             defaultConverters = converters;
         }
         #endregion
