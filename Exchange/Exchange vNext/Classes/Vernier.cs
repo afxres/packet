@@ -1,5 +1,4 @@
 ﻿using Mikodev.Binary.Converters;
-using System;
 using System.Reflection;
 
 namespace Mikodev.Binary
@@ -35,16 +34,13 @@ namespace Mikodev.Binary
         {
             offset += this.length;
             if ((uint)(limits - offset) < sizeof(int))
-                goto fail;
+                ThrowHelper.ThrowOverflow();
             var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[offset]);
             offset += sizeof(int);
             if ((uint)(limits - offset) < (uint)length)
-                goto fail;
+                ThrowHelper.ThrowOverflow();
             this.length = length;
             return;
-
-            fail:
-            throw new OverflowException();
         }
 
         internal void FlushExcept(int define)
@@ -53,7 +49,7 @@ namespace Mikodev.Binary
             {
                 offset += length;
                 if ((uint)(limits - offset) < (uint)define)
-                    throw new OverflowException();
+                    ThrowHelper.ThrowOverflow();
                 length = define;
             }
             else
@@ -75,7 +71,7 @@ namespace Mikodev.Binary
             return true;
         }
 
-        public static explicit operator Block(Vernier vernier) => new Block(vernier);
+        public static explicit operator Block(Vernier vernier) => new Block(vernier.buffer, vernier.offset, vernier.length);
 
         public static explicit operator Vernier(Block vernier) => new Vernier(vernier);
     }

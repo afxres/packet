@@ -31,7 +31,7 @@ namespace Mikodev.Binary.Converters
         public override Guid ToValue(Block block)
         {
             if (block.Length < Unsafe.SizeOf<Guid>())
-                throw new ArgumentException();
+                ThrowHelper.ThrowOverflow();
             if (origin)
             {
                 return Unsafe.ReadUnaligned<Guid>(ref block.Location);

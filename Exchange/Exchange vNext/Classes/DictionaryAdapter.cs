@@ -38,9 +38,9 @@ namespace Mikodev.Binary
             {
                 if (keyConverter.Length == 0)
                 {
-                    offset = stream.BeginExtend();
+                    offset = stream.AnchorExtend();
                     keyConverter.ToBytes(allocator, i.Key);
-                    stream.EndExtend(offset);
+                    stream.FinishExtend(offset);
                 }
                 else
                 {
@@ -48,9 +48,9 @@ namespace Mikodev.Binary
                 }
                 if (valueConverter.Length == 0)
                 {
-                    offset = stream.BeginExtend();
+                    offset = stream.AnchorExtend();
                     valueConverter.ToBytes(allocator, i.Value);
-                    stream.EndExtend(offset);
+                    stream.FinishExtend(offset);
                 }
                 else
                 {

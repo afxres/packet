@@ -11,5 +11,7 @@ namespace Mikodev.Binary
         internal static void ThrowArgumentNull() => throw new ArgumentNullException();
 
         internal static void ThrowArgumentOutOfRange() => throw new ArgumentOutOfRangeException();
+
+        internal static void ThrowOverflow() => throw new OverflowException();
     }
 }

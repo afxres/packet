@@ -21,7 +21,7 @@ namespace Mikodev.Binary.Converters
         public override decimal ToValue(Block block)
         {
             if (block.Length < sizeof(decimal))
-                throw new ArgumentException();
+                ThrowHelper.ThrowOverflow();
             var bits = new int[4];
             Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref bits[0]), ref block.Location, sizeof(decimal));
             if (reverse)

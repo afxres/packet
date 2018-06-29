@@ -7,6 +7,7 @@ namespace Mikodev.Binary
 {
     internal sealed class DynamicToken : DynamicMetaObject
     {
+        #region static
         private static readonly HashSet<Type> assignable;
 
         static DynamicToken()
@@ -17,6 +18,7 @@ namespace Mikodev.Binary
                 collection.Add(type);
             assignable = collection;
         }
+        #endregion
 
         public DynamicToken(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 

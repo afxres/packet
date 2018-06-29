@@ -11,7 +11,7 @@
             if (value == null)
                 return;
             var converter = packetCache.GetOrCreateConverter(value.GetType());
-            converter.ToBytesNonGeneric(allocator, value);
+            converter.ToBytesAny(allocator, value);
         }
 
         public override object ToValue(Block block) => new Token(packetCache, block);

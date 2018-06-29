@@ -15,9 +15,9 @@ namespace Mikodev.Binary.RuntimeConverters
                 var stream = allocator.stream;
                 for (int i = 0; i < value.Length; i++)
                 {
-                    offset = stream.BeginExtend();
+                    offset = stream.AnchorExtend();
                     converter.ToBytes(allocator, value[i]);
-                    stream.EndExtend(offset);
+                    stream.FinishExtend(offset);
                 }
             }
             else
@@ -38,7 +38,7 @@ namespace Mikodev.Binary.RuntimeConverters
 
             var quotient = Math.DivRem(block.Length, converter.Length, out var reminder);
             if (reminder != 0)
-                throw new OverflowException();
+                ThrowHelper.ThrowOverflow();
             var array = new T[quotient];
             for (int i = 0; i < quotient; i++)
                 array[i] = converter.ToValue(new Block(block.Buffer, block.Offset + i * converter.Length, converter.Length));

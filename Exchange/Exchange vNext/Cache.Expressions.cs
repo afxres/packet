@@ -15,8 +15,8 @@ namespace Mikodev.Binary
 
         private byte[] GetOrCache(string key)
         {
-            if (!encodingCache.TryGetValue(key, out var bytes))
-                encodingCache.TryAdd(key, (bytes = Converter.Encoding.GetBytes(key)));
+            if (!encoding.TryGetValue(key, out var bytes))
+                encoding.TryAdd(key, (bytes = Converter.Encoding.GetBytes(key)));
             return bytes;
         }
 
@@ -214,9 +214,9 @@ namespace Mikodev.Binary
                 var toBytesExpression = Expression.Call(Expression.Constant(converter), converter.ToBytesDelegate.Method, allocator, items[i]);
                 if (converter.Length == 0)
                 {
-                    expressions.Add(Expression.Assign(offset, Expression.Call(stream, UnsafeStream.BeginExtendMethodInfo)));
+                    expressions.Add(Expression.Assign(offset, Expression.Call(stream, UnsafeStream.AnchorExtendMethodInfo)));
                     expressions.Add(toBytesExpression);
-                    expressions.Add(Expression.Call(stream, UnsafeStream.EndExtendMethodInfo, offset));
+                    expressions.Add(Expression.Call(stream, UnsafeStream.FinishExtendMethodInfo, offset));
                 }
                 else
                 {
@@ -277,13 +277,13 @@ namespace Mikodev.Binary
                 var propertyValue = Expression.Call(instance, getMethod);
                 if (position == null)
                     variableList.Add(position = Expression.Variable(typeof(int), "position"));
-                list.Add(Expression.Assign(position, Expression.Call(stream, UnsafeStream.BeginExtendMethodInfo)));
+                list.Add(Expression.Assign(position, Expression.Call(stream, UnsafeStream.AnchorExtendMethodInfo)));
                 var converter = GetOrCreateConverter(propertyType);
                 list.Add(Expression.Call(
                     Expression.Constant(converter),
                     converter.ToBytesDelegate.Method,
                     allocator, propertyValue));
-                list.Add(Expression.Call(stream, UnsafeStream.EndExtendMethodInfo, position));
+                list.Add(Expression.Call(stream, UnsafeStream.FinishExtendMethodInfo, position));
             }
             var block = Expression.Block(variableList, list);
             var expression = Expression.Lambda(block, allocator, instance);

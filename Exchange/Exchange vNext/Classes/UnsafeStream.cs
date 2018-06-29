@@ -8,69 +8,79 @@ namespace Mikodev.Binary
     internal sealed class UnsafeStream
     {
         internal static MethodInfo AppendExtendMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(AppendExtend), BindingFlags.Instance | BindingFlags.NonPublic);
-
-        internal static MethodInfo BeginExtendMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(BeginExtend), BindingFlags.Instance | BindingFlags.NonPublic);
-
-        internal static MethodInfo EndExtendMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(EndExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static MethodInfo AnchorExtendMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(AnchorExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static MethodInfo FinishExtendMethodInfo { get; } = typeof(UnsafeStream).GetMethod(nameof(FinishExtend), BindingFlags.Instance | BindingFlags.NonPublic);
 
         private const int InitialLength = 256;
         private const int MaximumLength = 0x4000_0000;
+        private byte[] buffer = new byte[InitialLength];
+        private int position = 0;
 
-        internal byte[] buffer = new byte[InitialLength];
-        internal int position = 0;
-
-        private void ReAllocate(int offset, int require)
+        private byte[] ReAllocate(int offset, int require)
         {
             if ((uint)require > MaximumLength)
-                goto fail;
-            long limits = offset + require;
-            long length = buffer.Length;
+                ThrowHelper.ThrowOverflow();
+            var source = buffer;
+            var limits = (long)(offset + require);
+            var length = (long)(source.Length);
             do
             {
                 length <<= 2;
                 if (length > MaximumLength)
-                    goto fail;
+                    ThrowHelper.ThrowOverflow();
             }
             while (length < limits);
             var target = new byte[(int)length];
-            Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)offset);
+            Unsafe.CopyBlockUnaligned(ref target[0], ref source[0], (uint)offset);
             buffer = target;
-            return;
-
-            fail:
-            throw new OverflowException("Data length overflow!");
+            return target;
         }
 
-        internal int VerifyAvailable(int require)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int Allocate(int require, out byte[] target)
         {
             var offset = position;
-            if ((uint)require > (uint)(buffer.Length - offset))
-                ReAllocate(offset, require);
+            target = buffer;
+            if ((uint)require > (uint)(target.Length - offset))
+                target = ReAllocate(offset, require);
             position = offset + require;
             return offset;
         }
 
+        internal Block Allocate(int require)
+        {
+            var offset = Allocate(require, out var target);
+            return new Block(target, offset, require);
+        }
+
+        internal int AnchorExtend() => Allocate(sizeof(int), out var _);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void FinishExtend(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], position - offset - sizeof(int));
+
+        internal byte[] ToArray() => new Block(buffer, 0, position).ToArray();
+
         internal void AppendExtend(byte[] source)
         {
-            var offset = VerifyAvailable(source.Length + sizeof(int));
-            UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], source.Length);
-            if (source.Length == 0)
-                return;
-            Unsafe.CopyBlockUnaligned(ref buffer[offset + sizeof(int)], ref source[0], (uint)source.Length);
+            var length = source.Length;
+            var offset = Allocate(length, out var target);
+            UnmanagedValueConverter<int>.ToBytesUnchecked(ref target[offset], length);
+            Unsafe.CopyBlockUnaligned(ref target[offset + sizeof(int)], ref source[0], (uint)length);
         }
 
         internal void Append(byte[] source)
         {
-            if (source is null || source.Length == 0)
+            int length;
+            if (source == null || (length = source.Length) == 0)
                 return;
-            var offset = VerifyAvailable(source.Length);
-            Unsafe.CopyBlockUnaligned(ref buffer[offset], ref source[0], (uint)source.Length);
+            var offset = Allocate(length, out var target);
+            Unsafe.CopyBlockUnaligned(ref target[offset], ref source[0], (uint)length);
         }
 
         internal void Append(string text)
         {
             int length;
-            if (text is null || (length = text.Length) == 0)
+            if (text == null || (length = text.Length) == 0)
                 return;
             var encoding = Converter.Encoding;
             var offset = position;
@@ -80,27 +90,14 @@ namespace Mikodev.Binary
             {
                 single = Math.Min(single, length - cursor);
                 var maxCount = encoding.GetMaxByteCount(single);
-                if ((uint)maxCount > (uint)(buffer.Length - offset))
-                    ReAllocate(offset, maxCount);
-                offset += encoding.GetBytes(text, cursor, single, buffer, offset);
+                var target = buffer;
+                if ((uint)maxCount > (uint)(target.Length - offset))
+                    target = ReAllocate(offset, maxCount);
+                offset += encoding.GetBytes(text, cursor, single, target, offset);
                 cursor += single;
             }
             while (cursor != length);
             position = offset;
-        }
-
-        internal int BeginExtend() => VerifyAvailable(sizeof(int));
-
-        internal void EndExtend(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], position - offset - sizeof(int));
-
-        internal byte[] GetBytes()
-        {
-            var length = position;
-            if (length == 0)
-                return Empty.Array<byte>();
-            var target = new byte[length];
-            Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)length);
-            return target;
         }
     }
 }

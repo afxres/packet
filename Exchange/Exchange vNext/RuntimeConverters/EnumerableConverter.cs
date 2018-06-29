@@ -28,9 +28,9 @@ namespace Mikodev.Binary.RuntimeConverters
                 var stream = allocator.stream;
                 foreach (var i in value)
                 {
-                    offset = stream.BeginExtend();
+                    offset = stream.AnchorExtend();
                     converter.ToBytes(allocator, i);
-                    stream.EndExtend(offset);
+                    stream.FinishExtend(offset);
                 }
             }
             else

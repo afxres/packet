@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary
 {
@@ -11,14 +12,15 @@ namespace Mikodev.Binary
 
         internal Allocator(UnsafeStream stream) => this.stream = stream;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Block Allocate(int length)
         {
             if (stream == null)
                 ThrowHelper.ThrowEmptyAllocator();
-            var offset = stream.VerifyAvailable(length);
-            return new Block(stream.buffer, offset, length);
+            return stream.Allocate(length);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(byte[] source)
         {
             if (stream == null)
@@ -26,6 +28,7 @@ namespace Mikodev.Binary
             stream.Append(source);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(string source)
         {
             if (stream == null)

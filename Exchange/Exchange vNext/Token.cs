@@ -64,10 +64,10 @@ namespace Mikodev.Binary
 
         public object As(Type type)
         {
-            if (type is null)
+            if (type == null)
                 ThrowHelper.ThrowArgumentNull();
             var converter = cache.GetOrCreateConverter(type);
-            var value = converter.ToValueNonGeneric(block);
+            var value = converter.ToValueAny(block);
             return value;
         }
 

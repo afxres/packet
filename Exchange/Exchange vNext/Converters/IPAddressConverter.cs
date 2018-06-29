@@ -8,7 +8,7 @@ namespace Mikodev.Binary.Converters
 
         public override void ToBytes(Allocator allocator, IPAddress value)
         {
-            if (value is null)
+            if (value == null)
                 return;
             var result = value.GetAddressBytes();
             allocator.Append(result);

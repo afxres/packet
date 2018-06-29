@@ -22,9 +22,9 @@ namespace Mikodev.Binary
             Length = length;
         }
 
-        internal abstract void ToBytesNonGeneric(Allocator allocator, object @object);
+        internal abstract void ToBytesAny(Allocator allocator, object value);
 
-        internal abstract object ToValueNonGeneric(Block block);
+        internal abstract object ToValueAny(Block block);
 
         internal abstract Delegate ToBytesDelegate { get; }
 
@@ -60,8 +60,8 @@ namespace Mikodev.Binary
 
         public abstract T ToValue(Block block);
 
-        internal sealed override void ToBytesNonGeneric(Allocator allocator, object @object) => ToBytes(allocator, (T)@object);
+        internal sealed override void ToBytesAny(Allocator allocator, object value) => ToBytes(allocator, (T)value);
 
-        internal sealed override object ToValueNonGeneric(Block block) => ToValue(block);
+        internal sealed override object ToValueAny(Block block) => ToValue(block);
     }
 }

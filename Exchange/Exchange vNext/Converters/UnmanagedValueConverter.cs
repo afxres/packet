@@ -28,7 +28,7 @@ namespace Mikodev.Binary.Converters
         internal static T Value(Block block)
         {
             if (block.Length < Unsafe.SizeOf<T>())
-                throw new ArgumentException();
+                ThrowHelper.ThrowOverflow();
             return ToValueUnchecked(ref block.Location);
         }
 

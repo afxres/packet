@@ -39,25 +39,20 @@ namespace Mikodev.Binary
             }
         }
 
-        internal Block(Vernier vernier)
-        {
-            buffer = vernier.Buffer;
-            offset = vernier.Offset;
-            length = vernier.Length;
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Block(byte[] buffer)
         {
-            if (buffer is null)
+            if (buffer == null)
                 ThrowHelper.ThrowArgumentNull();
             this.buffer = buffer;
             offset = 0;
             length = buffer.Length;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Block(byte[] buffer, int offset, int length)
         {
-            if (buffer is null)
+            if (buffer == null)
                 ThrowHelper.ThrowArgumentNull();
             if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
                 ThrowHelper.ThrowArgumentOutOfRange();

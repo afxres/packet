@@ -10,7 +10,7 @@ namespace Mikodev.Binary
     public sealed partial class Cache
     {
         #region static
-        private static readonly List<Converter> defaultConverters;
+        private static readonly List<Converter> sharedConverters;
         private static readonly HashSet<Type> reserveTypes = new HashSet<Type>(typeof(Cache).Assembly.GetTypes());
 
         static Cache()
@@ -42,13 +42,13 @@ namespace Mikodev.Binary
             converters.Add(new DecimalConverter());
             converters.Add(new IPAddressConverter());
             converters.Add(new IPEndPointConverter());
-            defaultConverters = converters;
+            sharedConverters = converters;
         }
         #endregion
 
         private readonly ConcurrentDictionary<Type, Converter> converters;
         private readonly ConcurrentDictionary<Type, Adapter> adapters = new ConcurrentDictionary<Type, Adapter>();
-        private readonly ConcurrentDictionary<string, byte[]> encodingCache = new ConcurrentDictionary<string, byte[]>();
+        private readonly ConcurrentDictionary<string, byte[]> encoding = new ConcurrentDictionary<string, byte[]>();
 
         public Cache(IEnumerable<Converter> converters = null)
         {
@@ -56,7 +56,7 @@ namespace Mikodev.Binary
             if (converters != null)
                 foreach (var i in converters)
                     dictionary.TryAdd(i.ValueType, i);
-            foreach (var i in defaultConverters)
+            foreach (var i in sharedConverters)
                 dictionary.TryAdd(i.ValueType, i);
             dictionary[typeof(object)] = new ObjectConverter(this);
             this.converters = dictionary;
@@ -80,7 +80,7 @@ namespace Mikodev.Binary
         private object Deserialize(Type type, Block block)
         {
             var converter = GetOrCreateConverter(type);
-            var value = converter.ToValueNonGeneric(block);
+            var value = converter.ToValueAny(block);
             return value;
         }
 
@@ -102,18 +102,18 @@ namespace Mikodev.Binary
             var stream = new UnsafeStream();
             var allocator = new Allocator(stream);
             converter.ToBytes(allocator, value);
-            return stream.GetBytes();
+            return stream.ToArray();
         }
 
         public byte[] Serialize(object value)
         {
-            if (value is null)
+            if (value == null)
                 ThrowHelper.ThrowArgumentNull();
             var converter = GetOrCreateConverter(value.GetType());
             var stream = new UnsafeStream();
             var allocator = new Allocator(stream);
-            converter.ToBytesNonGeneric(allocator, value);
-            return stream.GetBytes();
+            converter.ToBytesAny(allocator, value);
+            return stream.ToArray();
         }
 
         public Token NewToken(byte[] buffer) => new Token(this, new Block(buffer));
@@ -129,7 +129,7 @@ namespace Mikodev.Binary
         public override int GetHashCode() => throw new InvalidOperationException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override string ToString() => nameof(Cache);
+        public override string ToString() => $"{nameof(Cache)} converter count : {converters.Count}, encoding cache : {encoding.Count}";
         #endregion
     }
 }
