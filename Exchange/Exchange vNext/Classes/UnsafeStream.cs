@@ -63,7 +63,7 @@ namespace Mikodev.Binary
         internal void AppendExtend(byte[] source)
         {
             var length = source.Length;
-            var offset = Allocate(length, out var target);
+            var offset = Allocate(length + sizeof(int), out var target);
             UnmanagedValueConverter<int>.ToBytesUnchecked(ref target[offset], length);
             Unsafe.CopyBlockUnaligned(ref target[offset + sizeof(int)], ref source[0], (uint)length);
         }

@@ -40,7 +40,7 @@ namespace Sample
 
             for (int k = 0; k < loop; k++)
             {
-                using (new TraceWatch("PacketCache Serialize")) // 288.284 ms <- excuse me?
+                using (new TraceWatch("PacketCache Serialize")) // 292.977 ms <- excuse me?
                 {
                     for (int i = 0; i < max; i++)
                     {
