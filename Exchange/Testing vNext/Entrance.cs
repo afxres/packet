@@ -97,12 +97,14 @@ namespace Mikodev.Testing
         {
             for (int i = 0; i < 8; i++)
             {
+                var now = DateTime.Now;
                 var anonymous = new
                 {
                     t1 = Tuple.Create(random.Next()),
                     t2 = ($"{random.Next()}", random.Next()),
                     t3 = Tuple.Create((short)random.Next(), random.Next(), random.NextDouble()),
-                    t4 = (random.Next(), $"{random.NextDouble()}", DateTime.Now, $"{DateTime.Now:u}"),
+                    t4 = (random.Next(), $"{random.NextDouble()}", now, $"{now:u}"),
+                    tr = (now.Second, $"{random.Next()}", Guid.NewGuid(), $"{now}", (short)random.Next(), (float)random.NextDouble(), IPAddress.Any, new IPEndPoint(IPAddress.IPv6Any, 1024), now.Millisecond)
                 };
                 var buffer = cache.Serialize(anonymous);
                 var result = cache.Deserialize(buffer, anonymous);

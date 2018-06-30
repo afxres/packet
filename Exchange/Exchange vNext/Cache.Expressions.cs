@@ -180,7 +180,7 @@ namespace Mikodev.Binary
         {
             var block = Expression.Parameter(typeof(Block), "block");
             var vernier = Expression.Variable(typeof(Vernier), "vernier");
-            var parameters = Enumerable.Range(0, converters.Length).Select(r => Expression.Variable(elementTypes[r], "item" + (r + 1))).ToArray();
+            var parameters = Enumerable.Range(0, converters.Length).Select(r => Expression.Variable(elementTypes[r], $"arg{r + 1}")).ToArray();
             var expressions = new List<Expression> { Expression.Assign(vernier, Expression.Convert(block, typeof(Vernier))) };
             for (int i = 0; i < converters.Length; i++)
             {
@@ -201,7 +201,9 @@ namespace Mikodev.Binary
             var stream = default(ParameterExpression);
             var variables = new List<ParameterExpression>();
             var expressions = new List<Expression>();
-            var items = Enumerable.Range(0, converters.Length).Select(r => Expression.PropertyOrField(tuple, "Item" + (r + 1))).ToArray();
+            var items = Enumerable.Range(0, converters.Length).Take(7).Select(r => Expression.PropertyOrField(tuple, $"Item{r + 1}")).ToList();
+            if (converters.Length > 7)
+                items.Add(Expression.PropertyOrField(tuple, "Rest"));
             if (length == 0)
             {
                 variables.Add(offset = Expression.Variable(typeof(int), "offset"));
