@@ -236,5 +236,26 @@ namespace Mikodev.Testing
             Assert.AreEqual(anonymous, r1);
             Assert.AreEqual(anonymous, r2);
         }
+
+        [TestMethod]
+        public void BlockTest()
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                var length = random.Next(16, 64);
+                var buffer = new byte[length];
+                random.NextBytes(buffer);
+                var sliceoffset = random.Next(0, length);
+                var sliceLength = random.Next(0, length - sliceoffset);
+                var s = buffer.AsSpan();
+                var a = new ArraySegment<byte>(buffer);
+                var ba = ((Block)buffer).Slice(sliceoffset);
+                var bb = ((Block)a).Slice(sliceoffset, sliceLength);
+                var sa = s.Slice(sliceoffset);
+                var sb = s.Slice(sliceoffset, sliceLength);
+                Assert.IsTrue(sa.ToArray().SequenceEqual(((Span<byte>)(ArraySegment<byte>)ba).ToArray()));
+                Assert.IsTrue(sb.ToArray().SequenceEqual(((Span<byte>)(ArraySegment<byte>)bb).ToArray()));
+            }
+        }
     }
 }

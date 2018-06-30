@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary
 {
+    [DebuggerTypeProxy(typeof(BlockDebug))]
     public readonly struct Block
     {
         #region fields
@@ -63,7 +65,7 @@ namespace Mikodev.Binary
 
         public Block Slice(int start) => new Block(buffer, offset + start, length - start);
 
-        public Block Slice(int start, int length) => new Block(buffer, offset + start, length);
+        public Block Slice(int start, int count) => new Block(buffer, offset + start, count);
 
         public byte[] ToArray()
         {
@@ -76,7 +78,9 @@ namespace Mikodev.Binary
 
         public static implicit operator ArraySegment<byte>(Block block) => new ArraySegment<byte>(block.buffer, block.offset, block.length);
 
-        public static explicit operator Block(ArraySegment<byte> segment) => new Block(segment.Array, segment.Offset, segment.Count);
+        public static implicit operator Block(ArraySegment<byte> segment) => new Block(segment.Array, segment.Offset, segment.Count);
+
+        public static implicit operator Block(byte[] array) => new Block(array);
 
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
