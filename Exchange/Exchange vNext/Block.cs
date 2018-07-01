@@ -45,22 +45,34 @@ namespace Mikodev.Binary
         public Block(byte[] buffer)
         {
             if (buffer == null)
-                ThrowHelper.ThrowArgumentNull();
-            this.buffer = buffer;
-            offset = 0;
-            length = buffer.Length;
+            {
+                this = default;
+            }
+            else
+            {
+                this.buffer = buffer;
+                offset = 0;
+                length = buffer.Length;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Block(byte[] buffer, int offset, int length)
         {
             if (buffer == null)
-                ThrowHelper.ThrowArgumentNull();
-            if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
-                ThrowHelper.ThrowArgumentOutOfRange();
-            this.buffer = buffer;
-            this.offset = offset;
-            this.length = length;
+            {
+                if (length != 0)
+                    ThrowHelper.ThrowArgumentOutOfRange();
+                this = default;
+            }
+            else
+            {
+                if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
+                    ThrowHelper.ThrowArgumentOutOfRange();
+                this.buffer = buffer;
+                this.offset = offset;
+                this.length = length;
+            }
         }
 
         public byte[] ToArray()
@@ -71,6 +83,8 @@ namespace Mikodev.Binary
             Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[offset], (uint)length);
             return target;
         }
+
+        public static implicit operator Block(byte[] buffer) => new Block(buffer);
 
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

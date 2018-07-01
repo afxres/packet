@@ -15,6 +15,16 @@ namespace Mikodev.Binary
 
         static Cache()
         {
+            var converters = new List<Converter>(32)
+            {
+                new StringConverter(),
+                new DateTimeConverter(),
+                new TimeSpanConverter(),
+                new GuidConverter(),
+                new DecimalConverter(),
+                new IPAddressConverter(),
+                new IPEndPointConverter()
+            };
             var unmanagedTypes = new[]
             {
                 typeof(bool),
@@ -32,23 +42,15 @@ namespace Mikodev.Binary
             };
             var valueConverters = unmanagedTypes.Select(r => (Converter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(r)));
             var arrayConverters = unmanagedTypes.Select(r => (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(r)));
-            var converters = new List<Converter>(32);
             converters.AddRange(valueConverters);
             converters.AddRange(arrayConverters);
-            converters.Add(new StringConverter());
-            converters.Add(new DateTimeConverter());
-            converters.Add(new TimeSpanConverter());
-            converters.Add(new GuidConverter());
-            converters.Add(new DecimalConverter());
-            converters.Add(new IPAddressConverter());
-            converters.Add(new IPEndPointConverter());
             sharedConverters = converters;
         }
         #endregion
 
         private readonly ConcurrentDictionary<Type, Converter> converters;
         private readonly ConcurrentDictionary<Type, Adapter> adapters = new ConcurrentDictionary<Type, Adapter>();
-        private readonly ConcurrentDictionary<string, byte[]> encoding = new ConcurrentDictionary<string, byte[]>();
+        private readonly ConcurrentDictionary<string, byte[]> texts = new ConcurrentDictionary<string, byte[]>();
 
         public Cache(IEnumerable<Converter> converters = null)
         {
@@ -70,31 +72,23 @@ namespace Mikodev.Binary
         }
 
         #region export
-        private T Deserialize<T>(Block block)
+        public T Deserialize<T>(Block block)
         {
             var converter = (Converter<T>)GetOrCreateConverter(typeof(T));
             var value = converter.ToValue(block);
             return value;
         }
 
-        private object Deserialize(Type type, Block block)
+        public T Deserialize<T>(Block block, T anonymous) => Deserialize<T>(block);
+
+        public object Deserialize(Block block, Type type)
         {
+            if (type == null)
+                ThrowHelper.ThrowArgumentNull();
             var converter = GetOrCreateConverter(type);
             var value = converter.ToValueAny(block);
             return value;
         }
-
-        public T Deserialize<T>(byte[] buffer) => Deserialize<T>(new Block(buffer));
-
-        public T Deserialize<T>(byte[] buffer, T anonymous) => Deserialize<T>(buffer);
-
-        public T Deserialize<T>(byte[] buffer, int offset, int length) => Deserialize<T>(new Block(buffer, offset, length));
-
-        public T Deserialize<T>(byte[] buffer, int offset, int length, T anonymous) => Deserialize<T>(buffer, offset, length);
-
-        public object Deserialize(byte[] buffer, Type type) => Deserialize(type, new Block(buffer));
-
-        public object Deserialize(byte[] buffer, int offset, int length, Type type) => Deserialize(type, new Block(buffer, offset, length));
 
         public byte[] Serialize<T>(T value)
         {
@@ -116,9 +110,7 @@ namespace Mikodev.Binary
             return stream.ToArray();
         }
 
-        public Token NewToken(byte[] buffer) => new Token(this, new Block(buffer));
-
-        public Token NewToken(byte[] buffer, int offset, int length) => new Token(this, new Block(buffer, offset, length));
+        public Token NewToken(Block block) => new Token(this, block);
         #endregion
 
         #region override
@@ -129,7 +121,7 @@ namespace Mikodev.Binary
         public override int GetHashCode() => throw new InvalidOperationException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override string ToString() => $"{nameof(Cache)} converter count : {converters.Count}, encoding cache : {encoding.Count}";
+        public override string ToString() => $"{nameof(Cache)} converter count : {converters.Count}, encoding cache : {texts.Count}";
         #endregion
     }
 }
