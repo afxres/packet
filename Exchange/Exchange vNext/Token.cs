@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq.Expressions;
 
 namespace Mikodev.Binary
 {
+    [DebuggerTypeProxy(typeof(TokenDebugProxy))]
     public sealed class Token : IDynamicMetaObjectProvider
     {
         private static readonly Dictionary<string, Token> empty = new Dictionary<string, Token>();
