@@ -21,9 +21,13 @@ namespace Mikodev.Binary.Converters
         {
             if (block.IsEmpty)
                 return null;
-            var addressBlock = block.Slice(0, block.Length - sizeof(ushort));
-            var address = new IPAddress(addressBlock.ToArray());
-            var port = UnmanagedValueConverter<ushort>.ToValueUnchecked(ref block[addressBlock.Length]);
+            var addressLength = block.Length - sizeof(ushort);
+            if (addressLength <= 0)
+                ThrowHelper.ThrowOverflow();
+            var addressBytes = new byte[addressLength];
+            Unsafe.CopyBlockUnaligned(ref addressBytes[0], ref block.Location, (uint)addressLength);
+            var address = new IPAddress(addressBytes);
+            var port = UnmanagedValueConverter<ushort>.ToValueUnchecked(ref block[addressLength]);
             return new IPEndPoint(address, port);
         }
     }

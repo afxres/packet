@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary
 {
-    [DebuggerTypeProxy(typeof(BlockDebug))]
+    [DebuggerTypeProxy(typeof(BlockDebugProxy))]
     public readonly struct Block
     {
         #region fields
@@ -63,10 +63,6 @@ namespace Mikodev.Binary
             this.length = length;
         }
 
-        public Block Slice(int start) => new Block(buffer, offset + start, length - start);
-
-        public Block Slice(int start, int count) => new Block(buffer, offset + start, count);
-
         public byte[] ToArray()
         {
             if (length == 0)
@@ -75,12 +71,6 @@ namespace Mikodev.Binary
             Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[offset], (uint)length);
             return target;
         }
-
-        public static implicit operator ArraySegment<byte>(Block block) => new ArraySegment<byte>(block.buffer, block.offset, block.length);
-
-        public static implicit operator Block(ArraySegment<byte> segment) => new Block(segment.Array, segment.Offset, segment.Count);
-
-        public static implicit operator Block(byte[] array) => new Block(array);
 
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
