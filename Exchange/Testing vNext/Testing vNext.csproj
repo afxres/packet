@@ -66,6 +66,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CircularReference.cs" />
     <Compile Include="Entrance.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

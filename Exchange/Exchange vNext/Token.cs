@@ -57,7 +57,7 @@ namespace Mikodev.Binary
 
         public T As<T>()
         {
-            var converter = (Converter<T>)cache.GetOrCreateConverter(typeof(T));
+            var converter = cache.GetConverter<T>();
             var value = converter.ToValue(block);
             return value;
         }
@@ -68,7 +68,7 @@ namespace Mikodev.Binary
         {
             if (type == null)
                 ThrowHelper.ThrowArgumentNull();
-            var converter = cache.GetOrCreateConverter(type);
+            var converter = cache.GetConverter(type);
             var value = converter.ToValueAny(block);
             return value;
         }

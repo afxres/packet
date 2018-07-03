@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary
 {
@@ -64,17 +65,20 @@ namespace Mikodev.Binary
             this.converters = dictionary;
         }
 
-        internal Converter GetOrCreateConverter(Type type)
+        internal Converter GetConverter(Type type)
         {
             if (!converters.TryGetValue(type, out var converter))
-                converters.TryAdd(type, (converter = CreateConverter(type)));
+                converter = ConverterGenerator.GenerateConverter(this, type);
             return converter;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
 
         #region export
         public T Deserialize<T>(Block block)
         {
-            var converter = (Converter<T>)GetOrCreateConverter(typeof(T));
+            var converter = GetConverter<T>();
             var value = converter.ToValue(block);
             return value;
         }
@@ -85,14 +89,14 @@ namespace Mikodev.Binary
         {
             if (type == null)
                 ThrowHelper.ThrowArgumentNull();
-            var converter = GetOrCreateConverter(type);
+            var converter = GetConverter(type);
             var value = converter.ToValueAny(block);
             return value;
         }
 
         public byte[] Serialize<T>(T value)
         {
-            var converter = (Converter<T>)GetOrCreateConverter(typeof(T));
+            var converter = GetConverter<T>();
             var stream = new UnsafeStream();
             var allocator = new Allocator(stream);
             converter.ToBytes(allocator, value);
@@ -103,7 +107,7 @@ namespace Mikodev.Binary
         {
             if (value == null)
                 ThrowHelper.ThrowArgumentNull();
-            var converter = GetOrCreateConverter(value.GetType());
+            var converter = GetConverter(value.GetType());
             var stream = new UnsafeStream();
             var allocator = new Allocator(stream);
             converter.ToBytesAny(allocator, value);

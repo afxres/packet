@@ -10,7 +10,7 @@
         {
             if (value == null)
                 return;
-            var converter = packetCache.GetOrCreateConverter(value.GetType());
+            var converter = packetCache.GetConverter(value.GetType());
             converter.ToBytesAny(allocator, value);
         }
 
