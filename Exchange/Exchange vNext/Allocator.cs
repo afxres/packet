@@ -21,19 +21,19 @@ namespace Mikodev.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Append(byte[] source)
+        public void Append(byte[] bytes)
         {
             if (stream == null)
                 ThrowHelper.ThrowEmptyAllocator();
-            stream.Append(source);
+            stream.Append(bytes);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Append(string source)
+        public void Append(string text)
         {
             if (stream == null)
                 ThrowHelper.ThrowEmptyAllocator();
-            stream.Append(source);
+            stream.Append(text);
         }
 
         #region override

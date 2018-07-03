@@ -13,6 +13,7 @@ namespace Mikodev.Network
         private byte[] buffer = new byte[InitialLength];
         private int position = 0;
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private void ReAllocate(int offset, int require)
         {
             if ((uint)require > MaximumLength)

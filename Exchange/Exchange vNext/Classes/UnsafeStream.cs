@@ -16,6 +16,7 @@ namespace Mikodev.Binary
         private byte[] buffer = new byte[InitialLength];
         private int position = 0;
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private byte[] ReAllocate(int offset, int require)
         {
             if ((uint)require > MaximumLength)
