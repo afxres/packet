@@ -24,9 +24,10 @@ namespace Mikodev.Binary.Converters
         {
             if (block.IsEmpty)
                 return Empty.Array<T>();
-            if (block.Length % Unsafe.SizeOf<T>() != 0)
+            var quotient = Math.DivRem(block.Length, Unsafe.SizeOf<T>(), out var remainder);
+            if (remainder != 0)
                 ThrowHelper.ThrowOverflow();
-            var target = new T[block.Length / Unsafe.SizeOf<T>()];
+            var target = new T[quotient];
             Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref block.Location, (uint)block.Length);
             if (reverse)
                 Endian.ReverseArray(target);
