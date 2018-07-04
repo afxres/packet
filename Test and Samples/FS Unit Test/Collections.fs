@@ -60,7 +60,7 @@ type Collections () =
         let a1 = reader.Deserialize<int array>()
         let s1 = reader.Deserialize<int seq>()
         
-        let token = cache.NewToken(b2)
+        let token = cache.NewToken((Block)b2)
         let l2 = token.As<int list>()
         let a2 = token.As<int array>()
         let s2 = token.As<int seq>()
@@ -86,7 +86,7 @@ type Collections () =
         let a1 = reader.Deserialize<Person array>()
         let s1 = reader.Deserialize<Person seq>()
 
-        let token = cache.NewToken(b2)
+        let token = cache.NewToken((Block)b2)
         let l2 = token.As<Person list>()
         let a2 = token.As<Person array>()
         let s2 = token.As<Person seq>()
@@ -114,8 +114,8 @@ type Collections () =
 
         let ra1 = PacketConvert.Deserialize<Map<string, Person>>(ta1)
         let rb1 = PacketConvert.Deserialize<Map<int, string>>(tb1)
-        let ra2 = cache.Deserialize<Map<string, Person>>(ta2)
-        let rb2 = cache.Deserialize<Map<int, string>>(tb2)
+        let ra2 = cache.Deserialize<Map<string, Person>>((Block)ta2)
+        let rb2 = cache.Deserialize<Map<int, string>>((Block)tb2)
 
         Extension.AreMapEqual a ra1
         Extension.AreMapEqual b rb1
@@ -139,9 +139,9 @@ type Collections () =
         let ra1 = PacketConvert.Deserialize<Set<int>>(ta1)
         let rb1 = PacketConvert.Deserialize<Set<string>>(tb1)
         let rc1 = PacketConvert.Deserialize<Set<Person>>(tc1)
-        let ra2 = cache.Deserialize<Set<int>>(ta2)
-        let rb2 = cache.Deserialize<Set<string>>(tb2)
-        let rc2 = cache.Deserialize<Set<Person>>(tc2)
+        let ra2 = cache.Deserialize<Set<int>>((Block)ta2)
+        let rb2 = cache.Deserialize<Set<string>>((Block)tb2)
+        let rc2 = cache.Deserialize<Set<Person>>((Block)tc2)
 
         Extension.AreSetEqual a ra1
         Extension.AreSetEqual b rb1
@@ -159,7 +159,7 @@ type Collections () =
         let t1 = cache.Serialize(a)
         let r = new PacketReader(t1)
         let r1 = r.Deserialize<Book>()
-        let r2 = cache.Deserialize<Book>(t2)
+        let r2 = cache.Deserialize<Book>((Block)t2)
         Assert.AreEqual(a, r1)
         Assert.AreEqual(a, r2)
         ()
