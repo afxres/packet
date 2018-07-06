@@ -25,7 +25,7 @@ namespace Mikodev.Binary
         {
             get
             {
-                if ((uint)index > (uint)length)
+                if ((uint)index >= (uint)length)
                     ThrowHelper.ThrowArgumentOutOfRange();
                 return ref buffer[offset + index];
             }

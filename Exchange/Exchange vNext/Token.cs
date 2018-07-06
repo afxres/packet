@@ -25,30 +25,31 @@ namespace Mikodev.Binary
 
         private Dictionary<string, Token> GetDictionary()
         {
+            var map = default(Dictionary<string, Token>);
+            var vernier = (Vernier)block;
+
             try
             {
-                var map = default(Dictionary<string, Token>);
-                var vernier = new Vernier(block);
                 while (vernier.Any)
                 {
-                    if (!vernier.TryFlush())
-                        goto fail;
+                    vernier.Flush();
                     var key = Converter.Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
-                    if (!vernier.TryFlush())
-                        goto fail;
+                    vernier.Flush();
                     var value = new Token(cache, (Block)vernier);
                     if (map == null)
                         map = new Dictionary<string, Token>(8);
                     map.Add(key, value);
                 }
-                dictionary = map;
-                return map;
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+                map = null;
+            }
 
-            fail:
-            dictionary = empty;
-            return empty;
+            if (map == null)
+                map = empty;
+            dictionary = map;
+            return map;
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicToken(parameter, this);

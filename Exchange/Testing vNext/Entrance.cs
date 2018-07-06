@@ -236,5 +236,30 @@ namespace Mikodev.Testing
             Assert.AreEqual(anonymous, r1);
             Assert.AreEqual(anonymous, r2);
         }
+
+        [TestMethod]
+        public void EmptyTest()
+        {
+            try
+            {
+                var bytes = new byte[16];
+                var block = new Block(bytes, 8, 0);
+                var value = block[0];
+                Assert.Fail();
+            }
+            catch (ArgumentOutOfRangeException) { }
+
+            try
+            {
+                var token = cache.NewToken(default(Block));
+                var texta = token.As<string>();
+                var textb = token.As(typeof(string));
+                Assert.AreEqual(string.Empty, texta);
+                Assert.AreEqual(string.Empty, textb);
+                var child = token[string.Empty];
+                Assert.Fail();
+            }
+            catch (KeyNotFoundException) { }
+        }
     }
 }

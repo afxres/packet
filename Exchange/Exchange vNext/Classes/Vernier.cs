@@ -1,5 +1,6 @@
 ﻿using Mikodev.Binary.Converters;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary
 {
@@ -30,6 +31,7 @@ namespace Mikodev.Binary
             length = 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Flush()
         {
             offset += this.length;
@@ -45,30 +47,17 @@ namespace Mikodev.Binary
 
         internal void FlushExcept(int define)
         {
-            if (define > 0)
+            if (define == 0)
+            {
+                Flush();
+            }
+            else
             {
                 offset += length;
                 if ((uint)(limits - offset) < (uint)define)
                     ThrowHelper.ThrowOverflow();
                 length = define;
             }
-            else
-            {
-                Flush();
-            }
-        }
-
-        internal bool TryFlush()
-        {
-            offset += this.length;
-            if ((uint)(limits - offset) < sizeof(int))
-                return false;
-            var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[offset]);
-            offset += sizeof(int);
-            if ((uint)(limits - offset) < (uint)length)
-                return false;
-            this.length = length;
-            return true;
         }
 
         public static explicit operator Block(Vernier vernier) => new Block(vernier.buffer, vernier.offset, vernier.length);
