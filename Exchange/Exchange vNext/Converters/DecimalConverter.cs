@@ -15,7 +15,7 @@ namespace Mikodev.Binary.Converters
             var block = allocator.Allocate(sizeof(decimal));
             if (reverse)
                 Endian.ReverseArray(bits);
-            Unsafe.CopyBlockUnaligned(ref block.Location, ref Unsafe.As<int, byte>(ref bits[0]), sizeof(decimal));
+            Unsafe.CopyBlockUnaligned(ref block[0], ref Unsafe.As<int, byte>(ref bits[0]), sizeof(decimal));
         }
 
         public override decimal ToValue(Block block)
@@ -23,7 +23,7 @@ namespace Mikodev.Binary.Converters
             if (block.Length < sizeof(decimal))
                 ThrowHelper.ThrowOverflow();
             var bits = new int[4];
-            Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref bits[0]), ref block.Location, sizeof(decimal));
+            Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref bits[0]), ref block[0], sizeof(decimal));
             if (reverse)
                 Endian.ReverseArray(bits);
             return new decimal(bits);

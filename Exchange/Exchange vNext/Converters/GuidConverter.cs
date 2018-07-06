@@ -14,7 +14,7 @@ namespace Mikodev.Binary.Converters
             var block = allocator.Allocate(Unsafe.SizeOf<Guid>());
             if (origin)
             {
-                Unsafe.WriteUnaligned(ref block.Location, value);
+                Unsafe.WriteUnaligned(ref block[0], value);
             }
             else
             {
@@ -34,7 +34,7 @@ namespace Mikodev.Binary.Converters
                 ThrowHelper.ThrowOverflow();
             if (origin)
             {
-                return Unsafe.ReadUnaligned<Guid>(ref block.Location);
+                return Unsafe.ReadUnaligned<Guid>(ref block[0]);
             }
             else
             {

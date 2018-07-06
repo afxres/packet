@@ -13,28 +13,13 @@ namespace Mikodev.Binary
         internal Allocator(UnsafeStream stream) => this.stream = stream;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Block Allocate(int length)
-        {
-            if (stream == null)
-                ThrowHelper.ThrowEmptyAllocator();
-            return stream.Allocate(length);
-        }
+        public Block Allocate(int length) => stream.Allocate(length);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Append(byte[] bytes)
-        {
-            if (stream == null)
-                ThrowHelper.ThrowEmptyAllocator();
-            stream.Append(bytes);
-        }
+        public void Append(byte[] bytes) => stream.Append(bytes);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Append(string text)
-        {
-            if (stream == null)
-                ThrowHelper.ThrowEmptyAllocator();
-            stream.Append(text);
-        }
+        public void Append(string text) => stream.Append(text);
 
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

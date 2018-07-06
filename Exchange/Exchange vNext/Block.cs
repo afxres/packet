@@ -21,16 +21,6 @@ namespace Mikodev.Binary
 
         public int Length => length;
 
-        public ref byte Location
-        {
-            get
-            {
-                if (length == 0)
-                    ThrowHelper.ThrowEmptyBlock();
-                return ref buffer[offset];
-            }
-        }
-
         public ref byte this[int index]
         {
             get
@@ -45,34 +35,22 @@ namespace Mikodev.Binary
         public Block(byte[] buffer)
         {
             if (buffer == null)
-            {
-                this = default;
-            }
-            else
-            {
-                this.buffer = buffer;
-                offset = 0;
-                length = buffer.Length;
-            }
+                ThrowHelper.ThrowArgumentNull();
+            this.buffer = buffer;
+            offset = 0;
+            length = buffer.Length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Block(byte[] buffer, int offset, int length)
         {
             if (buffer == null)
-            {
-                if (length != 0)
-                    ThrowHelper.ThrowArgumentOutOfRange();
-                this = default;
-            }
-            else
-            {
-                if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
-                    ThrowHelper.ThrowArgumentOutOfRange();
-                this.buffer = buffer;
-                this.offset = offset;
-                this.length = length;
-            }
+                ThrowHelper.ThrowArgumentNull();
+            if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
+                ThrowHelper.ThrowArgumentOutOfRange();
+            this.buffer = buffer;
+            this.offset = offset;
+            this.length = length;
         }
 
         public byte[] ToArray()

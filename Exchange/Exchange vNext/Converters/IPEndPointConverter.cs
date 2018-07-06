@@ -13,7 +13,7 @@ namespace Mikodev.Binary.Converters
                 return;
             var source = value.Address.GetAddressBytes();
             var block = allocator.Allocate(source.Length + sizeof(ushort));
-            Unsafe.CopyBlockUnaligned(ref block.Location, ref source[0], (uint)source.Length);
+            Unsafe.CopyBlockUnaligned(ref block[0], ref source[0], (uint)source.Length);
             UnmanagedValueConverter<ushort>.ToBytesUnchecked(ref block[source.Length], (ushort)value.Port);
         }
 
@@ -25,7 +25,7 @@ namespace Mikodev.Binary.Converters
             if (addressLength <= 0)
                 ThrowHelper.ThrowOverflow();
             var addressBytes = new byte[addressLength];
-            Unsafe.CopyBlockUnaligned(ref addressBytes[0], ref block.Location, (uint)addressLength);
+            Unsafe.CopyBlockUnaligned(ref addressBytes[0], ref block[0], (uint)addressLength);
             var address = new IPAddress(addressBytes);
             var port = UnmanagedValueConverter<ushort>.ToValueUnchecked(ref block[addressLength]);
             return new IPEndPoint(address, port);

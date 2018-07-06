@@ -22,14 +22,14 @@ namespace Mikodev.Binary.Converters
 
         internal static void Bytes(Allocator allocator, T value)
         {
-            ToBytesUnchecked(ref allocator.Allocate(Unsafe.SizeOf<T>()).Location, value);
+            ToBytesUnchecked(ref allocator.Allocate(Unsafe.SizeOf<T>())[0], value);
         }
 
         internal static T Value(Block block)
         {
             if (block.Length < Unsafe.SizeOf<T>())
                 ThrowHelper.ThrowOverflow();
-            return ToValueUnchecked(ref block.Location);
+            return ToValueUnchecked(ref block[0]);
         }
 
         public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }
