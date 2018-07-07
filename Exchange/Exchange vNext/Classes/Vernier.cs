@@ -23,6 +23,7 @@ namespace Mikodev.Binary
 
         internal bool Any => limits - offset != length;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal Vernier(Block block)
         {
             buffer = block.Buffer;
@@ -45,6 +46,7 @@ namespace Mikodev.Binary
             return;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void FlushExcept(int define)
         {
             if (define == 0)

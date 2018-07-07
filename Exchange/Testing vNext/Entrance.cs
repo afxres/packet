@@ -261,5 +261,20 @@ namespace Mikodev.Testing
             }
             catch (KeyNotFoundException) { }
         }
+
+        [TestMethod]
+        public void InvalidTest()
+        {
+            try
+            {
+                var bytes = new byte[16];
+                for (int i = 0; i < bytes.Length; i++)
+                    bytes[i] = 0xFF;
+                var token = cache.NewToken(bytes);
+                var value = token[string.Empty];
+                Assert.Fail();
+            }
+            catch (KeyNotFoundException) { }
+        }
     }
 }
