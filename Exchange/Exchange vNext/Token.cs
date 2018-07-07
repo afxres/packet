@@ -56,6 +56,8 @@ namespace Mikodev.Binary
 
         public Token this[string key] => Tokens[key];
 
+        public Token At(string key) => Tokens.TryGetValue(key, out var token) ? token : null;
+
         public T As<T>()
         {
             var converter = cache.GetConverter<T>();
