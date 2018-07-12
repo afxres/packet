@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using uint16 = System.UInt16;
 using uint32 = System.UInt32;
 using uint64 = System.UInt64;
@@ -42,7 +41,7 @@ namespace Mikodev.Network
                     var uint64 = Reverse64(Unsafe.As<T, uint64>(ref value));
                     return Unsafe.As<uint64, T>(ref uint64);
                 default:
-                    throw new ApplicationException();
+                    throw new System.ApplicationException();
             }
         }
 
@@ -63,7 +62,7 @@ namespace Mikodev.Network
                         Unsafe.As<T, uint64>(ref array[i]) = Reverse64(Unsafe.As<T, uint64>(ref array[i]));
                     break;
                 default:
-                    throw new ApplicationException();
+                    throw new System.ApplicationException();
             }
         }
 
@@ -84,7 +83,7 @@ namespace Mikodev.Network
                         Unsafe.As<byte, uint64>(ref buffer[i]) = Reverse64(Unsafe.As<byte, uint64>(ref buffer[i]));
                     break;
                 default:
-                    throw new ApplicationException();
+                    throw new System.ApplicationException();
             }
         }
     }

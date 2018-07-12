@@ -1,5 +1,5 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
+using intptr = System.IntPtr;
 using uint16 = System.UInt16;
 using uint32 = System.UInt32;
 using uint64 = System.UInt64;
@@ -30,64 +30,35 @@ namespace Mikodev.Binary
 
         internal static T Reverse<T>(T value) where T : unmanaged
         {
-            switch (Unsafe.SizeOf<T>())
-            {
-                case sizeof(uint16):
-                    var u16 = Reverse16(Unsafe.As<T, uint16>(ref value));
-                    return Unsafe.As<uint16, T>(ref u16);
-                case sizeof(uint32):
-                    var u32 = Reverse32(Unsafe.As<T, uint32>(ref value));
-                    return Unsafe.As<uint32, T>(ref u32);
-                case sizeof(uint64):
-                    var u64 = Reverse64(Unsafe.As<T, uint64>(ref value));
-                    return Unsafe.As<uint64, T>(ref u64);
-                default:
-                    throw new ApplicationException();
-            }
+            var size = Unsafe.SizeOf<T>();
+            if (size == sizeof(uint16))
+                Unsafe.As<T, uint16>(ref value) = Reverse16(Unsafe.As<T, uint16>(ref value));
+            else if (size == sizeof(uint32))
+                Unsafe.As<T, uint32>(ref value) = Reverse32(Unsafe.As<T, uint32>(ref value));
+            else if (size == sizeof(uint64))
+                Unsafe.As<T, uint64>(ref value) = Reverse64(Unsafe.As<T, uint64>(ref value));
+            else
+                throw new System.ApplicationException();
+            return value;
         }
 
-        internal static void ReverseArray<T>(T[] array) where T : unmanaged
-        {
-            switch (Unsafe.SizeOf<T>())
-            {
-                case sizeof(uint16):
-                    for (int i = 0; i < array.Length; i++)
-                        Unsafe.As<T, uint16>(ref array[i]) = Reverse16(Unsafe.As<T, uint16>(ref array[i]));
-                    break;
-                case sizeof(uint32):
-                    for (int i = 0; i < array.Length; i++)
-                        Unsafe.As<T, uint32>(ref array[i]) = Reverse32(Unsafe.As<T, uint32>(ref array[i]));
-                    break;
-                case sizeof(uint64):
-                    for (int i = 0; i < array.Length; i++)
-                        Unsafe.As<T, uint64>(ref array[i]) = Reverse64(Unsafe.As<T, uint64>(ref array[i]));
-                    break;
-                default:
-                    throw new ApplicationException();
-            }
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void ReverseRange<T>(ref T location, int length) where T : unmanaged => ReverseRange<T>(ref Unsafe.As<T, byte>(ref location), length);
 
-        internal static void ReverseBlock<T>(Block block) where T : unmanaged
+        internal static void ReverseRange<T>(ref byte location, int length) where T : unmanaged
         {
-            var buffer = block.Buffer;
-            var limits = block.Offset + block.Length;
-            switch (Unsafe.SizeOf<T>())
-            {
-                case sizeof(uint16):
-                    for (int i = block.Offset; i < limits; i += sizeof(uint16))
-                        Unsafe.As<byte, uint16>(ref buffer[i]) = Reverse16(Unsafe.As<byte, uint16>(ref buffer[i]));
-                    break;
-                case sizeof(uint32):
-                    for (int i = block.Offset; i < limits; i += sizeof(uint32))
-                        Unsafe.As<byte, uint32>(ref buffer[i]) = Reverse32(Unsafe.As<byte, uint32>(ref buffer[i]));
-                    break;
-                case sizeof(uint64):
-                    for (int i = block.Offset; i < limits; i += sizeof(uint64))
-                        Unsafe.As<byte, uint64>(ref buffer[i]) = Reverse64(Unsafe.As<byte, uint64>(ref buffer[i]));
-                    break;
-                default:
-                    throw new ApplicationException();
-            }
+            var size = Unsafe.SizeOf<T>();
+            if (size == sizeof(uint16))
+                for (var i = 0; i < length; i += size)
+                    Unsafe.As<byte, uint16>(ref Unsafe.AddByteOffset(ref location, (intptr)i)) = Reverse16(Unsafe.As<byte, uint16>(ref Unsafe.AddByteOffset(ref location, (intptr)i)));
+            else if (size == sizeof(uint32))
+                for (var i = 0; i < length; i += size)
+                    Unsafe.As<byte, uint32>(ref Unsafe.AddByteOffset(ref location, (intptr)i)) = Reverse32(Unsafe.As<byte, uint32>(ref Unsafe.AddByteOffset(ref location, (intptr)i)));
+            else if (size == sizeof(uint64))
+                for (var i = 0; i < length; i += size)
+                    Unsafe.As<byte, uint64>(ref Unsafe.AddByteOffset(ref location, (intptr)i)) = Reverse64(Unsafe.As<byte, uint64>(ref Unsafe.AddByteOffset(ref location, (intptr)i)));
+            else
+                throw new System.ApplicationException();
         }
     }
 }

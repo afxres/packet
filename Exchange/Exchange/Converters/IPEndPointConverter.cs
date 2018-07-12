@@ -11,7 +11,7 @@ namespace Mikodev.Network.Converters
             var address = value.Address.GetAddressBytes();
             var result = new byte[address.Length + sizeof(ushort)];
             Unsafe.CopyBlockUnaligned(ref result[0], ref address[0], (uint)address.Length);
-            Unsafe.WriteUnaligned(ref result[address.Length], (ushort)value.Port);
+            UnmanagedValueConverter<ushort>.ToBytesUnchecked(ref result[address.Length], (ushort)value.Port);
             return result;
         }
 
@@ -23,7 +23,7 @@ namespace Mikodev.Network.Converters
             var addressBuffer = new byte[addressLength];
             Unsafe.CopyBlockUnaligned(ref addressBuffer[0], ref buffer[offset], (uint)addressLength);
             var address = new IPAddress(addressBuffer);
-            var port = Unsafe.ReadUnaligned<ushort>(ref buffer[offset + addressLength]);
+            var port = UnmanagedValueConverter<ushort>.ToValueUnchecked(ref buffer[offset + addressLength]);
             return new IPEndPoint(address, port);
         }
 

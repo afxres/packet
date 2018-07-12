@@ -16,7 +16,7 @@ namespace Mikodev.Binary.Converters
             var block = allocator.Allocate(array.Length * Unsafe.SizeOf<T>());
             Unsafe.CopyBlockUnaligned(ref block[0], ref Unsafe.As<T, byte>(ref array[0]), (uint)block.Length);
             if (reverse)
-                Endian.ReverseBlock<T>(block);
+                Endian.ReverseRange(ref block[0], block.Length);
             return;
         }
 
@@ -30,7 +30,7 @@ namespace Mikodev.Binary.Converters
             var target = new T[quotient];
             Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref block[0], (uint)block.Length);
             if (reverse)
-                Endian.ReverseArray(target);
+                Endian.ReverseRange(ref target[0], block.Length);
             return target;
         }
     }

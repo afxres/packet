@@ -10,7 +10,7 @@
     <Company>Mikodev</Company>
     <Copyright>Mikodev 2018</Copyright>
     <Product>Mikodev.Binary</Product>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <PackageTags>binary packet dynamic serialize</PackageTags>
     <PackageProjectUrl>https://github.com/afxres/packet</PackageProjectUrl>
   </PropertyGroup>
