@@ -3,8 +3,10 @@ using System.Collections.Generic;
 
 namespace Mikodev.Binary
 {
-    internal abstract class DictionaryAdapter : Adapter
+    internal abstract class DictionaryAdapter
     {
+        public abstract Delegate BytesDelegate { get; }
+        public abstract Delegate ValueDelegate { get; }
         public abstract Delegate TupleDelegate { get; }
     }
 
@@ -14,9 +16,7 @@ namespace Mikodev.Binary
         private readonly Converter<TV> valueConverter;
 
         public sealed override Delegate BytesDelegate { get; }
-
         public sealed override Delegate ValueDelegate { get; }
-
         public sealed override Delegate TupleDelegate { get; }
 
         public DictionaryAdapter(Converter<TK> keyConverter, Converter<TV> valueConverter)

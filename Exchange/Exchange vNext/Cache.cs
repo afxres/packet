@@ -50,7 +50,7 @@ namespace Mikodev.Binary
         #endregion
 
         private readonly ConcurrentDictionary<Type, Converter> converters;
-        private readonly ConcurrentDictionary<Type, Adapter> adapters = new ConcurrentDictionary<Type, Adapter>();
+        private readonly ConcurrentDictionary<Type, DictionaryAdapter> adapters = new ConcurrentDictionary<Type, DictionaryAdapter>();
         private readonly ConcurrentDictionary<string, byte[]> texts = new ConcurrentDictionary<string, byte[]>();
 
         public Cache(IEnumerable<Converter> converters = null)

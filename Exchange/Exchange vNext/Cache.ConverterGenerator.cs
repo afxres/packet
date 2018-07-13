@@ -50,10 +50,10 @@ namespace Mikodev.Binary
                         throw new InvalidOperationException("Invalid dictionary key type");
                     var keyConverter = GetOrGenerateConverter(elementTypes[0]);
                     var valueConverter = GetOrGenerateConverter(elementTypes[1]);
-                    adapter = (Adapter)Activator.CreateInstance(adapterType, keyConverter, valueConverter);
+                    adapter = (DictionaryAdapter)Activator.CreateInstance(adapterType, keyConverter, valueConverter);
                     adapters.TryAdd(adapterType, adapter);
                 }
-                return (DictionaryAdapter)adapter;
+                return adapter;
             }
 
             private Converter GetOrGenerateConverter(Type type)
