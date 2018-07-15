@@ -5,7 +5,7 @@ namespace Mikodev.Binary.Converters
 {
     internal sealed class UnmanagedArrayConverter<T> : Converter<T[]> where T : unmanaged
     {
-        private static readonly bool reverse = BitConverter.IsLittleEndian != UseLittleEndian && Unsafe.SizeOf<T>() != 1;
+        private static readonly bool origin = BitConverter.IsLittleEndian == UseLittleEndian || Unsafe.SizeOf<T>() == 1;
 
         public UnmanagedArrayConverter() : base(0) { }
 
@@ -14,10 +14,10 @@ namespace Mikodev.Binary.Converters
             if (array == null || array.Length == 0)
                 return;
             var block = allocator.Allocate(array.Length * Unsafe.SizeOf<T>());
-            Unsafe.CopyBlockUnaligned(ref block[0], ref Unsafe.As<T, byte>(ref array[0]), (uint)block.Length);
-            if (reverse)
-                Endian.ReverseRange(ref block[0], block.Length);
-            return;
+            if (origin)
+                Unsafe.CopyBlockUnaligned(ref block[0], ref Unsafe.As<T, byte>(ref array[0]), (uint)block.Length);
+            else
+                Endian.SwapRange<T>(ref block[0], ref Unsafe.As<T, byte>(ref array[0]), block.Length);
         }
 
         public override T[] ToValue(Block block)
@@ -28,9 +28,10 @@ namespace Mikodev.Binary.Converters
             if (remainder != 0)
                 ThrowHelper.ThrowOverflow();
             var target = new T[quotient];
-            Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref block[0], (uint)block.Length);
-            if (reverse)
-                Endian.ReverseRange(ref target[0], block.Length);
+            if (origin)
+                Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref block[0], (uint)block.Length);
+            else
+                Endian.SwapRange<T>(ref Unsafe.As<T, byte>(ref target[0]), ref block[0], block.Length);
             return target;
         }
     }

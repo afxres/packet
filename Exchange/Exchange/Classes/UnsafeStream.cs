@@ -36,7 +36,8 @@ namespace Mikodev.Network
             throw PacketException.Overflow();
         }
 
-        private int VerifyAvailable(int require)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int Allocate(int require)
         {
             var offset = position;
             if ((uint)require > (uint)(buffer.Length - offset))
@@ -45,34 +46,34 @@ namespace Mikodev.Network
             return offset;
         }
 
-        internal void Write(byte[] source)
+        internal void Append(byte[] source)
         {
             if (source.Length == 0)
                 return;
-            var offset = VerifyAvailable(source.Length);
+            var offset = Allocate(source.Length);
             Unsafe.CopyBlockUnaligned(ref buffer[offset], ref source[0], (uint)source.Length);
         }
 
-        internal void WriteExtend(byte[] source)
+        internal void AppendExtend(byte[] source)
         {
-            var offset = VerifyAvailable(source.Length + sizeof(int));
-            UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], source.Length);
+            var offset = Allocate(source.Length + sizeof(int));
+            UnmanagedValueConverter<int>.UnsafeToBytes(ref buffer[offset], source.Length);
             if (source.Length == 0)
                 return;
             Unsafe.CopyBlockUnaligned(ref buffer[offset + sizeof(int)], ref source[0], (uint)source.Length);
         }
 
-        internal void WriteKey(string key) => WriteExtend(PacketConvert.Encoding.GetBytes(key));
+        internal void AppendKey(string key) => AppendExtend(PacketConvert.Encoding.GetBytes(key));
 
-        internal int BeginModify() => VerifyAvailable(sizeof(int));
+        internal int AnchorExtend() => Allocate(sizeof(int));
 
-        internal void EndModify(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], (position - offset - sizeof(int)));
+        internal void FinishExtend(int offset) => UnmanagedValueConverter<int>.UnsafeToBytes(ref buffer[offset], (position - offset - sizeof(int)));
 
         internal byte[] GetBytes()
         {
             var length = position;
             if (length == 0)
-                return Extension.EmptyArray<byte>();
+                return Empty.Array<byte>();
             var target = new byte[length];
             Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)length);
             return target;

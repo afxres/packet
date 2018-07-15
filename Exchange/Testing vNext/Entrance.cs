@@ -2,6 +2,7 @@
 using Mikodev.Binary;
 using Mikodev.Network;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -12,25 +13,28 @@ namespace Mikodev.Testing
     [TestClass]
     public class Entrance
     {
+        private const int loop = 1024;
+
         private readonly Cache cache = new Cache();
 
         private readonly Random random = new Random();
 
         private void Verify<T>(T value)
         {
-            var buffer = cache.Serialize(value);
-            var result = cache.Deserialize(buffer, value);
-            var legacy = PacketConvert.Deserialize(buffer, value);
-            Assert.IsFalse(ReferenceEquals(value, result));
-            Assert.IsFalse(ReferenceEquals(value, legacy));
-            Assert.AreEqual(value, result);
-            Assert.AreEqual(value, legacy);
+            var t1 = cache.Serialize(value);
+            var t2 = PacketConvert.Serialize(value);
+            var r1 = cache.Deserialize(t2, value);
+            var r2 = PacketConvert.Deserialize(t1, value);
+            Assert.IsFalse(ReferenceEquals(value, r1));
+            Assert.IsFalse(ReferenceEquals(value, r2));
+            Assert.AreEqual(value, r1);
+            Assert.AreEqual(value, r2);
         }
 
         [TestMethod]
         public void GuidTest()
         {
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < loop; i++)
             {
                 var anonymous = new
                 {
@@ -49,7 +53,7 @@ namespace Mikodev.Testing
                     // native endian
                     var arr = anonymous.b.ToByteArray();
                     var tmp = token["b"].As<byte[]>();
-                    Assert.IsTrue(arr.SequenceEqual(tmp));
+                    CollectionAssert.AreEqual(arr, tmp);
                 }
                 if (Converter.UseLittleEndian == false)
                 {
@@ -60,7 +64,7 @@ namespace Mikodev.Testing
                          .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
                          .ToArray();
                     var tmp = token["d"].As<byte[]>();
-                    Assert.IsTrue(arr.SequenceEqual(tmp));
+                    CollectionAssert.AreEqual(arr, tmp);
                 }
                 Assert.AreEqual(anonymous, r);
             }
@@ -69,7 +73,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Common()
         {
-            for (int i = 0; i < 16; i++)
+            for (int i = 0; i < loop; i++)
             {
                 var anonymous = new
                 {
@@ -85,6 +89,7 @@ namespace Mikodev.Testing
                     uint64 = (ulong)((((long)random.Next()) << 32) + random.Next()),
                     float32 = (float)random.NextDouble(),
                     float64 = random.NextDouble(),
+                    number = (decimal)random.NextDouble(),
                     datetime = DateTime.Now,
                     timespan = DateTime.Now - new DateTime(1999, 12, 31),
                 };
@@ -93,9 +98,45 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void ArrayAndList()
+        {
+            for (int i = 0; i < loop; i++)
+            {
+                var anonymous = new
+                {
+                    int16arr = Enumerable.Range(0, 16).Select(r => (short)random.Next()).ToArray(),
+                    int32arr = Enumerable.Range(0, 16).Select(r => random.Next()).ToArray(),
+                    int64list = Enumerable.Range(0, 16).Select(r => random.Next() * random.Next()).ToList(),
+                    float32arr = Enumerable.Range(0, 32).Select(r => (float)random.Next()).ToArray(),
+                    float64list = Enumerable.Range(0, 32).Select(r => random.NextDouble()).ToList(),
+                    textarr = Enumerable.Range(0, 8).Select(r => $"{random.Next():x}").ToArray(),
+                    textlist = Enumerable.Range(0, 8).Select(r => $"{random.NextDouble()}").ToList(),
+                };
+                var t1 = cache.Serialize(anonymous);
+                var t2 = PacketConvert.Serialize(anonymous);
+                var r1 = cache.Deserialize(t2, anonymous);
+                var r2 = PacketConvert.Deserialize(t1, anonymous);
+                Assert.IsFalse(ReferenceEquals(anonymous, r1));
+                Assert.IsFalse(ReferenceEquals(anonymous, r2));
+
+                CollectionAssert.AreEqual(anonymous.int16arr, r1.int16arr);
+                CollectionAssert.AreEqual(anonymous.int32arr, r1.int32arr);
+                CollectionAssert.AreEqual(anonymous.int64list, r1.int64list);
+                CollectionAssert.AreEqual(anonymous.textarr, r1.textarr);
+                CollectionAssert.AreEqual(anonymous.textlist, r1.textlist);
+
+                CollectionAssert.AreEqual(anonymous.int16arr, r2.int16arr);
+                CollectionAssert.AreEqual(anonymous.int32arr, r2.int32arr);
+                CollectionAssert.AreEqual(anonymous.int64list, r2.int64list);
+                CollectionAssert.AreEqual(anonymous.textarr, r2.textarr);
+                CollectionAssert.AreEqual(anonymous.textlist, r2.textlist);
+            }
+        }
+
+        [TestMethod]
         public void TupleTest()
         {
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < loop; i++)
             {
                 var now = DateTime.Now;
                 var anonymous = new
@@ -116,7 +157,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void DictionaryTest()
         {
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < loop; i++)
             {
                 var anonymous = new
                 {
@@ -124,54 +165,25 @@ namespace Mikodev.Testing
                     d2 = (IDictionary<string, double>)Enumerable.Range(0, 8).ToDictionary(r => $"{random.Next():x}", r => random.NextDouble()),
                     d3 = Enumerable.Range(0, 32).ToDictionary(r => random.Next(), r => random.NextDouble()),
                 };
-                var buffer = cache.Serialize(anonymous);
-                var result = cache.Deserialize(buffer, anonymous);
-                var legacy = PacketConvert.Deserialize(buffer, anonymous);
-                Assert.IsFalse(ReferenceEquals(anonymous, result));
-                Assert.IsFalse(ReferenceEquals(anonymous, legacy));
-                Assert.IsTrue(anonymous.d1.SequenceEqual(result.d1));
-                Assert.IsTrue(anonymous.d2.SequenceEqual(result.d2));
-                Assert.IsTrue(anonymous.d3.SequenceEqual(result.d3));
-                Assert.IsTrue(anonymous.d1.SequenceEqual(legacy.d1));
-                Assert.IsTrue(anonymous.d2.SequenceEqual(legacy.d2));
-                Assert.IsTrue(anonymous.d3.SequenceEqual(legacy.d3));
-            }
-        }
-
-        [TestMethod]
-        public void ArrayAndList()
-        {
-            for (int i = 0; i < 8; i++)
-            {
-                var anonymous = new
-                {
-                    int32arr = Enumerable.Range(0, 16).Select(r => random.Next()).ToArray(),
-                    float64list = Enumerable.Range(0, 16).Select(r => random.NextDouble()).ToList(),
-                    textarr = Enumerable.Range(0, 8).Select(r => $"{random.Next():x}").ToArray(),
-                    textlist = Enumerable.Range(0, 8).Select(r => $"{random.NextDouble()}").ToList(),
-                };
-                var buffer = cache.Serialize(anonymous);
-                var result = cache.Deserialize(buffer, anonymous);
-                var legacy = PacketConvert.Deserialize(buffer, anonymous);
-                Assert.IsFalse(ReferenceEquals(anonymous, result));
-                Assert.IsFalse(ReferenceEquals(anonymous, legacy));
-
-                Assert.IsTrue(anonymous.int32arr.SequenceEqual(result.int32arr));
-                Assert.IsTrue(anonymous.float64list.SequenceEqual(result.float64list));
-                Assert.IsTrue(anonymous.textarr.SequenceEqual(result.textarr));
-                Assert.IsTrue(anonymous.textlist.SequenceEqual(result.textlist));
-
-                Assert.IsTrue(anonymous.int32arr.SequenceEqual(legacy.int32arr));
-                Assert.IsTrue(anonymous.float64list.SequenceEqual(legacy.float64list));
-                Assert.IsTrue(anonymous.textarr.SequenceEqual(legacy.textarr));
-                Assert.IsTrue(anonymous.textlist.SequenceEqual(legacy.textlist));
+                var t1 = cache.Serialize(anonymous);
+                var t2 = PacketConvert.Serialize(anonymous);
+                var r1 = cache.Deserialize(t2, anonymous);
+                var r2 = PacketConvert.Deserialize(t1, anonymous);
+                Assert.IsFalse(ReferenceEquals(anonymous, r1));
+                Assert.IsFalse(ReferenceEquals(anonymous, r2));
+                CollectionAssert.AreEqual(anonymous.d1, r1.d1);
+                CollectionAssert.AreEqual((ICollection)anonymous.d2, (ICollection)r1.d2);
+                CollectionAssert.AreEqual(anonymous.d3, r1.d3);
+                CollectionAssert.AreEqual(anonymous.d1, r2.d1);
+                CollectionAssert.AreEqual((ICollection)anonymous.d2, (ICollection)r2.d2);
+                CollectionAssert.AreEqual(anonymous.d3, r2.d3);
             }
         }
 
         [TestMethod]
         public void CollectionTest()
         {
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < loop; i++)
             {
                 var anonymous = new
                 {
@@ -216,7 +228,7 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
-        public void IPAddressTest()
+        public void IPTest()
         {
             var anonymous = new
             {
@@ -251,7 +263,7 @@ namespace Mikodev.Testing
 
             try
             {
-                var token = cache.NewToken(default(Block));
+                var token = cache.NewToken(default);
                 var texta = token.As<string>();
                 var textb = token.As(typeof(string));
                 Assert.AreEqual(string.Empty, texta);

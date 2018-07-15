@@ -8,22 +8,26 @@ namespace Mikodev.Network.Converters
     {
         private static byte[] ToBytes(IPEndPoint value)
         {
+            if (value == null)
+                return Empty.Array<byte>();
             var address = value.Address.GetAddressBytes();
             var result = new byte[address.Length + sizeof(ushort)];
             Unsafe.CopyBlockUnaligned(ref result[0], ref address[0], (uint)address.Length);
-            UnmanagedValueConverter<ushort>.ToBytesUnchecked(ref result[address.Length], (ushort)value.Port);
+            UnmanagedValueConverter<ushort>.UnsafeToBytes(ref result[address.Length], (ushort)value.Port);
             return result;
         }
 
         private static IPEndPoint ToValue(byte[] buffer, int offset, int length)
         {
+            if (length == 0)
+                return null;
             var addressLength = length - sizeof(ushort);
-            if (buffer == null || offset < 0 || addressLength < 0 || buffer.Length - offset < length)
+            if (buffer == null || offset < 0 || addressLength < 1 || buffer.Length - offset < length)
                 throw PacketException.Overflow();
             var addressBuffer = new byte[addressLength];
             Unsafe.CopyBlockUnaligned(ref addressBuffer[0], ref buffer[offset], (uint)addressLength);
             var address = new IPAddress(addressBuffer);
-            var port = UnmanagedValueConverter<ushort>.ToValueUnchecked(ref buffer[offset + addressLength]);
+            var port = UnmanagedValueConverter<ushort>.UnsafeToValue(ref buffer[offset + addressLength]);
             return new IPEndPoint(address, port);
         }
 

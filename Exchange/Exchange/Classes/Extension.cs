@@ -64,29 +64,11 @@ namespace Mikodev.Network
             Converters = dictionary;
         }
 
-        internal static byte[] BorrowOrCopy(byte[] buffer, int offset, int length)
-        {
-            if (buffer == null)
-                goto fail;
-            if (offset == 0 && length == buffer.Length)
-                return buffer;
-            if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
-                goto fail;
-            if (length == 0)
-                return Extension.EmptyArray<byte>();
-            var result = new byte[length];
-            Unsafe.CopyBlockUnaligned(ref result[0], ref buffer[offset], (uint)length);
-            return result;
-
-            fail:
-            throw PacketException.Overflow();
-        }
-
         internal static byte[] ToBytes(this ICollection<byte> collection)
         {
             var length = collection?.Count ?? 0;
             if (length == 0)
-                return Extension.EmptyArray<byte>();
+                return Empty.Array<byte>();
             var target = new byte[length];
             collection.CopyTo(target, 0);
             return target;
@@ -96,7 +78,7 @@ namespace Mikodev.Network
         {
             var length = collection?.Count ?? 0;
             if (length == 0)
-                return Extension.EmptyArray<byte>();
+                return Empty.Array<byte>();
             var target = new byte[length];
             var source = new sbyte[length];
             collection.CopyTo(source, 0);

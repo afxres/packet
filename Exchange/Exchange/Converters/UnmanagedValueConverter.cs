@@ -10,7 +10,7 @@ namespace Mikodev.Network.Converters
         internal static byte[] ToBytes(T value)
         {
             var buffer = new byte[Unsafe.SizeOf<T>()];
-            ToBytesUnchecked(ref buffer[0], value);
+            UnsafeToBytes(ref buffer[0], value);
             return buffer;
         }
 
@@ -18,20 +18,26 @@ namespace Mikodev.Network.Converters
         {
             if (buffer == null || offset < 0 || length < Unsafe.SizeOf<T>() || buffer.Length - offset < length)
                 throw PacketException.Overflow();
-            return ToValueUnchecked(ref buffer[offset]);
+            return UnsafeToValue(ref buffer[offset]);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void ToBytesUnchecked(ref byte location, T value)
+        internal static void UnsafeToBytes(ref byte location, T value)
         {
-            Unsafe.WriteUnaligned(ref location, origin ? value : Endian.Reverse(value));
+            if (origin)
+                Unsafe.WriteUnaligned(ref location, value);
+            else
+                Endian.Swap<T>(ref location, ref Unsafe.As<T, byte>(ref value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T ToValueUnchecked(ref byte location)
+        internal static T UnsafeToValue(ref byte location)
         {
-            var value = Unsafe.ReadUnaligned<T>(ref location);
-            return origin ? value : Endian.Reverse(value);
+            if (origin)
+                return Unsafe.ReadUnaligned<T>(ref location);
+            var result = default(T);
+            Endian.Swap<T>(ref Unsafe.As<T, byte>(ref result), ref location);
+            return result;
         }
 
         public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }

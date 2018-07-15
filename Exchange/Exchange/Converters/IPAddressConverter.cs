@@ -1,13 +1,23 @@
 ﻿using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
     [Converter(typeof(IPAddress))]
     internal sealed class IPAddressConverter : PacketConverter<IPAddress>
     {
-        private static byte[] ToBytes(IPAddress value) => value.GetAddressBytes();
+        private static byte[] ToBytes(IPAddress value) => value != null ? value.GetAddressBytes() : Empty.Array<byte>();
 
-        private static IPAddress ToValue(byte[] buffer, int offset, int length) => new IPAddress(Extension.BorrowOrCopy(buffer, offset, length));
+        private static IPAddress ToValue(byte[] buffer, int offset, int length)
+        {
+            if (length == 0)
+                return null;
+            if (buffer == null || offset < 0 || length < 0 || buffer.Length - offset < length)
+                throw PacketException.Overflow();
+            var result = new byte[length];
+            Unsafe.CopyBlockUnaligned(ref result[0], ref buffer[offset], (uint)length);
+            return new IPAddress(result);
+        }
 
         public IPAddressConverter() : base(0) { }
 

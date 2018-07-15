@@ -5,9 +5,9 @@
     {
         public ByteArrayConverter() : base(0) { }
 
-        public override byte[] GetBytes(byte[] value) => value ?? Extension.EmptyArray<byte>();
+        public override byte[] GetBytes(byte[] value) => value ?? Empty.Array<byte>();
 
-        public override byte[] GetBytes(object value) => value != null ? (byte[])value : Extension.EmptyArray<byte>();
+        public override byte[] GetBytes(object value) => value != null ? (byte[])value : Empty.Array<byte>();
 
         public override byte[] GetValue(byte[] buffer, int offset, int length) => UnmanagedArrayConverter<byte>.ToValue(buffer, offset, length);
 

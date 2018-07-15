@@ -6,15 +6,16 @@ namespace Mikodev.Network.Converters
     [Converter(typeof(decimal))]
     internal sealed class DecimalConverter : PacketConverter<decimal>
     {
-        private static readonly bool reverse = BitConverter.IsLittleEndian != PacketConvert.UseLittleEndian;
+        private static readonly bool origin = BitConverter.IsLittleEndian == PacketConvert.UseLittleEndian;
 
         private static byte[] ToBytes(decimal value)
         {
-            var source = decimal.GetBits(value);
-            if (reverse)
-                Endian.ReverseArray(source);
             var target = new byte[sizeof(decimal)];
-            Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<int, byte>(ref source[0]), sizeof(decimal));
+            var source = decimal.GetBits(value);
+            if (origin)
+                Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<int, byte>(ref source[0]), sizeof(decimal));
+            else
+                Endian.SwapRange<int>(ref target[0], ref Unsafe.As<int, byte>(ref source[0]), sizeof(decimal));
             return target;
         }
 
@@ -23,9 +24,10 @@ namespace Mikodev.Network.Converters
             if (buffer == null || offset < 0 || length < sizeof(decimal) || buffer.Length - offset < length)
                 throw PacketException.Overflow();
             var target = new int[sizeof(decimal) / sizeof(int)];
-            Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref target[0]), ref buffer[offset], sizeof(decimal));
-            if (reverse)
-                Endian.ReverseArray(target);
+            if (origin)
+                Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref target[0]), ref buffer[offset], sizeof(decimal));
+            else
+                Endian.SwapRange<int>(ref Unsafe.As<int, byte>(ref target[0]), ref buffer[offset], sizeof(decimal));
             var result = new decimal(target);
             return result;
         }

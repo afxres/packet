@@ -1,5 +1,4 @@
-﻿using Mikodev.Network.Converters;
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network
@@ -54,7 +53,7 @@ namespace Mikodev.Network
             {
                 var buffer = converter.GetBytes(value);
                 if (buffer == null)
-                    buffer = Extension.EmptyArray<byte>();
+                    buffer = Empty.Array<byte>();
                 var define = converter.Length;
                 if (define > 0 && define != buffer.Length)
                     throw PacketException.ConversionMismatch(define);
@@ -72,7 +71,7 @@ namespace Mikodev.Network
             {
                 var buffer = converter.GetBytes(value);
                 if (buffer == null)
-                    buffer = Extension.EmptyArray<byte>();
+                    buffer = Empty.Array<byte>();
                 var define = converter.Length;
                 if (define > 0 && define != buffer.Length)
                     throw PacketException.ConversionMismatch(define);

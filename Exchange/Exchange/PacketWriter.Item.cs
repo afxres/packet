@@ -58,9 +58,9 @@ namespace Mikodev.Network
             internal void GetBytes(UnsafeStream stream, int level)
             {
                 PacketException.VerifyRecursionError(ref level);
-                var source = stream.BeginModify();
+                var source = stream.AnchorExtend();
                 GetBytesMatch(stream, level);
-                stream.EndModify(source);
+                stream.FinishExtend(source);
             }
 
             internal void GetBytesMatch(UnsafeStream stream, int level)
@@ -71,7 +71,7 @@ namespace Mikodev.Network
                     case ItemFlags.None:
                         break;
                     case ItemFlags.Buffer:
-                        stream.Write((byte[])data);
+                        stream.Append((byte[])data);
                         break;
                     case ItemFlags.BufferArray:
                         GetBytesMatchBufferArray(stream);
@@ -97,10 +97,10 @@ namespace Mikodev.Network
                 var array = (byte[][])data;
                 if (elementLength > 0)
                     for (int i = 0; i < array.Length; i++)
-                        stream.Write(array[i]);
+                        stream.Append(array[i]);
                 else
                     for (int i = 0; i < array.Length; i++)
-                        stream.WriteExtend(array[i]);
+                        stream.AppendExtend(array[i]);
             }
 
             private void GetBytesMatchItemList(UnsafeStream stream, int level)
@@ -115,7 +115,7 @@ namespace Mikodev.Network
                 var dictionary = (Dictionary<string, PacketWriter>)data;
                 foreach (var i in dictionary)
                 {
-                    stream.WriteKey(i.Key);
+                    stream.AppendKey(i.Key);
                     i.Value.item.GetBytes(stream, level);
                 }
             }
@@ -127,13 +127,13 @@ namespace Mikodev.Network
                 {
                     var current = list[i];
                     if (indexLength > 0)
-                        stream.Write(current.Key);
+                        stream.Append(current.Key);
                     else
-                        stream.WriteExtend(current.Key);
+                        stream.AppendExtend(current.Key);
                     if (elementLength > 0)
-                        stream.Write(current.Value);
+                        stream.Append(current.Value);
                     else
-                        stream.WriteExtend(current.Value);
+                        stream.AppendExtend(current.Value);
                 }
             }
 
@@ -144,9 +144,9 @@ namespace Mikodev.Network
                 {
                     var current = list[i];
                     if (elementLength > 0)
-                        stream.Write(current.Key);
+                        stream.Append(current.Key);
                     else
-                        stream.WriteExtend(current.Key);
+                        stream.AppendExtend(current.Key);
                     current.Value.GetBytes(stream, level);
                 }
             }

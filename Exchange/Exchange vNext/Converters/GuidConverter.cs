@@ -12,19 +12,18 @@ namespace Mikodev.Binary.Converters
         public override void ToBytes(Allocator allocator, Guid value)
         {
             var block = allocator.Allocate(Unsafe.SizeOf<Guid>());
+            ref var target = ref block[0];
             if (origin)
             {
-                Unsafe.WriteUnaligned(ref block[0], value);
+                Unsafe.WriteUnaligned(ref target, value);
             }
             else
             {
-                var buffer = block.Buffer;
-                var offset = block.Offset;
                 ref var source = ref Unsafe.As<Guid, byte>(ref value);
-                Unsafe.WriteUnaligned(ref buffer[offset], Endian.Reverse32(Unsafe.As<byte, uint>(ref source)));
-                Unsafe.WriteUnaligned(ref buffer[offset + 4], Endian.Reverse16(Unsafe.As<byte, ushort>(ref Unsafe.AddByteOffset(ref source, (IntPtr)4))));
-                Unsafe.WriteUnaligned(ref buffer[offset + 6], Endian.Reverse16(Unsafe.As<byte, ushort>(ref Unsafe.AddByteOffset(ref source, (IntPtr)6))));
-                Unsafe.WriteUnaligned(ref buffer[offset + 8], Unsafe.As<byte, ulong>(ref Unsafe.AddByteOffset(ref source, (IntPtr)8)));
+                Unsafe.WriteUnaligned(ref target, Endian.Swap32(Unsafe.As<byte, uint>(ref source)));
+                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)4), Endian.Swap16(Unsafe.As<byte, ushort>(ref Unsafe.AddByteOffset(ref source, (IntPtr)4))));
+                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)6), Endian.Swap16(Unsafe.As<byte, ushort>(ref Unsafe.AddByteOffset(ref source, (IntPtr)6))));
+                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)8), Unsafe.As<byte, ulong>(ref Unsafe.AddByteOffset(ref source, (IntPtr)8)));
             }
         }
 
@@ -32,20 +31,19 @@ namespace Mikodev.Binary.Converters
         {
             if (block.Length < Unsafe.SizeOf<Guid>())
                 ThrowHelper.ThrowOverflow();
+            ref var source = ref block[0];
             if (origin)
             {
-                return Unsafe.ReadUnaligned<Guid>(ref block[0]);
+                return Unsafe.ReadUnaligned<Guid>(ref source);
             }
             else
             {
-                var buffer = block.Buffer;
-                var offset = block.Offset;
                 var value = default(Guid);
                 ref var target = ref Unsafe.As<Guid, byte>(ref value);
-                Unsafe.WriteUnaligned(ref target, Endian.Reverse32(Unsafe.As<byte, uint>(ref buffer[offset])));
-                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)4), Endian.Reverse16(Unsafe.As<byte, ushort>(ref buffer[offset + 4])));
-                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)6), Endian.Reverse16(Unsafe.As<byte, ushort>(ref buffer[offset + 6])));
-                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)8), Unsafe.As<byte, ulong>(ref buffer[offset + 8]));
+                Unsafe.WriteUnaligned(ref target, Endian.Swap32(Unsafe.As<byte, uint>(ref source)));
+                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)4), Endian.Swap16(Unsafe.As<byte, ushort>(ref Unsafe.AddByteOffset(ref source, (IntPtr)4))));
+                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)6), Endian.Swap16(Unsafe.As<byte, ushort>(ref Unsafe.AddByteOffset(ref source, (IntPtr)6))));
+                Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (IntPtr)8), Unsafe.As<byte, ulong>(ref Unsafe.AddByteOffset(ref source, (IntPtr)8)));
                 return value;
             }
         }

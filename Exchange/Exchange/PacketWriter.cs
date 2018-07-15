@@ -1,5 +1,4 @@
-﻿using Mikodev.Network.Converters;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Expressions;
@@ -62,7 +61,7 @@ namespace Mikodev.Network
             switch (item.flag)
             {
                 case ItemFlags.None:
-                    return Extension.EmptyArray<byte>();
+                    return Empty.Array<byte>();
                 case ItemFlags.Buffer:
                     return (byte[])item.data;
                 default:

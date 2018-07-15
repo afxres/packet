@@ -9,13 +9,13 @@ namespace Mikodev.Binary
     internal static class Endian
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static uint16 Reverse16(uint16 value)
+        internal static uint16 Swap16(uint16 value)
         {
             return (uint16)((value >> 8) + (value << 8));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static uint32 Reverse32(uint32 value)
+        internal static uint32 Swap32(uint32 value)
         {
             var one = value & 0x00FF00FFU;
             var two = value & 0xFF00FF00U;
@@ -23,42 +23,48 @@ namespace Mikodev.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static uint64 Reverse64(uint64 value)
+        internal static uint64 Swap64(uint64 value)
         {
-            return ((uint64)Reverse32((uint32)value) << 32) + Reverse32((uint32)(value >> 32));
+            return ((uint64)Swap32((uint32)value) << 32) + Swap32((uint32)(value >> 32));
         }
 
-        internal static T Reverse<T>(T value) where T : unmanaged
+        internal static void Swap<T>(ref byte target, ref byte source) where T : unmanaged
         {
-            var size = Unsafe.SizeOf<T>();
-            if (size == sizeof(uint16))
-                Unsafe.As<T, uint16>(ref value) = Reverse16(Unsafe.As<T, uint16>(ref value));
-            else if (size == sizeof(uint32))
-                Unsafe.As<T, uint32>(ref value) = Reverse32(Unsafe.As<T, uint32>(ref value));
-            else if (size == sizeof(uint64))
-                Unsafe.As<T, uint64>(ref value) = Reverse64(Unsafe.As<T, uint64>(ref value));
-            else
-                throw new System.ApplicationException();
-            return value;
+            switch (Unsafe.SizeOf<T>())
+            {
+                case sizeof(uint16):
+                    Unsafe.WriteUnaligned(ref target, Swap16(Unsafe.As<byte, uint16>(ref source)));
+                    break;
+                case sizeof(uint32):
+                    Unsafe.WriteUnaligned(ref target, Swap32(Unsafe.As<byte, uint32>(ref source)));
+                    break;
+                case sizeof(uint64):
+                    Unsafe.WriteUnaligned(ref target, Swap64(Unsafe.As<byte, uint64>(ref source)));
+                    break;
+                default:
+                    throw new System.ApplicationException();
+            }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void ReverseRange<T>(ref T location, int length) where T : unmanaged => ReverseRange<T>(ref Unsafe.As<T, byte>(ref location), length);
-
-        internal static void ReverseRange<T>(ref byte location, int length) where T : unmanaged
+        internal static void SwapRange<T>(ref byte target, ref byte source, int byteCount) where T : unmanaged
         {
-            var size = Unsafe.SizeOf<T>();
-            if (size == sizeof(uint16))
-                for (var i = 0; i < length; i += size)
-                    Unsafe.As<byte, uint16>(ref Unsafe.AddByteOffset(ref location, (intptr)i)) = Reverse16(Unsafe.As<byte, uint16>(ref Unsafe.AddByteOffset(ref location, (intptr)i)));
-            else if (size == sizeof(uint32))
-                for (var i = 0; i < length; i += size)
-                    Unsafe.As<byte, uint32>(ref Unsafe.AddByteOffset(ref location, (intptr)i)) = Reverse32(Unsafe.As<byte, uint32>(ref Unsafe.AddByteOffset(ref location, (intptr)i)));
-            else if (size == sizeof(uint64))
-                for (var i = 0; i < length; i += size)
-                    Unsafe.As<byte, uint64>(ref Unsafe.AddByteOffset(ref location, (intptr)i)) = Reverse64(Unsafe.As<byte, uint64>(ref Unsafe.AddByteOffset(ref location, (intptr)i)));
-            else
-                throw new System.ApplicationException();
+            switch (Unsafe.SizeOf<T>())
+            {
+                case sizeof(uint16):
+                    for (var i = 0; i < byteCount; i += sizeof(uint16))
+                        Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (intptr)i), Swap16(Unsafe.As<byte, uint16>(ref Unsafe.AddByteOffset(ref source, (intptr)i))));
+                    break;
+                case sizeof(uint32):
+                    for (var i = 0; i < byteCount; i += sizeof(uint32))
+                        Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (intptr)i), Swap32(Unsafe.As<byte, uint32>(ref Unsafe.AddByteOffset(ref source, (intptr)i))));
+                    break;
+                case sizeof(uint64):
+                    for (var i = 0; i < byteCount; i += sizeof(uint64))
+                        Unsafe.WriteUnaligned(ref Unsafe.AddByteOffset(ref target, (intptr)i), Swap64(Unsafe.As<byte, uint64>(ref Unsafe.AddByteOffset(ref source, (intptr)i))));
+                    break;
+                default:
+                    throw new System.ApplicationException();
+            }
         }
     }
 }

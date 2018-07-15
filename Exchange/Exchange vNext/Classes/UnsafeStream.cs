@@ -57,7 +57,7 @@ namespace Mikodev.Binary
         internal int AnchorExtend() => Allocate(sizeof(int), out var _);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void FinishExtend(int offset) => UnmanagedValueConverter<int>.ToBytesUnchecked(ref buffer[offset], position - offset - sizeof(int));
+        internal void FinishExtend(int offset) => UnmanagedValueConverter<int>.UnsafeToBytes(ref buffer[offset], position - offset - sizeof(int));
 
         internal byte[] ToArray() => new Block(buffer, 0, position).ToArray();
 
@@ -65,7 +65,7 @@ namespace Mikodev.Binary
         {
             var length = source.Length;
             var offset = Allocate(length + sizeof(int), out var target);
-            UnmanagedValueConverter<int>.ToBytesUnchecked(ref target[offset], length);
+            UnmanagedValueConverter<int>.UnsafeToBytes(ref target[offset], length);
             Unsafe.CopyBlockUnaligned(ref target[offset + sizeof(int)], ref source[0], (uint)length);
         }
 

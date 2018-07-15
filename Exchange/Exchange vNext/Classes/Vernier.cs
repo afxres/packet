@@ -38,7 +38,7 @@ namespace Mikodev.Binary
             offset += this.length;
             if ((uint)(limits - offset) < sizeof(int))
                 ThrowHelper.ThrowOverflow();
-            var length = UnmanagedValueConverter<int>.ToValueUnchecked(ref buffer[offset]);
+            var length = UnmanagedValueConverter<int>.UnsafeToValue(ref buffer[offset]);
             offset += sizeof(int);
             if ((uint)(limits - offset) < (uint)length)
                 ThrowHelper.ThrowOverflow();
