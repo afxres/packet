@@ -40,7 +40,7 @@ namespace Sample
 
             for (int k = 0; k < loop; k++)
             {
-                using (new TraceWatch("PacketCache Serialize")) // 292.977 ms <- excuse me?
+                using (new TraceWatch("PacketCache Serialize")) // 307.211 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -48,7 +48,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketCache Deserialize")) // 965.866 ms
+                using (new TraceWatch("PacketCache Deserialize")) // 898.834 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -56,7 +56,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketWriter")) // 1598.162 ms
+                using (new TraceWatch("PacketWriter")) // 1543.461 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -64,7 +64,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketReader")) // 1592.582 ms
+                using (new TraceWatch("PacketReader")) // 1583.889 ms
                 {
                     for (int i = 0; i < max; i++)
                     {

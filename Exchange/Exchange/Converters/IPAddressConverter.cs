@@ -12,7 +12,7 @@ namespace Mikodev.Network.Converters
         {
             if (length == 0)
                 return null;
-            if (buffer == null || offset < 0 || length < 0 || buffer.Length - offset < length)
+            if (buffer == null || offset < 0 || length < 1 || buffer.Length - offset < length)
                 throw PacketException.Overflow();
             var result = new byte[length];
             Unsafe.CopyBlockUnaligned(ref result[0], ref buffer[offset], (uint)length);
