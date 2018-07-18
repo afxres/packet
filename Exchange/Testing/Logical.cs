@@ -76,7 +76,7 @@ namespace Mikodev.Testing
 
         public override byte[] GetBytes(TestTwo value)
         {
-            var two = (TestTwo)value;
+            var two = value;
             var buf = new byte[sizeof(int) * 2];
             var a = BitConverter.GetBytes(two.One);
             var b = BitConverter.GetBytes(two.Two);
@@ -122,7 +122,7 @@ namespace Mikodev.Testing
 
         public override byte[] GetBytes(TestBox value)
         {
-            return Encoding.UTF8.GetBytes(((TestBox)value).Name);
+            return Encoding.UTF8.GetBytes(value.Name);
         }
 
         public override TestBox GetValue(byte[] buffer, int offset, int length)
@@ -130,8 +130,6 @@ namespace Mikodev.Testing
             return new TestBox { Name = Encoding.UTF8.GetString(buffer, offset, length) };
         }
     }
-
-    internal class TestEmpty { }
 
     internal class TestPerson
     {
@@ -237,18 +235,6 @@ namespace Mikodev.Testing
             {
                 // ignore
             }
-        }
-
-        [TestMethod]
-        public void SpecialSerialize()
-        {
-            var msg = "Hello, exception!";
-            var e = new Exception(msg);
-            var pkt = PacketWriter.Serialize(e);
-            var buf = pkt.GetBytes();
-
-            var rea = new PacketReader(buf);
-            Assert.AreEqual(msg, rea[nameof(Exception.Message)].GetValue<string>());
         }
 
         [TestMethod]
@@ -403,18 +389,6 @@ namespace Mikodev.Testing
             var val = rea.GetItem(nameof(TestWriteOnly.Value), true);
 
             Assert.AreEqual(val, null);
-        }
-
-        [TestMethod]
-        public void DeserializeEmpty()
-        {
-            var a = new TestEmpty();
-            var pkt = PacketWriter.Serialize(a);
-            var buf = pkt.GetBytes();
-            var rea = new PacketReader(buf);
-            var obj = rea.Deserialize<TestEmpty>();
-
-            Assert.AreEqual(buf.Length, 0);
         }
 
         [TestMethod]

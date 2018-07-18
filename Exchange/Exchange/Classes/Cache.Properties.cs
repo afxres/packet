@@ -9,9 +9,12 @@ namespace Mikodev.Network
     {
         private static GetInfo InternalGetGetInfo(Type type)
         {
+            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            if (properties.Length == 0)
+                throw PacketException.InvalidType(type);
+
             var propertyList = new List<KeyValuePair<string, Type>>();
             var methodInfos = new List<MethodInfo>();
-            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             for (int i = 0; i < properties.Length; i++)
             {
                 var current = properties[i];
@@ -46,7 +49,7 @@ namespace Mikodev.Network
             return new GetInfo(propertyList.ToArray(), expression.Compile());
         }
 
-        private static SetInfo InternalGetSetInfoAnonymousType(Type type)
+        private static SetInfo InternalGetSetInfoAnonymousType(Type type, PropertyInfo[] properties)
         {
             var constructorInfos = type.GetConstructors();
             if (constructorInfos.Length != 1)
@@ -54,7 +57,6 @@ namespace Mikodev.Network
 
             var constructorInfo = constructorInfos[0];
             var constructorParameters = constructorInfo.GetParameters();
-            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             if (properties.Length != constructorParameters.Length)
                 return null;
 
@@ -80,9 +82,8 @@ namespace Mikodev.Network
             return new SetInfo(propertyList, expression.Compile());
         }
 
-        private static SetInfo InternalGetSetInfoProperties(Type type)
+        private static SetInfo InternalGetSetInfoProperties(Type type, PropertyInfo[] properties)
         {
-            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             var propertyList = new List<KeyValuePair<string, Type>>();
             var methodInfos = new List<MethodInfo>();
 
@@ -121,10 +122,13 @@ namespace Mikodev.Network
 
         private static SetInfo InternalGetSetInfo(Type type)
         {
-            if (type.IsValueType)
-                return InternalGetSetInfoProperties(type);
+            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            if (properties.Length == 0)
+                throw PacketException.InvalidType(type);
             var constructorInfos = type.GetConstructor(Type.EmptyTypes);
-            return constructorInfos != null ? InternalGetSetInfoProperties(type) : InternalGetSetInfoAnonymousType(type);
+            return type.IsValueType || constructorInfos != null
+                ? InternalGetSetInfoProperties(type, properties)
+                : InternalGetSetInfoAnonymousType(type, properties);
         }
 
         internal static GetInfo GetGetInfo(Type type)
