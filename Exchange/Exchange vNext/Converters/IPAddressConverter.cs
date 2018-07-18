@@ -16,7 +16,7 @@ namespace Mikodev.Binary.Converters
 
         public override IPAddress ToValue(Block block)
         {
-            if (block.IsEmpty)
+            if (block.Length == 0)
                 return null;
             var result = block.ToArray();
             return new IPAddress(result);

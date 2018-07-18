@@ -33,7 +33,7 @@ namespace Mikodev.Binary.RuntimeConverters
 
         internal static List<T> Value(Block block, Converter<T> converter)
         {
-            if (block.IsEmpty)
+            if (block.Length == 0)
                 return new List<T>(0);
             if (converter.Length == 0)
             {

@@ -13,8 +13,6 @@ namespace Mikodev.Binary
         private readonly int length;
         #endregion
 
-        public bool IsEmpty => length == 0;
-
         public byte[] Buffer => buffer;
 
         public int Offset => offset;

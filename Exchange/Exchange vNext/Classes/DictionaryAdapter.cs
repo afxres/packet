@@ -61,7 +61,7 @@ namespace Mikodev.Binary
 
         public Dictionary<TK, TV> Value(Block block)
         {
-            if (block.IsEmpty)
+            if (block.Length == 0)
                 return new Dictionary<TK, TV>(0);
             var dictionary = new Dictionary<TK, TV>(8);
             var vernier = (Vernier)block;
@@ -78,7 +78,7 @@ namespace Mikodev.Binary
 
         public List<Tuple<TK, TV>> Tuple(Block block)
         {
-            if (block.IsEmpty)
+            if (block.Length == 0)
                 return new List<Tuple<TK, TV>>(0);
             var list = new List<Tuple<TK, TV>>(8);
             var vernier = (Vernier)block;

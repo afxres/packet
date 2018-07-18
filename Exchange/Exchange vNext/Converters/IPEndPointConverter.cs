@@ -19,7 +19,7 @@ namespace Mikodev.Binary.Converters
 
         public override IPEndPoint ToValue(Block block)
         {
-            if (block.IsEmpty)
+            if (block.Length == 0)
                 return null;
             var addressLength = block.Length - sizeof(ushort);
             if (addressLength <= 0)

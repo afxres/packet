@@ -31,7 +31,7 @@ namespace Mikodev.Binary.RuntimeConverters
 
         internal static T[] Value(Block block, Converter<T> converter)
         {
-            if (block.IsEmpty)
+            if (block.Length == 0)
                 return Empty.Array<T>();
             if (converter.Length == 0)
                 return ListConverter<T>.Value(block, converter).ToArray();

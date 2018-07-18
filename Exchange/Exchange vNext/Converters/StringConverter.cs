@@ -11,7 +11,7 @@
 
         public override string ToValue(Block block)
         {
-            return block.IsEmpty ? string.Empty : Encoding.GetString(block.Buffer, block.Offset, block.Length);
+            return block.Length == 0 ? string.Empty : Encoding.GetString(block.Buffer, block.Offset, block.Length);
         }
     }
 }

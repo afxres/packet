@@ -22,7 +22,7 @@ namespace Mikodev.Binary.Converters
 
         public override T[] ToValue(Block block)
         {
-            if (block.IsEmpty)
+            if (block.Length == 0)
                 return Empty.Array<T>();
             var quotient = Math.DivRem(block.Length, Unsafe.SizeOf<T>(), out var remainder);
             if (remainder != 0)
