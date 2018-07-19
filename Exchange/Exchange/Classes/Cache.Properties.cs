@@ -122,13 +122,17 @@ namespace Mikodev.Network
 
         private static SetInfo InternalGetSetInfo(Type type)
         {
+            if (type.IsAbstract || type.IsInterface)
+                goto fail;
             var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             if (properties.Length == 0)
-                throw PacketException.InvalidType(type);
+                goto fail;
             var constructorInfos = type.GetConstructor(Type.EmptyTypes);
             return type.IsValueType || constructorInfos != null
                 ? InternalGetSetInfoProperties(type, properties)
                 : InternalGetSetInfoAnonymousType(type, properties);
+            fail:
+            throw PacketException.InvalidType(type);
         }
 
         internal static GetInfo GetGetInfo(Type type)

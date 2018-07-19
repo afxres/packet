@@ -68,7 +68,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AbstractType.cs" />
+    <Compile Include="AssertExtension.cs" />
     <Compile Include="CircularReference.cs" />
+    <Compile Include="CollectionTest.cs" />
     <Compile Include="EmptyType.cs" />
     <Compile Include="Entrance.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

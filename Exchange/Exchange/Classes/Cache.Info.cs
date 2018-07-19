@@ -154,16 +154,15 @@ namespace Mikodev.Network
                     info.ToCollection = Convert.ToListFunc(elementType);
                     info.ToCollectionExtend = Convert.ToListExtendFunc(elementType);
                 }
-                else if (interfaces.Contains(typeof(IEnumerable<>).MakeGenericType(elementType)))
+                else if (type.IsAbstract == false && type.IsInterface == false &&
+                    interfaces.Contains(typeof(IEnumerable<>).MakeGenericType(elementType)) &&
+                    Convert.ToCollectionByConstructorFunc(type, elementType, out collectionFunc, out collectionExtendFunc) ||
+                    Convert.ToCollectionByAddFunc(type, elementType, out collectionFunc, out collectionExtendFunc))
                 {
-                    if (Convert.ToCollectionByConstructorFunc(type, elementType, out collectionFunc, out collectionExtendFunc) ||
-                        Convert.ToCollectionByAddFunc(type, elementType, out collectionFunc, out collectionExtendFunc))
-                    {
-                        info.ElementType = elementType;
-                        info.To = InfoFlags.Collection;
-                        info.ToCollection = collectionFunc;
-                        info.ToCollectionExtend = collectionExtendFunc;
-                    }
+                    info.ElementType = elementType;
+                    info.To = InfoFlags.Collection;
+                    info.ToCollection = collectionFunc;
+                    info.ToCollectionExtend = collectionExtendFunc;
                 }
             }
 

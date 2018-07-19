@@ -75,7 +75,7 @@ namespace Mikodev.Binary
             #region is ...
             private bool IsTuple(Type type)
             {
-                if (type.IsAbstract || type.IsGenericType == false || type.Namespace != "System")
+                if (type.Namespace != "System")
                     return false;
                 var name = type.Name;
                 return type.IsValueType ? name.StartsWith("ValueTuple`") : name.StartsWith("Tuple`");
@@ -133,9 +133,9 @@ namespace Mikodev.Binary
                 if (definition == typeof(KeyValuePair<,>))
                     throw new InvalidOperationException("Use tuple instead of key-value pair");
 
+                // array
                 if (type.IsArray)
                 {
-                    // array
                     if (type.GetArrayRank() != 1)
                         throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
                     var elementType = type.GetElementType();
@@ -147,6 +147,7 @@ namespace Mikodev.Binary
                         : (Converter)Activator.CreateInstance(typeof(ArrayConverter<>).MakeGenericType(elementType), GetOrGenerateConverter(elementType));
                 }
 
+                // collection
                 var interfaces = type.IsInterface ? type.GetInterfaces().Concat(new[] { type }).ToArray() : type.GetInterfaces();
                 var enumerableTypes = interfaces.Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>)).ToArray();
                 if (enumerableTypes.Length > 1)
@@ -168,13 +169,14 @@ namespace Mikodev.Binary
                 if (elementType == typeof(object))
                     throw new InvalidOperationException($"Invalid collection type : {type}");
 
+                // dictionary or fs map
                 if (elementType.IsGenericType && elementType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
                 {
                     var elementTypes = elementType.GetGenericArguments();
                     var adapter = GetOrGenerateDictionaryAdapter(elementTypes);
+                    // fs map
                     if (IsFSharpMap(type, out var constructorInfo))
                     {
-                        // fs map
                         var block = Expression.Parameter(typeof(Block), "block");
                         var instance = Expression.New(constructorInfo, Expression.Call(Expression.Constant(adapter), adapter.TupleDelegate.Method, block));
                         var delegateType = typeof(Func<,>).MakeGenericType(typeof(Block), type);
@@ -189,14 +191,14 @@ namespace Mikodev.Binary
                     return (Converter)Activator.CreateInstance(typeof(DelegateConverter<>).MakeGenericType(type), adapter.BytesDelegate, adapter.ValueDelegate, 0);
                 }
 
-                var converter = GetOrGenerateConverter(elementType);
                 // list
+                var converter = GetOrGenerateConverter(elementType);
                 if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
                     return (Converter)Activator.CreateInstance(typeof(ListConverter<>).MakeGenericType(elementType), converter, GetOrGenerateConverter(elementType.MakeArrayType()));
                 var converterType = typeof(EnumerableConverter<,>).MakeGenericType(type, elementType);
+                // fs list
                 if (IsFSharpList(type))
                 {
-                    // fs list
                     var enumerable = Expression.Parameter(enumerableType, "enumerable");
                     var instance = Expression.Call(fsToListMethodInfo.MakeGenericMethod(elementType), enumerable);
                     var delegateType = typeof(Func<,>).MakeGenericType(enumerableType, type);
@@ -284,27 +286,79 @@ namespace Mikodev.Binary
             #region collection
             private Delegate ToCollectionDelegate(Type type, Type enumerableType, Type elementType)
             {
-                var enumerable = Expression.Parameter(enumerableType, "enumerable");
-                var constructorInfo = type.GetConstructor(new[] { enumerableType });
                 var delegateType = typeof(Func<,>).MakeGenericType(enumerableType, type);
-                if (constructorInfo != null)
+                if (type.IsAbstract == false && type.IsInterface == false)
                 {
-                    var instance = Expression.New(constructorInfo, enumerable);
-                    var lambda = Expression.Lambda(delegateType, instance, enumerable);
-                    return lambda.Compile();
+                    var enumerable = Expression.Parameter(enumerableType, "enumerable");
+                    var constructorInfo = type.GetConstructor(new[] { enumerableType });
+                    // .ctor(IEnumerable<T>)
+                    if (constructorInfo != null)
+                    {
+                        var instance = Expression.New(constructorInfo, enumerable);
+                        var lambda = Expression.Lambda(delegateType, instance, enumerable);
+                        return lambda.Compile();
+                    }
+                    // Add(T)
+                    var addMethodInfo = type.GetMethod("Add", new[] { elementType });
+                    if (addMethodInfo != null && (type.IsValueType || (constructorInfo = type.GetConstructor(Type.EmptyTypes)) != null))
+                        return ToCollectionDelegateAddMethod(type, elementType, enumerable, delegateType, addMethodInfo);
                 }
 
-                // assignable
+                // find default implementation
                 var arrayType = elementType.MakeArrayType();
                 var listType = typeof(List<>).MakeGenericType(elementType);
                 if (type.IsAssignableFrom(arrayType) && type.IsAssignableFrom(listType))
                 {
-                    var @object = Expression.Parameter(typeof(object), "object");
-                    var lambda = Expression.Lambda(delegateType, Expression.Convert(@object, type), @object);
+                    var source = Expression.Parameter(typeof(object), "source");
+                    var lambda = Expression.Lambda(delegateType, Expression.Convert(source, type), source);
                     return lambda.Compile();
                 }
                 var setType = typeof(HashSet<>).MakeGenericType(elementType);
                 return type.IsAssignableFrom(setType) ? ((IDelegateConverter)GetOrGenerateConverter(setType)).ToValueFunction : null;
+            }
+
+            private Delegate ToCollectionDelegateAddMethod(Type type, Type elementType, ParameterExpression enumerable, Type delegateType, MethodInfo addMethodInfo)
+            {
+                var instance = Expression.Variable(type, "collection");
+                var index = Expression.Variable(typeof(int), "index");
+                var label = Expression.Label(type, "label");
+
+                var variableList = new List<ParameterExpression> { instance, index };
+                var expressionList = new List<Expression>
+                {
+                    Expression.Assign(index, Expression.Constant(0)),
+                    Expression.Assign(instance, Expression.New(type)),
+                };
+
+                var converter = GetOrGenerateConverter(elementType);
+                if (converter.Length == 0)
+                {
+                    var listType = typeof(List<>).MakeGenericType(elementType);
+                    var list = Expression.Variable(listType, "list");
+                    variableList.Add(list);
+                    expressionList.Add(Expression.Assign(list, Expression.Convert(enumerable, listType)));
+                    expressionList.Add(Expression.Loop(
+                        Expression.IfThenElse(
+                            Expression.LessThan(index, Expression.Property(list, "Count")),
+                            Expression.Call(instance, addMethodInfo, Expression.Property(list, "Item", Expression.PostIncrementAssign(index))),
+                            Expression.Break(label, instance)),
+                        label));
+                }
+                else
+                {
+                    var arrayType = elementType.MakeArrayType();
+                    var array = Expression.Variable(arrayType, "array");
+                    variableList.Add(array);
+                    expressionList.Add(Expression.Assign(array, Expression.Convert(enumerable, arrayType)));
+                    expressionList.Add(Expression.Loop(
+                        Expression.IfThenElse(
+                            Expression.LessThan(index, Expression.ArrayLength(array)),
+                            Expression.Call(instance, addMethodInfo, Expression.ArrayAccess(array, Expression.PostIncrementAssign(index))),
+                            Expression.Break(label, instance)),
+                        label));
+                }
+                var lambda = Expression.Lambda(delegateType, Expression.Block(variableList, expressionList), enumerable);
+                return lambda.Compile();
             }
             #endregion
 
@@ -344,28 +398,31 @@ namespace Mikodev.Binary
 
             private Delegate ToValueDelegate(Type type, PropertyInfo[] properties, out int capacity)
             {
+                capacity = 0;
+                if (type.IsAbstract || type.IsInterface)
+                    return null;
                 var delegateType = typeof(Func<,>).MakeGenericType(typeof(Dictionary<string, Block>), type);
                 var constructorInfo = type.GetConstructor(Type.EmptyTypes);
                 return type.IsValueType || constructorInfo != null
-                    ? ToValueDelegateProperties(type, delegateType, properties, out capacity)
-                    : ToValueDelegateAnonymousType(type, delegateType, properties, out capacity);
+                    ? ToValueDelegateProperties(type, delegateType, properties, ref capacity)
+                    : ToValueDelegateAnonymousType(type, delegateType, properties, ref capacity);
             }
 
-            private Delegate ToValueDelegateAnonymousType(Type type, Type delegateType, PropertyInfo[] properties, out int capacity)
+            private Delegate ToValueDelegateAnonymousType(Type type, Type delegateType, PropertyInfo[] properties, ref int capacity)
             {
                 // anonymous type or record
                 var constructors = type.GetConstructors();
                 if (constructors.Length != 1)
-                    goto fail;
+                    return null;
 
                 var constructorInfo = constructors[0];
                 var constructorParameters = constructorInfo.GetParameters();
                 if (properties.Length != constructorParameters.Length)
-                    goto fail;
+                    return null;
 
                 for (int i = 0; i < properties.Length; i++)
                     if (properties[i].Name != constructorParameters[i].Name || properties[i].PropertyType != constructorParameters[i].ParameterType)
-                        goto fail;
+                        return null;
 
                 var dictionary = Expression.Parameter(typeof(Dictionary<string, Block>), "dictionary");
                 var expressionArray = new Expression[properties.Length];
@@ -380,13 +437,9 @@ namespace Mikodev.Binary
                 var lambda = Expression.Lambda(delegateType, Expression.New(constructorInfo, expressionArray), dictionary);
                 capacity = properties.Length;
                 return lambda.Compile();
-
-                fail:
-                capacity = 0;
-                return null;
             }
 
-            private Delegate ToValueDelegateProperties(Type type, Type delegateType, PropertyInfo[] properties, out int capacity)
+            private Delegate ToValueDelegateProperties(Type type, Type delegateType, PropertyInfo[] properties, ref int capacity)
             {
                 var propertyList = new List<PropertyInfo>();
                 for (int i = 0; i < properties.Length; i++)

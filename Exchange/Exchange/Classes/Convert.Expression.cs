@@ -86,9 +86,9 @@ namespace Mikodev.Network
 
         private static Expression<ToEnumerableAdapterFunction> ToEnumerableAdapterExpression<T>() => (reader, info, level) => new EnumerableAdapter<T>(reader, info, level);
 
-        private static Expression ToCollectionByAddExpression(Type elementType, Expression value, ConstructorInfo constructorInfo, MethodInfo addMethodInfo)
+        private static Expression ToCollectionByAddExpression(Type type, Type elementType, Expression value, MethodInfo addMethodInfo)
         {
-            var instance = Expression.Variable(constructorInfo.DeclaringType, "collection");
+            var instance = Expression.Variable(type, "collection");
             var array = Expression.Variable(value.Type, "array");
             var index = Expression.Variable(typeof(int), "index");
             var label = Expression.Label(typeof(object), "result");
@@ -97,7 +97,7 @@ namespace Mikodev.Network
                 arrayAccess = Expression.Convert(arrayAccess, elementType);
             var block = Expression.Block(
                 new[] { instance, array, index },
-                Expression.Assign(instance, Expression.New(constructorInfo)),
+                Expression.Assign(instance, Expression.New(type)),
                 Expression.Assign(array, value),
                 Expression.Assign(index, Expression.Constant(0)),
                 Expression.Loop(
@@ -179,7 +179,7 @@ namespace Mikodev.Network
         {
             var constructorInfo = type.GetConstructor(Type.EmptyTypes);
             var addMethodInfo = type.GetMethod("Add", BindingFlags.Instance | BindingFlags.Public, null, new[] { elementType }, null);
-            if (constructorInfo == null || addMethodInfo == null)
+            if (addMethodInfo == null || (type.IsValueType == false && constructorInfo == null))
             {
                 collectionFunc = null;
                 collectionExtendFunc = null;
@@ -190,18 +190,15 @@ namespace Mikodev.Network
             var converter = Expression.Parameter(typeof(PacketConverter), "converter");
             var expression = Expression.Lambda<Func<PacketReader, PacketConverter, object>>(
                 ToCollectionByAddExpression(
-                    elementType,
+                    type, elementType,
                     Expression.Call(ToArrayMethodInfo.MakeGenericMethod(elementType), reader, converter),
-                    constructorInfo, addMethodInfo),
+                    addMethodInfo),
                 reader, converter);
             collectionFunc = expression.Compile();
 
             var objectArray = Expression.Parameter(typeof(object[]), "objectArray");
             var extensionExpression = Expression.Lambda<ToCollectionExtendFunction>(
-                ToCollectionByAddExpression(
-                    elementType,
-                    objectArray,
-                    constructorInfo, addMethodInfo),
+                ToCollectionByAddExpression(type, elementType, objectArray, addMethodInfo),
                 objectArray);
             collectionExtendFunc = extensionExpression.Compile();
             return true;
