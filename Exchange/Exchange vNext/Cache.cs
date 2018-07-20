@@ -75,15 +75,13 @@ namespace Mikodev.Binary
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
 
-        #region export
+        #region deserialize
         public T Deserialize<T>(Block block)
         {
             var converter = GetConverter<T>();
             var value = converter.ToValue(block);
             return value;
         }
-
-        public T Deserialize<T>(Block block, T anonymous) => Deserialize<T>(block);
 
         public object Deserialize(Block block, Type type)
         {
@@ -94,6 +92,16 @@ namespace Mikodev.Binary
             return value;
         }
 
+        public object Deserialize(byte[] bytes, Type type) => Deserialize(new Block(bytes), type);
+
+        public T Deserialize<T>(byte[] bytes) => Deserialize<T>(new Block(bytes));
+
+        public T Deserialize<T>(Block block, T anonymous) => Deserialize<T>(block);
+
+        public T Deserialize<T>(byte[] bytes, T anonymous) => Deserialize<T>(new Block(bytes));
+        #endregion
+
+        #region serialize, token
         public byte[] Serialize<T>(T value)
         {
             var converter = GetConverter<T>();
@@ -115,6 +123,8 @@ namespace Mikodev.Binary
         }
 
         public Token NewToken(Block block) => new Token(this, block);
+
+        public Token NewToken(byte[] bytes) => NewToken(new Block(bytes));
         #endregion
 
         #region override

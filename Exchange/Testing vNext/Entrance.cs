@@ -98,6 +98,57 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void NonGeneric()
+        {
+            var anonymous = new
+            {
+                id = 1024,
+                text = "string",
+            };
+            var buffer = cache.Serialize((object)anonymous);
+            var result = cache.Deserialize(buffer, anonymous.GetType());
+
+            Assert.IsFalse(ReferenceEquals(anonymous, result));
+            Assert.AreEqual(anonymous, result);
+        }
+
+        [TestMethod]
+        public void PartialBuffer()
+        {
+            for (int i = 0; i < loop; i++)
+            {
+                var bytes = new byte[random.Next(4, 64)];
+                random.NextBytes(bytes);
+                var text = BitConverter.ToString(bytes);
+
+                var anonymous = new
+                {
+                    byteLength = bytes.Length,
+                    text,
+                    textLength = text.Length,
+                };
+                var buffer = cache.Serialize(anonymous);
+                var length = buffer.Length;
+                var expand = new byte[buffer.Length + 64];
+                var offset = random.Next(0, 64);
+                Buffer.BlockCopy(buffer, 0, expand, offset, length);
+                var r1 = cache.Deserialize(new Block(expand, offset, length), anonymous);
+                var r2 = cache.Deserialize(new Block(expand, offset, length), anonymous.GetType());
+                var r3 = cache.NewToken(new Block(expand, offset, length)).As(anonymous);
+                var r4 = cache.NewToken(new Block(expand, offset, length)).As(anonymous.GetType());
+
+                Assert.IsFalse(ReferenceEquals(anonymous, r1));
+                Assert.IsFalse(ReferenceEquals(anonymous, r2));
+                Assert.IsFalse(ReferenceEquals(anonymous, r3));
+                Assert.IsFalse(ReferenceEquals(anonymous, r4));
+                Assert.AreEqual(anonymous, r1);
+                Assert.AreEqual(anonymous, r2);
+                Assert.AreEqual(anonymous, r3);
+                Assert.AreEqual(anonymous, r4);
+            }
+        }
+
+        [TestMethod]
         public void ArrayAndList()
         {
             for (int i = 0; i < loop; i++)
@@ -265,7 +316,7 @@ namespace Mikodev.Testing
 
             try
             {
-                var token = cache.NewToken(default);
+                var token = cache.NewToken(default(Block));
                 var texta = token.As<string>();
                 var textb = token.As(typeof(string));
                 Assert.AreEqual(string.Empty, texta);

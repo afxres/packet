@@ -60,8 +60,6 @@ namespace Mikodev.Binary
             return target;
         }
 
-        public static implicit operator Block(byte[] buffer) => new Block(buffer);
-
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public override bool Equals(object obj) => throw new InvalidOperationException();
