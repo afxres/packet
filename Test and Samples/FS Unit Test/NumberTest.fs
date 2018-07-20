@@ -14,7 +14,7 @@ type Integers = {
 }
 
 [<TestClass>]
-type Arrays () =
+type NumberTest () =
 
     member __.ValidateInteger value = 
         let wa = new PacketWriter()

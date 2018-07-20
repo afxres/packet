@@ -1,51 +1,27 @@
 ﻿namespace FSharpTest
 
-open System.Linq
 open Mikodev.Network
 open Mikodev.Binary
 open Microsoft.VisualStudio.TestTools.UnitTesting
 
-module Extension =
-
-    let AreaSequenceEqual<'t> (a : seq<'t>) (b : seq<'t>) = 
-        if a.SequenceEqual b = false then 
-            Assert.Fail()
-        else ()
-
-    let AreMapEqual<'k , 'v when 'k : comparison and 'v : equality> (a : Map<'k, 'v>) (b : Map<'k, 'v>) =
-        if (a |> Map.count) <> (b |> Map.count) then
-            Assert.Fail()
-        for p in a do
-            if p.Value <> b.[p.Key] then
-                Assert.Fail()
-        ()
-
-    let AreSetEqual<'t when 't : comparison and 't : equality> (a : Set<'t>) (b : Set<'t>) =
-        if (a |> Set.count) <> (b |> Set.count) then
-            Assert.Fail()
-        for i in a do
-            if not (b |> Seq.contains i) then
-                Assert.Fail()
-        ()
-
 type Person = { id : int ; name : string }
 
 type Book(id : int, name : string, price : decimal) =
-    member this.id = id
-    member this.name = name
-    member this.price = price
+    member __.id = id
+    member __.name = name
+    member __.price = price
 
-    override this.ToString() = sprintf "id : %d, name : %s, price : %f" id name price
+    override __.ToString() = sprintf "id : %d, name : %s, price : %f" id name price
 
-    override this.Equals obj =
+    override __.Equals obj =
         match obj with
         | :? Book as other -> id = other.id && name = other.name && price = other.price
         | _ -> false
 
-    override this.GetHashCode() = 1313131313 + id + name.GetHashCode() + price.GetHashCode()
+    override __.GetHashCode() = 1313131313 + id + name.GetHashCode() + price.GetHashCode()
 
 [<TestClass>]
-type Collections () =
+type CollectionTest () =
     
     let cache = new Cache()
     
@@ -60,7 +36,7 @@ type Collections () =
         let a1 = reader.Deserialize<int array>()
         let s1 = reader.Deserialize<int seq>()
         
-        let token = cache.NewToken((Block)b2)
+        let token = cache.NewToken(b2)
         let l2 = token.As<int list>()
         let a2 = token.As<int array>()
         let s2 = token.As<int seq>()
@@ -86,13 +62,10 @@ type Collections () =
         let a1 = reader.Deserialize<Person array>()
         let s1 = reader.Deserialize<Person seq>()
 
-        let token = cache.NewToken((Block)b2)
+        let token = cache.NewToken(b2)
         let l2 = token.As<Person list>()
         let a2 = token.As<Person array>()
         let s2 = token.As<Person seq>()
-
-        let objectList = reader.Deserialize<obj list>()
-        let objectArray = reader.Deserialize<obj array>()
 
         Extension.AreaSequenceEqual source l1
         Extension.AreaSequenceEqual source a1
@@ -114,8 +87,8 @@ type Collections () =
 
         let ra1 = PacketConvert.Deserialize<Map<string, Person>>(ta1)
         let rb1 = PacketConvert.Deserialize<Map<int, string>>(tb1)
-        let ra2 = cache.Deserialize<Map<string, Person>>((Block)ta2)
-        let rb2 = cache.Deserialize<Map<int, string>>((Block)tb2)
+        let ra2 = cache.Deserialize<Map<string, Person>>(ta2)
+        let rb2 = cache.Deserialize<Map<int, string>>(tb2)
 
         Extension.AreMapEqual a ra1
         Extension.AreMapEqual b rb1
@@ -139,9 +112,9 @@ type Collections () =
         let ra1 = PacketConvert.Deserialize<Set<int>>(ta1)
         let rb1 = PacketConvert.Deserialize<Set<string>>(tb1)
         let rc1 = PacketConvert.Deserialize<Set<Person>>(tc1)
-        let ra2 = cache.Deserialize<Set<int>>((Block)ta2)
-        let rb2 = cache.Deserialize<Set<string>>((Block)tb2)
-        let rc2 = cache.Deserialize<Set<Person>>((Block)tc2)
+        let ra2 = cache.Deserialize<Set<int>>(ta2)
+        let rb2 = cache.Deserialize<Set<string>>(tb2)
+        let rc2 = cache.Deserialize<Set<Person>>(tc2)
 
         Extension.AreSetEqual a ra1
         Extension.AreSetEqual b rb1
@@ -159,7 +132,7 @@ type Collections () =
         let t1 = cache.Serialize(a)
         let r = new PacketReader(t1)
         let r1 = r.Deserialize<Book>()
-        let r2 = cache.Deserialize<Book>((Block)t2)
+        let r2 = cache.Deserialize<Book>(t2)
         Assert.AreEqual(a, r1)
         Assert.AreEqual(a, r2)
         ()
