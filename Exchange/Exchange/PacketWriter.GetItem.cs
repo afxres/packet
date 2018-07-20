@@ -46,8 +46,6 @@ namespace Mikodev.Network
             var info = Cache.GetConverterOrInfo(converters, elementType, out var converter);
             if (info == null)
                 return NewItem(valueInfo.FromEnumerable(converter, value), converter.Length);
-            if (valueInfo.ElementType == typeof(object))
-                throw PacketException.InvalidElementType(typeof(object), valueInfo.Type);
             var list = new List<Item>();
             foreach (var i in ((IEnumerable)value))
                 list.Add(GetItemMatch(converters, i, level, info));

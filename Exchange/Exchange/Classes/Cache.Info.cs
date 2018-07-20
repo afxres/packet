@@ -69,6 +69,8 @@ namespace Mikodev.Network
             if (enumerableTypes.Length == 1)
             {
                 var argument = enumerableTypes[0].GetGenericArguments().Single();
+                if (argument == typeof(object))
+                    throw PacketException.InvalidElementType(typeof(object), type);
                 if (argument.IsGenericType && argument.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
                 {
                     if (info.To != InfoFlags.Dictionary)

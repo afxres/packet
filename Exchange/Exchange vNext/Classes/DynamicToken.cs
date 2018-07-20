@@ -25,9 +25,10 @@ namespace Mikodev.Binary
         public override DynamicMetaObject BindConvert(ConvertBinder binder)
         {
             var value = Value;
-            if (!assignable.Contains(binder.Type))
-                value = ((Token)value).As(binder.Type);
-            var constant = Expression.Constant(value);
+            var type = binder.Type;
+            if (!assignable.Contains(type))
+                value = ((Token)value).As(type);
+            var constant = Expression.Constant(value, type);
             return new DynamicMetaObject(constant, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
 

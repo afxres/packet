@@ -9,9 +9,11 @@ namespace Mikodev.Network
     {
         private static GetInfo InternalGetGetInfo(Type type)
         {
+            if (type == typeof(object))
+                goto fail;
             var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             if (properties.Length == 0)
-                throw PacketException.InvalidType(type);
+                goto fail;
 
             var propertyList = new List<KeyValuePair<string, Type>>();
             var methodInfos = new List<MethodInfo>();
@@ -47,6 +49,9 @@ namespace Mikodev.Network
             var block = Expression.Block(new[] { value }, expressionList);
             var expression = Expression.Lambda<Action<object, object[]>>(block, parameter, objectArray);
             return new GetInfo(propertyList.ToArray(), expression.Compile());
+
+            fail:
+            throw PacketException.InvalidType(type);
         }
 
         private static SetInfo InternalGetSetInfoAnonymousType(Type type, PropertyInfo[] properties)

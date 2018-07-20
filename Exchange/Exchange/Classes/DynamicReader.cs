@@ -21,7 +21,7 @@ namespace Mikodev.Network
             var reader = (PacketReader)Value;
             var type = binder.Type;
             var value = reader.GetValue(type, 0);
-            var constant = Expression.Constant(value);
+            var constant = Expression.Constant(value, type);
             return new DynamicMetaObject(constant, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }
 

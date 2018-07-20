@@ -28,7 +28,7 @@ namespace Mikodev.Testing
             }
             catch (InvalidOperationException ex)
             {
-                Assert.IsTrue(ex.Message.StartsWith("Circular reference"));
+                Assert.IsTrue(ex.Message.StartsWith("Circular type reference"));
             }
         }
     }

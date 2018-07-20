@@ -274,8 +274,6 @@ namespace Mikodev.Testing
             var arr = Enumerable.Range(0, 8).Select(r => new TestIndex { Id = r, Name = r.ToString() }).ToArray();
             var buf = PacketConvert.Serialize(arr);
             var rs = PacketConvert.Deserialize<PacketReader[]>(buf);
-            var os = PacketConvert.Deserialize<object[]>(buf);
-            var ol = PacketConvert.Deserialize<List<object>>(buf);
             var rr = PacketConvert.Deserialize<PacketRawReader[]>(buf);
             var ra = PacketConvert.Deserialize<TestIndex[]>(buf);
             var rl = PacketConvert.Deserialize<List<TestIndex>>(buf);

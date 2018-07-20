@@ -50,7 +50,7 @@ namespace Mikodev.Binary
                 if (!adapters.TryGetValue(adapterType, out var adapter))
                 {
                     if (elementTypes[0] == typeof(object))
-                        throw new InvalidOperationException("Invalid dictionary key type");
+                        throw new InvalidOperationException($"Invalid dictionary key type : object");
                     var keyConverter = GetOrGenerateConverter(elementTypes[0]);
                     var valueConverter = GetOrGenerateConverter(elementTypes[1]);
                     adapter = (DictionaryAdapter)Activator.CreateInstance(adapterType, keyConverter, valueConverter);
@@ -65,7 +65,7 @@ namespace Mikodev.Binary
                 if (converters.TryGetValue(type, out var converter))
                     return converter;
                 if (!types.Add(type))
-                    throw new InvalidOperationException($"Circular reference! type : {type}");
+                    throw new InvalidOperationException($"Circular type reference detected! type : {type}");
                 converter = GenerateConverter(type);
                 converters.TryAdd(type, converter);
                 return converter;
@@ -131,21 +131,7 @@ namespace Mikodev.Binary
 
                 var definition = type.IsGenericType ? type.GetGenericTypeDefinition() : null;
                 if (definition == typeof(KeyValuePair<,>))
-                    throw new InvalidOperationException("Use tuple instead of key-value pair");
-
-                // array
-                if (type.IsArray)
-                {
-                    if (type.GetArrayRank() != 1)
-                        throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
-                    var elementType = type.GetElementType();
-                    if (elementType == typeof(object))
-                        throw new InvalidOperationException($"Invalid array type : {type}");
-                    // enum array or else
-                    return elementType.IsEnum
-                        ? (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(elementType))
-                        : (Converter)Activator.CreateInstance(typeof(ArrayConverter<>).MakeGenericType(elementType), GetOrGenerateConverter(elementType));
-                }
+                    throw new InvalidOperationException($"Use tuple instead of key-value pair");
 
                 // collection
                 var interfaces = type.IsInterface ? type.GetInterfaces().Concat(new[] { type }).ToArray() : type.GetInterfaces();
@@ -195,8 +181,19 @@ namespace Mikodev.Binary
                 var converter = GetOrGenerateConverter(elementType);
                 if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
                     return (Converter)Activator.CreateInstance(typeof(ListConverter<>).MakeGenericType(elementType), converter, GetOrGenerateConverter(elementType.MakeArrayType()));
-                var converterType = typeof(EnumerableConverter<,>).MakeGenericType(type, elementType);
+                // array
+                if (type.IsArray)
+                {
+                    if (type.GetArrayRank() != 1)
+                        throw new NotSupportedException("Multidimensional arrays are not supported, use array of arrays instead.");
+                    // enum array or else
+                    return elementType.IsEnum
+                        ? (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(elementType))
+                        : (Converter)Activator.CreateInstance(typeof(ArrayConverter<>).MakeGenericType(elementType), converter);
+                }
+
                 // fs list
+                var converterType = typeof(EnumerableConverter<,>).MakeGenericType(type, elementType);
                 if (IsFSharpList(type))
                 {
                     var enumerable = Expression.Parameter(enumerableType, "enumerable");
