@@ -12,9 +12,6 @@ namespace Mikodev.Binary
     {
         private readonly struct ConverterGenerator
         {
-            private static readonly MethodInfo expandoIndexerMethodInfo = typeof(Dictionary<string, Block>).GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Single(r => r.PropertyType == typeof(Block) && r.GetIndexParameters().Select(x => x.ParameterType).SequenceEqual(new[] { typeof(string) }))
-                .GetGetMethod();
             private static readonly string fsNamespace = "Microsoft.FSharp.Collections";
             private static MethodInfo fsToListMethodInfo;
 
@@ -112,7 +109,7 @@ namespace Mikodev.Binary
                 constructorInfo = type.GetConstructor(new[] { enumerableType });
                 return constructorInfo != null;
 
-                fail:
+            fail:
                 constructorInfo = null;
                 return false;
             }
@@ -425,9 +422,9 @@ namespace Mikodev.Binary
                 var expressionArray = new Expression[properties.Length];
                 for (int i = 0; i < properties.Length; i++)
                 {
-                    var current = properties[i];
-                    var converter = GetOrGenerateConverter(current.PropertyType);
-                    var block = Expression.Call(dictionary, expandoIndexerMethodInfo, Expression.Constant(current.Name));
+                    var item = properties[i];
+                    var converter = GetOrGenerateConverter(item.PropertyType);
+                    var block = Expression.Property(dictionary, "Item", Expression.Constant(item.Name));
                     var value = Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, block);
                     expressionArray[i] = value;
                 }
@@ -454,12 +451,12 @@ namespace Mikodev.Binary
                 var dictionary = Expression.Parameter(typeof(Dictionary<string, Block>), "dictionary");
                 var instance = Expression.Variable(type, "instance");
                 var expressionList = new List<Expression> { Expression.Assign(instance, Expression.New(type)) };
-                foreach (var i in propertyList)
+                foreach (var item in propertyList)
                 {
-                    var converter = GetOrGenerateConverter(i.PropertyType);
-                    var block = Expression.Call(dictionary, expandoIndexerMethodInfo, Expression.Constant(i.Name));
+                    var converter = GetOrGenerateConverter(item.PropertyType);
+                    var block = Expression.Property(dictionary, "Item", Expression.Constant(item.Name));
                     var value = Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, block);
-                    expressionList.Add(Expression.Call(instance, i.GetSetMethod(), value));
+                    expressionList.Add(Expression.Call(instance, item.GetSetMethod(), value));
                 }
                 expressionList.Add(instance);
                 var lambda = Expression.Lambda(delegateType, Expression.Block(new[] { instance }, expressionList), dictionary);

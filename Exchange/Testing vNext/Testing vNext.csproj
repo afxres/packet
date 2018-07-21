@@ -74,6 +74,7 @@
     <Compile Include="CollectionTest.cs" />
     <Compile Include="EmptyType.cs" />
     <Compile Include="Entrance.cs" />
+    <Compile Include="EnumTest.cs" />
     <Compile Include="NullTest.cs" />
     <Compile Include="ObjectTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
