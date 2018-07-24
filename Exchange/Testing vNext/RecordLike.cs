@@ -81,10 +81,10 @@ namespace Mikodev.Testing
         public void Structure()
         {
             var value = new SimpleStructure(int.MaxValue, "sharp");
-            var t1 = cache.Serialize(value);
+            var t1 = cache.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
             var r1 = PacketConvert.Deserialize<SimpleStructure>(t1);
-            var r2 = cache.Deserialize<SimpleStructure>(t2);
+            var r2 = cache.ToValue<SimpleStructure>(t2);
 
             Assert.AreEqual(value, r1);
             Assert.AreEqual(value, r2);
@@ -93,10 +93,10 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Class()
         {
-            var value = new SimpleClass(Guid.NewGuid(), new IPEndPoint(IPAddress.Loopback, 3389)); var t1 = cache.Serialize(value);
+            var value = new SimpleClass(Guid.NewGuid(), new IPEndPoint(IPAddress.Loopback, 3389)); var t1 = cache.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
             var r1 = PacketConvert.Deserialize<SimpleClass>(t1);
-            var r2 = cache.Deserialize<SimpleClass>(t2);
+            var r2 = cache.ToValue<SimpleClass>(t2);
 
             Assert.AreEqual(value, r1);
             Assert.AreEqual(value, r2);

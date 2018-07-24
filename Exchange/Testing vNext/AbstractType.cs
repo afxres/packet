@@ -34,12 +34,12 @@ namespace Mikodev.Testing
         public void Abstract()
         {
             var value = (AbstractObject)new SimpleClass("2048", Guid.NewGuid());
-            var t1 = cache.Serialize(value);
+            var t1 = cache.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
-            var token = cache.NewToken(t1);
+            var token = cache.AsToken(t1);
             var reader = new PacketReader(t2);
 
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.Deserialize<AbstractObject>(t1));
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<AbstractObject>(t1));
             AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize<AbstractObject>(t2));
 
 
@@ -54,12 +54,12 @@ namespace Mikodev.Testing
         public void Interface()
         {
             var value = (IObject)new SimpleClass("2048", Guid.NewGuid());
-            var t1 = cache.Serialize(value);
+            var t1 = cache.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
-            var token = cache.NewToken(t1);
+            var token = cache.AsToken(t1);
             var reader = new PacketReader(t2);
 
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.Deserialize<IObject>(t1));
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<IObject>(t1));
             AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize<IObject>(t2));
 
 

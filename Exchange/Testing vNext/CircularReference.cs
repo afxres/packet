@@ -23,7 +23,7 @@ namespace Mikodev.Testing
             try
             {
                 var linked = Enumerable.Range(0, 9).Aggregate(default(LinkedNode<int>), (last, index) => new LinkedNode<int> { Next = last, Item = index });
-                var buffer = cache.Serialize(linked);
+                var buffer = cache.ToBytes(linked);
                 Assert.Fail();
             }
             catch (InvalidOperationException ex)

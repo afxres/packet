@@ -96,10 +96,10 @@ namespace Mikodev.Testing
                 Assert.IsTrue(l1.SequenceEqual(anonymous.c1));
                 Assert.IsTrue(l2.SequenceEqual(anonymous.c2));
 
-                var t1 = cache.Serialize(anonymous);
+                var t1 = cache.ToBytes(anonymous);
                 var t2 = PacketConvert.Serialize(anonymous);
                 var r1 = PacketConvert.Deserialize(t1, anonymous);
-                var r2 = cache.Deserialize(t2, anonymous);
+                var r2 = cache.ToValue(t2, anonymous);
 
                 Assert.IsTrue(l1.SequenceEqual(r1.c1));
                 Assert.IsTrue(l2.SequenceEqual(r1.c2));
@@ -126,10 +126,10 @@ namespace Mikodev.Testing
                 Assert.IsTrue(l1.SequenceEqual(anonymous.c1));
                 Assert.IsTrue(l2.SequenceEqual(anonymous.c2));
 
-                var t1 = cache.Serialize(anonymous);
+                var t1 = cache.ToBytes(anonymous);
                 var t2 = PacketConvert.Serialize(anonymous);
                 var r1 = PacketConvert.Deserialize(t1, anonymous);
-                var r2 = cache.Deserialize(t2, anonymous);
+                var r2 = cache.ToValue(t2, anonymous);
 
                 Assert.IsTrue(l1.SequenceEqual(r1.c1));
                 Assert.IsTrue(l2.SequenceEqual(r1.c2));
@@ -152,10 +152,10 @@ namespace Mikodev.Testing
                 Assert.IsTrue(l1.SequenceEqual(anonymous.c1));
                 Assert.IsTrue(l2.SequenceEqual(anonymous.c2));
 
-                var t1 = cache.Serialize(anonymous);
+                var t1 = cache.ToBytes(anonymous);
                 var t2 = PacketConvert.Serialize(anonymous);
                 var r1 = PacketConvert.Deserialize(t1, anonymous);
-                var r2 = cache.Deserialize(t2, anonymous);
+                var r2 = cache.ToValue(t2, anonymous);
 
                 Assert.IsTrue(l1.SequenceEqual(r1.c1));
                 Assert.IsTrue(l2.SequenceEqual(r1.c2));
@@ -182,14 +182,14 @@ namespace Mikodev.Testing
                 Assert.IsTrue(l1.SequenceEqual(anonymous.c3));
                 Assert.IsTrue(l2.SequenceEqual(anonymous.c4));
 
-                var t3 = cache.Serialize(anonymous);
+                var t3 = cache.ToBytes(anonymous);
                 var t4 = PacketConvert.Serialize(anonymous);
 
-                AssertExtension.MustFail<InvalidOperationException>(() => cache.Deserialize(t3, anonymous), ex => ex.Message.Contains("Unable to get collection"));
+                AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue(t3, anonymous), ex => ex.Message.Contains("Unable to get collection"));
                 AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize(t4, anonymous), ex => ex.ErrorCode == PacketError.InvalidType);
 
                 var model = new { c3 = default(int[]), c4 = default(string[]), };
-                var r1 = cache.Deserialize(t3, model);
+                var r1 = cache.ToValue(t3, model);
                 var r2 = PacketConvert.Deserialize(t3, model);
 
                 Assert.IsTrue(l1.SequenceEqual(r1.c3));
@@ -217,10 +217,10 @@ namespace Mikodev.Testing
                 Assert.IsTrue(l1.SequenceEqual(anonymous.c1));
                 Assert.IsTrue(l2.SequenceEqual(anonymous.c2));
 
-                var t1 = cache.Serialize(anonymous);
+                var t1 = cache.ToBytes(anonymous);
                 var t2 = PacketConvert.Serialize(anonymous);
                 var r1 = PacketConvert.Deserialize(t1, anonymous);
-                var r2 = cache.Deserialize(t2, anonymous);
+                var r2 = cache.ToValue(t2, anonymous);
 
                 Assert.IsTrue(l1.SequenceEqual(r1.c1));
                 Assert.IsTrue(l2.SequenceEqual(r1.c2));
@@ -251,14 +251,14 @@ namespace Mikodev.Testing
                 Assert.IsTrue(l1.SequenceEqual(anonymous.c3));
                 Assert.IsTrue(l2.SequenceEqual(anonymous.c4));
 
-                var t3 = cache.Serialize(anonymous);
+                var t3 = cache.ToBytes(anonymous);
                 var t4 = PacketConvert.Serialize(anonymous);
 
-                AssertExtension.MustFail<InvalidOperationException>(() => cache.Deserialize(t3, anonymous), ex => ex.Message.Contains("Unable to get collection"));
+                AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue(t3, anonymous), ex => ex.Message.Contains("Unable to get collection"));
                 AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize(t4, anonymous), ex => ex.ErrorCode == PacketError.InvalidType);
 
                 var model = new { c3 = default(int[]), c4 = default(string[]), };
-                var r1 = cache.Deserialize(t3, model);
+                var r1 = cache.ToValue(t3, model);
                 var r2 = PacketConvert.Deserialize(t3, model);
 
                 Assert.IsTrue(l1.SequenceEqual(r1.c3));
@@ -302,14 +302,14 @@ namespace Mikodev.Testing
                 Assert.IsTrue(lv1.SequenceEqual(anonymous.v3));
                 Assert.IsTrue(lv2.SequenceEqual(anonymous.v4));
 
-                var t3 = cache.Serialize(anonymous);
+                var t3 = cache.ToBytes(anonymous);
                 var t4 = PacketConvert.Serialize(anonymous);
 
-                AssertExtension.MustFail<InvalidOperationException>(() => cache.Deserialize(t3, anonymous), ex => ex.Message.Contains("Unable to get collection"));
+                AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue(t3, anonymous), ex => ex.Message.Contains("Unable to get collection"));
                 AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize(t4, anonymous), ex => ex.ErrorCode == PacketError.InvalidType);
 
                 var model = new { c3 = default(int[]), c4 = default(string[]), v3 = default(int[]), v4 = default(string[]) };
-                var r1 = cache.Deserialize(t3, model);
+                var r1 = cache.ToValue(t3, model);
                 var r2 = PacketConvert.Deserialize(t3, model);
 
                 Assert.IsTrue(l1.SequenceEqual(r1.c3));

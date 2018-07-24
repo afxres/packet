@@ -39,10 +39,10 @@ namespace Mikodev.Testing
                     day = (DayOfWeek)random.Next(0, 7),
                     number = (SimpleEnum)random.Next(0, 11),
                 };
-                var t1 = cache.Serialize(anonymous);
+                var t1 = cache.ToBytes(anonymous);
                 var t2 = PacketConvert.Serialize(anonymous);
                 var r1 = PacketConvert.Deserialize(t1, anonymous);
-                var r2 = cache.Deserialize(t2, anonymous);
+                var r2 = cache.ToValue(t2, anonymous);
 
                 Assert.AreEqual(anonymous, r1);
                 Assert.AreEqual(anonymous, r2);
@@ -63,10 +63,10 @@ namespace Mikodev.Testing
                         days,
                         numbers,
                     };
-                    var t1 = cache.Serialize(anonymous);
+                    var t1 = cache.ToBytes(anonymous);
                     var t2 = PacketConvert.Serialize(anonymous);
                     var r1 = PacketConvert.Deserialize(t1, anonymous);
-                    var r2 = cache.Deserialize(t2, anonymous);
+                    var r2 = cache.ToValue(t2, anonymous);
 
                     Assert.AreEqual(anonymous.day, r1.day);
                     Assert.AreEqual(anonymous.number, r1.number);

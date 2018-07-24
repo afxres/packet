@@ -23,10 +23,10 @@ namespace Mikodev.Testing
                 intArray = default(int[]),
                 textArray = default(string[]),
             };
-            var t1 = cache.Serialize(anonymous);
+            var t1 = cache.ToBytes(anonymous);
             var t2 = PacketConvert.Serialize(anonymous);
             var r1 = PacketConvert.Deserialize(t1, anonymous);
-            var r2 = cache.Deserialize(t2, anonymous);
+            var r2 = cache.ToValue(t2, anonymous);
 
             Assert.IsFalse(ReferenceEquals(anonymous, r1));
             Assert.IsFalse(ReferenceEquals(anonymous, r2));
@@ -61,10 +61,10 @@ namespace Mikodev.Testing
                 dictionary = default(Dictionary<int, string>),
                 idictionary = default(IDictionary<string, int>),
             };
-            var t1 = cache.Serialize(anonymous);
+            var t1 = cache.ToBytes(anonymous);
             var t2 = PacketConvert.Serialize(anonymous);
             var r1 = PacketConvert.Deserialize(t1, anonymous);
-            var r2 = cache.Deserialize(t2, anonymous);
+            var r2 = cache.ToValue(t2, anonymous);
 
             Assert.IsFalse(ReferenceEquals(anonymous, r1));
             Assert.IsFalse(ReferenceEquals(anonymous, r2));

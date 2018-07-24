@@ -44,7 +44,7 @@ namespace Sample
                 {
                     for (int i = 0; i < max; i++)
                     {
-                        var _ = cache.Serialize(abo);
+                        var _ = cache.ToBytes(abo);
                     }
                 }
 
@@ -52,7 +52,7 @@ namespace Sample
                 {
                     for (int i = 0; i < max; i++)
                     {
-                        var _ = cache.Deserialize(tmp, abo);
+                        var _ = cache.ToValue(tmp, abo);
                     }
                 }
 

@@ -76,14 +76,14 @@ namespace Mikodev.Binary
         internal Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
 
         #region deserialize
-        public T Deserialize<T>(Block block)
+        public T ToValue<T>(Block block)
         {
             var converter = GetConverter<T>();
             var value = converter.ToValue(block);
             return value;
         }
 
-        public object Deserialize(Block block, Type type)
+        public object ToValue(Block block, Type type)
         {
             if (type == null)
                 ThrowHelper.ThrowArgumentNull();
@@ -92,17 +92,17 @@ namespace Mikodev.Binary
             return value;
         }
 
-        public object Deserialize(byte[] bytes, Type type) => Deserialize(new Block(bytes), type);
+        public object ToValue(byte[] bytes, Type type) => ToValue(new Block(bytes), type);
 
-        public T Deserialize<T>(byte[] bytes) => Deserialize<T>(new Block(bytes));
+        public T ToValue<T>(byte[] bytes) => ToValue<T>(new Block(bytes));
 
-        public T Deserialize<T>(Block block, T anonymous) => Deserialize<T>(block);
+        public T ToValue<T>(Block block, T anonymous) => ToValue<T>(block);
 
-        public T Deserialize<T>(byte[] bytes, T anonymous) => Deserialize<T>(new Block(bytes));
+        public T ToValue<T>(byte[] bytes, T anonymous) => ToValue<T>(new Block(bytes));
         #endregion
 
         #region serialize, token
-        public byte[] Serialize<T>(T value)
+        public byte[] ToBytes<T>(T value)
         {
             var converter = GetConverter<T>();
             var stream = new UnsafeStream();
@@ -111,7 +111,7 @@ namespace Mikodev.Binary
             return stream.ToArray();
         }
 
-        public byte[] Serialize(object value)
+        public byte[] ToBytes(object value)
         {
             if (value == null)
                 ThrowHelper.ThrowArgumentNull();
@@ -122,9 +122,9 @@ namespace Mikodev.Binary
             return stream.ToArray();
         }
 
-        public Token NewToken(Block block) => new Token(this, block);
+        public Token AsToken(Block block) => new Token(this, block);
 
-        public Token NewToken(byte[] bytes) => NewToken(new Block(bytes));
+        public Token AsToken(byte[] bytes) => AsToken(new Block(bytes));
         #endregion
 
         #region override

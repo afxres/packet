@@ -21,9 +21,9 @@ namespace Mikodev.Testing
 
         private void Verify<T>(T value)
         {
-            var t1 = cache.Serialize(value);
+            var t1 = cache.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
-            var r1 = cache.Deserialize(t2, value);
+            var r1 = cache.ToValue(t2, value);
             var r2 = PacketConvert.Deserialize(t1, value);
             Assert.IsFalse(ReferenceEquals(value, r1));
             Assert.IsFalse(ReferenceEquals(value, r2));
@@ -44,9 +44,9 @@ namespace Mikodev.Testing
                     d = Guid.NewGuid(),
                     e = random.NextDouble(),
                 };
-                var t = cache.Serialize(anonymous);
-                var r = cache.Deserialize(t, anonymous);
-                var token = cache.NewToken(t);
+                var t = cache.ToBytes(anonymous);
+                var r = cache.ToValue(t, anonymous);
+                var token = cache.AsToken(t);
                 Assert.IsFalse(ReferenceEquals(anonymous, r));
                 if (BitConverter.IsLittleEndian == Converter.UseLittleEndian)
                 {
@@ -105,8 +105,8 @@ namespace Mikodev.Testing
                 id = 1024,
                 text = "string",
             };
-            var buffer = cache.Serialize((object)anonymous);
-            var result = cache.Deserialize(buffer, anonymous.GetType());
+            var buffer = cache.ToBytes((object)anonymous);
+            var result = cache.ToValue(buffer, anonymous.GetType());
 
             Assert.IsFalse(ReferenceEquals(anonymous, result));
             Assert.AreEqual(anonymous, result);
@@ -127,15 +127,15 @@ namespace Mikodev.Testing
                     text,
                     textLength = text.Length,
                 };
-                var buffer = cache.Serialize(anonymous);
+                var buffer = cache.ToBytes(anonymous);
                 var length = buffer.Length;
                 var expand = new byte[buffer.Length + 64];
                 var offset = random.Next(0, 64);
                 Buffer.BlockCopy(buffer, 0, expand, offset, length);
-                var r1 = cache.Deserialize(new Block(expand, offset, length), anonymous);
-                var r2 = cache.Deserialize(new Block(expand, offset, length), anonymous.GetType());
-                var r3 = cache.NewToken(new Block(expand, offset, length)).As(anonymous);
-                var r4 = cache.NewToken(new Block(expand, offset, length)).As(anonymous.GetType());
+                var r1 = cache.ToValue(new Block(expand, offset, length), anonymous);
+                var r2 = cache.ToValue(new Block(expand, offset, length), anonymous.GetType());
+                var r3 = cache.AsToken(new Block(expand, offset, length)).As(anonymous);
+                var r4 = cache.AsToken(new Block(expand, offset, length)).As(anonymous.GetType());
 
                 Assert.IsFalse(ReferenceEquals(anonymous, r1));
                 Assert.IsFalse(ReferenceEquals(anonymous, r2));
@@ -163,9 +163,9 @@ namespace Mikodev.Testing
                     textarr = Enumerable.Range(0, 8).Select(r => $"{random.Next():x}").ToArray(),
                     textlist = Enumerable.Range(0, 8).Select(r => $"{random.NextDouble()}").ToList(),
                 };
-                var t1 = cache.Serialize(anonymous);
+                var t1 = cache.ToBytes(anonymous);
                 var t2 = PacketConvert.Serialize(anonymous);
-                var r1 = cache.Deserialize(t2, anonymous);
+                var r1 = cache.ToValue(t2, anonymous);
                 var r2 = PacketConvert.Deserialize(t1, anonymous);
                 Assert.IsFalse(ReferenceEquals(anonymous, r1));
                 Assert.IsFalse(ReferenceEquals(anonymous, r2));
@@ -198,8 +198,8 @@ namespace Mikodev.Testing
                     t4 = (random.Next(), $"{random.NextDouble()}", now, $"{now:u}"),
                     tr = (now.Second, $"{random.Next()}", Guid.NewGuid(), $"{now}", (short)random.Next(), (float)random.NextDouble(), IPAddress.Any, new IPEndPoint(IPAddress.Broadcast, (ushort)random.Next()), now.Millisecond)
                 };
-                var buffer = cache.Serialize(anonymous);
-                var result = cache.Deserialize(buffer, anonymous);
+                var buffer = cache.ToBytes(anonymous);
+                var result = cache.ToValue(buffer, anonymous);
                 Assert.IsFalse(ReferenceEquals(anonymous, result));
                 Assert.AreEqual(anonymous, result);
             }
@@ -216,9 +216,9 @@ namespace Mikodev.Testing
                     d2 = (IDictionary<string, double>)Enumerable.Range(0, 8).ToDictionary(r => $"{random.Next():x}", r => random.NextDouble()),
                     d3 = Enumerable.Range(0, 32).ToDictionary(r => random.Next(), r => random.NextDouble()),
                 };
-                var t1 = cache.Serialize(anonymous);
+                var t1 = cache.ToBytes(anonymous);
                 var t2 = PacketConvert.Serialize(anonymous);
-                var r1 = cache.Deserialize(t2, anonymous);
+                var r1 = cache.ToValue(t2, anonymous);
                 var r2 = PacketConvert.Deserialize(t1, anonymous);
                 Assert.IsFalse(ReferenceEquals(anonymous, r1));
                 Assert.IsFalse(ReferenceEquals(anonymous, r2));
@@ -245,8 +245,8 @@ namespace Mikodev.Testing
                     readonlyList = (IReadOnlyList<int>)Enumerable.Range(0, 16).Select(r => random.Next()).ToList(),
                     enumerable = (IEnumerable<int>)Enumerable.Range(0, 16).Select(r => random.Next()).ToList(),
                 };
-                var buffer = cache.Serialize(anonymous);
-                var result = cache.Deserialize(buffer, anonymous);
+                var buffer = cache.ToBytes(anonymous);
+                var result = cache.ToValue(buffer, anonymous);
                 var legacy = PacketConvert.Deserialize(buffer, anonymous);
             }
         }
@@ -260,8 +260,8 @@ namespace Mikodev.Testing
                 name = $"{random.Next()}",
                 guid = Guid.NewGuid(),
             };
-            var t1 = cache.Serialize(anonymous);
-            var token = cache.NewToken(t1);
+            var t1 = cache.ToBytes(anonymous);
+            var token = cache.AsToken(t1);
             var d = (dynamic)token;
             var r1 = (Token)d;
             var r2 = (object)d;
@@ -291,9 +291,9 @@ namespace Mikodev.Testing
                 emptyEndpoint = default(IPEndPoint),
                 status = "ok",
             };
-            var b1 = cache.Serialize(anonymous);
+            var b1 = cache.ToBytes(anonymous);
             var b2 = PacketConvert.Serialize(anonymous);
-            var r1 = cache.Deserialize(b2, anonymous);
+            var r1 = cache.ToValue(b2, anonymous);
             var r2 = PacketConvert.Deserialize(b1, anonymous);
 
             Assert.IsFalse(ReferenceEquals(anonymous, r1));
@@ -316,7 +316,7 @@ namespace Mikodev.Testing
 
             try
             {
-                var token = cache.NewToken(default(Block));
+                var token = cache.AsToken(default(Block));
                 var texta = token.As<string>();
                 var textb = token.As(typeof(string));
                 Assert.AreEqual(string.Empty, texta);
@@ -335,7 +335,7 @@ namespace Mikodev.Testing
                 var bytes = new byte[16];
                 for (int i = 0; i < bytes.Length; i++)
                     bytes[i] = 0xFF;
-                var token = cache.NewToken(bytes);
+                var token = cache.AsToken(bytes);
                 var value = token[string.Empty];
                 Assert.Fail();
             }
