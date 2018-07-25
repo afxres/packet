@@ -38,7 +38,7 @@ namespace Mikodev.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int Allocate(int require, out byte[] target)
+        internal int Allocate(int require, out byte[] target)
         {
             var offset = position;
             target = buffer;
@@ -48,18 +48,12 @@ namespace Mikodev.Binary
             return offset;
         }
 
-        internal Block Allocate(int require)
-        {
-            var offset = Allocate(require, out var target);
-            return new Block(target, offset, require);
-        }
-
         internal int AnchorExtend() => Allocate(sizeof(int), out var _);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void FinishExtend(int offset) => UnmanagedValueConverter<int>.UnsafeToBytes(ref buffer[offset], position - offset - sizeof(int));
 
-        internal byte[] ToArray() => new Block(buffer, 0, position).ToArray();
+        internal byte[] ToArray() => new Memory<byte>(buffer, 0, position).ToArray();
 
         internal void AppendExtend(byte[] source)
         {

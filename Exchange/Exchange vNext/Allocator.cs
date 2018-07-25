@@ -12,8 +12,11 @@ namespace Mikodev.Binary
 
         internal Allocator(UnsafeStream stream) => this.stream = stream;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Block Allocate(int length) => stream.Allocate(length);
+        public Memory<byte> Allocate(int length)
+        {
+            var offset = stream.Allocate(length, out var target);
+            return new Memory<byte>(target, offset, length);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(byte[] bytes) => stream.Append(bytes);

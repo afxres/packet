@@ -24,7 +24,7 @@ namespace Mikodev.Binary
 
         internal abstract void ToBytesAny(Allocator allocator, object value);
 
-        internal abstract object ToValueAny(Block block);
+        internal abstract object ToValueAny(Memory<byte> memory);
 
         internal abstract Delegate ToBytesDelegate { get; }
 
@@ -53,15 +53,15 @@ namespace Mikodev.Binary
         protected Converter(int length) : base(length)
         {
             ToBytesDelegate = (Action<Allocator, T>)ToBytes;
-            ToValueDelegate = (Func<Block, T>)ToValue;
+            ToValueDelegate = (Func<Memory<byte>, T>)ToValue;
         }
 
         public abstract void ToBytes(Allocator allocator, T value);
 
-        public abstract T ToValue(Block block);
+        public abstract T ToValue(Memory<byte> memory);
 
         internal sealed override void ToBytesAny(Allocator allocator, object value) => ToBytes(allocator, (T)value);
 
-        internal sealed override object ToValueAny(Block block) => ToValue(block);
+        internal sealed override object ToValueAny(Memory<byte> memory) => ToValue(memory);
     }
 }

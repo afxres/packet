@@ -1,4 +1,6 @@
-﻿namespace Mikodev.Binary.Converters
+﻿using System;
+
+namespace Mikodev.Binary.Converters
 {
     internal sealed class StringConverter : Converter<string>
     {
@@ -9,9 +11,12 @@
             allocator.Append(value);
         }
 
-        public override string ToValue(Block block)
+        public override string ToValue(Memory<byte> memory)
         {
-            return block.Length == 0 ? string.Empty : Encoding.GetString(block.Buffer, block.Offset, block.Length);
+            if (memory.IsEmpty)
+                return string.Empty;
+            var span = memory.Span;
+            return Encoding.GetString(ref span[0], span.Length);
         }
     }
 }

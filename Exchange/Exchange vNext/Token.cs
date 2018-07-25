@@ -12,44 +12,45 @@ namespace Mikodev.Binary
         private static readonly Dictionary<string, Token> empty = new Dictionary<string, Token>();
 
         private readonly Cache cache;
-        private readonly Block block;
+        private readonly Memory<byte> memory;
         private Dictionary<string, Token> dictionary;
 
         internal Dictionary<string, Token> Tokens => dictionary ?? GetDictionary();
 
-        internal Token(Cache cache, Block block)
+        internal Token(Cache cache, Memory<byte> memory)
         {
             this.cache = cache;
-            this.block = block;
+            this.memory = memory;
         }
 
         private Dictionary<string, Token> GetDictionary()
         {
-            var map = default(Dictionary<string, Token>);
-            var vernier = (Vernier)block;
+            var span = memory.Span;
+            var collection = default(Dictionary<string, Token>);
 
             try
             {
-                while (vernier.Any)
+                var vernier = (Vernier)memory;
+                while (vernier.Any())
                 {
                     vernier.Flush();
-                    var key = Converter.Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
+                    var key = Converter.Encoding.GetString(ref span[vernier.offset], vernier.length);
                     vernier.Flush();
-                    var value = new Token(cache, (Block)vernier);
-                    if (map == null)
-                        map = new Dictionary<string, Token>(8);
-                    map.Add(key, value);
+                    var value = new Token(cache, (Memory<byte>)vernier);
+                    if (collection == null)
+                        collection = new Dictionary<string, Token>(8);
+                    collection.Add(key, value);
                 }
             }
             catch (Exception)
             {
-                map = null;
+                collection = null;
             }
 
-            if (map == null)
-                map = empty;
-            dictionary = map;
-            return map;
+            if (collection == null)
+                collection = empty;
+            dictionary = collection;
+            return collection;
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicToken(parameter, this);
@@ -61,7 +62,7 @@ namespace Mikodev.Binary
         public T As<T>()
         {
             var converter = cache.GetConverter<T>();
-            var value = converter.ToValue(block);
+            var value = converter.ToValue(memory);
             return value;
         }
 
@@ -72,7 +73,7 @@ namespace Mikodev.Binary
             if (type == null)
                 ThrowHelper.ThrowArgumentNull();
             var converter = cache.GetConverter(type);
-            var value = converter.ToValueAny(block);
+            var value = converter.ToValueAny(memory);
             return value;
         }
 
@@ -84,7 +85,7 @@ namespace Mikodev.Binary
         public override int GetHashCode() => throw new InvalidOperationException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override string ToString() => $"{nameof(Token)} item count : {Tokens.Count}, byte length : {block.Length}";
+        public override string ToString() => $"{nameof(Token)} item count : {Tokens.Count}, byte length : {memory.Length}";
         #endregion
     }
 }

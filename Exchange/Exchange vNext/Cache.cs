@@ -76,29 +76,23 @@ namespace Mikodev.Binary
         internal Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
 
         #region deserialize
-        public T ToValue<T>(Block block)
+        public T ToValue<T>(Memory<byte> memory)
         {
             var converter = GetConverter<T>();
-            var value = converter.ToValue(block);
+            var value = converter.ToValue(memory);
             return value;
         }
 
-        public object ToValue(Block block, Type type)
+        public object ToValue(Memory<byte> memory, Type type)
         {
             if (type == null)
                 ThrowHelper.ThrowArgumentNull();
             var converter = GetConverter(type);
-            var value = converter.ToValueAny(block);
+            var value = converter.ToValueAny(memory);
             return value;
         }
 
-        public object ToValue(byte[] bytes, Type type) => ToValue(new Block(bytes), type);
-
-        public T ToValue<T>(byte[] bytes) => ToValue<T>(new Block(bytes));
-
-        public T ToValue<T>(Block block, T anonymous) => ToValue<T>(block);
-
-        public T ToValue<T>(byte[] bytes, T anonymous) => ToValue<T>(new Block(bytes));
+        public T ToValue<T>(Memory<byte> memory, T anonymous) => ToValue<T>(memory);
         #endregion
 
         #region serialize, token
@@ -122,9 +116,7 @@ namespace Mikodev.Binary
             return stream.ToArray();
         }
 
-        public Token AsToken(Block block) => new Token(this, block);
-
-        public Token AsToken(byte[] bytes) => AsToken(new Block(bytes));
+        public Token AsToken(Memory<byte> memory) => new Token(this, memory);
         #endregion
 
         #region override

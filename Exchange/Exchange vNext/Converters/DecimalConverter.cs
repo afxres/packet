@@ -12,22 +12,24 @@ namespace Mikodev.Binary.Converters
         public override void ToBytes(Allocator allocator, decimal value)
         {
             var bits = decimal.GetBits(value);
-            var block = allocator.Allocate(sizeof(decimal));
+            var memory = allocator.Allocate(sizeof(decimal));
+            var span = memory.Span;
             if (origin)
-                Unsafe.CopyBlockUnaligned(ref block[0], ref Unsafe.As<int, byte>(ref bits[0]), sizeof(decimal));
+                Unsafe.CopyBlockUnaligned(ref span[0], ref Unsafe.As<int, byte>(ref bits[0]), sizeof(decimal));
             else
-                Endian.SwapRange<int>(ref block[0], ref Unsafe.As<int, byte>(ref bits[0]), sizeof(decimal));
+                Endian.SwapRange<int>(ref span[0], ref Unsafe.As<int, byte>(ref bits[0]), sizeof(decimal));
         }
 
-        public override decimal ToValue(Block block)
+        public override decimal ToValue(Memory<byte> memory)
         {
-            if (block.Length < sizeof(decimal))
+            if (memory.Length < sizeof(decimal))
                 ThrowHelper.ThrowOverflow();
             var bits = new int[4];
+            var span = memory.Span;
             if (origin)
-                Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref bits[0]), ref block[0], sizeof(decimal));
+                Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref bits[0]), ref span[0], sizeof(decimal));
             else
-                Endian.SwapRange<int>(ref Unsafe.As<int, byte>(ref bits[0]), ref block[0], sizeof(decimal));
+                Endian.SwapRange<int>(ref Unsafe.As<int, byte>(ref bits[0]), ref span[0], sizeof(decimal));
             return new decimal(bits);
         }
     }

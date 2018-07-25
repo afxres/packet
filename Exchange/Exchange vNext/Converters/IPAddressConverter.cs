@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 
 namespace Mikodev.Binary.Converters
 {
@@ -14,11 +15,11 @@ namespace Mikodev.Binary.Converters
             allocator.Append(result);
         }
 
-        public override IPAddress ToValue(Block block)
+        public override IPAddress ToValue(Memory<byte> memory)
         {
-            if (block.Length == 0)
+            if (memory.IsEmpty)
                 return null;
-            var result = block.ToArray();
+            var result = memory.ToArray();
             return new IPAddress(result);
         }
     }

@@ -29,19 +29,21 @@ namespace Mikodev.Binary.RuntimeConverters
             }
         }
 
-        internal static T[] Value(Block block, Converter<T> converter)
+        internal static T[] Value(Memory<byte> memory, Converter<T> converter)
         {
-            if (block.Length == 0)
-                return Empty.Array<T>();
-            if (converter.Length == 0)
-                return ListConverter<T>.Value(block, converter).ToArray();
+            if (memory.IsEmpty)
+                return Array.Empty<T>();
+            var definition = converter.Length;
+            if (definition == 0)
+                return ListConverter<T>.Value(memory, converter).ToArray();
 
-            var quotient = Math.DivRem(block.Length, converter.Length, out var reminder);
+            var span = memory.Span;
+            var quotient = Math.DivRem(span.Length, definition, out var reminder);
             if (reminder != 0)
                 ThrowHelper.ThrowOverflow();
             var array = new T[quotient];
             for (int i = 0; i < quotient; i++)
-                array[i] = converter.ToValue(new Block(block.Buffer, block.Offset + i * converter.Length, converter.Length));
+                array[i] = converter.ToValue(memory.Slice(i * definition, definition));
             return array;
         }
 
@@ -51,6 +53,6 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public override void ToBytes(Allocator allocator, T[] value) => Bytes(allocator, value, converter);
 
-        public override T[] ToValue(Block block) => Value(block, converter);
+        public override T[] ToValue(Memory<byte> memory) => Value(memory, converter);
     }
 }

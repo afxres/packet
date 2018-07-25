@@ -10,6 +10,6 @@ namespace Mikodev.Binary.Converters
 
         public override void ToBytes(Allocator allocator, DateTime value) => UnmanagedValueConverter<T>.SafeToBytes(allocator, value.ToBinary());
 
-        public override DateTime ToValue(Block block) => DateTime.FromBinary(UnmanagedValueConverter<T>.SafeToValue(block));
+        public override DateTime ToValue(Memory<byte> memory) => DateTime.FromBinary(UnmanagedValueConverter<T>.SafeToValue(memory));
     }
 }

@@ -13,25 +13,27 @@ namespace Mikodev.Binary.Converters
         {
             if (array == null || array.Length == 0)
                 return;
-            var block = allocator.Allocate(array.Length * Unsafe.SizeOf<T>());
+            var memory = allocator.Allocate(array.Length * Unsafe.SizeOf<T>());
+            var span = memory.Span;
             if (origin)
-                Unsafe.CopyBlockUnaligned(ref block[0], ref Unsafe.As<T, byte>(ref array[0]), (uint)block.Length);
+                Unsafe.CopyBlockUnaligned(ref span[0], ref Unsafe.As<T, byte>(ref array[0]), (uint)span.Length);
             else
-                Endian.SwapRange<T>(ref block[0], ref Unsafe.As<T, byte>(ref array[0]), block.Length);
+                Endian.SwapRange<T>(ref span[0], ref Unsafe.As<T, byte>(ref array[0]), span.Length);
         }
 
-        public override T[] ToValue(Block block)
+        public override T[] ToValue(Memory<byte> memory)
         {
-            if (block.Length == 0)
-                return Empty.Array<T>();
-            var quotient = Math.DivRem(block.Length, Unsafe.SizeOf<T>(), out var remainder);
+            if (memory.IsEmpty)
+                return Array.Empty<T>();
+            var span = memory.Span;
+            var quotient = Math.DivRem(span.Length, Unsafe.SizeOf<T>(), out var remainder);
             if (remainder != 0)
                 ThrowHelper.ThrowOverflow();
             var target = new T[quotient];
             if (origin)
-                Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref block[0], (uint)block.Length);
+                Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref span[0], (uint)span.Length);
             else
-                Endian.SwapRange<T>(ref Unsafe.As<T, byte>(ref target[0]), ref block[0], block.Length);
+                Endian.SwapRange<T>(ref Unsafe.As<T, byte>(ref target[0]), ref span[0], span.Length);
             return target;
         }
     }

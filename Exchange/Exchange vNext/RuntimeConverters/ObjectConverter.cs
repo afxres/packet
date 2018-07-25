@@ -19,6 +19,6 @@ namespace Mikodev.Binary.RuntimeConverters
             converter.ToBytesAny(allocator, value);
         }
 
-        public override object ToValue(Block block) => new Token(cache, block);
+        public override object ToValue(Memory<byte> memory) => new Token(cache, memory);
     }
 }

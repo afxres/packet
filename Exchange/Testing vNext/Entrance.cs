@@ -112,41 +112,41 @@ namespace Mikodev.Testing
             Assert.AreEqual(anonymous, result);
         }
 
-        [TestMethod]
-        public void PartialBuffer()
-        {
-            for (int i = 0; i < loop; i++)
-            {
-                var bytes = new byte[random.Next(4, 64)];
-                random.NextBytes(bytes);
-                var text = BitConverter.ToString(bytes);
+        //[TestMethod]
+        //public void PartialBuffer()
+        //{
+        //    for (int i = 0; i < loop; i++)
+        //    {
+        //        var bytes = new byte[random.Next(4, 64)];
+        //        random.NextBytes(bytes);
+        //        var text = BitConverter.ToString(bytes);
 
-                var anonymous = new
-                {
-                    byteLength = bytes.Length,
-                    text,
-                    textLength = text.Length,
-                };
-                var buffer = cache.ToBytes(anonymous);
-                var length = buffer.Length;
-                var expand = new byte[buffer.Length + 64];
-                var offset = random.Next(0, 64);
-                Buffer.BlockCopy(buffer, 0, expand, offset, length);
-                var r1 = cache.ToValue(new Block(expand, offset, length), anonymous);
-                var r2 = cache.ToValue(new Block(expand, offset, length), anonymous.GetType());
-                var r3 = cache.AsToken(new Block(expand, offset, length)).As(anonymous);
-                var r4 = cache.AsToken(new Block(expand, offset, length)).As(anonymous.GetType());
+        //        var anonymous = new
+        //        {
+        //            byteLength = bytes.Length,
+        //            text,
+        //            textLength = text.Length,
+        //        };
+        //        var buffer = cache.ToBytes(anonymous);
+        //        var length = buffer.Length;
+        //        var expand = new byte[buffer.Length + 64];
+        //        var offset = random.Next(0, 64);
+        //        Buffer.BlockCopy(buffer, 0, expand, offset, length);
+        //        var r1 = cache.ToValue(new Block(expand, offset, length), anonymous);
+        //        var r2 = cache.ToValue(new Block(expand, offset, length), anonymous.GetType());
+        //        var r3 = cache.AsToken(new Block(expand, offset, length)).As(anonymous);
+        //        var r4 = cache.AsToken(new Block(expand, offset, length)).As(anonymous.GetType());
 
-                Assert.IsFalse(ReferenceEquals(anonymous, r1));
-                Assert.IsFalse(ReferenceEquals(anonymous, r2));
-                Assert.IsFalse(ReferenceEquals(anonymous, r3));
-                Assert.IsFalse(ReferenceEquals(anonymous, r4));
-                Assert.AreEqual(anonymous, r1);
-                Assert.AreEqual(anonymous, r2);
-                Assert.AreEqual(anonymous, r3);
-                Assert.AreEqual(anonymous, r4);
-            }
-        }
+        //        Assert.IsFalse(ReferenceEquals(anonymous, r1));
+        //        Assert.IsFalse(ReferenceEquals(anonymous, r2));
+        //        Assert.IsFalse(ReferenceEquals(anonymous, r3));
+        //        Assert.IsFalse(ReferenceEquals(anonymous, r4));
+        //        Assert.AreEqual(anonymous, r1);
+        //        Assert.AreEqual(anonymous, r2);
+        //        Assert.AreEqual(anonymous, r3);
+        //        Assert.AreEqual(anonymous, r4);
+        //    }
+        //}
 
         [TestMethod]
         public void ArrayAndList()
@@ -307,16 +307,7 @@ namespace Mikodev.Testing
         {
             try
             {
-                var bytes = new byte[16];
-                var block = new Block(bytes, 8, 0);
-                var value = block[0];
-                Assert.Fail();
-            }
-            catch (ArgumentOutOfRangeException) { }
-
-            try
-            {
-                var token = cache.AsToken(default(Block));
+                var token = cache.AsToken(default);
                 var texta = token.As<string>();
                 var textb = token.As(typeof(string));
                 Assert.AreEqual(string.Empty, texta);

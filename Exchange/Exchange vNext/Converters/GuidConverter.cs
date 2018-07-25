@@ -11,8 +11,9 @@ namespace Mikodev.Binary.Converters
 
         public override void ToBytes(Allocator allocator, Guid value)
         {
-            var block = allocator.Allocate(Unsafe.SizeOf<Guid>());
-            ref var target = ref block[0];
+            var memory = allocator.Allocate(Unsafe.SizeOf<Guid>());
+            var span = memory.Span;
+            ref var target = ref span[0];
             if (origin)
             {
                 Unsafe.WriteUnaligned(ref target, value);
@@ -27,11 +28,12 @@ namespace Mikodev.Binary.Converters
             }
         }
 
-        public override Guid ToValue(Block block)
+        public override Guid ToValue(Memory<byte> memory)
         {
-            if (block.Length < Unsafe.SizeOf<Guid>())
+            if (memory.Length < Unsafe.SizeOf<Guid>())
                 ThrowHelper.ThrowOverflow();
-            ref var source = ref block[0];
+            var span = memory.Span;
+            ref var source = ref span[0];
             if (origin)
             {
                 return Unsafe.ReadUnaligned<Guid>(ref source);

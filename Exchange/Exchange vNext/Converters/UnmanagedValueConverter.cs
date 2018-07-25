@@ -28,20 +28,20 @@ namespace Mikodev.Binary.Converters
 
         internal static void SafeToBytes(Allocator allocator, T value)
         {
-            UnsafeToBytes(ref allocator.Allocate(Unsafe.SizeOf<T>())[0], value);
+            UnsafeToBytes(ref allocator.Allocate(Unsafe.SizeOf<T>()).Span[0], value);
         }
 
-        internal static T SafeToValue(Block block)
+        internal static T SafeToValue(Memory<byte> memory)
         {
-            if (block.Length < Unsafe.SizeOf<T>())
+            if (memory.Length < Unsafe.SizeOf<T>())
                 ThrowHelper.ThrowOverflow();
-            return UnsafeToValue(ref block[0]);
+            return UnsafeToValue(ref memory.Span[0]);
         }
 
         public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }
 
         public override void ToBytes(Allocator allocator, T value) => SafeToBytes(allocator, value);
 
-        public override T ToValue(Block block) => SafeToValue(block);
+        public override T ToValue(Memory<byte> memory) => SafeToValue(memory);
     }
 }

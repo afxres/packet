@@ -42,13 +42,13 @@ namespace Mikodev.Binary.RuntimeConverters
             }
         }
 
-        public override TE ToValue(Block block)
+        public override TE ToValue(Memory<byte> memory)
         {
             if (toValue == null)
                 throw new InvalidOperationException($"Unable to get collection, type : {typeof(TE)}");
             var enumerable = converter.Length == 0
-                ? (IEnumerable<TV>)ListConverter<TV>.Value(block, converter)
-                : ArrayConverter<TV>.Value(block, converter);
+                ? (IEnumerable<TV>)ListConverter<TV>.Value(memory, converter)
+                : ArrayConverter<TV>.Value(memory, converter);
             return toValue.Invoke(enumerable);
         }
     }

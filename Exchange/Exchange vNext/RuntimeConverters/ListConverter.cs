@@ -31,29 +31,31 @@ namespace Mikodev.Binary.RuntimeConverters
             }
         }
 
-        internal static List<T> Value(Block block, Converter<T> converter)
+        internal static List<T> Value(Memory<byte> memory, Converter<T> converter)
         {
-            if (block.Length == 0)
+            if (memory.IsEmpty)
                 return new List<T>(0);
-            if (converter.Length == 0)
+            var definition = converter.Length;
+            if (definition == 0)
             {
                 var list = new List<T>(8);
-                var vernier = (Vernier)block;
-                while (vernier.Any)
+                var vernier = (Vernier)memory;
+                while (vernier.Any())
                 {
                     vernier.Flush();
-                    list.Add(converter.ToValue((Block)vernier));
+                    var value = converter.ToValue((Memory<byte>)vernier);
+                    list.Add(value);
                 }
                 return list;
             }
             else
             {
-                var quotient = Math.DivRem(block.Length, converter.Length, out var reminder);
+                var quotient = Math.DivRem(memory.Length, definition, out var reminder);
                 if (reminder != 0)
                     ThrowHelper.ThrowOverflow();
                 var list = new List<T>(quotient);
                 for (int i = 0; i < quotient; i++)
-                    list.Add(converter.ToValue(new Block(block.Buffer, block.Offset + i * converter.Length, converter.Length)));
+                    list.Add(converter.ToValue(memory.Slice(i * definition, definition)));
                 return list;
             }
         }
@@ -70,6 +72,6 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public override void ToBytes(Allocator allocator, List<T> value) => Bytes(allocator, value, converter);
 
-        public override List<T> ToValue(Block block) => arrayConverter == null ? Value(block, converter) : new List<T>(arrayConverter.ToValue(block));
+        public override List<T> ToValue(Memory<byte> memory) => arrayConverter == null ? Value(memory, converter) : new List<T>(arrayConverter.ToValue(memory));
     }
 }

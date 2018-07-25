@@ -24,8 +24,8 @@ namespace Mikodev.Binary
             this.keyConverter = keyConverter;
             this.valueConverter = valueConverter;
             BytesDelegate = new Action<Allocator, IEnumerable<KeyValuePair<TK, TV>>>(Bytes);
-            ValueDelegate = new Func<Block, Dictionary<TK, TV>>(Value);
-            TupleDelegate = new Func<Block, List<Tuple<TK, TV>>>(Tuple);
+            ValueDelegate = new Func<Memory<byte>, Dictionary<TK, TV>>(Value);
+            TupleDelegate = new Func<Memory<byte>, List<Tuple<TK, TV>>>(Tuple);
         }
 
         public void Bytes(Allocator allocator, IEnumerable<KeyValuePair<TK, TV>> value)
@@ -59,35 +59,35 @@ namespace Mikodev.Binary
             }
         }
 
-        public Dictionary<TK, TV> Value(Block block)
+        public Dictionary<TK, TV> Value(Memory<byte> memory)
         {
-            if (block.Length == 0)
+            if (memory.IsEmpty)
                 return new Dictionary<TK, TV>(0);
             var dictionary = new Dictionary<TK, TV>(8);
-            var vernier = (Vernier)block;
-            while (vernier.Any)
+            var vernier = (Vernier)memory;
+            while (vernier.Any())
             {
                 vernier.FlushExcept(keyConverter.Length);
-                var key = keyConverter.ToValue((Block)vernier);
+                var key = keyConverter.ToValue((Memory<byte>)vernier);
                 vernier.FlushExcept(valueConverter.Length);
-                var value = valueConverter.ToValue((Block)vernier);
+                var value = valueConverter.ToValue((Memory<byte>)vernier);
                 dictionary.Add(key, value);
             }
             return dictionary;
         }
 
-        public List<Tuple<TK, TV>> Tuple(Block block)
+        public List<Tuple<TK, TV>> Tuple(Memory<byte> memory)
         {
-            if (block.Length == 0)
+            if (memory.IsEmpty)
                 return new List<Tuple<TK, TV>>(0);
             var list = new List<Tuple<TK, TV>>(8);
-            var vernier = (Vernier)block;
-            while (vernier.Any)
+            var vernier = (Vernier)memory;
+            while (vernier.Any())
             {
                 vernier.FlushExcept(keyConverter.Length);
-                var key = keyConverter.ToValue((Block)vernier);
+                var key = keyConverter.ToValue((Memory<byte>)vernier);
                 vernier.FlushExcept(valueConverter.Length);
-                var value = valueConverter.ToValue((Block)vernier);
+                var value = valueConverter.ToValue((Memory<byte>)vernier);
                 list.Add(new Tuple<TK, TV>(key, value));
             }
             return list;
