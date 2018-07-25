@@ -63,35 +63,27 @@ namespace Mikodev.Binary
             Unsafe.CopyBlockUnaligned(ref target[offset + sizeof(int)], ref source[0], (uint)length);
         }
 
-        internal void Append(byte[] source)
+        internal unsafe void Append(ReadOnlySpan<char> span)
         {
-            int length;
-            if (source == null || (length = source.Length) == 0)
-                return;
-            var offset = Allocate(length, out var target);
-            Unsafe.CopyBlockUnaligned(ref target[offset], ref source[0], (uint)length);
-        }
-
-        internal void Append(string text)
-        {
-            int length;
-            if (text == null || (length = text.Length) == 0)
+            if (span.IsEmpty)
                 return;
             var encoding = Converter.Encoding;
             var offset = position;
             var cursor = 0;
-            var single = Math.Max((length >> 3) + 1, 32);
+            var charCount = Math.Max((span.Length >> 3) + 1, 32);
             do
             {
-                single = Math.Min(single, length - cursor);
-                var maxCount = encoding.GetMaxByteCount(single);
+                charCount = Math.Min(charCount, span.Length - cursor);
+                var byteCount = encoding.GetMaxByteCount(charCount);
                 var target = buffer;
-                if ((uint)maxCount > (uint)(target.Length - offset))
-                    target = ReAllocate(offset, maxCount);
-                offset += encoding.GetBytes(text, cursor, single, target, offset);
-                cursor += single;
+                if ((uint)byteCount > (uint)(target.Length - offset))
+                    target = ReAllocate(offset, byteCount);
+                fixed (char* chars = &span[cursor])
+                fixed (byte* bytes = &target[offset])
+                    offset += encoding.GetBytes(chars, charCount, bytes, byteCount);
+                cursor += charCount;
             }
-            while (cursor != length);
+            while (cursor != span.Length);
             position = offset;
         }
     }

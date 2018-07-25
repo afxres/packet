@@ -19,10 +19,16 @@ namespace Mikodev.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Append(byte[] bytes) => stream.Append(bytes);
+        public void Append(Span<byte> span)
+        {
+            if (span.IsEmpty)
+                return;
+            var offset = stream.Allocate(span.Length, out var target);
+            Unsafe.CopyBlockUnaligned(ref target[offset], ref span[0], (uint)span.Length);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Append(string text) => stream.Append(text);
+        public void Append(ReadOnlySpan<char> span) => stream.Append(span);
 
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

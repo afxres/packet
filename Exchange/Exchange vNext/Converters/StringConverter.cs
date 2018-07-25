@@ -8,7 +8,7 @@ namespace Mikodev.Binary.Converters
 
         public override void ToBytes(Allocator allocator, string value)
         {
-            allocator.Append(value);
+            allocator.Append(value.AsSpan());
         }
 
         public override string ToValue(Memory<byte> memory)
