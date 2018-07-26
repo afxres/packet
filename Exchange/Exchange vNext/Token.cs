@@ -12,12 +12,12 @@ namespace Mikodev.Binary
         private static readonly Dictionary<string, Token> empty = new Dictionary<string, Token>();
 
         private readonly Cache cache;
-        private readonly Memory<byte> memory;
+        private readonly ReadOnlyMemory<byte> memory;
         private Dictionary<string, Token> dictionary;
 
         internal Dictionary<string, Token> Tokens => dictionary ?? GetDictionary();
 
-        internal Token(Cache cache, Memory<byte> memory)
+        internal Token(Cache cache, ReadOnlyMemory<byte> memory)
         {
             this.cache = cache;
             this.memory = memory;
@@ -34,9 +34,9 @@ namespace Mikodev.Binary
                 while (vernier.Any())
                 {
                     vernier.Flush();
-                    var key = Converter.Encoding.GetString(ref span[vernier.offset], vernier.length);
+                    var key = Converter.Encoding.GetString(in span[vernier.offset], vernier.length);
                     vernier.Flush();
-                    var value = new Token(cache, (Memory<byte>)vernier);
+                    var value = new Token(cache, (ReadOnlyMemory<byte>)vernier);
                     if (collection == null)
                         collection = new Dictionary<string, Token>(8);
                     collection.Add(key, value);

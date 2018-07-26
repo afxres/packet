@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary.Converters
 {
@@ -15,11 +14,11 @@ namespace Mikodev.Binary.Converters
             var source = value.Address.GetAddressBytes();
             var memory = allocator.Allocate(source.Length + sizeof(ushort));
             var span = memory.Span;
-            Unsafe.CopyBlockUnaligned(ref span[0], ref source[0], (uint)source.Length);
+            Unsafe.Copy(ref span[0], in source[0], source.Length);
             UnmanagedValueConverter<ushort>.UnsafeToBytes(ref span[source.Length], (ushort)value.Port);
         }
 
-        public override IPEndPoint ToValue(Memory<byte> memory)
+        public override IPEndPoint ToValue(ReadOnlyMemory<byte> memory)
         {
             if (memory.IsEmpty)
                 return null;
@@ -28,9 +27,9 @@ namespace Mikodev.Binary.Converters
             if (addressLength <= 0)
                 ThrowHelper.ThrowOverflow();
             var addressBytes = new byte[addressLength];
-            Unsafe.CopyBlockUnaligned(ref addressBytes[0], ref span[0], (uint)addressLength);
+            Unsafe.Copy(ref addressBytes[0], in span[0], addressLength);
             var address = new IPAddress(addressBytes);
-            var port = UnmanagedValueConverter<ushort>.UnsafeToValue(ref span[addressLength]);
+            var port = UnmanagedValueConverter<ushort>.UnsafeToValue(in span[addressLength]);
             return new IPEndPoint(address, port);
         }
     }

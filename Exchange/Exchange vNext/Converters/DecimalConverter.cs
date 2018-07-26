@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary.Converters
 {
@@ -15,21 +14,21 @@ namespace Mikodev.Binary.Converters
             var memory = allocator.Allocate(sizeof(decimal));
             var span = memory.Span;
             if (origin)
-                Unsafe.CopyBlockUnaligned(ref span[0], ref Unsafe.As<int, byte>(ref bits[0]), sizeof(decimal));
+                Unsafe.Copy(ref span[0], in bits[0], sizeof(decimal));
             else
-                Endian.SwapRange<int>(ref span[0], ref Unsafe.As<int, byte>(ref bits[0]), sizeof(decimal));
+                Endian.SwapCopy(ref span[0], in bits[0], sizeof(decimal));
         }
 
-        public override decimal ToValue(Memory<byte> memory)
+        public override decimal ToValue(ReadOnlyMemory<byte> memory)
         {
             if (memory.Length < sizeof(decimal))
                 ThrowHelper.ThrowOverflow();
             var bits = new int[4];
             var span = memory.Span;
             if (origin)
-                Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref bits[0]), ref span[0], sizeof(decimal));
+                Unsafe.Copy(ref bits[0], in span[0], sizeof(decimal));
             else
-                Endian.SwapRange<int>(ref Unsafe.As<int, byte>(ref bits[0]), ref span[0], sizeof(decimal));
+                Endian.SwapCopy(ref bits[0], in span[0], sizeof(decimal));
             return new decimal(bits);
         }
     }

@@ -5,43 +5,42 @@ namespace Mikodev.Binary.Converters
 {
     internal sealed class UnmanagedValueConverter<T> : Converter<T> where T : unmanaged
     {
-        private static readonly bool origin = BitConverter.IsLittleEndian == UseLittleEndian || Unsafe.SizeOf<T>() == 1;
+        private static readonly unsafe bool origin = BitConverter.IsLittleEndian == UseLittleEndian || sizeof(T) == 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void UnsafeToBytes(ref byte location, T value)
         {
             if (origin)
-                Unsafe.WriteUnaligned(ref location, value);
+                Unsafe.Assign(ref location, value);
             else
-                Endian.Swap<T>(ref location, ref Unsafe.As<T, byte>(ref value));
+                Endian.SwapAssign(ref location, value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T UnsafeToValue(ref byte location)
+        internal static T UnsafeToValue(in byte location)
         {
             if (origin)
-                return Unsafe.ReadUnaligned<T>(ref location);
-            var result = default(T);
-            Endian.Swap<T>(ref Unsafe.As<T, byte>(ref result), ref location);
-            return result;
+                return Unsafe.As<T>(in location);
+            else
+                return Endian.SwapAs<T>(in location);
         }
 
-        internal static void SafeToBytes(Allocator allocator, T value)
+        internal static unsafe void Bytes(Allocator allocator, T value)
         {
-            UnsafeToBytes(ref allocator.Allocate(Unsafe.SizeOf<T>()).Span[0], value);
+            UnsafeToBytes(ref allocator.Allocate(sizeof(T)).Span[0], value);
         }
 
-        internal static T SafeToValue(Memory<byte> memory)
+        internal static unsafe T Value(ReadOnlyMemory<byte> memory)
         {
-            if (memory.Length < Unsafe.SizeOf<T>())
+            if (memory.Length < sizeof(T))
                 ThrowHelper.ThrowOverflow();
-            return UnsafeToValue(ref memory.Span[0]);
+            return UnsafeToValue(in memory.Span[0]);
         }
 
-        public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }
+        public unsafe UnmanagedValueConverter() : base(sizeof(T)) { }
 
-        public override void ToBytes(Allocator allocator, T value) => SafeToBytes(allocator, value);
+        public override void ToBytes(Allocator allocator, T value) => Bytes(allocator, value);
 
-        public override T ToValue(Memory<byte> memory) => SafeToValue(memory);
+        public override T ToValue(ReadOnlyMemory<byte> memory) => Value(memory);
     }
 }

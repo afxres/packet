@@ -4,21 +4,20 @@
     <TargetFrameworks>net461;netstandard2.0;netcoreapp2.0</TargetFrameworks>
     <AssemblyName>Mikodev.Binary</AssemblyName>
     <RootNamespace>Mikodev.Binary</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Mikodev</Authors>
     <Company>Mikodev</Company>
     <Copyright>Mikodev 2018</Copyright>
     <Product>Mikodev.Binary</Product>
-    <Version>1.0.2</Version>
+    <Version>1.1.0</Version>
     <PackageTags>binary packet dynamic serialize</PackageTags>
     <PackageProjectUrl>https://github.com/afxres/packet</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Memory" Version="4.5.0" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.0" />
   </ItemGroup>
 
 </Project>

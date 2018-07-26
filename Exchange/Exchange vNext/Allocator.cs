@@ -18,13 +18,12 @@ namespace Mikodev.Binary
             return new Memory<byte>(target, offset, length);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Append(Span<byte> span)
+        public void Append(ReadOnlySpan<byte> span)
         {
             if (span.IsEmpty)
                 return;
             var offset = stream.Allocate(span.Length, out var target);
-            Unsafe.CopyBlockUnaligned(ref target[offset], ref span[0], (uint)span.Length);
+            Unsafe.Copy(ref target[offset], in span[0], span.Length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

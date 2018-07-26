@@ -29,7 +29,7 @@ namespace Mikodev.Binary.RuntimeConverters
             }
         }
 
-        internal static T[] Value(Memory<byte> memory, Converter<T> converter)
+        internal static T[] Value(ReadOnlyMemory<byte> memory, Converter<T> converter)
         {
             if (memory.IsEmpty)
                 return Array.Empty<T>();
@@ -53,6 +53,6 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public override void ToBytes(Allocator allocator, T[] value) => Bytes(allocator, value, converter);
 
-        public override T[] ToValue(Memory<byte> memory) => Value(memory, converter);
+        public override T[] ToValue(ReadOnlyMemory<byte> memory) => Value(memory, converter);
     }
 }

@@ -32,7 +32,7 @@ namespace Mikodev.Binary
             }
             while (length < limits);
             var target = new byte[(int)length];
-            Unsafe.CopyBlockUnaligned(ref target[0], ref source[0], (uint)offset);
+            Unsafe.Copy(ref target[0], in source[0], offset);
             buffer = target;
             return target;
         }
@@ -53,14 +53,14 @@ namespace Mikodev.Binary
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void FinishExtend(int offset) => UnmanagedValueConverter<int>.UnsafeToBytes(ref buffer[offset], position - offset - sizeof(int));
 
-        internal byte[] ToArray() => new Memory<byte>(buffer, 0, position).ToArray();
+        internal byte[] ToArray() => new ReadOnlyMemory<byte>(buffer, 0, position).ToArray();
 
         internal void AppendExtend(byte[] source)
         {
             var length = source.Length;
             var offset = Allocate(length + sizeof(int), out var target);
             UnmanagedValueConverter<int>.UnsafeToBytes(ref target[offset], length);
-            Unsafe.CopyBlockUnaligned(ref target[offset + sizeof(int)], ref source[0], (uint)length);
+            Unsafe.Copy(ref target[offset + sizeof(int)], in source[0], length);
         }
 
         internal unsafe void Append(ReadOnlySpan<char> span)

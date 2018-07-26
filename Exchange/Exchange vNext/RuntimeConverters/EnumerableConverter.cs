@@ -9,7 +9,6 @@ namespace Mikodev.Binary.RuntimeConverters
         private readonly Func<IEnumerable<TV>, TE> toValue;
 
         public Delegate ToBytesFunction => null;
-
         public Delegate ToValueFunction => toValue;
 
         public EnumerableConverter(Converter<TV> converter, Func<IEnumerable<TV>, TE> toValue) : base(0)
@@ -42,7 +41,7 @@ namespace Mikodev.Binary.RuntimeConverters
             }
         }
 
-        public override TE ToValue(Memory<byte> memory)
+        public override TE ToValue(ReadOnlyMemory<byte> memory)
         {
             if (toValue == null)
                 throw new InvalidOperationException($"Unable to get collection, type : {typeof(TE)}");

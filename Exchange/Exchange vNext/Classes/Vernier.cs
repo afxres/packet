@@ -9,11 +9,11 @@ namespace Mikodev.Binary
     {
         internal static MethodInfo FlushExceptMethodInfo { get; } = typeof(Vernier).GetMethod(nameof(FlushExcept), BindingFlags.Instance | BindingFlags.NonPublic);
 
-        internal readonly Memory<byte> memory;
+        internal readonly ReadOnlyMemory<byte> memory;
         internal int offset;
         internal int length;
 
-        internal Vernier(Memory<byte> memory)
+        internal Vernier(ReadOnlyMemory<byte> memory)
         {
             this.memory = memory;
             offset = 0;
@@ -28,7 +28,7 @@ namespace Mikodev.Binary
             offset += this.length;
             if ((uint)(memory.Length - offset) < sizeof(int))
                 ThrowHelper.ThrowOverflow();
-            var length = UnmanagedValueConverter<int>.UnsafeToValue(ref memory.Span[offset]);
+            var length = UnmanagedValueConverter<int>.UnsafeToValue(in memory.Span[offset]);
             offset += sizeof(int);
             if ((uint)(memory.Length - offset) < (uint)length)
                 ThrowHelper.ThrowOverflow();
@@ -51,8 +51,8 @@ namespace Mikodev.Binary
             }
         }
 
-        public static explicit operator Vernier(Memory<byte> memory) => new Vernier(memory);
+        public static explicit operator Vernier(ReadOnlyMemory<byte> memory) => new Vernier(memory);
 
-        public static explicit operator Memory<byte>(Vernier vernier) => vernier.memory.Slice(vernier.offset, vernier.length);
+        public static explicit operator ReadOnlyMemory<byte>(Vernier vernier) => vernier.memory.Slice(vernier.offset, vernier.length);
     }
 }
