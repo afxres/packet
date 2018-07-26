@@ -99,10 +99,9 @@ namespace Mikodev.Binary
         public byte[] ToBytes<T>(T value)
         {
             var converter = GetConverter<T>();
-            var stream = new UnsafeStream();
-            var allocator = new Allocator(stream);
+            var allocator = new Allocator();
             converter.ToBytes(allocator, value);
-            return stream.ToArray();
+            return allocator.ToArray();
         }
 
         public byte[] ToBytes(object value)
@@ -110,10 +109,9 @@ namespace Mikodev.Binary
             if (value == null)
                 ThrowHelper.ThrowArgumentNull();
             var converter = GetConverter(value.GetType());
-            var stream = new UnsafeStream();
-            var allocator = new Allocator(stream);
+            var allocator = new Allocator();
             converter.ToBytesAny(allocator, value);
-            return stream.ToArray();
+            return allocator.ToArray();
         }
 
         public Token AsToken(ReadOnlyMemory<byte> memory) => new Token(this, memory);

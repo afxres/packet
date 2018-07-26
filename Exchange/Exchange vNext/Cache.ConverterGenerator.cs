@@ -245,7 +245,6 @@ namespace Mikodev.Binary
                 var tuple = Expression.Parameter(type, "tuple");
                 var allocator = Expression.Parameter(typeof(Allocator), "allocator");
                 var offset = default(ParameterExpression);
-                var stream = default(ParameterExpression);
                 var variables = new List<ParameterExpression>();
                 var expressions = new List<Expression>();
                 var itemNames = Enumerable.Range(0, converters.Length).Take(7).Select(r => $"Item{r + 1}").ToList();
@@ -253,20 +252,16 @@ namespace Mikodev.Binary
                     itemNames.Add("Rest");
                 var items = itemNames.Select(r => Expression.PropertyOrField(tuple, r)).ToArray();
                 if (length == 0)
-                {
                     variables.Add(offset = Expression.Variable(typeof(int), "offset"));
-                    variables.Add(stream = Expression.Variable(typeof(UnsafeStream), "stream"));
-                    expressions.Add(Expression.Assign(stream, Expression.Field(allocator, Allocator.FieldInfo)));
-                }
                 for (int i = 0; i < converters.Length; i++)
                 {
                     var converter = converters[i];
                     var toBytesExpression = Expression.Call(Expression.Constant(converter), converter.ToBytesDelegate.Method, allocator, items[i]);
                     if (converter.Length == 0)
                     {
-                        expressions.Add(Expression.Assign(offset, Expression.Call(stream, UnsafeStream.AnchorExtendMethodInfo)));
+                        expressions.Add(Expression.Assign(offset, Expression.Call(allocator, Allocator.AnchorExtendMethodInfo)));
                         expressions.Add(toBytesExpression);
-                        expressions.Add(Expression.Call(stream, UnsafeStream.FinishExtendMethodInfo, offset));
+                        expressions.Add(Expression.Call(allocator, Allocator.FinishExtendMethodInfo, offset));
                     }
                     else
                     {
@@ -362,10 +357,9 @@ namespace Mikodev.Binary
             {
                 var instance = Expression.Parameter(type, "instance");
                 var allocator = Expression.Parameter(typeof(Allocator), "allocator");
-                var stream = Expression.Variable(typeof(UnsafeStream), "stream");
                 var position = default(ParameterExpression);
-                var variableList = new List<ParameterExpression> { stream };
-                var list = new List<Expression> { Expression.Assign(stream, Expression.Field(allocator, Allocator.FieldInfo)) };
+                var variableList = new List<ParameterExpression>();
+                var list = new List<Expression>();
                 foreach (var i in properties)
                 {
                     var getMethod = i.GetGetMethod();
@@ -373,17 +367,17 @@ namespace Mikodev.Binary
                         continue;
                     var propertyType = i.PropertyType;
                     var buffer = GetOrCache(i.Name);
-                    list.Add(Expression.Call(stream, UnsafeStream.AppendExtendMethodInfo, Expression.Constant(buffer)));
+                    list.Add(Expression.Call(allocator, Allocator.AppendExtendMethodInfo, Expression.Constant(buffer)));
                     var propertyValue = Expression.Call(instance, getMethod);
                     if (position == null)
                         variableList.Add(position = Expression.Variable(typeof(int), "position"));
-                    list.Add(Expression.Assign(position, Expression.Call(stream, UnsafeStream.AnchorExtendMethodInfo)));
+                    list.Add(Expression.Assign(position, Expression.Call(allocator, Allocator.AnchorExtendMethodInfo)));
                     var converter = GetOrGenerateConverter(propertyType);
                     list.Add(Expression.Call(
                         Expression.Constant(converter),
                         converter.ToBytesDelegate.Method,
                         allocator, propertyValue));
-                    list.Add(Expression.Call(stream, UnsafeStream.FinishExtendMethodInfo, position));
+                    list.Add(Expression.Call(allocator, Allocator.FinishExtendMethodInfo, position));
                 }
                 var memory = Expression.Block(variableList, list);
                 var delegateType = typeof(Action<,>).MakeGenericType(typeof(Allocator), type);

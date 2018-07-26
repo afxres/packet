@@ -13,12 +13,11 @@ namespace Mikodev.Binary.RuntimeConverters
                 if (converter.Length == 0)
                 {
                     int offset;
-                    var stream = allocator.stream;
                     for (int i = 0; i < value.Count; i++)
                     {
-                        offset = stream.AnchorExtend();
+                        offset = allocator.AnchorExtend();
                         converter.ToBytes(allocator, value[i]);
-                        stream.FinishExtend(offset);
+                        allocator.FinishExtend(offset);
                     }
                 }
                 else
