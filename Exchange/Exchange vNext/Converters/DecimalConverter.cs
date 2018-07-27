@@ -10,13 +10,12 @@ namespace Mikodev.Binary.Converters
 
         public override void ToBytes(Allocator allocator, decimal value)
         {
-            var bits = decimal.GetBits(value);
-            var memory = allocator.Allocate(sizeof(decimal));
-            var span = memory.Span;
+            var source = decimal.GetBits(value);
+            ref var target = ref allocator.Allocate(sizeof(decimal));
             if (origin)
-                Unsafe.Copy(ref span[0], in bits[0], sizeof(decimal));
+                Unsafe.Copy(ref target, in source[0], sizeof(decimal));
             else
-                Endian.SwapCopy(ref span[0], in bits[0], sizeof(decimal));
+                Endian.SwapCopy(ref target, in source[0], sizeof(decimal));
         }
 
         public override decimal ToValue(ReadOnlyMemory<byte> memory)

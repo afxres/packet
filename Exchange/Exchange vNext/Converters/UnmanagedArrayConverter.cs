@@ -12,9 +12,8 @@ namespace Mikodev.Binary.Converters
         {
             if (array == null || array.Length == 0)
                 return;
-            var length = array.Length * sizeof(T);
-            var memory = allocator.Allocate(length);
-            ref var target = ref memory.Span[0];
+            var length = checked(array.Length * sizeof(T));
+            ref var target = ref allocator.Allocate(length);
             if (origin)
                 Unsafe.Copy(ref target, in array[0], length);
             else

@@ -41,17 +41,15 @@ namespace Mikodev.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int Allocate(int require, out byte[] target)
+        internal int AnchorExtend()
         {
             var offset = position;
-            target = buffer;
-            if ((uint)require > (uint)(target.Length - offset))
-                target = ReAllocate(offset, require);
-            position = offset + require;
+            var target = buffer;
+            if (sizeof(int) > (uint)(target.Length - offset))
+                target = ReAllocate(offset, sizeof(int));
+            position = offset + sizeof(int);
             return offset;
         }
-
-        internal int AnchorExtend() => Allocate(sizeof(int), out var _);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal unsafe void FinishExtend(int offset)
@@ -62,16 +60,42 @@ namespace Mikodev.Binary
                 UnmanagedValueConverter<int>.UnsafeToBytes(pointer - cursor, position - offset - sizeof(int));
         }
 
-        internal byte[] ToArray() => new ReadOnlyMemory<byte>(buffer, 0, position).ToArray();
-
-        internal void AppendExtend(byte[] source)
+        internal unsafe void AppendExtend(byte[] source)
         {
             var length = source.Length;
-            var offset = Allocate(length + sizeof(int), out var target);
-            UnmanagedValueConverter<int>.UnsafeToBytes(ref target[offset], length);
-            Unsafe.Copy(ref target[offset + sizeof(int)], in source[0], length);
+            ref var target = ref Allocate(length + sizeof(int));
+            fixed (byte* src = &source[0])
+            fixed (byte* dst = &target)
+            {
+                UnmanagedValueConverter<int>.UnsafeToBytes(dst, length);
+                Unsafe.Copy(dst + sizeof(int), src, length);
+            }
         }
+
+        internal byte[] ToArray() => new ReadOnlySpan<byte>(buffer, 0, position).ToArray();
         #endregion
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Memory<byte> AllocateMemory(int length)
+        {
+            var offset = position;
+            var target = buffer;
+            if ((uint)length > (uint)(target.Length - offset))
+                target = ReAllocate(offset, length);
+            position = offset + length;
+            return new Memory<byte>(target, offset, length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref byte Allocate(int length)
+        {
+            var offset = position;
+            var target = buffer;
+            if ((uint)length > (uint)(target.Length - offset))
+                target = ReAllocate(offset, length);
+            position = offset + length;
+            return ref target[offset];
+        }
 
         public unsafe void Append(ReadOnlySpan<char> span)
         {
@@ -97,18 +121,12 @@ namespace Mikodev.Binary
             position = offset;
         }
 
-        public Memory<byte> Allocate(int length)
-        {
-            var offset = Allocate(length, out var target);
-            return new Memory<byte>(target, offset, length);
-        }
-
         public void Append(ReadOnlySpan<byte> span)
         {
             if (span.IsEmpty)
                 return;
-            var offset = Allocate(span.Length, out var target);
-            Unsafe.Copy(ref target[offset], in span[0], span.Length);
+            ref var target = ref Allocate(span.Length);
+            Unsafe.Copy(ref target, in span[0], span.Length);
         }
 
         #region override

@@ -7,15 +7,19 @@ namespace Mikodev.Binary.Converters
     {
         public IPEndPointConverter() : base(0) { }
 
-        public override void ToBytes(Allocator allocator, IPEndPoint value)
+        public override unsafe void ToBytes(Allocator allocator, IPEndPoint value)
         {
             if (value == null)
                 return;
             var source = value.Address.GetAddressBytes();
-            var memory = allocator.Allocate(source.Length + sizeof(ushort));
-            var span = memory.Span;
-            Unsafe.Copy(ref span[0], in source[0], source.Length);
-            UnmanagedValueConverter<ushort>.UnsafeToBytes(ref span[source.Length], (ushort)value.Port);
+            var length = source.Length;
+            ref var target = ref allocator.Allocate(length + sizeof(ushort));
+            fixed (byte* src = &source[0])
+            fixed (byte* dst = &target)
+            {
+                Unsafe.Copy(dst, src, length);
+                UnmanagedValueConverter<ushort>.UnsafeToBytes(dst + length, (ushort)value.Port);
+            }
         }
 
         public override IPEndPoint ToValue(ReadOnlyMemory<byte> memory)

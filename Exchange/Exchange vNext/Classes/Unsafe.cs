@@ -12,5 +12,11 @@ namespace Mikodev.Binary
             fixed (U* src = &source)
                 Buffer.MemoryCopy(src, dst, count, count);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static unsafe void Copy(byte* target, byte* source, int count)
+        {
+            Buffer.MemoryCopy(source, target, count, count);
+        }
     }
 }
