@@ -12,12 +12,13 @@ namespace Mikodev.Binary.Converters
         {
             if (array == null || array.Length == 0)
                 return;
-            var memory = allocator.Allocate(array.Length * sizeof(T));
-            var span = memory.Span;
+            var length = array.Length * sizeof(T);
+            var memory = allocator.Allocate(length);
+            ref var target = ref memory.Span[0];
             if (origin)
-                Unsafe.Copy(ref span[0], in array[0], span.Length);
+                Unsafe.Copy(ref target, in array[0], length);
             else
-                Endian.SwapCopy(ref span[0], in array[0], span.Length);
+                Endian.SwapCopy(ref target, in array[0], length);
         }
 
         public override unsafe T[] ToValue(ReadOnlyMemory<byte> memory)

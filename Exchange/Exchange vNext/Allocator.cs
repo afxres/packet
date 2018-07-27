@@ -54,7 +54,13 @@ namespace Mikodev.Binary
         internal int AnchorExtend() => Allocate(sizeof(int), out var _);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void FinishExtend(int offset) => UnmanagedValueConverter<int>.UnsafeToBytes(ref buffer[offset], position - offset - sizeof(int));
+        internal unsafe void FinishExtend(int offset)
+        {
+            const int cursor = sizeof(int) - 1;
+            ref var target = ref buffer[offset + cursor];
+            fixed (byte* pointer = &target)
+                UnmanagedValueConverter<int>.UnsafeToBytes(pointer - cursor, position - offset - sizeof(int));
+        }
 
         internal byte[] ToArray() => new ReadOnlyMemory<byte>(buffer, 0, position).ToArray();
 

@@ -30,22 +30,6 @@ namespace Mikodev.Binary
         #endregion
 
         #region swap single value
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe void SwapAssign<T>(ref byte target, T source) where T : unmanaged
-        {
-            fixed (byte* dst = &target)
-                Swap<T>(dst, (byte*)&source);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe T SwapAs<T>(in byte source) where T : unmanaged
-        {
-            T target;
-            fixed (byte* src = &source)
-                Swap<T>((byte*)&target, src);
-            return target;
-        }
-
         internal static unsafe void Swap<T>(byte* target, byte* source) where T : unmanaged
         {
             switch (sizeof(T))
