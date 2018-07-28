@@ -142,8 +142,8 @@ namespace Mikodev.Binary
                     return GenerateCollectionConverter(type, enumerableTypes[0]);
                 // converter via properties
                 var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-                if (properties.Length == 0)
-                    throw new InvalidOperationException($"No public property found, type : {type}");
+                if (!properties.Any(x => x.GetGetMethod() != null))
+                    throw new InvalidOperationException($"No available property found, type : {type}");
                 var toBytes = ToBytesDelegate(type, properties);
                 var toValue = ToValueDelegate(type, properties, out var capacity);
                 return (Converter)Activator.CreateInstance(typeof(ExpandoConverter<>).MakeGenericType(type), toBytes, toValue, capacity);
