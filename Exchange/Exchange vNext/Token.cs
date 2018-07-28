@@ -25,18 +25,19 @@ namespace Mikodev.Binary
 
         private Dictionary<string, Token> GetDictionary()
         {
-            var span = memory.Span;
             var collection = default(Dictionary<string, Token>);
 
             try
             {
-                var vernier = (Vernier)memory;
+                var span = memory.Span;
+                ref readonly var location = ref span[0];
+                var vernier = new Vernier(memory.Length);
                 while (vernier.Any())
                 {
-                    vernier.Flush();
+                    vernier.Flush(in location);
                     var key = Converter.Encoding.GetString(in span[vernier.offset], vernier.length);
-                    vernier.Flush();
-                    var value = new Token(cache, (ReadOnlyMemory<byte>)vernier);
+                    vernier.Flush(in location);
+                    var value = new Token(cache, memory.Slice(vernier.offset, vernier.length));
                     if (collection == null)
                         collection = new Dictionary<string, Token>(8);
                     collection.Add(key, value);

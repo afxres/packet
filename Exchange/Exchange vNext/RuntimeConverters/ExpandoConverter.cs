@@ -22,15 +22,22 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (toValue == null)
                 throw new InvalidOperationException($"Unable to get value, type : {typeof(T)}");
+            if (capacity == 0)
+            {
+                if (!memory.IsEmpty)
+                    throw new InvalidOperationException("Memory is not empty!");
+                return toValue.Invoke(new Dictionary<string, ReadOnlyMemory<byte>>(0));
+            }
             var dictionary = new Dictionary<string, ReadOnlyMemory<byte>>(capacity);
             var span = memory.Span;
-            var vernier = (Vernier)memory;
+            ref readonly var location = ref span[0];
+            var vernier = new Vernier(span.Length);
             while (vernier.Any())
             {
-                vernier.Flush();
+                vernier.Flush(in location);
                 var key = Encoding.GetString(in span[vernier.offset], vernier.length);
-                vernier.Flush();
-                dictionary.Add(key, (ReadOnlyMemory<byte>)vernier);
+                vernier.Flush(in location);
+                dictionary.Add(key, memory.Slice(vernier.offset, vernier.length));
             }
             return toValue.Invoke(dictionary);
         }

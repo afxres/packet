@@ -12,6 +12,9 @@ namespace Mikodev.Binary
     {
         private readonly struct ConverterGenerator
         {
+            private const int TupleMaximumItems = 8;
+            private const int TupleMinimumItems = 1;
+
             private static readonly string fsNamespace = "Microsoft.FSharp.Collections";
             private static MethodInfo fsToListMethodInfo;
 
@@ -208,7 +211,7 @@ namespace Mikodev.Binary
             {
                 var name = type.Name;
                 var elementCount = int.Parse(name.Substring(name.LastIndexOf('`') + 1));
-                if ((uint)elementCount > 8)
+                if (elementCount < TupleMinimumItems || elementCount > TupleMaximumItems)
                     throw new InvalidOperationException($"Invalid tuple type : {type}");
                 var elementTypes = default(Type[]);
                 var constructorInfo = type.GetConstructors().Single(r => (elementTypes = r.GetParameters().Select(x => x.ParameterType).ToArray()).Length == elementCount);
@@ -216,28 +219,27 @@ namespace Mikodev.Binary
                 var converters = new Converter[elementCount];
                 for (int i = 0; i < elementCount; i++)
                     converters[i] = GetOrGenerateConverter(elementTypes[i]);
-                var length = converters.Any(r => r.Length == 0) ? 0 : converters.Sum(r => r.Length);
+                var definitions = converters.Select(x => x.Length).ToArray();
+                var length = definitions.Any(x => x == 0) ? 0 : definitions.Sum();
                 var toBytes = TupleToBytesExpression(type, converters, length);
                 var toValue = TupleToValueExpression(type, constructorInfo, elementTypes, converters);
-                return (Converter)Activator.CreateInstance(typeof(DelegateConverter<>).MakeGenericType(type), toBytes.Compile(), toValue.Compile(), length);
+                return (Converter)Activator.CreateInstance(typeof(TupleConverter<>).MakeGenericType(type), toBytes.Compile(), toValue.Compile(), definitions, length);
             }
 
             private static LambdaExpression TupleToValueExpression(Type type, ConstructorInfo constructorInfo, Type[] elementTypes, Converter[] converters)
             {
-                var memory = Expression.Parameter(typeof(ReadOnlyMemory<byte>), "memory");
-                var vernier = Expression.Variable(typeof(Vernier), "vernier");
-
-                var arguments = Enumerable.Range(0, converters.Length).Select(r => Expression.Variable(elementTypes[r], $"arg{r + 1}")).ToArray();
-                var expressions = new List<Expression> { Expression.Assign(vernier, Expression.Convert(memory, typeof(Vernier))) };
+                var arrayType = typeof(ReadOnlyMemory<byte>).MakeArrayType();
+                var array = Expression.Parameter(arrayType, "array");
+                var items = new List<Expression>();
                 for (int i = 0; i < converters.Length; i++)
                 {
                     var converter = converters[i];
-                    expressions.Add(Expression.Call(vernier, Vernier.FlushExceptMethodInfo, Expression.Constant(converter.Length)));
-                    expressions.Add(Expression.Assign(arguments[i], Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, Expression.Convert(vernier, typeof(ReadOnlyMemory<byte>)))));
+                    var memory = Expression.ArrayAccess(array, Expression.Constant(i));
+                    var result = Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, memory);
+                    items.Add(result);
                 }
-                expressions.Add(Expression.New(constructorInfo, arguments));
-                var delegateType = typeof(Func<,>).MakeGenericType(typeof(ReadOnlyMemory<byte>), type);
-                return Expression.Lambda(delegateType, Expression.Block(new[] { vernier }.Concat(arguments), expressions), memory);
+                var delegateType = typeof(Func<,>).MakeGenericType(arrayType, type);
+                return Expression.Lambda(delegateType, Expression.New(constructorInfo, items), array);
             }
 
             private static LambdaExpression TupleToBytesExpression(Type type, Converter[] converters, int length)
@@ -247,8 +249,8 @@ namespace Mikodev.Binary
                 var offset = default(ParameterExpression);
                 var variables = new List<ParameterExpression>();
                 var expressions = new List<Expression>();
-                var itemNames = Enumerable.Range(0, converters.Length).Take(7).Select(r => $"Item{r + 1}").ToList();
-                if (converters.Length > 7)
+                var itemNames = Enumerable.Range(0, converters.Length).Take(TupleMaximumItems - 1).Select(r => $"Item{r + 1}").ToList();
+                if (converters.Length == TupleMaximumItems)
                     itemNames.Add("Rest");
                 var items = itemNames.Select(r => Expression.PropertyOrField(tuple, r)).ToArray();
                 if (length == 0)

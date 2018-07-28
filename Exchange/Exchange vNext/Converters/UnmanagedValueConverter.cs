@@ -26,14 +26,18 @@ namespace Mikodev.Binary.Converters
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static unsafe T UnsafeToValue(in byte location)
         {
-            T result;
             fixed (byte* pointer = &location)
-            {
-                if (origin)
-                    result = *(T*)pointer;
-                else
-                    Endian.Swap<T>((byte*)&result, pointer);
-            }
+                return UnsafeToValue(pointer);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static unsafe T UnsafeToValue(byte* pointer)
+        {
+            T result;
+            if (origin)
+                result = *(T*)pointer;
+            else
+                Endian.Swap<T>((byte*)&result, pointer);
             return result;
         }
 

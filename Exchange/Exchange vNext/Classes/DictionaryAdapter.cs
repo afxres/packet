@@ -63,13 +63,14 @@ namespace Mikodev.Binary
             if (memory.IsEmpty)
                 return new Dictionary<TK, TV>(0);
             var dictionary = new Dictionary<TK, TV>(8);
-            var vernier = (Vernier)memory;
+            ref readonly var location = ref memory.Span[0];
+            var vernier = new Vernier(memory.Length);
             while (vernier.Any())
             {
-                vernier.FlushExcept(keyConverter.Length);
-                var key = keyConverter.ToValue((ReadOnlyMemory<byte>)vernier);
-                vernier.FlushExcept(valueConverter.Length);
-                var value = valueConverter.ToValue((ReadOnlyMemory<byte>)vernier);
+                vernier.FlushExcept(in location, keyConverter.Length);
+                var key = keyConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
+                vernier.FlushExcept(in location, valueConverter.Length);
+                var value = valueConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
                 dictionary.Add(key, value);
             }
             return dictionary;
@@ -80,13 +81,14 @@ namespace Mikodev.Binary
             if (memory.IsEmpty)
                 return new List<Tuple<TK, TV>>(0);
             var list = new List<Tuple<TK, TV>>(8);
-            var vernier = (Vernier)memory;
+            ref readonly var location = ref memory.Span[0];
+            var vernier = new Vernier(memory.Length);
             while (vernier.Any())
             {
-                vernier.FlushExcept(keyConverter.Length);
-                var key = keyConverter.ToValue((ReadOnlyMemory<byte>)vernier);
-                vernier.FlushExcept(valueConverter.Length);
-                var value = valueConverter.ToValue((ReadOnlyMemory<byte>)vernier);
+                vernier.FlushExcept(in location, keyConverter.Length);
+                var key = keyConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
+                vernier.FlushExcept(in location, valueConverter.Length);
+                var value = valueConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
                 list.Add(new Tuple<TK, TV>(key, value));
             }
             return list;

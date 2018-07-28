@@ -38,11 +38,12 @@ namespace Mikodev.Binary.RuntimeConverters
             if (definition == 0)
             {
                 var list = new List<T>(8);
-                var vernier = (Vernier)memory;
+                ref readonly var location = ref memory.Span[0];
+                var vernier = new Vernier(memory.Length);
                 while (vernier.Any())
                 {
-                    vernier.Flush();
-                    var value = converter.ToValue((ReadOnlyMemory<byte>)vernier);
+                    vernier.Flush(in location);
+                    var value = converter.ToValue(memory.Slice(vernier.offset, vernier.length));
                     list.Add(value);
                 }
                 return list;

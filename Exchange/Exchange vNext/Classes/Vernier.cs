@@ -1,58 +1,52 @@
 ﻿using Mikodev.Binary.Converters;
-using System;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary
 {
     internal struct Vernier
     {
-        internal static readonly MethodInfo FlushExceptMethodInfo = typeof(Vernier).GetMethod(nameof(FlushExcept), BindingFlags.Instance | BindingFlags.NonPublic);
-
-        internal readonly ReadOnlyMemory<byte> memory;
+        internal readonly int limits;
         internal int offset;
         internal int length;
 
-        internal Vernier(ReadOnlyMemory<byte> memory)
+        internal Vernier(int limits)
         {
-            this.memory = memory;
+            this.limits = limits;
             offset = 0;
             length = 0;
         }
 
-        internal bool Any() => memory.Length - offset != length;
+        internal bool Any() => limits - offset != length;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Flush()
+        internal unsafe void Flush(in byte location)
         {
             offset += this.length;
-            if ((uint)(memory.Length - offset) < sizeof(int))
+            if ((uint)(limits - offset) < sizeof(int))
                 ThrowHelper.ThrowOverflow();
-            var length = UnmanagedValueConverter<int>.UnsafeToValue(in memory.Span[offset]);
+            int length;
+            fixed (byte* pointer = &location)
+                length = UnmanagedValueConverter<int>.UnsafeToValue(pointer + offset);
             offset += sizeof(int);
-            if ((uint)(memory.Length - offset) < (uint)length)
+            if ((uint)(limits - offset) < (uint)length)
                 ThrowHelper.ThrowOverflow();
             this.length = length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void FlushExcept(int define)
+        internal void FlushExcept(in byte location, int define)
         {
             if (define == 0)
             {
-                Flush();
+                Flush(in location);
             }
             else
             {
                 offset += length;
-                if ((uint)(memory.Length - offset) < (uint)define)
+                if ((uint)(limits - offset) < (uint)define)
                     ThrowHelper.ThrowOverflow();
                 length = define;
             }
         }
-
-        public static explicit operator Vernier(ReadOnlyMemory<byte> memory) => new Vernier(memory);
-
-        public static explicit operator ReadOnlyMemory<byte>(Vernier vernier) => vernier.memory.Slice(vernier.offset, vernier.length);
     }
 }
