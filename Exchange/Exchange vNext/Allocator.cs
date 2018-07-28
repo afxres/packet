@@ -8,9 +8,9 @@ namespace Mikodev.Binary
     public sealed class Allocator
     {
         #region non-public
-        internal static MethodInfo AppendExtendMethodInfo { get; } = typeof(Allocator).GetMethod(nameof(AppendExtend), BindingFlags.Instance | BindingFlags.NonPublic);
-        internal static MethodInfo AnchorExtendMethodInfo { get; } = typeof(Allocator).GetMethod(nameof(AnchorExtend), BindingFlags.Instance | BindingFlags.NonPublic);
-        internal static MethodInfo FinishExtendMethodInfo { get; } = typeof(Allocator).GetMethod(nameof(FinishExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static readonly MethodInfo AppendExtendMethodInfo = typeof(Allocator).GetMethod(nameof(AppendExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static readonly MethodInfo AnchorExtendMethodInfo = typeof(Allocator).GetMethod(nameof(AnchorExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static readonly MethodInfo FinishExtendMethodInfo = typeof(Allocator).GetMethod(nameof(FinishExtend), BindingFlags.Instance | BindingFlags.NonPublic);
 
         private const int InitialLength = 256;
         private const int MaximumLength = 0x4000_0000;

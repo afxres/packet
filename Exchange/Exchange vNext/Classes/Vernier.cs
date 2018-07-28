@@ -7,7 +7,7 @@ namespace Mikodev.Binary
 {
     internal struct Vernier
     {
-        internal static MethodInfo FlushExceptMethodInfo { get; } = typeof(Vernier).GetMethod(nameof(FlushExcept), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static readonly MethodInfo FlushExceptMethodInfo = typeof(Vernier).GetMethod(nameof(FlushExcept), BindingFlags.Instance | BindingFlags.NonPublic);
 
         internal readonly ReadOnlyMemory<byte> memory;
         internal int offset;
