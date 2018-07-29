@@ -21,13 +21,7 @@ namespace Mikodev.Binary.RuntimeConverters
         public override T ToValue(ReadOnlyMemory<byte> memory)
         {
             if (toValue == null)
-                throw new InvalidOperationException($"Unable to get value, type : {typeof(T)}");
-            if (capacity == 0)
-            {
-                if (!memory.IsEmpty)
-                    throw new InvalidOperationException("Memory is not empty!");
-                return toValue.Invoke(new Dictionary<string, ReadOnlyMemory<byte>>(0));
-            }
+                throw new InvalidOperationException($"Unable to get value, type: {typeof(T)}");
             var dictionary = new Dictionary<string, ReadOnlyMemory<byte>>(capacity);
             var span = memory.Span;
             ref readonly var location = ref span[0];

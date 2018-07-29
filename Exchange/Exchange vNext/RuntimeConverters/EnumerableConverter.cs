@@ -43,7 +43,7 @@ namespace Mikodev.Binary.RuntimeConverters
         public override TE ToValue(ReadOnlyMemory<byte> memory)
         {
             if (toValue == null)
-                throw new InvalidOperationException($"Unable to get collection, type : {typeof(TE)}");
+                throw new InvalidOperationException($"Unable to get collection, type: {typeof(TE)}");
             var enumerable = converter.Length == 0
                 ? (IEnumerable<TV>)ListConverter<TV>.Value(memory, converter)
                 : ArrayConverter<TV>.Value(memory, converter);

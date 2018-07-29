@@ -34,7 +34,7 @@ namespace Mikodev.Binary
         public override int GetHashCode() => throw new InvalidOperationException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override string ToString() => $"{nameof(Converter)} type : {ValueType}, byte length : {Length}";
+        public override string ToString() => $"{nameof(Converter)} type: {ValueType}, byte length : {Length}";
         #endregion
     }
 

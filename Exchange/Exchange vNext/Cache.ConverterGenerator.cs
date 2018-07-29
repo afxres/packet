@@ -50,7 +50,7 @@ namespace Mikodev.Binary
                 if (!adapters.TryGetValue(adapterType, out var adapter))
                 {
                     if (elementTypes[0] == typeof(object))
-                        throw new InvalidOperationException($"Invalid dictionary key type : object");
+                        throw new InvalidOperationException($"Invalid dictionary key type: object");
                     var keyConverter = GetOrGenerateConverter(elementTypes[0]);
                     var valueConverter = GetOrGenerateConverter(elementTypes[1]);
                     adapter = (DictionaryAdapter)Activator.CreateInstance(adapterType, keyConverter, valueConverter);
@@ -65,7 +65,7 @@ namespace Mikodev.Binary
                 if (converters.TryGetValue(type, out var converter))
                     return converter;
                 if (!types.Add(type))
-                    throw new InvalidOperationException($"Circular type reference detected! type : {type}");
+                    throw new InvalidOperationException($"Circular type reference detected! type: {type}");
                 converter = GenerateConverter(type);
                 converters.TryAdd(type, converter);
                 return converter;
@@ -121,7 +121,7 @@ namespace Mikodev.Binary
             private Converter GenerateConverter(Type type)
             {
                 if (reserveTypes.Contains(type))
-                    throw new InvalidOperationException($"Invalid type : {type}");
+                    throw new InvalidOperationException($"Invalid type: {type}");
                 // enum
                 if (type.IsEnum)
                     return (Converter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(type));
@@ -137,23 +137,25 @@ namespace Mikodev.Binary
                 var interfaces = type.IsInterface ? type.GetInterfaces().Concat(new[] { type }).ToArray() : type.GetInterfaces();
                 var enumerableTypes = interfaces.Where(r => r.IsGenericType && r.GetGenericTypeDefinition() == typeof(IEnumerable<>)).ToArray();
                 if (enumerableTypes.Length > 1)
-                    throw new InvalidOperationException($"Multiple IEnumerable implementations, type : {type}");
+                    throw new InvalidOperationException($"Multiple IEnumerable implementations detected, type: {type}");
                 if (enumerableTypes.Length == 1)
                     return GenerateCollectionConverter(type, enumerableTypes[0]);
                 // converter via properties
-                var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-                if (!properties.Any(x => x.GetGetMethod() != null))
-                    throw new InvalidOperationException($"No available property found, type : {type}");
+                var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                    .Where(x => x.GetGetMethod()?.GetParameters().Length == 0)
+                    .ToArray();
+                if (properties.Length == 0)
+                    throw new InvalidOperationException($"No available property found, type: {type}");
                 var toBytes = ToBytesDelegate(type, properties);
-                var toValue = ToValueDelegate(type, properties, out var capacity);
-                return (Converter)Activator.CreateInstance(typeof(ExpandoConverter<>).MakeGenericType(type), toBytes, toValue, capacity);
+                var toValue = ToValueDelegate(type, properties);
+                return (Converter)Activator.CreateInstance(typeof(ExpandoConverter<>).MakeGenericType(type), toBytes, toValue, properties.Length);
             }
 
             private Converter GenerateCollectionConverter(Type type, Type enumerableType)
             {
                 var elementType = enumerableType.GetGenericArguments().Single();
                 if (elementType == typeof(object))
-                    throw new InvalidOperationException($"Invalid collection type : {type}");
+                    throw new InvalidOperationException($"Invalid collection type: {type}");
 
                 // dictionary or fs map
                 if (elementType.IsGenericType && elementType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
@@ -172,7 +174,7 @@ namespace Mikodev.Binary
 
                     var dictionaryType = typeof(Dictionary<,>).MakeGenericType(elementTypes);
                     if (!type.IsAssignableFrom(dictionaryType))
-                        throw new InvalidOperationException($"Invalid key-value pair collection type : {type}");
+                        throw new InvalidOperationException($"Invalid key-value pair collection type: {type}");
                     // dictionary
                     return (Converter)Activator.CreateInstance(typeof(DelegateConverter<>).MakeGenericType(type), adapter.BytesDelegate, adapter.ValueDelegate, 0);
                 }
@@ -212,7 +214,7 @@ namespace Mikodev.Binary
                 var name = type.Name;
                 var elementCount = int.Parse(name.Substring(name.LastIndexOf('`') + 1));
                 if (elementCount < TupleMinimumItems || elementCount > TupleMaximumItems)
-                    throw new InvalidOperationException($"Invalid tuple type : {type}");
+                    throw new InvalidOperationException($"Invalid tuple type: {type}");
                 var elementTypes = default(Type[]);
                 var constructorInfo = type.GetConstructors().Single(r => (elementTypes = r.GetParameters().Select(x => x.ParameterType).ToArray()).Length == elementCount);
                 var self = this;
@@ -363,9 +365,6 @@ namespace Mikodev.Binary
                 var list = new List<Expression>();
                 foreach (var property in properties)
                 {
-                    var getter = property.GetGetMethod();
-                    if (getter == null || getter.GetParameters().Length != 0)
-                        continue;
                     var propertyType = property.PropertyType;
                     var buffer = GetOrCache(property.Name);
                     list.Add(Expression.Call(allocator, Allocator.AppendExtendMethodInfo, Expression.Constant(buffer)));
@@ -383,19 +382,18 @@ namespace Mikodev.Binary
                 return expression.Compile();
             }
 
-            private Delegate ToValueDelegate(Type type, PropertyInfo[] properties, out int capacity)
+            private Delegate ToValueDelegate(Type type, PropertyInfo[] properties)
             {
-                capacity = 0;
                 if (type.IsAbstract || type.IsInterface)
                     return null;
                 var delegateType = typeof(Func<,>).MakeGenericType(typeof(Dictionary<string, ReadOnlyMemory<byte>>), type);
                 var constructorInfo = type.GetConstructor(Type.EmptyTypes);
                 return type.IsValueType || constructorInfo != null
-                    ? ToValueDelegateProperties(type, delegateType, properties, ref capacity)
-                    : ToValueDelegateAnonymousType(type, delegateType, properties, ref capacity);
+                    ? ToValueDelegateProperties(type, delegateType, properties)
+                    : ToValueDelegateAnonymousType(type, delegateType, properties);
             }
 
-            private Delegate ToValueDelegateAnonymousType(Type type, Type delegateType, PropertyInfo[] properties, ref int capacity)
+            private Delegate ToValueDelegateAnonymousType(Type type, Type delegateType, PropertyInfo[] properties)
             {
                 // anonymous type or record
                 var constructors = type.GetConstructors();
@@ -422,30 +420,18 @@ namespace Mikodev.Binary
                     expressionArray[i] = value;
                 }
                 var lambda = Expression.Lambda(delegateType, Expression.New(constructorInfo, expressionArray), dictionary);
-                capacity = properties.Length;
                 return lambda.Compile();
             }
 
-            private Delegate ToValueDelegateProperties(Type type, Type delegateType, PropertyInfo[] properties, ref int capacity)
+            private Delegate ToValueDelegateProperties(Type type, Type delegateType, PropertyInfo[] properties)
             {
-                var propertyList = new List<PropertyInfo>();
-                for (int i = 0; i < properties.Length; i++)
-                {
-                    var property = properties[i];
-                    var getter = property.GetGetMethod();
-                    var setter = property.GetSetMethod();
-                    if (getter == null || setter == null)
-                        continue;
-                    var setterParameters = setter.GetParameters();
-                    if (setterParameters == null || setterParameters.Length != 1)
-                        continue;
-                    propertyList.Add(property);
-                }
                 var dictionary = Expression.Parameter(typeof(Dictionary<string, ReadOnlyMemory<byte>>), "dictionary");
                 var instance = Expression.Variable(type, "instance");
                 var expressionList = new List<Expression> { Expression.Assign(instance, Expression.New(type)) };
-                foreach (var property in propertyList)
+                foreach (var property in properties)
                 {
+                    if (property.GetSetMethod() == null)
+                        throw new InvalidOperationException($"Property '{property.Name}' does not have a public setter, type: {type}");
                     var converter = GetOrGenerateConverter(property.PropertyType);
                     var memory = Expression.Property(dictionary, "Item", Expression.Constant(property.Name));
                     var value = Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, memory);
@@ -453,7 +439,6 @@ namespace Mikodev.Binary
                 }
                 expressionList.Add(instance);
                 var lambda = Expression.Lambda(delegateType, Expression.Block(new[] { instance }, expressionList), dictionary);
-                capacity = propertyList.Count;
                 return lambda.Compile();
             }
             #endregion

@@ -14,7 +14,7 @@ namespace Mikodev.Binary.RuntimeConverters
                 return;
             var type = value.GetType();
             if (type == typeof(object))
-                throw new InvalidOperationException("Invalid type : object");
+                throw new InvalidOperationException("Invalid type: object");
             var converter = cache.GetConverter(type);
             converter.ToBytesAny(allocator, value);
         }
