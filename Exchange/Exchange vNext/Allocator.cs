@@ -131,13 +131,13 @@ namespace Mikodev.Binary
 
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override bool Equals(object obj) => throw new InvalidOperationException();
+        public sealed override bool Equals(object obj) => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override int GetHashCode() => throw new InvalidOperationException();
+        public sealed override int GetHashCode() => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override string ToString() => nameof(Allocator);
+        public sealed override string ToString() => nameof(Allocator);
         #endregion
     }
 }

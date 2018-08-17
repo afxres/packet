@@ -71,8 +71,10 @@
     <Compile Include="AbstractType.cs" />
     <Compile Include="AllocatorTest.cs" />
     <Compile Include="AssertExtension.cs" />
+    <Compile Include="CacheTest.cs" />
     <Compile Include="CircularReference.cs" />
     <Compile Include="CollectionTest.cs" />
+    <Compile Include="ConverterTest.cs" />
     <Compile Include="EmptyType.cs" />
     <Compile Include="Entrance.cs" />
     <Compile Include="EnumTest.cs" />

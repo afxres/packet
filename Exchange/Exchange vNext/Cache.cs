@@ -11,21 +11,29 @@ namespace Mikodev.Binary
     public sealed partial class Cache
     {
         #region static
-        private static readonly List<Converter> sharedConverters;
-        private static readonly HashSet<Type> reserveTypes = new HashSet<Type>(typeof(Cache).Assembly.GetTypes());
+        private static readonly Dictionary<Type, Type> converterTypes;
+
+        private static Type GetValueType(Type type)
+        {
+            while ((type = type.BaseType) != null)
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Converter<>))
+                    return type.GetGenericArguments().Single();
+            throw new ApplicationException();
+        }
 
         static Cache()
         {
-            var converters = new List<Converter>(32)
+            var types = new[]
             {
-                new StringConverter(),
-                new DateTimeConverter(),
-                new TimeSpanConverter(),
-                new GuidConverter(),
-                new DecimalConverter(),
-                new IPAddressConverter(),
-                new IPEndPointConverter()
+                typeof(StringConverter),
+                typeof(DateTimeConverter),
+                typeof(TimeSpanConverter),
+                typeof(GuidConverter),
+                typeof(DecimalConverter),
+                typeof(IPAddressConverter),
+                typeof(IPEndPointConverter)
             };
+
             var unmanagedTypes = new[]
             {
                 typeof(bool),
@@ -41,11 +49,30 @@ namespace Mikodev.Binary
                 typeof(float),
                 typeof(double),
             };
-            var valueConverters = unmanagedTypes.Select(r => (Converter)Activator.CreateInstance(typeof(UnmanagedValueConverter<>).MakeGenericType(r)));
-            var arrayConverters = unmanagedTypes.Select(r => (Converter)Activator.CreateInstance(typeof(UnmanagedArrayConverter<>).MakeGenericType(r)));
-            converters.AddRange(valueConverters);
-            converters.AddRange(arrayConverters);
-            sharedConverters = converters;
+
+            var dictionary = types.ToDictionary(GetValueType);
+            foreach (var type in unmanagedTypes)
+                dictionary.Add(type, typeof(UnmanagedValueConverter<>).MakeGenericType(type));
+            foreach (var type in unmanagedTypes)
+                dictionary.Add(type.MakeArrayType(), typeof(UnmanagedArrayConverter<>).MakeGenericType(type));
+            converterTypes = dictionary;
+        }
+
+        private static ConcurrentDictionary<Type, Converter> GetConverters(IEnumerable<Converter> converters)
+        {
+            var dictionary = new ConcurrentDictionary<Type, Converter>();
+            // add user-defined converters
+            if (converters != null)
+                foreach (var i in converters)
+                    if (i != null)
+                        dictionary.TryAdd(GetValueType(i.GetType()), i);
+            // try add converters
+            foreach (var i in converterTypes)
+                if (!dictionary.ContainsKey(i.Key))
+                    dictionary.TryAdd(i.Key, (Converter)Activator.CreateInstance(i.Value));
+            // set object converter
+            dictionary[typeof(object)] = new ObjectConverter();
+            return dictionary;
         }
         #endregion
 
@@ -55,13 +82,9 @@ namespace Mikodev.Binary
 
         public Cache(IEnumerable<Converter> converters = null)
         {
-            var dictionary = new ConcurrentDictionary<Type, Converter>();
-            if (converters != null)
-                foreach (var i in converters)
-                    dictionary.TryAdd(i.ValueType, i);
-            foreach (var i in sharedConverters)
-                dictionary.TryAdd(i.ValueType, i);
-            dictionary[typeof(object)] = new ObjectConverter(this);
+            var dictionary = GetConverters(converters);
+            foreach (var converter in dictionary.Values)
+                converter.Initialize(this);
             this.converters = dictionary;
         }
 
@@ -119,13 +142,13 @@ namespace Mikodev.Binary
 
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override bool Equals(object obj) => throw new InvalidOperationException();
+        public sealed override bool Equals(object obj) => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override int GetHashCode() => throw new InvalidOperationException();
+        public sealed override int GetHashCode() => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override string ToString() => $"{nameof(Cache)} converter count : {converters.Count}, encoding cache : {texts.Count}";
+        public sealed override string ToString() => $"{nameof(Cache)}";
         #endregion
     }
 }

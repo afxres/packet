@@ -96,7 +96,7 @@ namespace Mikodev.Binary
                     }
                     catch (Exception ex)
                     {
-                        throw new InvalidOperationException("No valid F# toList method detected", ex);
+                        throw new InvalidOperationException("No valid F# 'ToList' method detected", ex);
                     }
                 }
                 fsToListMethodInfo = methodInfo;
@@ -120,7 +120,7 @@ namespace Mikodev.Binary
 
             private Converter GenerateConverter(Type type)
             {
-                if (reserveTypes.Contains(type))
+                if (type.Assembly == typeof(Cache).Assembly)
                     throw new InvalidOperationException($"Invalid type: {type}");
                 // enum
                 if (type.IsEnum)
@@ -237,7 +237,7 @@ namespace Mikodev.Binary
                 {
                     var converter = converters[i];
                     var memory = Expression.ArrayAccess(array, Expression.Constant(i));
-                    var result = Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, memory);
+                    var result = Expression.Call(Expression.Constant(converter), converter.GetToValueMethodInfo(), memory);
                     items.Add(result);
                 }
                 var delegateType = typeof(Func<,>).MakeGenericType(arrayType, type);
@@ -260,7 +260,7 @@ namespace Mikodev.Binary
                 for (int i = 0; i < converters.Length; i++)
                 {
                     var converter = converters[i];
-                    var toBytesExpression = Expression.Call(Expression.Constant(converter), converter.ToBytesDelegate.Method, allocator, items[i]);
+                    var toBytesExpression = Expression.Call(Expression.Constant(converter), converter.GetToBytesMethodInfo(), allocator, items[i]);
                     if (converter.Length == 0)
                     {
                         expressions.Add(Expression.Assign(offset, Expression.Call(allocator, Allocator.AnchorExtendMethodInfo)));
@@ -372,7 +372,7 @@ namespace Mikodev.Binary
                     var converter = GetOrGenerateConverter(propertyType);
                     list.Add(Expression.Call(
                         Expression.Constant(converter),
-                        converter.ToBytesDelegate.Method,
+                        converter.GetToBytesMethodInfo(),
                         allocator, Expression.Property(instance, property)));
                     list.Add(Expression.Call(allocator, Allocator.FinishExtendMethodInfo, position));
                 }
@@ -416,7 +416,7 @@ namespace Mikodev.Binary
                     var item = properties[i];
                     var converter = GetOrGenerateConverter(item.PropertyType);
                     var memory = Expression.Property(dictionary, "Item", Expression.Constant(item.Name));
-                    var value = Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, memory);
+                    var value = Expression.Call(Expression.Constant(converter), converter.GetToValueMethodInfo(), memory);
                     expressionArray[i] = value;
                 }
                 var lambda = Expression.Lambda(delegateType, Expression.New(constructorInfo, expressionArray), dictionary);
@@ -434,7 +434,7 @@ namespace Mikodev.Binary
                         throw new InvalidOperationException($"Property '{property.Name}' does not have a public setter, type: {type}");
                     var converter = GetOrGenerateConverter(property.PropertyType);
                     var memory = Expression.Property(dictionary, "Item", Expression.Constant(property.Name));
-                    var value = Expression.Call(Expression.Constant(converter), converter.ToValueDelegate.Method, memory);
+                    var value = Expression.Call(Expression.Constant(converter), converter.GetToValueMethodInfo(), memory);
                     expressionList.Add(Expression.Assign(Expression.Property(instance, property), value));
                 }
                 expressionList.Add(instance);

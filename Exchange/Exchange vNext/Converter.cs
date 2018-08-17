@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 
 namespace Mikodev.Binary
 {
@@ -10,52 +12,75 @@ namespace Mikodev.Binary
         public static readonly bool UseLittleEndian = true;
         #endregion
 
-        internal int Length { get; }
-        internal abstract Type ValueType { get; }
-        internal abstract Delegate ToBytesDelegate { get; }
-        internal abstract Delegate ToValueDelegate { get; }
+        #region private fields
+        private readonly int length;
+        private Cache cache;
+        #endregion
+
+        internal int Length => length;
+
+        internal Cache Cache => cache;
 
         internal Converter(int length)
         {
             if (length < 0)
                 ThrowHelper.ThrowArgumentOutOfRange();
-            Length = length;
+            this.length = length;
         }
 
-        internal abstract void ToBytesAny(Allocator allocator, object value);
+        internal void Initialize(Cache cache)
+        {
+            if (Interlocked.CompareExchange(ref this.cache, cache, null) == null)
+                return;
+            ThrowHelper.ThrowConverterInitialized();
+        }
 
-        internal abstract object ToValueAny(ReadOnlyMemory<byte> memory);
+        protected Converter GetConverter(Type type)
+        {
+            if (type == null)
+                ThrowHelper.ThrowArgumentNull();
+            var cache = this.cache;
+            if (cache == null)
+                ThrowHelper.ThrowConverterNotInitialized();
+            return cache.GetConverter(type);
+        }
 
-        #region override
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override bool Equals(object obj) => throw new InvalidOperationException();
+        protected Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
 
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override int GetHashCode() => throw new InvalidOperationException();
+        internal abstract MethodInfo GetToBytesMethodInfo();
 
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public override string ToString() => $"{nameof(Converter)} type: {ValueType}, byte length : {Length}";
-        #endregion
+        internal abstract MethodInfo GetToValueMethodInfo();
+
+        public abstract void ToBytesAny(Allocator allocator, object value);
+
+        public abstract object ToValueAny(ReadOnlyMemory<byte> memory);
     }
 
     public abstract class Converter<T> : Converter
     {
-        internal sealed override Type ValueType => typeof(T);
-        internal sealed override Delegate ToBytesDelegate { get; }
-        internal sealed override Delegate ToValueDelegate { get; }
+        protected Converter(int length) : base(length) { }
 
-        protected Converter(int length) : base(length)
-        {
-            ToBytesDelegate = (Action<Allocator, T>)ToBytes;
-            ToValueDelegate = (Func<ReadOnlyMemory<byte>, T>)ToValue;
-        }
+        internal sealed override MethodInfo GetToBytesMethodInfo() => new Action<Allocator, T>(ToBytes).GetMethodInfo();
+
+        internal sealed override MethodInfo GetToValueMethodInfo() => new Func<ReadOnlyMemory<byte>, T>(ToValue).GetMethodInfo();
+
+        public override void ToBytesAny(Allocator allocator, object value) => ToBytes(allocator, (T)value);
+
+        public override object ToValueAny(ReadOnlyMemory<byte> memory) => ToValue(memory);
 
         public abstract void ToBytes(Allocator allocator, T value);
 
         public abstract T ToValue(ReadOnlyMemory<byte> memory);
 
-        internal sealed override void ToBytesAny(Allocator allocator, object value) => ToBytes(allocator, (T)value);
+        #region override
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public sealed override bool Equals(object obj) => throw new NotSupportedException();
 
-        internal sealed override object ToValueAny(ReadOnlyMemory<byte> memory) => ToValue(memory);
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public sealed override int GetHashCode() => throw new NotSupportedException();
+
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public sealed override string ToString() => $"{nameof(Converter)}(Type: {typeof(T)}, Length: {Length})";
+        #endregion
     }
 }
