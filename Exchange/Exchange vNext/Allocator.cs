@@ -137,7 +137,7 @@ namespace Mikodev.Binary
         public sealed override int GetHashCode() => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override string ToString() => nameof(Allocator);
+        public sealed override string ToString() => $"{nameof(Allocator)}(Length: {position}, Capacity: {buffer.Length})";
         #endregion
     }
 }

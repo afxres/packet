@@ -148,7 +148,7 @@ namespace Mikodev.Binary
         public sealed override int GetHashCode() => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override string ToString() => $"{nameof(Cache)}";
+        public sealed override string ToString() => $"{nameof(Cache)}(Converters: {converters.Count})";
         #endregion
     }
 }

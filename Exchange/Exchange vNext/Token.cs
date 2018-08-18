@@ -86,7 +86,7 @@ namespace Mikodev.Binary
         public sealed override int GetHashCode() => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override string ToString() => $"{nameof(Token)}(Bytes: {memory.Length}, Items: {Tokens.Count})";
+        public sealed override string ToString() => $"{nameof(Token)}(Items: {Tokens.Count}, Bytes: {memory.Length})";
         #endregion
     }
 }
