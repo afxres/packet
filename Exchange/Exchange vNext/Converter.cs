@@ -47,6 +47,8 @@ namespace Mikodev.Binary
 
         protected Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
 
+        internal abstract Type GetValueType();
+
         internal abstract MethodInfo GetToBytesMethodInfo();
 
         internal abstract MethodInfo GetToValueMethodInfo();
@@ -54,11 +56,24 @@ namespace Mikodev.Binary
         public abstract void ToBytesAny(Allocator allocator, object value);
 
         public abstract object ToValueAny(ReadOnlyMemory<byte> memory);
+
+        #region override
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public sealed override bool Equals(object obj) => throw new NotSupportedException();
+
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public sealed override int GetHashCode() => throw new NotSupportedException();
+
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public sealed override string ToString() => $"{nameof(Converter)}(Type: {GetValueType()}, Length: {Length})";
+        #endregion
     }
 
     public abstract class Converter<T> : Converter
     {
         protected Converter(int length) : base(length) { }
+
+        internal sealed override Type GetValueType() => typeof(T);
 
         internal sealed override MethodInfo GetToBytesMethodInfo() => new Action<Allocator, T>(ToBytes).GetMethodInfo();
 
@@ -71,16 +86,5 @@ namespace Mikodev.Binary
         public abstract void ToBytes(Allocator allocator, T value);
 
         public abstract T ToValue(ReadOnlyMemory<byte> memory);
-
-        #region override
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override bool Equals(object obj) => throw new NotSupportedException();
-
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override int GetHashCode() => throw new NotSupportedException();
-
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override string ToString() => $"{nameof(Converter)}(Type: {typeof(T)}, Length: {Length})";
-        #endregion
     }
 }

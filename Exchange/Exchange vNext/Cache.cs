@@ -65,7 +65,7 @@ namespace Mikodev.Binary
             if (converters != null)
                 foreach (var i in converters)
                     if (i != null)
-                        dictionary.TryAdd(GetValueType(i.GetType()), i);
+                        dictionary.TryAdd(i.GetValueType(), i);
             // try add converters
             foreach (var i in converterTypes)
                 if (!dictionary.ContainsKey(i.Key))
