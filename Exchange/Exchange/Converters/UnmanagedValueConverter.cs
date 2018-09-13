@@ -5,42 +5,49 @@ namespace Mikodev.Network.Converters
 {
     internal sealed class UnmanagedValueConverter<T> : PacketConverter<T> where T : unmanaged
     {
-        private static readonly bool origin = BitConverter.IsLittleEndian == PacketConvert.UseLittleEndian || Unsafe.SizeOf<T>() == 1;
+        private static readonly unsafe bool origin = BitConverter.IsLittleEndian == PacketConvert.UseLittleEndian || sizeof(T) == 1;
 
-        internal static byte[] ToBytes(T value)
+        internal static unsafe byte[] ToBytes(T value)
         {
-            var buffer = new byte[Unsafe.SizeOf<T>()];
+            var buffer = new byte[sizeof(T)];
             UnsafeToBytes(ref buffer[0], value);
             return buffer;
         }
 
-        internal static T ToValue(byte[] buffer, int offset, int length)
+        internal static unsafe T ToValue(byte[] buffer, int offset, int length)
         {
-            if (buffer == null || offset < 0 || length < Unsafe.SizeOf<T>() || buffer.Length - offset < length)
+            if (buffer == null || offset < 0 || length < sizeof(T) || buffer.Length - offset < length)
                 throw PacketException.Overflow();
             return UnsafeToValue(ref buffer[offset]);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void UnsafeToBytes(ref byte location, T value)
+        internal static unsafe void UnsafeToBytes(ref byte location, T value)
         {
-            if (origin)
-                Unsafe.WriteUnaligned(ref location, value);
-            else
-                Endian.Swap<T>(ref location, ref Unsafe.As<T, byte>(ref value));
+            fixed (byte* pointer = &location)
+            {
+                if (origin)
+                    *(T*)pointer = value;
+                else
+                    Endian.Swap<T>(pointer, (byte*)&value);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T UnsafeToValue(ref byte location)
+        internal static unsafe T UnsafeToValue(ref byte location)
         {
-            if (origin)
-                return Unsafe.ReadUnaligned<T>(ref location);
-            var result = default(T);
-            Endian.Swap<T>(ref Unsafe.As<T, byte>(ref result), ref location);
+            T result;
+            fixed (byte* pointer = &location)
+            {
+                if (origin)
+                    result = *(T*)pointer;
+                else
+                    Endian.Swap<T>((byte*)&result, pointer);
+            }
             return result;
         }
 
-        public UnmanagedValueConverter() : base(Unsafe.SizeOf<T>()) { }
+        public unsafe UnmanagedValueConverter() : base(sizeof(T)) { }
 
         public override byte[] GetBytes(T value) => ToBytes(value);
 

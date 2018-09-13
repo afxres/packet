@@ -1,16 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net461;netstandard2.0;netcoreapp2.0;</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard2.0;</TargetFrameworks>
     <AssemblyName>Mikodev.Exchange</AssemblyName>
     <RootNamespace>Mikodev.Network</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <LangVersion>latest</LangVersion>
     <Authors>Mikodev</Authors>
     <Company>Mikodev</Company>
     <Copyright>Mikodev 2018</Copyright>
     <Product>Mikodev.Network</Product>
-    <Version>1.6.8</Version>
+    <Version>1.6.9</Version>
     <PackageTags>binary packet dynamic serialize</PackageTags>
     <PackageProjectUrl>https://github.com/afxres/packet</PackageProjectUrl>
   </PropertyGroup>
@@ -18,9 +19,5 @@
   <PropertyGroup Condition=" '$(TargetFramework)' != 'net45' ">
     <DefineConstants>NETFULL</DefineConstants>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.0"/>
-  </ItemGroup>
 
 </Project>

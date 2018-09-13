@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
@@ -13,9 +12,9 @@ namespace Mikodev.Network.Converters
             var target = new byte[sizeof(decimal)];
             var source = decimal.GetBits(value);
             if (origin)
-                Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<int, byte>(ref source[0]), sizeof(decimal));
+                Unsafe.Copy(ref target[0], in source[0], sizeof(decimal));
             else
-                Endian.SwapRange<int>(ref target[0], ref Unsafe.As<int, byte>(ref source[0]), sizeof(decimal));
+                Endian.SwapCopy<int>(ref target[0], in source[0], sizeof(decimal));
             return target;
         }
 
@@ -25,9 +24,9 @@ namespace Mikodev.Network.Converters
                 throw PacketException.Overflow();
             var target = new int[sizeof(decimal) / sizeof(int)];
             if (origin)
-                Unsafe.CopyBlockUnaligned(ref Unsafe.As<int, byte>(ref target[0]), ref buffer[offset], sizeof(decimal));
+                Unsafe.Copy(ref target[0], in buffer[offset], sizeof(decimal));
             else
-                Endian.SwapRange<int>(ref Unsafe.As<int, byte>(ref target[0]), ref buffer[offset], sizeof(decimal));
+                Endian.SwapCopy<int>(ref target[0], in buffer[offset], sizeof(decimal));
             var result = new decimal(target);
             return result;
         }

@@ -82,7 +82,7 @@ namespace Mikodev.Network
             var target = new byte[length];
             var source = new sbyte[length];
             collection.CopyTo(source, 0);
-            Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<sbyte, byte>(ref source[0]), (uint)length);
+            Unsafe.Copy(ref target[0], in source[0], length);
             return target;
         }
 

@@ -28,7 +28,7 @@ namespace Mikodev.Network
             }
             while (length < limits);
             var target = new byte[(int)length];
-            Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)offset);
+            Unsafe.Copy(ref target[0], in buffer[0], offset);
             buffer = target;
             return;
 
@@ -51,7 +51,7 @@ namespace Mikodev.Network
             if (source.Length == 0)
                 return;
             var offset = Allocate(source.Length);
-            Unsafe.CopyBlockUnaligned(ref buffer[offset], ref source[0], (uint)source.Length);
+            Unsafe.Copy(ref buffer[offset], in source[0], source.Length);
         }
 
         internal void AppendExtend(byte[] source)
@@ -60,7 +60,7 @@ namespace Mikodev.Network
             UnmanagedValueConverter<int>.UnsafeToBytes(ref buffer[offset], source.Length);
             if (source.Length == 0)
                 return;
-            Unsafe.CopyBlockUnaligned(ref buffer[offset + sizeof(int)], ref source[0], (uint)source.Length);
+            Unsafe.Copy(ref buffer[offset + sizeof(int)], in source[0], source.Length);
         }
 
         internal void AppendKey(string key) => AppendExtend(PacketConvert.Encoding.GetBytes(key));
@@ -75,7 +75,7 @@ namespace Mikodev.Network
             if (length == 0)
                 return Empty.Array<byte>();
             var target = new byte[length];
-            Unsafe.CopyBlockUnaligned(ref target[0], ref buffer[0], (uint)length);
+            Unsafe.Copy(ref target[0], in buffer[0], length);
             return target;
         }
     }

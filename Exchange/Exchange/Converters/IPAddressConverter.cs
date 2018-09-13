@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
@@ -15,7 +14,7 @@ namespace Mikodev.Network.Converters
             if (buffer == null || offset < 0 || length < 1 || buffer.Length - offset < length)
                 throw PacketException.Overflow();
             var result = new byte[length];
-            Unsafe.CopyBlockUnaligned(ref result[0], ref buffer[offset], (uint)length);
+            Unsafe.Copy(ref result[0], in buffer[offset], length);
             return new IPAddress(result);
         }
 

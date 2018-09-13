@@ -1,36 +1,35 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
     internal sealed class UnmanagedArrayConverter<T> : PacketConverter<T[]> where T : unmanaged
     {
-        private static readonly bool origin = BitConverter.IsLittleEndian == PacketConvert.UseLittleEndian || Unsafe.SizeOf<T>() == 1;
+        private static readonly unsafe bool origin = BitConverter.IsLittleEndian == PacketConvert.UseLittleEndian || sizeof(T) == 1;
 
-        internal static byte[] ToBytes(T[] source)
+        internal static unsafe byte[] ToBytes(T[] source)
         {
             if (source == null || source.Length == 0)
                 return Empty.Array<byte>();
-            var targetLength = source.Length * Unsafe.SizeOf<T>();
+            var targetLength = source.Length * sizeof(T);
             var target = new byte[targetLength];
             if (origin)
-                Unsafe.CopyBlockUnaligned(ref target[0], ref Unsafe.As<T, byte>(ref source[0]), (uint)targetLength);
+                Unsafe.Copy(ref target[0], in source[0], targetLength);
             else
-                Endian.SwapRange<T>(ref target[0], ref Unsafe.As<T, byte>(ref source[0]), targetLength);
+                Endian.SwapCopy<T>(ref target[0], in source[0], targetLength);
             return target;
         }
 
-        internal static T[] ToValue(byte[] buffer, int offset, int length)
+        internal static unsafe T[] ToValue(byte[] buffer, int offset, int length)
         {
             if (length == 0)
                 return Empty.Array<T>();
-            if (buffer == null || length < 0 || offset < 0 || buffer.Length - offset < length || (length % Unsafe.SizeOf<T>()) != 0)
+            if (buffer == null || length < 0 || offset < 0 || buffer.Length - offset < length || (length % sizeof(T)) != 0)
                 throw PacketException.Overflow();
-            var target = new T[length / Unsafe.SizeOf<T>()];
+            var target = new T[length / sizeof(T)];
             if (origin)
-                Unsafe.CopyBlockUnaligned(ref Unsafe.As<T, byte>(ref target[0]), ref buffer[offset], (uint)length);
+                Unsafe.Copy(ref target[0], in buffer[offset], length);
             else
-                Endian.SwapRange<T>(ref Unsafe.As<T, byte>(ref target[0]), ref buffer[offset], length);
+                Endian.SwapCopy<T>(ref target[0], in buffer[offset], length);
             return target;
         }
 
