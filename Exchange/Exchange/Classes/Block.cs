@@ -6,45 +6,41 @@ namespace Mikodev.Network
 {
     internal struct Block
     {
-        private readonly byte[] buffer;
-        private readonly int offset;
-        private readonly int length;
+        internal byte[] Buffer { get; }
+
+        internal int Offset { get; }
+
+        internal int Length { get; }
+
+        internal int Limits => Offset + Length;
 
         internal Block(Vernier vernier)
         {
-            buffer = vernier.Buffer;
-            offset = vernier.Offset;
-            length = vernier.Length;
+            Buffer = vernier.Buffer;
+            Offset = vernier.Offset;
+            Length = vernier.Length;
         }
 
         internal Block(byte[] buffer)
         {
-            this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
-            offset = 0;
-            length = buffer.Length;
+            Buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            Offset = 0;
+            Length = buffer.Length;
         }
 
         internal Block(byte[] buffer, int offset, int length)
         {
-            this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+            Buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
             if ((uint)offset > (uint)buffer.Length || (uint)length > (uint)(buffer.Length - offset))
                 throw new ArgumentOutOfRangeException();
-            this.offset = offset;
-            this.length = length;
+            Offset = offset;
+            Length = length;
         }
-
-        internal byte[] Buffer => buffer;
-
-        internal int Limits => offset + length;
-
-        internal int Offset => offset;
-
-        internal int Length => length;
 
         #region to array, to list, to dictionary
         internal void ToDictionary<TK, TV>(PacketConverter indexConverter, PacketConverter elementConverter, DictionaryAbstract<TK, TV> dictionary)
         {
-            if (length == 0)
+            if (Length == 0)
                 return;
             var indexGeneric = (PacketConverter<TK>)indexConverter;
             var elementGeneric = (PacketConverter<TV>)elementConverter;

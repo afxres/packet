@@ -5,17 +5,14 @@ namespace Mikodev.Network
 {
     internal sealed class SetInfo
     {
-        private readonly KeyValuePair<string, Type>[] arguments;
-        private readonly Func<object[], object> func;
+        internal KeyValuePair<string, Type>[] Arguments { get; }
 
-        internal SetInfo(KeyValuePair<string, Type>[] arguments, Func<object[], object> func)
+        internal Func<object[], object> Functor { get; }
+
+        internal SetInfo(KeyValuePair<string, Type>[] arguments, Func<object[], object> functor)
         {
-            this.arguments = arguments;
-            this.func = func;
+            Arguments = arguments;
+            Functor = functor;
         }
-
-        internal KeyValuePair<string, Type>[] Arguments => arguments;
-
-        internal object GetObject(object[] values) => func.Invoke(values);
     }
 }

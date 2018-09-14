@@ -4,7 +4,7 @@ using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, M
 
 namespace Mikodev.Network
 {
-    partial class PacketWriter
+    public partial class PacketWriter
     {
         private static Item GetItem(ConverterDictionary converters, object value, int level)
         {
@@ -85,11 +85,13 @@ namespace Mikodev.Network
         private static Item GetItemMatchDefault(ConverterDictionary converters, object value, int level, Info valueInfo)
         {
             var get = Cache.GetGetInfo(valueInfo.Type);
-            var values = get.GetValues(value);
+            var functor = get.Functor;
             var arguments = get.Arguments;
+            var results = new object[arguments.Length];
+            functor.Invoke(value, results);
             var dictionary = new Dictionary<string, PacketWriter>(arguments.Length);
             for (int i = 0; i < arguments.Length; i++)
-                dictionary[arguments[i].Key] = GetWriter(converters, values[i], level);
+                dictionary[arguments[i].Key] = GetWriter(converters, results[i], level);
             return NewItem(dictionary);
         }
     }

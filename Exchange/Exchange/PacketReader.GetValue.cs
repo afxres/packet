@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    partial class PacketReader
+    public partial class PacketReader
     {
         internal object GetValue(Type type, int level)
         {
@@ -86,6 +86,7 @@ namespace Mikodev.Network
             var set = Cache.GetSetInfo(valueType);
             if (set == null)
                 throw PacketException.InvalidType(valueType);
+            var functor = set.Functor;
             var arguments = set.Arguments;
             var source = new object[arguments.Length];
             for (int i = 0; i < arguments.Length; i++)
@@ -94,8 +95,7 @@ namespace Mikodev.Network
                 var result = reader.GetValue(arguments[i].Value, level);
                 source[i] = result;
             }
-            var target = set.GetObject(source);
-            return target;
+            return functor.Invoke(source);
         }
     }
 }

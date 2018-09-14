@@ -4,37 +4,34 @@ namespace Mikodev.Network
 {
     internal struct Vernier
     {
-        private readonly byte[] buffer;
-        private readonly int limits;
-        private int offset;
-        private int length;
+        internal byte[] Buffer { get; }
 
-        internal byte[] Buffer => buffer;
+        internal int Limits { get; }
 
-        internal int Offset => offset;
+        internal int Offset { get; private set; }
 
-        internal int Length => length;
+        internal int Length { get; private set; }
 
-        internal bool Any => limits - offset != length;
+        internal bool Any => Limits - Offset != Length;
 
         internal Vernier(Block block)
         {
-            buffer = block.Buffer;
-            offset = block.Offset;
-            limits = block.Limits;
-            length = 0;
+            Buffer = block.Buffer;
+            Offset = block.Offset;
+            Limits = block.Limits;
+            Length = 0;
         }
 
         internal void Flush()
         {
-            offset += this.length;
-            if ((uint)(limits - offset) < sizeof(int))
+            Offset += Length;
+            if ((uint)(Limits - Offset) < sizeof(int))
                 goto fail;
-            var length = UnmanagedValueConverter<int>.UnsafeToValue(ref buffer[offset]);
-            offset += sizeof(int);
-            if ((uint)(limits - offset) < (uint)length)
+            var length = UnmanagedValueConverter<int>.UnsafeToValue(ref Buffer[Offset]);
+            Offset += sizeof(int);
+            if ((uint)(Limits - Offset) < (uint)length)
                 goto fail;
-            this.length = length;
+            Length = length;
             return;
 
             fail:
@@ -45,10 +42,10 @@ namespace Mikodev.Network
         {
             if (define > 0)
             {
-                offset += length;
-                if ((uint)(limits - offset) < (uint)define)
+                Offset += Length;
+                if ((uint)(Limits - Offset) < (uint)define)
                     throw PacketException.Overflow();
-                length = define;
+                Length = define;
             }
             else
             {
@@ -58,14 +55,14 @@ namespace Mikodev.Network
 
         internal bool TryFlush()
         {
-            offset += this.length;
-            if ((uint)(limits - offset) < sizeof(int))
+            Offset += Length;
+            if ((uint)(Limits - Offset) < sizeof(int))
                 return false;
-            var length = UnmanagedValueConverter<int>.UnsafeToValue(ref buffer[offset]);
-            offset += sizeof(int);
-            if ((uint)(limits - offset) < (uint)length)
+            var length = UnmanagedValueConverter<int>.UnsafeToValue(ref Buffer[Offset]);
+            Offset += sizeof(int);
+            if ((uint)(Limits - Offset) < (uint)length)
                 return false;
-            this.length = length;
+            Length = length;
             return true;
         }
 
