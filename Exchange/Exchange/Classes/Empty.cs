@@ -13,7 +13,7 @@
 
     internal static class Empty
     {
-internal static T[] Array<T>() => Empty<T>.Array;
+        internal static T[] Array<T>() => Empty<T>.Array;
     }
 #endif
 }

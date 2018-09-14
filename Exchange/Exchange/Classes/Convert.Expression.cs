@@ -14,7 +14,7 @@ using ToEnumerableAdapterFunction = System.Func<Mikodev.Network.PacketReader, Mi
 
 namespace Mikodev.Network
 {
-    partial class Convert
+    internal partial class Convert
     {
         private static readonly MethodInfo ConvertArrayMethodInfo = typeof(Array).GetMethod(nameof(Array.Copy), new[] { typeof(Array), typeof(Array), typeof(int) });
 

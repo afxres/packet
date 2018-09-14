@@ -8,6 +8,7 @@ namespace Mikodev.Network
     public sealed class PacketException : Exception
     {
         private const int RecursionLimits = 64;
+
         private const string RecursionError = "Recursion limit of 64 reached";
 
         private static string GetMessage(PacketError code)

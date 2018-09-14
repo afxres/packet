@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    partial class PacketConvert
+    public partial class PacketConvert
     {
         public static object GetValue(this PacketReader reader, Type type)
         {

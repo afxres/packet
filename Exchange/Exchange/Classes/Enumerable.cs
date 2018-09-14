@@ -7,6 +7,7 @@ namespace Mikodev.Network
     internal class Enumerable : IEnumerable
     {
         protected readonly PacketReader reader;
+
         protected readonly PacketConverter converter;
 
         internal Enumerable(PacketReader reader, PacketConverter converter)

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Expressions;
-using System.Text;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
@@ -10,6 +9,7 @@ namespace Mikodev.Network
     public sealed partial class PacketWriter : IDynamicMetaObjectProvider
     {
         internal readonly ConverterDictionary converters;
+
         private Item item;
 
         internal PacketWriter(ConverterDictionary converters, Item item)
@@ -74,15 +74,9 @@ namespace Mikodev.Network
         public override string ToString()
         {
             var data = item.data;
-            var builder = new StringBuilder(nameof(PacketWriter));
-            builder.Append(" with ");
             if (data is byte[] bytes)
-                builder.AppendFormat("{0} byte(s)", bytes.Length);
-            else if (data is ICollection collection)
-                builder.AppendFormat("{0} node(s)", collection.Count);
-            else
-                builder.Append("none");
-            return builder.ToString();
+                return $"{nameof(PacketWriter)}(Bytes: {bytes.Length})";
+            return $"{nameof(PacketWriter)}(Nodes: {(data as ICollection)?.Count ?? 0})";
         }
 
         public static PacketWriter Serialize(object value, ConverterDictionary converters = null) => GetWriter(converters, value, 0);

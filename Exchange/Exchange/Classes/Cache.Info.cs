@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Mikodev.Network
 {
-    partial class Cache
+    internal partial class Cache
     {
         internal static Info GetInfo(Type type)
         {

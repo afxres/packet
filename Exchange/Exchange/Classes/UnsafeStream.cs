@@ -8,9 +8,11 @@ namespace Mikodev.Network
         /* 警告: 该类仅应用于单线程环境 */
 
         private const int InitialLength = 256;
+
         private const int MaximumLength = 0x4000_0000;
 
         private byte[] buffer = new byte[InitialLength];
+
         private int position = 0;
 
         [MethodImpl(MethodImplOptions.NoInlining)]

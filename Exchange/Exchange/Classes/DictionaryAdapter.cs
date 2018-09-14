@@ -6,6 +6,7 @@ namespace Mikodev.Network
     internal sealed class DictionaryAdapter<TK, TV> : IEnumerable<KeyValuePair<byte[], object>>
     {
         private readonly PacketConverter<TK> converter;
+
         private readonly IEnumerable<KeyValuePair<TK, TV>> dictionary;
 
         internal DictionaryAdapter(PacketConverter converter, IEnumerable<KeyValuePair<TK, TV>> dictionary)

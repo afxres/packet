@@ -15,7 +15,7 @@ namespace Mikodev.Network.Converters
             if (origin)
                 Unsafe.Copy(ref target[0], in source[0], targetLength);
             else
-                Endian.SwapCopy<T>(ref target[0], in source[0], targetLength);
+                Endian.SwapCopy(ref target[0], in source[0], targetLength);
             return target;
         }
 
@@ -29,7 +29,7 @@ namespace Mikodev.Network.Converters
             if (origin)
                 Unsafe.Copy(ref target[0], in buffer[offset], length);
             else
-                Endian.SwapCopy<T>(ref target[0], in buffer[offset], length);
+                Endian.SwapCopy(ref target[0], in buffer[offset], length);
             return target;
         }
 

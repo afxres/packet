@@ -14,7 +14,7 @@ namespace Mikodev.Network.Converters
             if (origin)
                 Unsafe.Copy(ref target[0], in source[0], sizeof(decimal));
             else
-                Endian.SwapCopy<int>(ref target[0], in source[0], sizeof(decimal));
+                Endian.SwapCopy(ref target[0], in source[0], sizeof(decimal));
             return target;
         }
 
@@ -26,7 +26,7 @@ namespace Mikodev.Network.Converters
             if (origin)
                 Unsafe.Copy(ref target[0], in buffer[offset], sizeof(decimal));
             else
-                Endian.SwapCopy<int>(ref target[0], in buffer[offset], sizeof(decimal));
+                Endian.SwapCopy(ref target[0], in buffer[offset], sizeof(decimal));
             var result = new decimal(target);
             return result;
         }

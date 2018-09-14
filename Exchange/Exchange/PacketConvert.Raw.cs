@@ -2,7 +2,7 @@
 
 namespace Mikodev.Network
 {
-    partial class PacketConvert
+    public partial class PacketConvert
     {
         public static object GetValue(this PacketRawReader reader, Type type)
         {
@@ -19,7 +19,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(reader);
 
             var con = (PacketConverter<T>)Cache.GetConverter<T>(reader.converters, false);
-            var val = reader.Next<T>(con);
+            var val = reader.Next(con);
             return val;
         }
 

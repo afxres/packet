@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Mikodev.Network
 {
-    partial class Cache
+    internal partial class Cache
     {
         private static GetInfo InternalGetGetInfo(Type type)
         {

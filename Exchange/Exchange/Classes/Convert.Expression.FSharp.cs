@@ -10,7 +10,7 @@ using ToDictionaryFunction = System.Func<Mikodev.Network.PacketReader, Mikodev.N
 
 namespace Mikodev.Network
 {
-    partial class Convert
+    internal partial class Convert
     {
         private const string FSharpCollectionsNamespace = "Microsoft.FSharp.Collections";
 

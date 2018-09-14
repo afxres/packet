@@ -38,6 +38,6 @@ namespace Mikodev.Network
         /// </summary>
         internal PacketConverter Converter { get; set; }
 
-        public override string ToString() => $"{nameof(Info)} | type: {Type}, from: {From}, to: {To}";
+        public override string ToString() => $"{nameof(Info)}(Type: {Type}, From: {From}, To: {To})";
     }
 }

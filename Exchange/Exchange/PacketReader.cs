@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Expressions;
-using System.Text;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
@@ -17,10 +16,13 @@ namespace Mikodev.Network
         }
 
         internal readonly ConverterDictionary converters;
+
         internal readonly Block block;
 
         private List<PacketReader> list;
+
         private Dictionary<string, PacketReader> dictionary;
+
         private Flags flags;
 
         internal PacketReader(Block block, ConverterDictionary converters)
@@ -133,16 +135,7 @@ namespace Mikodev.Network
             }
         }
 
-        public override string ToString()
-        {
-            var builder = new StringBuilder(nameof(PacketReader));
-            builder.Append(" with ");
-            var collection = GetDictionary();
-            if (collection != null)
-                builder.AppendFormat("{0} node(s), ", collection.Count);
-            builder.AppendFormat("{0} byte(s)", block.Length);
-            return builder.ToString();
-        }
+        public override string ToString() => $"{nameof(PacketReader)}(Nodes: {GetDictionary()?.Count ?? 0}, Bytes: {block.Length})";
 
         public T Deserialize<T>() => (T)GetValue(typeof(T), 0);
 

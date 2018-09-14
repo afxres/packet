@@ -6,7 +6,9 @@ namespace Mikodev.Network
     internal sealed class EnumerableAdapter<T> : IEnumerable<T>
     {
         private readonly PacketReader reader;
+
         private readonly Info info;
+
         private readonly int level;
 
         internal EnumerableAdapter(PacketReader reader, Info info, int level)

@@ -16,7 +16,7 @@
             fixed (U* src = &source)
                 Copy((byte*)dst, (byte*)src, length);
         }
-        
+
         internal static unsafe void Copy(byte* target, byte* source, int length)
         {
             while (length >= 8)

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    partial class PacketWriter
+    public partial class PacketWriter
     {
         #region new item
         internal static Item NewItem(byte[] data) => new Item(data, ItemFlags.Buffer);
@@ -24,8 +24,11 @@ namespace Mikodev.Network
             internal static readonly Item Empty = new Item(new object(), ItemFlags.None);
 
             internal readonly object data;
+
             internal readonly ItemFlags flag;
+
             private readonly int indexLength;
+
             private readonly int elementLength;
 
             internal Item(object data, ItemFlags flag)
@@ -151,7 +154,7 @@ namespace Mikodev.Network
                 }
             }
 
-            public override string ToString() => $"{nameof(Item)} | flag: {flag}, index length: {indexLength}, element length: {elementLength}";
+            public override string ToString() => $"{nameof(Item)}(Flag: {flag}, Length: (index: {indexLength}, element: {elementLength}))";
         }
     }
 }

@@ -9,7 +9,9 @@ namespace Mikodev.Network
     internal static partial class Extension
     {
         internal const int Capacity = 8;
+
         internal static readonly char[] Separator = new[] { '/', '\\' };
+
         internal static readonly ConverterDictionary Converters;
 
         static Extension()

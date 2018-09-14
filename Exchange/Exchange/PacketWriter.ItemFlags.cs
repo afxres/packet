@@ -1,6 +1,6 @@
 ﻿namespace Mikodev.Network
 {
-    partial class PacketWriter
+    public partial class PacketWriter
     {
         internal enum ItemFlags : int
         {

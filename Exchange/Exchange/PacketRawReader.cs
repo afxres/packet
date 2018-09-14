@@ -5,7 +5,9 @@ namespace Mikodev.Network
     public sealed class PacketRawReader
     {
         internal readonly ConverterDictionary converters;
+
         private readonly Block block;
+
         private Vernier vernier;
 
         public PacketRawReader(PacketReader source)
@@ -46,6 +48,6 @@ namespace Mikodev.Network
 
         public void Reset() => vernier = (Vernier)block;
 
-        public override string ToString() => $"{nameof(PacketRawReader)} with {block.Length} byte(s)";
+        public override string ToString() => $"{nameof(PacketRawReader)}(Bytes: {block.Length})";
     }
 }

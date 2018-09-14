@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Mikodev.Network
 {
-    partial class PacketConvert
+    public partial class PacketConvert
     {
         public static PacketWriter SetValue(this PacketWriter writer, string key, object value, Type type)
         {

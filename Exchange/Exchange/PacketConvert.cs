@@ -87,7 +87,7 @@ namespace Mikodev.Network
         public static object GetValue<T>(byte[] buffer)
         {
             ThrowIfArgumentError(buffer);
-            return ((PacketConverter<T>)Cache.GetConverter<T>(null, false)).GetValueChecked<T>(buffer, 0, buffer.Length, true);
+            return ((PacketConverter<T>)Cache.GetConverter<T>(null, false)).GetValueChecked(buffer, 0, buffer.Length, true);
         }
 
         public static object GetValue<T>(byte[] buffer, int offset, int length)
