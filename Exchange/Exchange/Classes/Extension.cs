@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
@@ -87,7 +86,6 @@ namespace Mikodev.Network
         }
 
         #region memory stream
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void Write(this MemoryStream stream, byte[] buffer) => stream.Write(buffer, 0, buffer.Length);
 
         internal static void WriteExtend(this MemoryStream stream, byte[] buffer)

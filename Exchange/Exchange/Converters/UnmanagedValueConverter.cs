@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network.Converters
 {
@@ -21,7 +20,6 @@ namespace Mikodev.Network.Converters
             return UnsafeToValue(ref buffer[offset]);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static unsafe void UnsafeToBytes(ref byte location, T value)
         {
             fixed (byte* pointer = &location)
@@ -33,7 +31,6 @@ namespace Mikodev.Network.Converters
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static unsafe T UnsafeToValue(ref byte location)
         {
             T result;

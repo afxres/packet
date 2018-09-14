@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
@@ -20,7 +19,6 @@ namespace Mikodev.Network
             SetInfos.Clear();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static PacketConverter GetConverter<T>(ConverterDictionary converters, bool nothrow) => GetConverter(converters, typeof(T), nothrow);
 
         internal static PacketConverter GetConverter(ConverterDictionary converters, Type type, bool nothrow)

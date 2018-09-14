@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using System.Text;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
@@ -42,10 +41,8 @@ namespace Mikodev.Network
             this.converters = converters;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal Dictionary<string, PacketReader> GetDictionary() => dictionary ?? InitializeDictionary();
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal List<PacketReader> GetList() => list ?? InitializeList();
 
         private Dictionary<string, PacketReader> InitializeDictionary()

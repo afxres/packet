@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Threading;
 
@@ -79,7 +78,6 @@ namespace Mikodev.Network
             return new PacketException(PacketError.Overflow);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void VerifyRecursionError(ref int level)
         {
             if (level > RecursionLimits)

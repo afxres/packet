@@ -1,18 +1,22 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Mikodev.Network
+﻿namespace Mikodev.Network
 {
     internal static class Unsafe
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if NETFULL
+        internal static unsafe void Copy<T, U>(ref T target, in U source, int length) where T : unmanaged where U : unmanaged
+        {
+            fixed (T* dst = &target)
+            fixed (U* src = &source)
+                System.Buffer.MemoryCopy(src, dst, length, length);
+        }
+#else
         internal static unsafe void Copy<T, U>(ref T target, in U source, int length) where T : unmanaged where U : unmanaged
         {
             fixed (T* dst = &target)
             fixed (U* src = &source)
                 Copy((byte*)dst, (byte*)src, length);
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         internal static unsafe void Copy(byte* target, byte* source, int length)
         {
             while (length >= 8)
@@ -41,5 +45,6 @@ namespace Mikodev.Network
                 *target = *source;
             }
         }
+#endif
     }
 }

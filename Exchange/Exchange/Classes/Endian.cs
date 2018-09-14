@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using uint16 = System.UInt16;
+﻿using uint16 = System.UInt16;
 using uint32 = System.UInt32;
 using uint64 = System.UInt64;
 
@@ -8,13 +7,11 @@ namespace Mikodev.Network
     internal static class Endian
     {
         #region basic swap methods
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static uint16 Swap16(uint16 value)
         {
             return (uint16)((value >> 8) + (value << 8));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static uint32 Swap32(uint32 value)
         {
             var one = value & 0x00FF00FFU;
@@ -22,7 +19,6 @@ namespace Mikodev.Network
             return ((one >> 8) | one << 24) + (two << 8 | (two >> 24));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static uint64 Swap64(uint64 value)
         {
             return ((uint64)Swap32((uint32)value) << 32) + Swap32((uint32)(value >> 32));
@@ -50,7 +46,6 @@ namespace Mikodev.Network
         #endregion
 
         #region swap multiple values
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static unsafe void SwapCopy<Item>(ref byte target, in Item source, int byteCount) where Item : unmanaged
         {
             fixed (byte* dst = &target)
@@ -58,7 +53,6 @@ namespace Mikodev.Network
                 SwapCopy<Item>(dst, (byte*)src, byteCount);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static unsafe void SwapCopy<Item>(ref Item target, in byte source, int byteCount) where Item : unmanaged
         {
             fixed (Item* dst = &target)

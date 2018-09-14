@@ -36,7 +36,6 @@ namespace Mikodev.Network
             throw PacketException.Overflow();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int Allocate(int require)
         {
             var offset = position;

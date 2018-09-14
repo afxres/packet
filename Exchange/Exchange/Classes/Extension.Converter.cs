@@ -1,20 +1,16 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network
 {
-    partial class Extension
+    internal partial class Extension
     {
         #region overload
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static T GetValue<T>(this PacketConverter<T> converter, Block block) => converter.GetValue(block.Buffer, block.Offset, block.Length);
         #endregion
 
         #region bytes -> object
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static object GetObjectChecked(this PacketConverter converter, Block block, bool check = false) => GetObjectChecked(converter, block.Buffer, block.Offset, block.Length, check);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static T GetValueChecked<T>(this PacketConverter<T> converter, Block block, bool check = false) => GetValueChecked(converter, block.Buffer, block.Offset, block.Length, check);
 
         internal static object GetObjectChecked(this PacketConverter converter, byte[] buffer, int offset, int length, bool check = false)
