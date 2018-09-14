@@ -8,17 +8,20 @@ using System.Reflection;
 
 namespace Mikodev.Binary
 {
-    partial class Cache
+    public partial class Cache
     {
         private readonly struct ConverterGenerator
         {
             private const int TupleMaximumItems = 8;
+
             private const int TupleMinimumItems = 1;
 
             private static readonly string fsNamespace = "Microsoft.FSharp.Collections";
+
             private static MethodInfo fsToListMethodInfo;
 
             private readonly Cache cache;
+
             private readonly HashSet<Type> types;
 
             private ConverterGenerator(Cache cache)
@@ -221,7 +224,7 @@ namespace Mikodev.Binary
                 var converters = new Converter[elementCount];
                 for (int i = 0; i < elementCount; i++)
                     converters[i] = GetOrGenerateConverter(elementTypes[i]);
-                var definitions = converters.Select(x => x.Length).ToArray();
+                var definitions = converters.Select(x => x.length).ToArray();
                 var length = definitions.Any(x => x == 0) ? 0 : definitions.Sum();
                 var toBytes = TupleToBytesExpression(type, converters, length);
                 var toValue = TupleToValueExpression(type, constructorInfo, elementTypes, converters);
@@ -261,7 +264,7 @@ namespace Mikodev.Binary
                 {
                     var converter = converters[i];
                     var toBytesExpression = Expression.Call(Expression.Constant(converter), converter.GetToBytesMethodInfo(), allocator, items[i]);
-                    if (converter.Length == 0)
+                    if (converter.length == 0)
                     {
                         expressions.Add(Expression.Assign(offset, Expression.Call(allocator, Allocator.AnchorExtendMethodInfo)));
                         expressions.Add(toBytesExpression);
@@ -308,7 +311,7 @@ namespace Mikodev.Binary
                     return lambda.Compile();
                 }
                 var setType = typeof(HashSet<>).MakeGenericType(elementType);
-                return type.IsAssignableFrom(setType) ? ((IDelegateConverter)GetOrGenerateConverter(setType)).ToValueFunction : null;
+                return type.IsAssignableFrom(setType) ? ((IDelegateConverter)GetOrGenerateConverter(setType)).ToValueDelegate : null;
             }
 
             private Delegate ToCollectionDelegateAddMethod(Type type, Type elementType, ParameterExpression enumerable, Type delegateType, MethodInfo addMethodInfo)
@@ -325,7 +328,7 @@ namespace Mikodev.Binary
                 };
 
                 var converter = GetOrGenerateConverter(elementType);
-                if (converter.Length == 0)
+                if (converter.length == 0)
                 {
                     var listType = typeof(List<>).MakeGenericType(elementType);
                     var list = Expression.Variable(listType, "list");

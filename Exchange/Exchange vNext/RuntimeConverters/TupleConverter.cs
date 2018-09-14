@@ -5,7 +5,9 @@ namespace Mikodev.Binary.RuntimeConverters
     internal sealed class TupleConverter<T> : Converter<T>
     {
         private readonly int[] definitions;
+
         private readonly Action<Allocator, T> toBytes;
+
         private readonly Func<ReadOnlyMemory<byte>[], T> toValue;
 
         public TupleConverter(Action<Allocator, T> toBytes, Func<ReadOnlyMemory<byte>[], T> toValue, int[] definitions, int length) : base(length)
@@ -14,6 +16,7 @@ namespace Mikodev.Binary.RuntimeConverters
             this.toValue = toValue;
             this.definitions = definitions;
         }
+
         public override void ToBytes(Allocator allocator, T value) => toBytes.Invoke(allocator, value);
 
         public override T ToValue(ReadOnlyMemory<byte> memory)

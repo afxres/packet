@@ -4,7 +4,8 @@ namespace Mikodev.Binary.RuntimeConverters
 {
     internal interface IDelegateConverter
     {
-        Delegate ToBytesFunction { get; }
-        Delegate ToValueFunction { get; }
+        Delegate ToBytesDelegate { get; }
+
+        Delegate ToValueDelegate { get; }
     }
 }

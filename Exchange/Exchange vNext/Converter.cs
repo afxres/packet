@@ -7,19 +7,13 @@ namespace Mikodev.Binary
 {
     public abstract class Converter
     {
-        #region define
         public static readonly Encoding Encoding = Encoding.UTF8;
+
         public static readonly bool UseLittleEndian = true;
-        #endregion
 
-        #region private fields
-        private readonly int length;
-        private Cache cache;
-        #endregion
+        internal readonly int length;
 
-        internal int Length => length;
-
-        internal Cache Cache => cache;
+        internal Cache cache;
 
         internal Converter(int length)
         {
@@ -65,7 +59,7 @@ namespace Mikodev.Binary
         public sealed override int GetHashCode() => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override string ToString() => $"{nameof(Converter)}(Type: {GetValueType()}, Length: {Length})";
+        public sealed override string ToString() => $"{nameof(Converter)}(Type: {GetValueType()}, Length: {length})";
         #endregion
     }
 

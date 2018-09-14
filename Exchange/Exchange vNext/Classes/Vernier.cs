@@ -6,7 +6,9 @@ namespace Mikodev.Binary
     internal struct Vernier
     {
         internal readonly int limits;
+
         internal int offset;
+
         internal int length;
 
         internal Vernier(int limits)
@@ -16,6 +18,7 @@ namespace Mikodev.Binary
             length = 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool Any() => limits - offset != length;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

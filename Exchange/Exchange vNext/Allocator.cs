@@ -9,12 +9,17 @@ namespace Mikodev.Binary
     {
         #region non-public
         internal static readonly MethodInfo AppendExtendMethodInfo = typeof(Allocator).GetMethod(nameof(AppendExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+
         internal static readonly MethodInfo AnchorExtendMethodInfo = typeof(Allocator).GetMethod(nameof(AnchorExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+
         internal static readonly MethodInfo FinishExtendMethodInfo = typeof(Allocator).GetMethod(nameof(FinishExtend), BindingFlags.Instance | BindingFlags.NonPublic);
 
         private const int InitialLength = 256;
+
         private const int MaximumLength = 0x4000_0000;
+
         private byte[] buffer = new byte[InitialLength];
+
         private int position = 0;
 
         internal Allocator() { }
@@ -104,10 +109,11 @@ namespace Mikodev.Binary
             var encoding = Converter.Encoding;
             var offset = position;
             var cursor = 0;
-            var charCount = Math.Max((span.Length >> 3) + 1, 32);
+            var limits = span.Length;
+            var charCount = Math.Max((limits >> 3) + 1, 32);
             do
             {
-                charCount = Math.Min(charCount, span.Length - cursor);
+                charCount = Math.Min(charCount, limits - cursor);
                 var byteCount = encoding.GetMaxByteCount(charCount);
                 var target = buffer;
                 if ((uint)byteCount > (uint)(target.Length - offset))
@@ -117,7 +123,7 @@ namespace Mikodev.Binary
                     offset += encoding.GetBytes(chars, charCount, bytes, byteCount);
                 cursor += charCount;
             }
-            while (cursor != span.Length);
+            while (cursor != limits);
             position = offset;
         }
 
@@ -125,8 +131,9 @@ namespace Mikodev.Binary
         {
             if (span.IsEmpty)
                 return;
-            ref var target = ref Allocate(span.Length);
-            Unsafe.Copy(ref target, in span[0], span.Length);
+            var limits = span.Length;
+            ref var target = ref Allocate(limits);
+            Unsafe.Copy(ref target, in span[0], limits);
         }
 
         #region override

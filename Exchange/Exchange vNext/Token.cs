@@ -12,7 +12,9 @@ namespace Mikodev.Binary
         private static readonly Dictionary<string, Token> empty = new Dictionary<string, Token>();
 
         private readonly Cache cache;
+
         private readonly ReadOnlyMemory<byte> memory;
+
         private Dictionary<string, Token> dictionary;
 
         internal Dictionary<string, Token> Tokens => dictionary ?? GetDictionary();

@@ -6,17 +6,22 @@ namespace Mikodev.Binary
     internal abstract class DictionaryAdapter
     {
         public abstract Delegate BytesDelegate { get; }
+
         public abstract Delegate ValueDelegate { get; }
+
         public abstract Delegate TupleDelegate { get; }
     }
 
     internal sealed class DictionaryAdapter<TK, TV> : DictionaryAdapter
     {
         private readonly Converter<TK> keyConverter;
+
         private readonly Converter<TV> valueConverter;
 
         public sealed override Delegate BytesDelegate { get; }
+
         public sealed override Delegate ValueDelegate { get; }
+
         public sealed override Delegate TupleDelegate { get; }
 
         public DictionaryAdapter(Converter<TK> keyConverter, Converter<TV> valueConverter)
@@ -35,7 +40,7 @@ namespace Mikodev.Binary
             int offset;
             foreach (var i in value)
             {
-                if (keyConverter.Length == 0)
+                if (keyConverter.length == 0)
                 {
                     offset = allocator.AnchorExtend();
                     keyConverter.ToBytes(allocator, i.Key);
@@ -45,7 +50,7 @@ namespace Mikodev.Binary
                 {
                     keyConverter.ToBytes(allocator, i.Key);
                 }
-                if (valueConverter.Length == 0)
+                if (valueConverter.length == 0)
                 {
                     offset = allocator.AnchorExtend();
                     valueConverter.ToBytes(allocator, i.Value);
@@ -67,9 +72,9 @@ namespace Mikodev.Binary
             var vernier = new Vernier(memory.Length);
             while (vernier.Any())
             {
-                vernier.FlushExcept(in location, keyConverter.Length);
+                vernier.FlushExcept(in location, keyConverter.length);
                 var key = keyConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
-                vernier.FlushExcept(in location, valueConverter.Length);
+                vernier.FlushExcept(in location, valueConverter.length);
                 var value = valueConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
                 dictionary.Add(key, value);
             }
@@ -85,9 +90,9 @@ namespace Mikodev.Binary
             var vernier = new Vernier(memory.Length);
             while (vernier.Any())
             {
-                vernier.FlushExcept(in location, keyConverter.Length);
+                vernier.FlushExcept(in location, keyConverter.length);
                 var key = keyConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
-                vernier.FlushExcept(in location, valueConverter.Length);
+                vernier.FlushExcept(in location, valueConverter.length);
                 var value = valueConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
                 list.Add(new Tuple<TK, TV>(key, value));
             }

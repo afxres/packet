@@ -6,10 +6,12 @@ namespace Mikodev.Binary.RuntimeConverters
     internal sealed class EnumerableConverter<TE, TV> : Converter<TE>, IDelegateConverter where TE : IEnumerable<TV>
     {
         private readonly Converter<TV> converter;
+
         private readonly Func<IEnumerable<TV>, TE> toValue;
 
-        public Delegate ToBytesFunction => null;
-        public Delegate ToValueFunction => toValue;
+        public Delegate ToBytesDelegate => null;
+
+        public Delegate ToValueDelegate => toValue;
 
         public EnumerableConverter(Converter<TV> converter, Func<IEnumerable<TV>, TE> toValue) : base(0)
         {
@@ -21,7 +23,7 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (value == null)
                 return;
-            if (converter.Length == 0)
+            if (converter.length == 0)
             {
                 int offset;
                 foreach (var i in value)
@@ -44,7 +46,7 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (toValue == null)
                 throw new InvalidOperationException($"Unable to get collection, type: {typeof(TE)}");
-            var enumerable = converter.Length == 0
+            var enumerable = converter.length == 0
                 ? (IEnumerable<TV>)ListConverter<TV>.Value(memory, converter)
                 : ArrayConverter<TV>.Value(memory, converter);
             return toValue.Invoke(enumerable);

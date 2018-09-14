@@ -10,7 +10,7 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (value != null && value.Count != 0)
             {
-                if (converter.Length == 0)
+                if (converter.length == 0)
                 {
                     int offset;
                     for (int i = 0; i < value.Count; i++)
@@ -34,7 +34,7 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (memory.IsEmpty)
                 return new List<T>(0);
-            var definition = converter.Length;
+            var definition = converter.length;
             if (definition == 0)
             {
                 var list = new List<T>(8);
@@ -61,6 +61,7 @@ namespace Mikodev.Binary.RuntimeConverters
         }
 
         private readonly Converter<T> converter;
+
         private readonly Converter<T[]> arrayConverter;
 
         public ListConverter(Converter<T> converter, Converter<T[]> arrayConverter) : base(0)

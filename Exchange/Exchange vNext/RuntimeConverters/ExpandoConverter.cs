@@ -6,7 +6,9 @@ namespace Mikodev.Binary.RuntimeConverters
     internal sealed class ExpandoConverter<T> : Converter<T>
     {
         private readonly Action<Allocator, T> toBytes;
+
         private readonly Func<Dictionary<string, ReadOnlyMemory<byte>>, T> toValue;
+
         private readonly int capacity;
 
         public ExpandoConverter(Action<Allocator, T> toBytes, Func<Dictionary<string, ReadOnlyMemory<byte>>, T> toValue, int capacity) : base(0)

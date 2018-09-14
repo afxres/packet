@@ -6,9 +6,9 @@ using System.Linq;
 
 namespace Sample
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var cache = new Cache();
             var dic = new Dictionary<string, List<TimeSpan>>();
@@ -40,7 +40,7 @@ namespace Sample
 
             for (int k = 0; k < loop; k++)
             {
-                using (new TraceWatch("Cache Serialize")) // 335.520 ms
+                using (new TraceWatch("Cache Serialize")) // 340.417 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -48,7 +48,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("Cache Deserialize")) // 1121.473 ms
+                using (new TraceWatch("Cache Deserialize")) // 1076.628 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -56,7 +56,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketWriter")) // 1558.616 ms
+                using (new TraceWatch("PacketWriter")) // 1853.654 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -64,7 +64,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketReader")) // 1607.393 ms
+                using (new TraceWatch("PacketReader")) // 1736.637 ms
                 {
                     for (int i = 0; i < max; i++)
                     {
@@ -90,7 +90,7 @@ namespace Sample
         }
     }
 
-    static class Extension
+    internal static class Extension
     {
         internal static HashSet<T> ToHashSet<T>(this IEnumerable<T> enumerable) => new HashSet<T>(enumerable);
     }

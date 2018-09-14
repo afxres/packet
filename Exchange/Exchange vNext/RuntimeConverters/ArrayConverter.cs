@@ -9,7 +9,7 @@ namespace Mikodev.Binary.RuntimeConverters
             if (value == null || value.Length == 0)
                 return;
 
-            if (converter.Length == 0)
+            if (converter.length == 0)
             {
                 int offset;
                 for (int i = 0; i < value.Length; i++)
@@ -32,7 +32,7 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (memory.IsEmpty)
                 return Array.Empty<T>();
-            var definition = converter.Length;
+            var definition = converter.length;
             if (definition == 0)
                 return ListConverter<T>.Value(memory, converter).ToArray();
 

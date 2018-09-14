@@ -25,14 +25,15 @@ namespace Mikodev.Binary.Converters
             if (memory.IsEmpty)
                 return Array.Empty<T>();
             var span = memory.Span;
-            var quotient = Math.DivRem(span.Length, sizeof(T), out var remainder);
+            var limits = span.Length;
+            var quotient = Math.DivRem(limits, sizeof(T), out var remainder);
             if (remainder != 0)
                 ThrowHelper.ThrowOverflow();
             var target = new T[quotient];
             if (origin)
-                Unsafe.Copy(ref target[0], in span[0], span.Length);
+                Unsafe.Copy(ref target[0], in span[0], limits);
             else
-                Endian.SwapCopy(ref target[0], in span[0], span.Length);
+                Endian.SwapCopy(ref target[0], in span[0], limits);
             return target;
         }
     }
