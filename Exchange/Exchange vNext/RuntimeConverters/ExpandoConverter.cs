@@ -5,13 +5,13 @@ namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class ExpandoConverter<T> : Converter<T>
     {
-        private readonly Action<Allocator, T> toBytes;
+        private readonly ToBytes<T> toBytes;
 
         private readonly Func<Dictionary<string, ReadOnlyMemory<byte>>, T> toValue;
 
         private readonly int capacity;
 
-        public ExpandoConverter(Action<Allocator, T> toBytes, Func<Dictionary<string, ReadOnlyMemory<byte>>, T> toValue, int capacity) : base(0)
+        public ExpandoConverter(ToBytes<T> toBytes, Func<Dictionary<string, ReadOnlyMemory<byte>>, T> toValue, int capacity) : base(0)
         {
             this.toBytes = toBytes;
             this.toValue = toValue;
@@ -30,9 +30,9 @@ namespace Mikodev.Binary.RuntimeConverters
                 var vernier = new Vernier(pointer, memory.Length);
                 while (vernier.Any())
                 {
-                    vernier.Flush();
+                    vernier.Update();
                     var key = Encoding.GetString(pointer + vernier.offset, vernier.length);
-                    vernier.Flush();
+                    vernier.Update();
                     var value = memory.Slice(vernier.offset, vernier.length);
                     dictionary.Add(key, value);
                 }

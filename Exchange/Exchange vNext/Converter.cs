@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 
@@ -43,9 +42,9 @@ namespace Mikodev.Binary
 
         internal abstract Type GetValueType();
 
-        internal abstract MethodInfo GetToBytesMethodInfo();
+        internal abstract Delegate GetToBytesDelegate();
 
-        internal abstract MethodInfo GetToValueMethodInfo();
+        internal abstract Delegate GetToValueDelegate();
 
         public abstract void ToBytesAny(Allocator allocator, object value);
 
@@ -69,9 +68,9 @@ namespace Mikodev.Binary
 
         internal sealed override Type GetValueType() => typeof(T);
 
-        internal sealed override MethodInfo GetToBytesMethodInfo() => new Action<Allocator, T>(ToBytes).GetMethodInfo();
+        internal sealed override Delegate GetToBytesDelegate() => new ToBytes<T>(ToBytes);
 
-        internal sealed override MethodInfo GetToValueMethodInfo() => new Func<ReadOnlyMemory<byte>, T>(ToValue).GetMethodInfo();
+        internal sealed override Delegate GetToValueDelegate() => new ToValue<T>(ToValue);
 
         public override void ToBytesAny(Allocator allocator, object value) => ToBytes(allocator, (T)value);
 

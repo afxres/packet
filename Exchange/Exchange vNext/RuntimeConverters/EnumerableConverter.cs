@@ -3,21 +3,19 @@ using System.Collections.Generic;
 
 namespace Mikodev.Binary.RuntimeConverters
 {
-    internal sealed class EnumerableConverter<TE, TV> : Converter<TE>, IDelegateConverter where TE : IEnumerable<TV>
+    internal sealed class EnumerableConverter<TE, TV> : Converter<TE>, IEnumerableConverter where TE : IEnumerable<TV>
     {
         private readonly Converter<TV> converter;
 
         private readonly Func<IEnumerable<TV>, TE> toValue;
-
-        public Delegate ToBytesDelegate => null;
-
-        public Delegate ToValueDelegate => toValue;
 
         public EnumerableConverter(Converter<TV> converter, Func<IEnumerable<TV>, TE> toValue) : base(0)
         {
             this.converter = converter;
             this.toValue = toValue;
         }
+
+        public Delegate GetToEnumerableDelegate() => toValue;
 
         public override void ToBytes(Allocator allocator, TE value)
         {

@@ -42,7 +42,7 @@ namespace Mikodev.Binary.RuntimeConverters
                     var vernier = new Vernier(pointer, memory.Length);
                     while (vernier.Any())
                     {
-                        vernier.Flush();
+                        vernier.Update();
                         var value = converter.ToValue(memory.Slice(vernier.offset, vernier.length));
                         list.Add(value);
                     }

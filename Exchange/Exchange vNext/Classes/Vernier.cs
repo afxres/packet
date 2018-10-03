@@ -1,10 +1,17 @@
 ﻿using Mikodev.Binary.Converters;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary
 {
     internal ref struct Vernier
     {
+        internal static MethodInfo UpdateExceptMethodInfo = typeof(Vernier).GetMethod(nameof(UpdateExcept), BindingFlags.Instance | BindingFlags.NonPublic);
+
+        internal static FieldInfo OffsetFieldInfo = typeof(Vernier).GetField(nameof(offset), BindingFlags.Instance | BindingFlags.NonPublic);
+
+        internal static FieldInfo LengthFieldInfo = typeof(Vernier).GetField(nameof(length), BindingFlags.Instance | BindingFlags.NonPublic);
+
         internal readonly unsafe byte* pointer;
 
         internal readonly int limits;
@@ -25,7 +32,7 @@ namespace Mikodev.Binary
         internal bool Any() => limits - offset != length;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal unsafe void Flush()
+        internal unsafe void Update()
         {
             offset += this.length;
             if ((uint)(limits - offset) < sizeof(int))
@@ -38,11 +45,11 @@ namespace Mikodev.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void FlushExcept(int define)
+        internal void UpdateExcept(int define)
         {
             if (define == 0)
             {
-                Flush();
+                Update();
             }
             else
             {

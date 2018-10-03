@@ -39,9 +39,9 @@ namespace Mikodev.Binary
                     {
                         while (vernier.Any())
                         {
-                            vernier.Flush();
+                            vernier.Update();
                             var key = Converter.Encoding.GetString(pointer + vernier.offset, vernier.length);
-                            vernier.Flush();
+                            vernier.Update();
                             var value = new Token(cache, memory.Slice(vernier.offset, vernier.length));
                             if (collection == null)
                                 collection = new Dictionary<string, Token>(8);
