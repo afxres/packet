@@ -641,7 +641,7 @@ namespace Mikodev.Testing
         public void Invalid()
         {
             var buf = new byte[1024];
-            for (int i = 0; i < buf.Length; i++)
+            for (var i = 0; i < buf.Length; i++)
                 buf[i] = 0xFF;
 
             var rea = new PacketReader(buf);
@@ -820,7 +820,7 @@ namespace Mikodev.Testing
 
             Assert.AreEqual(a.Count, ra.Count);
 
-            for (int i = 0; i < ra.Count; i++)
+            for (var i = 0; i < ra.Count; i++)
                 ThrowIfNotSequenceEqual(a[i], ra[i]);
             ThrowIfNotEqual(b.ToHashSet(), rb);
             ThrowIfNotEqual(c, rc);

@@ -243,12 +243,12 @@ namespace Mikodev.Testing
             var lst = new List<Task>();
             const int _max = 1 << 16;
             const int _tasks = 16;
-            for (int i = 0; i < _tasks; i++)
+            for (var i = 0; i < _tasks; i++)
             {
                 var idx = i;
                 lst.Add(new Task(() =>
                 {
-                    for (int k = 0; k < _max; k++)
+                    for (var k = 0; k < _max; k++)
                     {
                         var obj = new
                         {

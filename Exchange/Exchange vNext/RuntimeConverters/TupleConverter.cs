@@ -19,17 +19,19 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public override void ToBytes(Allocator allocator, T value) => toBytes.Invoke(allocator, value);
 
-        public override T ToValue(ReadOnlyMemory<byte> memory)
+        public override unsafe T ToValue(ReadOnlyMemory<byte> memory)
         {
-            ref readonly var location = ref memory.Span[0];
-            var vernier = new Vernier(memory.Length);
             var length = definitions.Length;
             var result = new ReadOnlyMemory<byte>[length];
-            for (int i = 0; i < length; i++)
+            fixed (byte* pointer = &memory.Span[0])
             {
-                vernier.FlushExcept(in location, definitions[i]);
-                var slice = memory.Slice(vernier.offset, vernier.length);
-                result[i] = slice;
+                var vernier = new Vernier(pointer, memory.Length);
+                for (var i = 0; i < length; i++)
+                {
+                    vernier.FlushExcept(definitions[i]);
+                    var slice = memory.Slice(vernier.offset, vernier.length);
+                    result[i] = slice;
+                }
             }
             return toValue.Invoke(result);
         }

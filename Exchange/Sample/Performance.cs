@@ -38,11 +38,11 @@ namespace Mikodev.Test
             var tmp = PacketConvert.Serialize(ano);
 
             // release mode, i7-7700hq
-            for (int idx = 0; idx < loop; idx++)
+            for (var idx = 0; idx < loop; idx++)
             {
                 using (new TraceWatch("BitConverter")) // 7.331 ms
                 {
-                    for (int i = 0; i < max; i++)
+                    for (var i = 0; i < max; i++)
                     {
                         var buf = BitConverter.GetBytes(i);
                         var res = BitConverter.ToInt32(buf, 0);
@@ -51,7 +51,7 @@ namespace Mikodev.Test
 
                 using (new TraceWatch("PacketWriter<>")) // 1214.549 ms
                 {
-                    for (int i = 0; i < max; i++)
+                    for (var i = 0; i < max; i++)
                     {
                         var wtr = new PacketWriter()
                             .SetValue(nameof(ano.num), ano.num)
@@ -66,7 +66,7 @@ namespace Mikodev.Test
 
                 using (new TraceWatch("Serialize (anonymous)")) // 1583.934 ms
                 {
-                    for (int i = 0; i < max; i++)
+                    for (var i = 0; i < max; i++)
                     {
                         var _ = PacketConvert.Serialize(ano);
                     }
@@ -74,7 +74,7 @@ namespace Mikodev.Test
 
                 using (new TraceWatch("Deserialize (anonymous)")) // 1586.963 ms
                 {
-                    for (int i = 0; i < max; i++)
+                    for (var i = 0; i < max; i++)
                     {
                         var _ = PacketConvert.Deserialize(tmp, ano);
                     }

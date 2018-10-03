@@ -21,7 +21,7 @@ namespace Mikodev.Network
         private IEnumerator<T> Enumerator()
         {
             var list = reader.GetList();
-            for (int i = 0; i < list.Count; i++)
+            for (var i = 0; i < list.Count; i++)
                 yield return (T)list[i].GetValueMatch(typeof(T), level, info);
         }
 

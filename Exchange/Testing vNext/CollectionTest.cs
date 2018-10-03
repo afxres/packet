@@ -83,7 +83,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void StructureViaConstructor()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var l1 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next()).ToList();
                 var l2 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next().ToString("x")).ToList();
@@ -111,7 +111,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void StructureViaAdd()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var l1 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next()).ToList();
                 var l2 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next().ToString("x")).ToList();
@@ -141,7 +141,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void ClassViaConstructor()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var l1 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next()).ToList();
                 var l2 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next().ToString("x")).ToList();
@@ -167,7 +167,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void AbstractClassViaConstructor()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var l1 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next()).ToList();
                 var l2 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next().ToString("x")).ToList();
@@ -202,7 +202,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void ClassViaAdd()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var l1 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next()).ToList();
                 var l2 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next().ToString("x")).ToList();
@@ -232,7 +232,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void AbstractClassViaAdd()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var l1 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next()).ToList();
                 var l2 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next().ToString("x")).ToList();
@@ -271,7 +271,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void InterfaceViaAdd()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var l1 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next()).ToList();
                 var l2 = Enumerable.Range(0, random.Next(4, 64)).Select(x => random.Next().ToString("x")).ToList();

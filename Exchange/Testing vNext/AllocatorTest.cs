@@ -42,7 +42,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void AllocateMemory()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var length = random.Next(0, 4096);
                 var buffer = new byte[length];

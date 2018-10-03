@@ -12,7 +12,7 @@ namespace Mikodev.Binary.RuntimeConverters
             if (converter.length == 0)
             {
                 int offset;
-                for (int i = 0; i < value.Length; i++)
+                for (var i = 0; i < value.Length; i++)
                 {
                     offset = allocator.AnchorExtend();
                     converter.ToBytes(allocator, value[i]);
@@ -21,7 +21,7 @@ namespace Mikodev.Binary.RuntimeConverters
             }
             else
             {
-                for (int i = 0; i < value.Length; i++)
+                for (var i = 0; i < value.Length; i++)
                 {
                     converter.ToBytes(allocator, value[i]);
                 }
@@ -41,7 +41,7 @@ namespace Mikodev.Binary.RuntimeConverters
             if (reminder != 0)
                 ThrowHelper.ThrowOverflow();
             var array = new T[quotient];
-            for (int i = 0; i < quotient; i++)
+            for (var i = 0; i < quotient; i++)
                 array[i] = converter.ToValue(memory.Slice(i * definition, definition));
             return array;
         }

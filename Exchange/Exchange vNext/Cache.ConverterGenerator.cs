@@ -222,7 +222,7 @@ namespace Mikodev.Binary
                 var constructorInfo = type.GetConstructors().Single(r => (elementTypes = r.GetParameters().Select(x => x.ParameterType).ToArray()).Length == elementCount);
                 var self = this;
                 var converters = new Converter[elementCount];
-                for (int i = 0; i < elementCount; i++)
+                for (var i = 0; i < elementCount; i++)
                     converters[i] = GetOrGenerateConverter(elementTypes[i]);
                 var definitions = converters.Select(x => x.length).ToArray();
                 var length = definitions.Any(x => x == 0) ? 0 : definitions.Sum();
@@ -236,7 +236,7 @@ namespace Mikodev.Binary
                 var arrayType = typeof(ReadOnlyMemory<byte>).MakeArrayType();
                 var array = Expression.Parameter(arrayType, "array");
                 var items = new List<Expression>();
-                for (int i = 0; i < converters.Length; i++)
+                for (var i = 0; i < converters.Length; i++)
                 {
                     var converter = converters[i];
                     var memory = Expression.ArrayAccess(array, Expression.Constant(i));
@@ -260,7 +260,7 @@ namespace Mikodev.Binary
                 var items = itemNames.Select(r => Expression.PropertyOrField(tuple, r)).ToArray();
                 if (length == 0)
                     variables.Add(offset = Expression.Variable(typeof(int), "offset"));
-                for (int i = 0; i < converters.Length; i++)
+                for (var i = 0; i < converters.Length; i++)
                 {
                     var converter = converters[i];
                     var toBytesExpression = Expression.Call(Expression.Constant(converter), converter.GetToBytesMethodInfo(), allocator, items[i]);
@@ -408,13 +408,13 @@ namespace Mikodev.Binary
                 if (properties.Length != constructorParameters.Length)
                     return null;
 
-                for (int i = 0; i < properties.Length; i++)
+                for (var i = 0; i < properties.Length; i++)
                     if (properties[i].Name != constructorParameters[i].Name || properties[i].PropertyType != constructorParameters[i].ParameterType)
                         return null;
 
                 var dictionary = Expression.Parameter(typeof(Dictionary<string, ReadOnlyMemory<byte>>), "dictionary");
                 var expressionArray = new Expression[properties.Length];
-                for (int i = 0; i < properties.Length; i++)
+                for (var i = 0; i < properties.Length; i++)
                 {
                     var item = properties[i];
                     var converter = GetOrGenerateConverter(item.PropertyType);

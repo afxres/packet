@@ -19,7 +19,7 @@ namespace Mikodev.Network
             {
                 var result = new List<T>(count);
                 var generic = (PacketConverter<T>)converter;
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                     result.Add(generic.GetValue(readerList[i].block));
                 return result;
             }
@@ -40,7 +40,7 @@ namespace Mikodev.Network
             {
                 var result = new T[count];
                 var generic = (PacketConverter<T>)converter;
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                     result[i] = generic.GetValue(readerList[i].block);
                 return result;
             }
@@ -80,7 +80,7 @@ namespace Mikodev.Network
         internal static Dictionary<TK, TV> ToDictionaryExtend<TK, TV>(List<object> list)
         {
             var dictionary = new Dictionary<TK, TV>(list.Count >> 1);
-            for (int i = 0; i < list.Count; i += 2)
+            for (var i = 0; i < list.Count; i += 2)
             {
                 var key = (TK)list[i];
                 var value = (TV)list[i + 1];
@@ -99,7 +99,7 @@ namespace Mikodev.Network
         internal static List<Tuple<TK, TV>> ToTupleListExtend<TK, TV>(List<object> list)
         {
             var tupleList = new List<Tuple<TK, TV>>(list.Count >> 1);
-            for (int i = 0; i < list.Count; i += 2)
+            for (var i = 0; i < list.Count; i += 2)
             {
                 var key = (TK)list[i];
                 var value = (TV)list[i + 1];
@@ -112,7 +112,7 @@ namespace Mikodev.Network
         {
             var generic = (PacketConverter<T>)converter;
             var result = new byte[array.Length][];
-            for (int i = 0; i < array.Length; i++)
+            for (var i = 0; i < array.Length; i++)
                 result[i] = generic.GetBytesChecked(array[i]);
             return result;
         }
@@ -121,7 +121,7 @@ namespace Mikodev.Network
         {
             var generic = (PacketConverter<T>)converter;
             var result = new byte[list.Count][];
-            for (int i = 0; i < list.Count; i++)
+            for (var i = 0; i < list.Count; i++)
                 result[i] = generic.GetBytesChecked(list[i]);
             return result;
         }

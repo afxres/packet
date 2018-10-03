@@ -99,17 +99,17 @@ namespace Mikodev.Network
             {
                 var array = (byte[][])data;
                 if (elementLength > 0)
-                    for (int i = 0; i < array.Length; i++)
+                    for (var i = 0; i < array.Length; i++)
                         stream.Append(array[i]);
                 else
-                    for (int i = 0; i < array.Length; i++)
+                    for (var i = 0; i < array.Length; i++)
                         stream.AppendExtend(array[i]);
             }
 
             private void GetBytesMatchItemList(UnsafeStream stream, int level)
             {
                 var list = (List<Item>)data;
-                for (int i = 0; i < list.Count; i++)
+                for (var i = 0; i < list.Count; i++)
                     list[i].GetBytes(stream, level);
             }
 
@@ -126,7 +126,7 @@ namespace Mikodev.Network
             private void GetBytesMatchDictionaryBuffer(UnsafeStream stream)
             {
                 var list = (List<KeyValuePair<byte[], byte[]>>)data;
-                for (int i = 0; i < list.Count; i++)
+                for (var i = 0; i < list.Count; i++)
                 {
                     var current = list[i];
                     if (indexLength > 0)
@@ -143,7 +143,7 @@ namespace Mikodev.Network
             private void GetBytesMatchDictionaryBufferItem(UnsafeStream stream, int level)
             {
                 var list = (List<KeyValuePair<byte[], Item>>)data;
-                for (int i = 0; i < list.Count; i++)
+                for (var i = 0; i < list.Count; i++)
                 {
                     var current = list[i];
                     if (elementLength > 0)

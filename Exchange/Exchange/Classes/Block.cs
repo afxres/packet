@@ -81,7 +81,7 @@ namespace Mikodev.Network
             {
                 var target = new T[quotient];
                 var generic = (PacketConverter<T>)converter;
-                for (int i = 0; i < quotient; i++)
+                for (var i = 0; i < quotient; i++)
                     target[i] = generic.GetValue(Buffer, Offset + i * define, define);
                 return target;
             }
@@ -109,7 +109,7 @@ namespace Mikodev.Network
             {
                 var list = new List<T>(quotient);
                 var generic = (PacketConverter<T>)converter;
-                for (int i = 0; i < quotient; i++)
+                for (var i = 0; i < quotient; i++)
                     list.Add(generic.GetValue(Buffer, Offset + i * define, define));
                 return list;
             }

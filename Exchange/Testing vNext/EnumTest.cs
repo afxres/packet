@@ -32,7 +32,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Value()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var anonymous = new
                 {
@@ -52,7 +52,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Collection()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 void AssertLegacy<T, U>(T days, U numbers) where T : IEnumerable<DayOfWeek> where U : IEnumerable<SimpleEnum>
                 {

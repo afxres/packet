@@ -34,7 +34,7 @@ namespace Mikodev.Network
                 typeof(double),
             };
 
-            for (int i = 0; i < assemblyTypes.Length; i++)
+            for (var i = 0; i < assemblyTypes.Length; i++)
             {
                 var type = assemblyTypes[i];
                 var attributes = type.GetCustomAttributes(typeof(ConverterAttribute), false);
@@ -45,7 +45,7 @@ namespace Mikodev.Network
                 var instance = (PacketConverter)Activator.CreateInstance(type);
                 dictionary.Add(elementType, instance);
             }
-            for (int i = 0; i < unmanagedTypes.Length; i++)
+            for (var i = 0; i < unmanagedTypes.Length; i++)
             {
                 var elementType = unmanagedTypes[i];
                 var arrayType = elementType.MakeArrayType();

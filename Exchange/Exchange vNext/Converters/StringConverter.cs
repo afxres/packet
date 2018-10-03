@@ -11,12 +11,12 @@ namespace Mikodev.Binary.Converters
             allocator.Append(value.AsSpan());
         }
 
-        public override string ToValue(ReadOnlyMemory<byte> memory)
+        public override unsafe string ToValue(ReadOnlyMemory<byte> memory)
         {
             if (memory.IsEmpty)
                 return string.Empty;
-            var span = memory.Span;
-            return Encoding.GetString(in span[0], span.Length);
+            fixed (byte* pointer = &memory.Span[0])
+                return Encoding.GetString(pointer, memory.Length);
         }
     }
 }

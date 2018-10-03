@@ -42,7 +42,7 @@ namespace Mikodev.Network
             var list = GetList();
             var length = list.Count;
             var source = new object[length];
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
                 source[i] = list[i].GetValueMatch(valueInfo.ElementType, level, info);
             var result = valueInfo.ToCollectionExtend(source);
             return result;
@@ -89,7 +89,7 @@ namespace Mikodev.Network
             var functor = set.Functor;
             var arguments = set.Arguments;
             var source = new object[arguments.Length];
-            for (int i = 0; i < arguments.Length; i++)
+            for (var i = 0; i < arguments.Length; i++)
             {
                 var reader = GetItem(arguments[i].Key, false);
                 var result = reader.GetValue(arguments[i].Value, level);

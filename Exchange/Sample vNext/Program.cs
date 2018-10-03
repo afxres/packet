@@ -38,11 +38,11 @@ namespace Sample
 
             /* i7 7700hq, .net core 2.1, release */
 
-            for (int k = 0; k < loop; k++)
+            for (var k = 0; k < loop; k++)
             {
                 using (new TraceWatch("Cache Serialize")) // 340.417 ms
                 {
-                    for (int i = 0; i < max; i++)
+                    for (var i = 0; i < max; i++)
                     {
                         var _ = cache.ToBytes(abo);
                     }
@@ -50,7 +50,7 @@ namespace Sample
 
                 using (new TraceWatch("Cache Deserialize")) // 1076.628 ms
                 {
-                    for (int i = 0; i < max; i++)
+                    for (var i = 0; i < max; i++)
                     {
                         var _ = cache.ToValue(tmp, abo);
                     }
@@ -58,7 +58,7 @@ namespace Sample
 
                 using (new TraceWatch("PacketWriter")) // 1853.654 ms
                 {
-                    for (int i = 0; i < max; i++)
+                    for (var i = 0; i < max; i++)
                     {
                         var _ = PacketConvert.Serialize(abo);
                     }
@@ -66,7 +66,7 @@ namespace Sample
 
                 using (new TraceWatch("PacketReader")) // 1736.637 ms
                 {
-                    for (int i = 0; i < max; i++)
+                    for (var i = 0; i < max; i++)
                     {
                         var _ = PacketConvert.Deserialize(tmp, abo);
                     }

@@ -25,29 +25,34 @@ namespace Mikodev.Binary
             this.memory = memory;
         }
 
-        private Dictionary<string, Token> GetDictionary()
+        private unsafe Dictionary<string, Token> GetDictionary()
         {
+            var limits = memory.Length;
             var collection = default(Dictionary<string, Token>);
 
-            try
+            if (limits > 0)
             {
-                var span = memory.Span;
-                ref readonly var location = ref span[0];
-                var vernier = new Vernier(memory.Length);
-                while (vernier.Any())
+                fixed (byte* pointer = &memory.Span[0])
                 {
-                    vernier.Flush(in location);
-                    var key = Converter.Encoding.GetString(in span[vernier.offset], vernier.length);
-                    vernier.Flush(in location);
-                    var value = new Token(cache, memory.Slice(vernier.offset, vernier.length));
-                    if (collection == null)
-                        collection = new Dictionary<string, Token>(8);
-                    collection.Add(key, value);
+                    var vernier = new Vernier(pointer, limits);
+                    try
+                    {
+                        while (vernier.Any())
+                        {
+                            vernier.Flush();
+                            var key = Converter.Encoding.GetString(pointer + vernier.offset, vernier.length);
+                            vernier.Flush();
+                            var value = new Token(cache, memory.Slice(vernier.offset, vernier.length));
+                            if (collection == null)
+                                collection = new Dictionary<string, Token>(8);
+                            collection.Add(key, value);
+                        }
+                    }
+                    catch (Exception ex) when (ex is ArgumentException || ex is OverflowException)
+                    {
+                        collection = null;
+                    }
                 }
-            }
-            catch (Exception)
-            {
-                collection = null;
             }
 
             if (collection == null)

@@ -20,20 +20,22 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public override void ToBytes(Allocator allocator, T value) => toBytes.Invoke(allocator, value);
 
-        public override T ToValue(ReadOnlyMemory<byte> memory)
+        public override unsafe T ToValue(ReadOnlyMemory<byte> memory)
         {
             if (toValue == null)
                 throw new InvalidOperationException($"Unable to get value, type: {typeof(T)}");
             var dictionary = new Dictionary<string, ReadOnlyMemory<byte>>(capacity);
-            var span = memory.Span;
-            ref readonly var location = ref span[0];
-            var vernier = new Vernier(span.Length);
-            while (vernier.Any())
+            fixed (byte* pointer = &memory.Span[0])
             {
-                vernier.Flush(in location);
-                var key = Encoding.GetString(in span[vernier.offset], vernier.length);
-                vernier.Flush(in location);
-                dictionary.Add(key, memory.Slice(vernier.offset, vernier.length));
+                var vernier = new Vernier(pointer, memory.Length);
+                while (vernier.Any())
+                {
+                    vernier.Flush();
+                    var key = Encoding.GetString(pointer + vernier.offset, vernier.length);
+                    vernier.Flush();
+                    var value = memory.Slice(vernier.offset, vernier.length);
+                    dictionary.Add(key, value);
+                }
             }
             return toValue.Invoke(dictionary);
         }

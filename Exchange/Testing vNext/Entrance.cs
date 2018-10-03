@@ -34,7 +34,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void GuidTest()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var anonymous = new
                 {
@@ -73,7 +73,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Common()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var anonymous = new
                 {
@@ -115,7 +115,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void PartialBuffer()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var bytes = new byte[random.Next(4, 64)];
                 random.NextBytes(bytes);
@@ -151,7 +151,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void ArrayAndList()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var anonymous = new
                 {
@@ -187,7 +187,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void TupleTest()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var now = DateTime.Now;
                 var anonymous = new
@@ -208,7 +208,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void DictionaryTest()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var anonymous = new
                 {
@@ -234,7 +234,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void CollectionTest()
         {
-            for (int i = 0; i < loop; i++)
+            for (var i = 0; i < loop; i++)
             {
                 var anonymous = new
                 {
@@ -324,7 +324,7 @@ namespace Mikodev.Testing
             try
             {
                 var bytes = new byte[16];
-                for (int i = 0; i < bytes.Length; i++)
+                for (var i = 0; i < bytes.Length; i++)
                     bytes[i] = 0xFF;
                 var token = cache.AsToken(bytes);
                 var value = token[string.Empty];

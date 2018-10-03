@@ -63,38 +63,42 @@ namespace Mikodev.Binary
             }
         }
 
-        public Dictionary<TK, TV> Value(ReadOnlyMemory<byte> memory)
+        public unsafe Dictionary<TK, TV> Value(ReadOnlyMemory<byte> memory)
         {
             if (memory.IsEmpty)
                 return new Dictionary<TK, TV>(0);
             var dictionary = new Dictionary<TK, TV>(8);
-            ref readonly var location = ref memory.Span[0];
-            var vernier = new Vernier(memory.Length);
-            while (vernier.Any())
+            fixed (byte* pointer = &memory.Span[0])
             {
-                vernier.FlushExcept(in location, keyConverter.length);
-                var key = keyConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
-                vernier.FlushExcept(in location, valueConverter.length);
-                var value = valueConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
-                dictionary.Add(key, value);
+                var vernier = new Vernier(pointer, memory.Length);
+                while (vernier.Any())
+                {
+                    vernier.FlushExcept(keyConverter.length);
+                    var key = keyConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
+                    vernier.FlushExcept(valueConverter.length);
+                    var value = valueConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
+                    dictionary.Add(key, value);
+                }
             }
             return dictionary;
         }
 
-        public List<Tuple<TK, TV>> Tuple(ReadOnlyMemory<byte> memory)
+        public unsafe List<Tuple<TK, TV>> Tuple(ReadOnlyMemory<byte> memory)
         {
             if (memory.IsEmpty)
                 return new List<Tuple<TK, TV>>(0);
             var list = new List<Tuple<TK, TV>>(8);
-            ref readonly var location = ref memory.Span[0];
-            var vernier = new Vernier(memory.Length);
-            while (vernier.Any())
+            fixed (byte* pointer = &memory.Span[0])
             {
-                vernier.FlushExcept(in location, keyConverter.length);
-                var key = keyConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
-                vernier.FlushExcept(in location, valueConverter.length);
-                var value = valueConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
-                list.Add(new Tuple<TK, TV>(key, value));
+                var vernier = new Vernier(pointer, memory.Length);
+                while (vernier.Any())
+                {
+                    vernier.FlushExcept(keyConverter.length);
+                    var key = keyConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
+                    vernier.FlushExcept(valueConverter.length);
+                    var value = valueConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
+                    list.Add(new Tuple<TK, TV>(key, value));
+                }
             }
             return list;
         }

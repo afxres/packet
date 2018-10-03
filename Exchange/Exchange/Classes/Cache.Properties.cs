@@ -17,7 +17,7 @@ namespace Mikodev.Network
 
             var propertyList = new List<KeyValuePair<string, Type>>();
             var methodInfos = new List<MethodInfo>();
-            for (int i = 0; i < properties.Length; i++)
+            for (var i = 0; i < properties.Length; i++)
             {
                 var current = properties[i];
                 var getter = current.GetGetMethod();
@@ -37,7 +37,7 @@ namespace Mikodev.Network
             var value = Expression.Variable(type, "value");
             expressionList.Add(Expression.Assign(value, Expression.Convert(parameter, type)));
 
-            for (int i = 0; i < propertyList.Count; i++)
+            for (var i = 0; i < propertyList.Count; i++)
             {
                 var arrayAccess = Expression.ArrayAccess(objectArray, Expression.Constant(i));
                 var result = Expression.Call(value, methodInfos[i]);
@@ -65,14 +65,14 @@ namespace Mikodev.Network
             if (properties.Length != constructorParameters.Length)
                 return null;
 
-            for (int i = 0; i < properties.Length; i++)
+            for (var i = 0; i < properties.Length; i++)
                 if (properties[i].Name != constructorParameters[i].Name || properties[i].PropertyType != constructorParameters[i].ParameterType)
                     return null;
 
             var parameter = Expression.Parameter(typeof(object[]), "parameters");
             var expressionArray = new Expression[constructorParameters.Length];
             var propertyList = new KeyValuePair<string, Type>[constructorParameters.Length];
-            for (int i = 0; i < constructorParameters.Length; i++)
+            for (var i = 0; i < constructorParameters.Length; i++)
             {
                 var current = constructorParameters[i];
                 var arrayIndex = Expression.ArrayIndex(parameter, Expression.Constant(i));
@@ -92,7 +92,7 @@ namespace Mikodev.Network
             var propertyList = new List<KeyValuePair<string, Type>>();
             var methodInfos = new List<MethodInfo>();
 
-            for (int i = 0; i < properties.Length; i++)
+            for (var i = 0; i < properties.Length; i++)
             {
                 var current = properties[i];
                 var getter = current.GetGetMethod();
@@ -111,7 +111,7 @@ namespace Mikodev.Network
             var instance = Expression.Variable(type, "instance");
 
             expressionList.Add(Expression.Assign(instance, Expression.New(type)));
-            for (int i = 0; i < propertyList.Count; i++)
+            for (var i = 0; i < propertyList.Count; i++)
             {
                 var arrayIndex = Expression.ArrayIndex(parameter, Expression.Constant(i));
                 var convert = Expression.Convert(arrayIndex, propertyList[i].Value);

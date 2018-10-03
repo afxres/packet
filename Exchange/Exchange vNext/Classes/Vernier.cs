@@ -3,16 +3,19 @@ using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary
 {
-    internal struct Vernier
+    internal ref struct Vernier
     {
+        internal readonly unsafe byte* pointer;
+
         internal readonly int limits;
 
         internal int offset;
 
         internal int length;
 
-        internal Vernier(int limits)
+        internal unsafe Vernier(byte* pointer, int limits)
         {
+            this.pointer = pointer;
             this.limits = limits;
             offset = 0;
             length = 0;
@@ -22,14 +25,12 @@ namespace Mikodev.Binary
         internal bool Any() => limits - offset != length;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal unsafe void Flush(in byte location)
+        internal unsafe void Flush()
         {
             offset += this.length;
             if ((uint)(limits - offset) < sizeof(int))
                 ThrowHelper.ThrowOverflow();
-            int length;
-            fixed (byte* pointer = &location)
-                length = UnmanagedValueConverter<int>.UnsafeToValue(pointer + offset);
+            var length = UnmanagedValueConverter<int>.UnsafeToValue(pointer + offset);
             offset += sizeof(int);
             if ((uint)(limits - offset) < (uint)length)
                 ThrowHelper.ThrowOverflow();
@@ -37,11 +38,11 @@ namespace Mikodev.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void FlushExcept(in byte location, int define)
+        internal void FlushExcept(int define)
         {
             if (define == 0)
             {
-                Flush(in location);
+                Flush();
             }
             else
             {

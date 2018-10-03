@@ -90,7 +90,7 @@ namespace Mikodev.Network
             var results = new object[arguments.Length];
             functor.Invoke(value, results);
             var dictionary = new Dictionary<string, PacketWriter>(arguments.Length);
-            for (int i = 0; i < arguments.Length; i++)
+            for (var i = 0; i < arguments.Length; i++)
                 dictionary[arguments[i].Key] = GetWriter(converters, results[i], level);
             return NewItem(dictionary);
         }
