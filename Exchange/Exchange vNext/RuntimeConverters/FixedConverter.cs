@@ -14,14 +14,27 @@ namespace Mikodev.Binary.RuntimeConverters
             this.toValue = toValue;
         }
 
-        public override void ToBytes(Allocator allocator, T value) => toBytes.Invoke(allocator, value);
+        public override void ToBytes(Allocator allocator, T value)
+        {
+            if (value == null)
+                return;
+            toBytes.Invoke(allocator, value);
+        }
 
         public override unsafe T ToValue(ReadOnlyMemory<byte> memory)
         {
             if (memory.IsEmpty)
-                ThrowHelper.ThrowOverflow();
+            {
+                if (default(T) != null)
+                    ThrowHelper.ThrowOverflow();
+                return default;
+            }
+
             fixed (byte* pointer = &memory.Span[0])
-                return toValue.Invoke(memory, new Vernier(pointer, memory.Length));
+            {
+                var vernier = new Vernier(pointer, memory.Length);
+                return toValue.Invoke(memory, vernier);
+            }
         }
     }
 }

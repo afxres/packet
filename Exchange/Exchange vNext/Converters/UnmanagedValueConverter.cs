@@ -8,26 +8,12 @@ namespace Mikodev.Binary.Converters
         private static readonly unsafe bool origin = BitConverter.IsLittleEndian == UseLittleEndian || sizeof(T) == 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe void UnsafeToBytes(ref byte location, T value)
-        {
-            fixed (byte* pointer = &location)
-                UnsafeToBytes(pointer, value);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static unsafe void UnsafeToBytes(byte* pointer, T value)
         {
             if (origin)
                 *(T*)pointer = value;
             else
                 Endian.Swap<T>(pointer, (byte*)&value);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe T UnsafeToValue(in byte location)
-        {
-            fixed (byte* pointer = &location)
-                return UnsafeToValue(pointer);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -43,14 +29,16 @@ namespace Mikodev.Binary.Converters
 
         internal static unsafe void Bytes(Allocator allocator, T value)
         {
-            UnsafeToBytes(ref allocator.Allocate(sizeof(T)), value);
+            fixed (byte* pointer = &allocator.Allocate(sizeof(T)))
+                UnsafeToBytes(pointer, value);
         }
 
         internal static unsafe T Value(ReadOnlyMemory<byte> memory)
         {
             if (memory.Length < sizeof(T))
                 ThrowHelper.ThrowOverflow();
-            return UnsafeToValue(in memory.Span[0]);
+            fixed (byte* pointer = &memory.Span[0])
+                return UnsafeToValue(pointer);
         }
 
         public unsafe UnmanagedValueConverter() : base(sizeof(T)) { }

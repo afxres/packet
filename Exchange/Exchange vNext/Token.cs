@@ -15,9 +15,7 @@ namespace Mikodev.Binary
 
         private readonly ReadOnlyMemory<byte> memory;
 
-        private Dictionary<string, Token> dictionary;
-
-        internal Dictionary<string, Token> Tokens => dictionary ?? GetDictionary();
+        private Dictionary<string, Token> tokens;
 
         internal Token(Cache cache, ReadOnlyMemory<byte> memory)
         {
@@ -25,47 +23,45 @@ namespace Mikodev.Binary
             this.memory = memory;
         }
 
+        internal Dictionary<string, Token> GetTokens() => tokens ?? GetDictionary();
+
         private unsafe Dictionary<string, Token> GetDictionary()
         {
-            var limits = memory.Length;
-            var collection = default(Dictionary<string, Token>);
+            if (memory.IsEmpty)
+                goto fail;
 
-            if (limits > 0)
+            fixed (byte* pointer = &memory.Span[0])
             {
-                fixed (byte* pointer = &memory.Span[0])
+                var vernier = new Vernier(pointer, memory.Length);
+                var dictionary = new Dictionary<string, Token>(8);
+
+                try
                 {
-                    var vernier = new Vernier(pointer, limits);
-                    try
+                    while (vernier.Any())
                     {
-                        while (vernier.Any())
-                        {
-                            vernier.Update();
-                            var key = Converter.Encoding.GetString(pointer + vernier.offset, vernier.length);
-                            vernier.Update();
-                            var value = new Token(cache, memory.Slice(vernier.offset, vernier.length));
-                            if (collection == null)
-                                collection = new Dictionary<string, Token>(8);
-                            collection.Add(key, value);
-                        }
+                        vernier.Update();
+                        var key = Converter.Encoding.GetString(pointer + vernier.offset, vernier.length);
+                        vernier.Update();
+                        var value = new Token(cache, memory.Slice(vernier.offset, vernier.length));
+                        dictionary.Add(key, value);
                     }
-                    catch (Exception ex) when (ex is ArgumentException || ex is OverflowException)
-                    {
-                        collection = null;
-                    }
+
+                    tokens = dictionary;
+                    return dictionary;
                 }
+                catch (Exception ex) when (ex is ArgumentException || ex is OverflowException) { }
             }
 
-            if (collection == null)
-                collection = empty;
-            dictionary = collection;
-            return collection;
+        fail:
+            tokens = empty;
+            return empty;
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicToken(parameter, this);
 
-        public Token this[string key] => Tokens[key];
+        public Token this[string key] => GetTokens()[key];
 
-        public Token At(string key) => Tokens.TryGetValue(key, out var token) ? token : null;
+        public Token At(string key) => GetTokens().TryGetValue(key, out var token) ? token : null;
 
         public T As<T>()
         {
@@ -93,7 +89,7 @@ namespace Mikodev.Binary
         public sealed override int GetHashCode() => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override string ToString() => $"{nameof(Token)}(Items: {Tokens.Count}, Bytes: {memory.Length})";
+        public sealed override string ToString() => $"{nameof(Token)}(Items: {GetTokens().Count}, Bytes: {memory.Length})";
         #endregion
     }
 }

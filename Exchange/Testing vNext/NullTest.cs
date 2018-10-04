@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mikodev.Binary;
 using Mikodev.Network;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -10,6 +11,20 @@ namespace Mikodev.Testing
     [TestClass]
     public class NullTest
     {
+        private sealed class TestClass
+        {
+            public int Id { get; set; }
+
+            public string Tag { get; set; }
+        }
+
+        private struct TestStruct
+        {
+            public int Id { get; set; }
+
+            public string Tag { get; set; }
+        }
+
         private static readonly Cache cache = new Cache();
 
         [TestMethod]
@@ -90,6 +105,42 @@ namespace Mikodev.Testing
             Assert.AreEqual(r2.stringISet.Count, 0);
             Assert.AreEqual(r2.dictionary.Count, 0);
             Assert.AreEqual(r2.idictionary.Count, 0);
+        }
+
+        [TestMethod]
+        public void Tuple()
+        {
+            // default value is null
+            var emptyTuple = default(Tuple<string, int>);
+            var buffer = cache.ToBytes(emptyTuple);
+            Assert.IsTrue(buffer.Length == 0);
+            var emptyTupleResult = cache.ToValue<Tuple<string, int>>(Array.Empty<byte>());
+            Assert.AreEqual(emptyTupleResult, null);
+
+            // default value not null
+            var emptyValueTuple = default((int, string));
+            var valueBuffer = cache.ToBytes(emptyValueTuple);
+            Assert.IsTrue(valueBuffer.Length != 0);
+            AssertExtension.MustFail<OverflowException>(() => cache.ToValue<(int, string)>(Array.Empty<byte>()));
+        }
+
+        [TestMethod]
+        public void Class()
+        {
+            var source = default(TestClass);
+            var buffer = cache.ToBytes(source);
+            Assert.IsTrue(buffer.Length == 0);
+            var result = cache.ToValue<TestClass>(Array.Empty<byte>());
+            Assert.IsTrue(result == null);
+        }
+
+        [TestMethod]
+        public void ValueType()
+        {
+            var source = default(TestStruct);
+            var buffer = cache.ToBytes(source);
+            Assert.IsTrue(buffer.Length != 0);
+            AssertExtension.MustFail<OverflowException>(() => cache.ToValue<TestStruct>(Array.Empty<byte>()));
         }
     }
 }

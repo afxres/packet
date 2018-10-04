@@ -9,6 +9,6 @@ namespace Mikodev.Binary
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
         public KeyValuePair<string, Token>[] Items { get; }
 
-        public TokenDebugProxy(Token token) => Items = token.Tokens.ToArray();
+        public TokenDebugProxy(Token token) => Items = token.GetTokens().ToArray();
     }
 }

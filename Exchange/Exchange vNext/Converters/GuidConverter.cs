@@ -21,13 +21,12 @@ namespace Mikodev.Binary.Converters
 
         public override unsafe void ToBytes(Allocator allocator, Guid value)
         {
-            ref var target = ref allocator.Allocate(sizeof(Guid));
-            fixed (byte* pointer = &target)
+            fixed (byte* target = &allocator.Allocate(sizeof(Guid)))
             {
                 if (origin)
-                    *(Guid*)pointer = value;
+                    *(Guid*)target = value;
                 else
-                    Swap(pointer, (byte*)&value);
+                    Swap(target, (byte*)&value);
             }
         }
 

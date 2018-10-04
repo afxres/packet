@@ -11,29 +11,32 @@ namespace Mikodev.Binary.Converters
         {
             if (value == null)
                 return;
-            var source = value.Address.GetAddressBytes();
-            var length = source.Length;
-            ref var target = ref allocator.Allocate(length + sizeof(ushort));
-            fixed (byte* src = &source[0])
-            fixed (byte* dst = &target)
+            var addressBytes = value.Address.GetAddressBytes();
+            var addressLength = addressBytes.Length;
+            fixed (byte* target = &allocator.Allocate(addressLength + sizeof(ushort)))
             {
-                Unsafe.Copy(dst, src, length);
-                UnmanagedValueConverter<ushort>.UnsafeToBytes(dst + length, (ushort)value.Port);
+                fixed (byte* source = &addressBytes[0])
+                    Unsafe.Copy(target, source, addressLength);
+                UnmanagedValueConverter<ushort>.UnsafeToBytes(target + addressLength, (ushort)value.Port);
             }
         }
 
-        public override IPEndPoint ToValue(ReadOnlyMemory<byte> memory)
+        public override unsafe IPEndPoint ToValue(ReadOnlyMemory<byte> memory)
         {
             if (memory.IsEmpty)
                 return null;
-            var span = memory.Span;
-            var addressLength = span.Length - sizeof(ushort);
+            var addressLength = memory.Length - sizeof(ushort);
             if (addressLength <= 0)
                 ThrowHelper.ThrowOverflow();
+            int port;
             var addressBytes = new byte[addressLength];
-            Unsafe.Copy(ref addressBytes[0], in span[0], addressLength);
+            fixed (byte* source = &memory.Span[0])
+            {
+                fixed (byte* target = &addressBytes[0])
+                    Unsafe.Copy(target, source, addressLength);
+                port = UnmanagedValueConverter<ushort>.UnsafeToValue(source + addressLength);
+            }
             var address = new IPAddress(addressBytes);
-            var port = UnmanagedValueConverter<ushort>.UnsafeToValue(in span[addressLength]);
             return new IPEndPoint(address, port);
         }
     }

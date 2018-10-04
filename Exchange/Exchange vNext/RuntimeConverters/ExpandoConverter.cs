@@ -18,12 +18,25 @@ namespace Mikodev.Binary.RuntimeConverters
             this.capacity = capacity;
         }
 
-        public override void ToBytes(Allocator allocator, T value) => toBytes.Invoke(allocator, value);
+        public override void ToBytes(Allocator allocator, T value)
+        {
+            if (value == null)
+                return;
+            toBytes.Invoke(allocator, value);
+        }
 
         public override unsafe T ToValue(ReadOnlyMemory<byte> memory)
         {
             if (toValue == null)
                 throw new InvalidOperationException($"Unable to get value, type: {typeof(T)}");
+
+            if (memory.IsEmpty)
+            {
+                if (default(T) != null)
+                    ThrowHelper.ThrowOverflow();
+                return default;
+            }
+
             var dictionary = new Dictionary<string, ReadOnlyMemory<byte>>(capacity);
             fixed (byte* pointer = &memory.Span[0])
             {
