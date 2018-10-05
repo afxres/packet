@@ -51,19 +51,15 @@ namespace Mikodev.Binary
 
         #region swap multiple values
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe void SwapCopy<Item>(ref byte target, in Item source, int byteCount) where Item : unmanaged
+        internal static unsafe void SwapCopy<T>(byte* target, T* source, int length) where T : unmanaged
         {
-            fixed (byte* dst = &target)
-            fixed (Item* src = &source)
-                SwapCopy<Item>(dst, (byte*)src, byteCount);
+            SwapCopy<T>(target, (byte*)source, length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe void SwapCopy<Item>(ref Item target, in byte source, int byteCount) where Item : unmanaged
+        internal static unsafe void SwapCopy<T>(T* target, byte* source, int length) where T : unmanaged
         {
-            fixed (Item* dst = &target)
-            fixed (byte* src = &source)
-                SwapCopy<Item>((byte*)dst, src, byteCount);
+            SwapCopy<T>((byte*)target, source, length);
         }
 
         internal static unsafe void SwapCopy<T>(byte* target, byte* source, int length) where T : unmanaged

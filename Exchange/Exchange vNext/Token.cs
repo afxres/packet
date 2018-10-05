@@ -19,20 +19,20 @@ namespace Mikodev.Binary
 
         internal Token(Cache cache, ReadOnlyMemory<byte> memory)
         {
+            if (memory.IsEmpty)
+                tokens = empty;
+            else
+                this.memory = memory;
             this.cache = cache;
-            this.memory = memory;
         }
 
         internal Dictionary<string, Token> GetTokens() => tokens ?? GetDictionary();
 
         private unsafe Dictionary<string, Token> GetDictionary()
         {
-            if (memory.IsEmpty)
-                goto fail;
-
-            fixed (byte* pointer = &memory.Span[0])
+            fixed (byte* srcptr = memory.Span)
             {
-                var vernier = new Vernier(pointer, memory.Length);
+                var vernier = new Vernier(srcptr, memory.Length);
                 var dictionary = new Dictionary<string, Token>(8);
 
                 try
@@ -40,7 +40,7 @@ namespace Mikodev.Binary
                     while (vernier.Any())
                     {
                         vernier.Update();
-                        var key = Converter.Encoding.GetString(pointer + vernier.offset, vernier.length);
+                        var key = Converter.Encoding.GetString(srcptr + vernier.offset, vernier.length);
                         vernier.Update();
                         var value = new Token(cache, memory.Slice(vernier.offset, vernier.length));
                         dictionary.Add(key, value);
@@ -52,7 +52,6 @@ namespace Mikodev.Binary
                 catch (Exception ex) when (ex is ArgumentException || ex is OverflowException) { }
             }
 
-        fail:
             tokens = empty;
             return empty;
         }

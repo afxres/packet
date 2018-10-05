@@ -15,8 +15,8 @@ namespace Mikodev.Binary.Converters
         {
             if (memory.IsEmpty)
                 return string.Empty;
-            fixed (byte* pointer = &memory.Span[0])
-                return Encoding.GetString(pointer, memory.Length);
+            fixed (byte* srcptr = memory.Span)
+                return Encoding.GetString(srcptr, memory.Length);
         }
     }
 }

@@ -37,9 +37,9 @@ namespace Mikodev.Binary.RuntimeConverters
             if (definition == 0)
             {
                 var list = new List<T>(8);
-                fixed (byte* pointer = &memory.Span[0])
+                fixed (byte* srcptr = memory.Span)
                 {
-                    var vernier = new Vernier(pointer, memory.Length);
+                    var vernier = new Vernier(srcptr, memory.Length);
                     while (vernier.Any())
                     {
                         vernier.Update();

@@ -29,16 +29,16 @@ namespace Mikodev.Binary.Converters
 
         internal static unsafe void Bytes(Allocator allocator, T value)
         {
-            fixed (byte* pointer = &allocator.Allocate(sizeof(T)))
-                UnsafeToBytes(pointer, value);
+            fixed (byte* dstptr = &allocator.Allocate(sizeof(T)))
+                UnsafeToBytes(dstptr, value);
         }
 
         internal static unsafe T Value(ReadOnlyMemory<byte> memory)
         {
             if (memory.Length < sizeof(T))
                 ThrowHelper.ThrowOverflow();
-            fixed (byte* pointer = &memory.Span[0])
-                return UnsafeToValue(pointer);
+            fixed (byte* srcptr = memory.Span)
+                return UnsafeToValue(srcptr);
         }
 
         public unsafe UnmanagedValueConverter() : base(sizeof(T)) { }

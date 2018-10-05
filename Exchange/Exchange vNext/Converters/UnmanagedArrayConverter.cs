@@ -13,27 +13,33 @@ namespace Mikodev.Binary.Converters
             if (array == null || array.Length == 0)
                 return;
             var length = checked(array.Length * sizeof(T));
-            ref var target = ref allocator.Allocate(length);
-            if (origin)
-                Unsafe.Copy(ref target, in array[0], length);
-            else
-                Endian.SwapCopy(ref target, in array[0], length);
+            fixed (byte* dstptr = &allocator.Allocate(length))
+            fixed (T* srcptr = &array[0])
+            {
+                if (origin)
+                    Unsafe.Copy(dstptr, srcptr, length);
+                else
+                    Endian.SwapCopy(dstptr, srcptr, length);
+            }
         }
 
         public override unsafe T[] ToValue(ReadOnlyMemory<byte> memory)
         {
             if (memory.IsEmpty)
                 return Array.Empty<T>();
-            var span = memory.Span;
-            var limits = span.Length;
+            var limits = memory.Length;
             var quotient = Math.DivRem(limits, sizeof(T), out var remainder);
             if (remainder != 0)
                 ThrowHelper.ThrowOverflow();
             var target = new T[quotient];
-            if (origin)
-                Unsafe.Copy(ref target[0], in span[0], limits);
-            else
-                Endian.SwapCopy(ref target[0], in span[0], limits);
+            fixed (byte* srcptr = memory.Span)
+            fixed (T* dstptr = &target[0])
+            {
+                if (origin)
+                    Unsafe.Copy(dstptr, srcptr, limits);
+                else
+                    Endian.SwapCopy(dstptr, srcptr, limits);
+            }
             return target;
         }
     }

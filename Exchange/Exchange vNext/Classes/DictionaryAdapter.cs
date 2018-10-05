@@ -65,9 +65,9 @@ namespace Mikodev.Binary
             if (memory.IsEmpty)
                 return new Dictionary<TK, TV>(0);
             var dictionary = new Dictionary<TK, TV>(8);
-            fixed (byte* pointer = &memory.Span[0])
+            fixed (byte* srcptr = memory.Span)
             {
-                var vernier = new Vernier(pointer, memory.Length);
+                var vernier = new Vernier(srcptr, memory.Length);
                 while (vernier.Any())
                 {
                     vernier.UpdateExcept(keyConverter.length);
@@ -85,9 +85,9 @@ namespace Mikodev.Binary
             if (memory.IsEmpty)
                 return new List<Tuple<TK, TV>>(0);
             var list = new List<Tuple<TK, TV>>(8);
-            fixed (byte* pointer = &memory.Span[0])
+            fixed (byte* srcptr = memory.Span)
             {
-                var vernier = new Vernier(pointer, memory.Length);
+                var vernier = new Vernier(srcptr, memory.Length);
                 while (vernier.Any())
                 {
                     vernier.UpdateExcept(keyConverter.length);

@@ -13,11 +13,11 @@ namespace Mikodev.Binary.Converters
                 return;
             var addressBytes = value.Address.GetAddressBytes();
             var addressLength = addressBytes.Length;
-            fixed (byte* target = &allocator.Allocate(addressLength + sizeof(ushort)))
+            fixed (byte* dstptr = &allocator.Allocate(addressLength + sizeof(ushort)))
             {
-                fixed (byte* source = &addressBytes[0])
-                    Unsafe.Copy(target, source, addressLength);
-                UnmanagedValueConverter<ushort>.UnsafeToBytes(target + addressLength, (ushort)value.Port);
+                fixed (byte* srcptr = &addressBytes[0])
+                    Unsafe.Copy(dstptr, srcptr, addressLength);
+                UnmanagedValueConverter<ushort>.UnsafeToBytes(dstptr + addressLength, (ushort)value.Port);
             }
         }
 
@@ -30,11 +30,11 @@ namespace Mikodev.Binary.Converters
                 ThrowHelper.ThrowOverflow();
             int port;
             var addressBytes = new byte[addressLength];
-            fixed (byte* source = &memory.Span[0])
+            fixed (byte* srcptr = memory.Span)
             {
-                fixed (byte* target = &addressBytes[0])
-                    Unsafe.Copy(target, source, addressLength);
-                port = UnmanagedValueConverter<ushort>.UnsafeToValue(source + addressLength);
+                fixed (byte* dstptr = &addressBytes[0])
+                    Unsafe.Copy(dstptr, srcptr, addressLength);
+                port = UnmanagedValueConverter<ushort>.UnsafeToValue(srcptr + addressLength);
             }
             var address = new IPAddress(addressBytes);
             return new IPEndPoint(address, port);

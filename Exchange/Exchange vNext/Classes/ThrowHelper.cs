@@ -19,5 +19,13 @@ namespace Mikodev.Binary
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal static void ThrowConverterNotInitialized() => throw new InvalidOperationException("Converter not initialized!");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        internal static T ThrowOverflowOrNull<T>()
+        {
+            if (default(T) == null)
+                return default;
+            throw new OverflowException();
+        }
     }
 }

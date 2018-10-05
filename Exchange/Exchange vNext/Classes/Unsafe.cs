@@ -6,17 +6,15 @@ namespace Mikodev.Binary
     internal static class Unsafe
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe void Copy<T, U>(ref T target, in U source, int count) where T : unmanaged where U : unmanaged
+        internal static void Copy(byte[] target, byte[] source, int length)
         {
-            fixed (T* dst = &target)
-            fixed (U* src = &source)
-                Buffer.MemoryCopy(src, dst, count, count);
+            Buffer.BlockCopy(source, 0, target, 0, length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe void Copy(byte* target, byte* source, int count)
+        internal static unsafe void Copy(void* target, void* source, int length)
         {
-            Buffer.MemoryCopy(source, target, count, count);
+            Buffer.MemoryCopy(source, target, length, length);
         }
     }
 }

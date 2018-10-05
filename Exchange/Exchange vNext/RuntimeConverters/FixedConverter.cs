@@ -24,17 +24,9 @@ namespace Mikodev.Binary.RuntimeConverters
         public override unsafe T ToValue(ReadOnlyMemory<byte> memory)
         {
             if (memory.IsEmpty)
-            {
-                if (default(T) != null)
-                    ThrowHelper.ThrowOverflow();
-                return default;
-            }
-
-            fixed (byte* pointer = &memory.Span[0])
-            {
-                var vernier = new Vernier(pointer, memory.Length);
-                return toValue.Invoke(memory, vernier);
-            }
+                return ThrowHelper.ThrowOverflowOrNull<T>();
+            fixed (byte* srcptr = memory.Span)
+                return toValue.Invoke(memory, new Vernier(srcptr, memory.Length));
         }
     }
 }

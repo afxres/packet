@@ -25,7 +25,7 @@ namespace Mikodev.Binary
         internal Allocator() { }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private byte[] ReAllocate(int offset, int require)
+        private unsafe byte[] ReAllocate(int offset, int require)
         {
             if ((uint)require > MaximumLength)
                 ThrowHelper.ThrowOverflow();
@@ -40,7 +40,7 @@ namespace Mikodev.Binary
             }
             while (length < limits);
             var target = new byte[(int)length];
-            Unsafe.Copy(ref target[0], in source[0], offset);
+            Unsafe.Copy(target, source, offset);
             buffer = target;
             return target;
         }
@@ -60,20 +60,18 @@ namespace Mikodev.Binary
         internal unsafe void FinishExtend(int offset)
         {
             const int cursor = sizeof(int) - 1;
-            ref var target = ref buffer[offset + cursor];
-            fixed (byte* pointer = &target)
-                UnmanagedValueConverter<int>.UnsafeToBytes(pointer - cursor, position - offset - sizeof(int));
+            fixed (byte* dstptr = &buffer[offset + cursor])
+                UnmanagedValueConverter<int>.UnsafeToBytes(dstptr - cursor, position - offset - sizeof(int));
         }
 
         internal unsafe void AppendExtend(byte[] source)
         {
             var length = source.Length;
-            ref var target = ref Allocate(length + sizeof(int));
-            fixed (byte* src = &source[0])
-            fixed (byte* dst = &target)
+            fixed (byte* srcptr = &source[0])
+            fixed (byte* dstptr = &Allocate(length + sizeof(int)))
             {
-                UnmanagedValueConverter<int>.UnsafeToBytes(dst, length);
-                Unsafe.Copy(dst + sizeof(int), src, length);
+                UnmanagedValueConverter<int>.UnsafeToBytes(dstptr, length);
+                Unsafe.Copy(dstptr + sizeof(int), srcptr, length);
             }
         }
 
@@ -118,22 +116,23 @@ namespace Mikodev.Binary
                 var target = buffer;
                 if ((uint)byteCount > (uint)(target.Length - offset))
                     target = ReAllocate(offset, byteCount);
-                fixed (char* chars = &span[cursor])
-                fixed (byte* bytes = &target[offset])
-                    offset += encoding.GetBytes(chars, charCount, bytes, byteCount);
+                fixed (char* srcptr = &span[cursor])
+                fixed (byte* dstptr = &target[offset])
+                    offset += encoding.GetBytes(srcptr, charCount, dstptr, byteCount);
                 cursor += charCount;
             }
             while (cursor != limits);
             position = offset;
         }
 
-        public void Append(ReadOnlySpan<byte> span)
+        public unsafe void Append(ReadOnlySpan<byte> span)
         {
             if (span.IsEmpty)
                 return;
             var limits = span.Length;
-            ref var target = ref Allocate(limits);
-            Unsafe.Copy(ref target, in span[0], limits);
+            fixed (byte* dstptr = &Allocate(limits))
+            fixed (byte* srcptr = span)
+                Unsafe.Copy(dstptr, srcptr, limits);
         }
 
         #region override

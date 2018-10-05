@@ -21,12 +21,12 @@ namespace Mikodev.Binary.Converters
 
         public override unsafe void ToBytes(Allocator allocator, Guid value)
         {
-            fixed (byte* target = &allocator.Allocate(sizeof(Guid)))
+            fixed (byte* dstptr = &allocator.Allocate(sizeof(Guid)))
             {
                 if (origin)
-                    *(Guid*)target = value;
+                    *(Guid*)dstptr = value;
                 else
-                    Swap(target, (byte*)&value);
+                    Swap(dstptr, (byte*)&value);
             }
         }
 
@@ -35,12 +35,12 @@ namespace Mikodev.Binary.Converters
             if (memory.Length < sizeof(Guid))
                 ThrowHelper.ThrowOverflow();
             var result = default(Guid);
-            fixed (byte* source = &memory.Span[0])
+            fixed (byte* srcptr = memory.Span)
             {
                 if (origin)
-                    result = *(Guid*)source;
+                    result = *(Guid*)srcptr;
                 else
-                    Swap((byte*)&result, source);
+                    Swap((byte*)&result, srcptr);
             }
             return result;
         }
