@@ -11,22 +11,11 @@ namespace Mikodev.Binary.RuntimeConverters
             if (value == null || value.Count == 0)
                 return;
             if (converter.length == 0)
-            {
-                int offset;
                 for (var i = 0; i < value.Count; i++)
-                {
-                    offset = allocator.AnchorExtend();
-                    converter.ToBytes(allocator, value[i]);
-                    allocator.FinishExtend(offset);
-                }
-            }
+                    allocator.AppendValueExtend(converter, value[i]);
             else
-            {
                 for (var i = 0; i < value.Count; i++)
-                {
                     converter.ToBytes(allocator, value[i]);
-                }
-            }
         }
 
         internal static unsafe List<T> Value(ReadOnlyMemory<byte> memory, Converter<T> converter)

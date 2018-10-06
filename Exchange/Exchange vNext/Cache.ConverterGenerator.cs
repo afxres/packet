@@ -179,8 +179,7 @@ namespace Mikodev.Binary
                     if (IsFSharpMap(type, out var constructorInfo))
                     {
                         var memory = Expression.Parameter(typeof(ReadOnlyMemory<byte>), "memory");
-                        var functor = adapter.GetToTupleDelegate();
-                        var instance = Expression.New(constructorInfo, MakeDelegateCall(functor, memory));
+                        var instance = Expression.New(constructorInfo, MakeDelegateCall(adapter.GetToTupleDelegate(), memory));
                         var delegateType = typeof(ToValue<>).MakeGenericType(type);
                         var lambda = Expression.Lambda(delegateType, instance, memory);
                         return (Converter)Activator.CreateInstance(typeof(DelegateConverter<>).MakeGenericType(type), adapter.GetToBytesDelegate(), lambda.Compile(), 0);
@@ -251,14 +250,13 @@ namespace Mikodev.Binary
                 for (var i = 0; i < converters.Length; i++)
                 {
                     var converter = converters[i];
-                    var functor = converter.GetToValueDelegate();
                     var variable = Expression.Variable(converter.GetValueType(), $"item{i + 1}");
                     variables[i] = variable;
                     var update = Expression.Call(vernier, Vernier.UpdateExceptMethodInfo, Expression.Constant(converter.length, typeof(int)));
                     var offset = Expression.Field(vernier, Vernier.OffsetFieldInfo);
                     var length = Expression.Field(vernier, Vernier.LengthFieldInfo);
                     var invoke = Expression.Call(memory, sliceMethodInfo, offset, length);
-                    var assign = Expression.Assign(variable, MakeDelegateCall(functor, invoke));
+                    var assign = Expression.Assign(variable, MakeDelegateCall(converter.GetToValueDelegate(), invoke));
                     expressions.Add(update);
                     expressions.Add(assign);
                 }
@@ -283,18 +281,10 @@ namespace Mikodev.Binary
                 for (var i = 0; i < converters.Length; i++)
                 {
                     var converter = converters[i];
-                    var functor = converter.GetToBytesDelegate();
-                    var toBytesExpression = MakeDelegateCall(functor, allocator, items[i]);
-                    if (converter.length == 0)
-                    {
-                        expressions.Add(Expression.Assign(offset, Expression.Call(allocator, Allocator.AnchorExtendMethodInfo)));
-                        expressions.Add(toBytesExpression);
-                        expressions.Add(Expression.Call(allocator, Allocator.FinishExtendMethodInfo, offset));
-                    }
-                    else
-                    {
-                        expressions.Add(toBytesExpression);
-                    }
+                    var expression = converter.length == 0
+                        ? Expression.Call(allocator, Allocator.AppendValueExtendMethodInfo.MakeGenericMethod(converter.GetValueType()), Expression.Constant(converter), items[i])
+                        : MakeDelegateCall(converter.GetToBytesDelegate(), allocator, items[i]);
+                    expressions.Add(expression);
                 }
                 var delegateType = typeof(ToBytes<>).MakeGenericType(type);
                 return Expression.Lambda(delegateType, Expression.Block(variables, expressions), allocator, tuple);
@@ -390,13 +380,11 @@ namespace Mikodev.Binary
                 foreach (var property in properties)
                 {
                     var propertyType = property.PropertyType;
+                    var propertyValue = Expression.Property(instance, property);
                     var buffer = GetOrCache(property.Name);
-                    list.Add(Expression.Call(allocator, Allocator.AppendExtendMethodInfo, Expression.Constant(buffer)));
-                    list.Add(Expression.Assign(position, Expression.Call(allocator, Allocator.AnchorExtendMethodInfo)));
                     var converter = GetOrGenerateConverter(propertyType);
-                    var functor = converter.GetToBytesDelegate();
-                    list.Add(MakeDelegateCall(functor, allocator, Expression.Property(instance, property)));
-                    list.Add(Expression.Call(allocator, Allocator.FinishExtendMethodInfo, position));
+                    list.Add(Expression.Call(allocator, Allocator.AppendBytesExtendMethodInfo, Expression.Constant(buffer)));
+                    list.Add(Expression.Call(allocator, Allocator.AppendValueExtendMethodInfo.MakeGenericMethod(propertyType), Expression.Constant(converter), propertyValue));
                 }
                 var memory = Expression.Block(new[] { position }, list);
                 var delegateType = typeof(ToBytes<>).MakeGenericType(type);
@@ -437,10 +425,8 @@ namespace Mikodev.Binary
                 {
                     var item = properties[i];
                     var converter = GetOrGenerateConverter(item.PropertyType);
-                    var functor = converter.GetToValueDelegate();
                     var memory = Expression.Property(dictionary, "Item", Expression.Constant(item.Name));
-                    var value = MakeDelegateCall(functor, memory);
-                    expressionArray[i] = value;
+                    expressionArray[i] = MakeDelegateCall(converter.GetToValueDelegate(), memory);
                 }
                 var lambda = Expression.Lambda(delegateType, Expression.New(constructorInfo, expressionArray), dictionary);
                 return lambda.Compile();
@@ -456,10 +442,9 @@ namespace Mikodev.Binary
                     if (property.GetSetMethod() == null)
                         throw new InvalidOperationException($"Property '{property.Name}' does not have a public setter, type: {type}");
                     var converter = GetOrGenerateConverter(property.PropertyType);
-                    var functor = converter.GetToValueDelegate();
                     var memory = Expression.Property(dictionary, "Item", Expression.Constant(property.Name));
-                    var value = MakeDelegateCall(functor, memory);
-                    expressionList.Add(Expression.Assign(Expression.Property(instance, property), value));
+                    var expression = MakeDelegateCall(converter.GetToValueDelegate(), memory);
+                    expressionList.Add(Expression.Assign(Expression.Property(instance, property), expression));
                 }
                 expressionList.Add(instance);
                 var lambda = Expression.Lambda(delegateType, Expression.Block(new[] { instance }, expressionList), dictionary);

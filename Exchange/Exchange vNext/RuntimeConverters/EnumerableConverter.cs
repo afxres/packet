@@ -22,22 +22,11 @@ namespace Mikodev.Binary.RuntimeConverters
             if (value == null)
                 return;
             if (converter.length == 0)
-            {
-                int offset;
                 foreach (var i in value)
-                {
-                    offset = allocator.AnchorExtend();
-                    converter.ToBytes(allocator, i);
-                    allocator.FinishExtend(offset);
-                }
-            }
+                    allocator.AppendValueExtend(converter, i);
             else
-            {
                 foreach (var i in value)
-                {
                     converter.ToBytes(allocator, i);
-                }
-            }
         }
 
         public override TE ToValue(ReadOnlyMemory<byte> memory)

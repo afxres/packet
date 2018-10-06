@@ -34,29 +34,16 @@ namespace Mikodev.Binary
         {
             if (value == null)
                 return;
-            int offset;
             foreach (var i in value)
             {
                 if (keyConverter.length == 0)
-                {
-                    offset = allocator.AnchorExtend();
-                    keyConverter.ToBytes(allocator, i.Key);
-                    allocator.FinishExtend(offset);
-                }
+                    allocator.AppendValueExtend(keyConverter, i.Key);
                 else
-                {
                     keyConverter.ToBytes(allocator, i.Key);
-                }
                 if (valueConverter.length == 0)
-                {
-                    offset = allocator.AnchorExtend();
-                    valueConverter.ToBytes(allocator, i.Value);
-                    allocator.FinishExtend(offset);
-                }
+                    allocator.AppendValueExtend(valueConverter, i.Value);
                 else
-                {
                     valueConverter.ToBytes(allocator, i.Value);
-                }
             }
         }
 

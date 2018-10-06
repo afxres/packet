@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using uint16 = System.UInt16;
 using uint32 = System.UInt32;
 using uint64 = System.UInt64;
@@ -44,7 +45,7 @@ namespace Mikodev.Binary
                     *(uint64*)target = Swap64(*(uint64*)source);
                     break;
                 default:
-                    throw new System.ApplicationException();
+                    throw new ApplicationException();
             }
         }
         #endregion
@@ -79,7 +80,7 @@ namespace Mikodev.Binary
                         *(uint64*)(target + i) = Swap64(*(uint64*)(source + i));
                     break;
                 default:
-                    throw new System.ApplicationException();
+                    throw new ApplicationException();
             }
         }
         #endregion

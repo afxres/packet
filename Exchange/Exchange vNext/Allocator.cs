@@ -8,11 +8,9 @@ namespace Mikodev.Binary
     public sealed class Allocator
     {
         #region non-public
-        internal static readonly MethodInfo AppendExtendMethodInfo = typeof(Allocator).GetMethod(nameof(AppendExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static readonly MethodInfo AppendBytesExtendMethodInfo = typeof(Allocator).GetMethod(nameof(AppendBytesExtend), BindingFlags.Instance | BindingFlags.NonPublic);
 
-        internal static readonly MethodInfo AnchorExtendMethodInfo = typeof(Allocator).GetMethod(nameof(AnchorExtend), BindingFlags.Instance | BindingFlags.NonPublic);
-
-        internal static readonly MethodInfo FinishExtendMethodInfo = typeof(Allocator).GetMethod(nameof(FinishExtend), BindingFlags.Instance | BindingFlags.NonPublic);
+        internal static readonly MethodInfo AppendValueExtendMethodInfo = typeof(Allocator).GetMethod(nameof(AppendValueExtend), BindingFlags.Instance | BindingFlags.NonPublic);
 
         private const int InitialLength = 256;
 
@@ -45,26 +43,22 @@ namespace Mikodev.Binary
             return target;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal int AnchorExtend()
+        internal unsafe void AppendValueExtend<T>(Converter<T> converter, T value)
         {
             var offset = position;
             var target = buffer;
             if (sizeof(int) > (uint)(target.Length - offset))
                 target = ReAllocate(offset, sizeof(int));
             position = offset + sizeof(int);
-            return offset;
-        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal unsafe void FinishExtend(int offset)
-        {
+            converter.ToBytes(this, value);
+
             const int cursor = sizeof(int) - 1;
             fixed (byte* dstptr = &buffer[offset + cursor])
                 UnmanagedValueConverter<int>.UnsafeToBytes(dstptr - cursor, position - offset - sizeof(int));
         }
 
-        internal unsafe void AppendExtend(byte[] source)
+        internal unsafe void AppendBytesExtend(byte[] source)
         {
             var length = source.Length;
             fixed (byte* srcptr = &source[0])

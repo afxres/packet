@@ -13,16 +13,16 @@ namespace Mikodev.Binary
         #region static
         private static readonly Dictionary<Type, Type> converterTypes;
 
-        private static Type GetValueType(Type type)
-        {
-            while ((type = type.BaseType) != null)
-                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Converter<>))
-                    return type.GetGenericArguments().Single();
-            throw new ApplicationException();
-        }
-
         static Cache()
         {
+            Type identifier(Type type)
+            {
+                while ((type = type.BaseType) != null)
+                    if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Converter<>))
+                        return type.GetGenericArguments().Single();
+                throw new ApplicationException();
+            }
+
             var types = new[]
             {
                 typeof(StringConverter),
@@ -50,7 +50,7 @@ namespace Mikodev.Binary
                 typeof(double),
             };
 
-            var dictionary = types.ToDictionary(GetValueType);
+            var dictionary = types.ToDictionary(identifier);
             foreach (var type in unmanagedTypes)
                 dictionary.Add(type, typeof(UnmanagedValueConverter<>).MakeGenericType(type));
             foreach (var type in unmanagedTypes)

@@ -10,21 +10,11 @@ namespace Mikodev.Binary.RuntimeConverters
                 return;
 
             if (converter.length == 0)
-            {
                 for (var i = 0; i < value.Length; i++)
-                {
-                    var offset = allocator.AnchorExtend();
-                    converter.ToBytes(allocator, value[i]);
-                    allocator.FinishExtend(offset);
-                }
-            }
+                    allocator.AppendValueExtend(converter, value[i]);
             else
-            {
                 for (var i = 0; i < value.Length; i++)
-                {
                     converter.ToBytes(allocator, value[i]);
-                }
-            }
         }
 
         internal static T[] Value(ReadOnlyMemory<byte> memory, Converter<T> converter)
