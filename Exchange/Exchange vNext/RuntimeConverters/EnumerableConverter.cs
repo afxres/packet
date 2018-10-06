@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace Mikodev.Binary.RuntimeConverters
 {
-    internal sealed class EnumerableConverter<TE, TV> : Converter<TE>, IEnumerableConverter where TE : IEnumerable<TV>
+    internal sealed class EnumerableConverter<T, TItem> : Converter<T>, IEnumerableConverter where T : IEnumerable<TItem>
     {
-        private readonly Converter<TV> converter;
+        private readonly Converter<TItem> converter;
 
-        private readonly Func<IEnumerable<TV>, TE> toValue;
+        private readonly Func<IEnumerable<TItem>, T> toValue;
 
-        public EnumerableConverter(Converter<TV> converter, Func<IEnumerable<TV>, TE> toValue) : base(0)
+        public EnumerableConverter(Converter<TItem> converter, Func<IEnumerable<TItem>, T> toValue) : base(0)
         {
             this.converter = converter;
             this.toValue = toValue;
@@ -17,7 +17,7 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public Delegate GetToEnumerableDelegate() => toValue;
 
-        public override void ToBytes(Allocator allocator, TE value)
+        public override void ToBytes(Allocator allocator, T value)
         {
             if (value == null)
                 return;
@@ -29,13 +29,13 @@ namespace Mikodev.Binary.RuntimeConverters
                     converter.ToBytes(allocator, i);
         }
 
-        public override TE ToValue(ReadOnlyMemory<byte> memory)
+        public override T ToValue(ReadOnlyMemory<byte> memory)
         {
             if (toValue == null)
-                throw new InvalidOperationException($"Unable to get collection, type: {typeof(TE)}");
+                throw new InvalidOperationException($"Unable to get collection, type: {typeof(T)}");
             var enumerable = converter.length == 0
-                ? (IEnumerable<TV>)ListConverter<TV>.Value(memory, converter)
-                : ArrayConverter<TV>.Value(memory, converter);
+                ? (IEnumerable<TItem>)ListConverter<TItem>.Value(memory, converter)
+                : ArrayConverter<TItem>.Value(memory, converter);
             return toValue.Invoke(enumerable);
         }
     }

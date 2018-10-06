@@ -26,7 +26,9 @@ namespace Mikodev.Testing
         }
 
         private const int loop = 32;
+
         private readonly Cache cache = new Cache();
+
         private readonly Random random = new Random();
 
         [TestMethod]

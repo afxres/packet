@@ -29,15 +29,15 @@ namespace Mikodev.Testing
 
             public bool Equals(SimpleStructure other)
             {
-                return this.Id == other.Id &&
-                       this.Name == other.Name;
+                return Id == other.Id &&
+                       Name == other.Name;
             }
 
             public override int GetHashCode()
             {
                 var hashCode = -1919740922;
-                hashCode = hashCode * -1521134295 + this.Id.GetHashCode();
-                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(this.Name);
+                hashCode = hashCode * -1521134295 + Id.GetHashCode();
+                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
                 return hashCode;
             }
         }
@@ -62,15 +62,15 @@ namespace Mikodev.Testing
             public bool Equals(SimpleClass other)
             {
                 return other != null &&
-                       this.Guid.Equals(other.Guid) &&
-                       EqualityComparer<IPEndPoint>.Default.Equals(this.EndPoint, other.EndPoint);
+                       Guid.Equals(other.Guid) &&
+                       EqualityComparer<IPEndPoint>.Default.Equals(EndPoint, other.EndPoint);
             }
 
             public override int GetHashCode()
             {
                 var hashCode = -1964891576;
-                hashCode = hashCode * -1521134295 + EqualityComparer<Guid>.Default.GetHashCode(this.Guid);
-                hashCode = hashCode * -1521134295 + EqualityComparer<IPEndPoint>.Default.GetHashCode(this.EndPoint);
+                hashCode = hashCode * -1521134295 + EqualityComparer<Guid>.Default.GetHashCode(Guid);
+                hashCode = hashCode * -1521134295 + EqualityComparer<IPEndPoint>.Default.GetHashCode(EndPoint);
                 return hashCode;
             }
         }

@@ -44,14 +44,14 @@ namespace Mikodev.Testing
 
             public bool Equals(Person other) =>
                 other != null &&
-                this.Id == other.Id &&
-                this.Name == other.Name;
+                Id == other.Id &&
+                Name == other.Name;
 
             public override int GetHashCode()
             {
                 var hashCode = -1919740922;
-                hashCode = hashCode * -1521134295 + this.Id.GetHashCode();
-                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(this.Name);
+                hashCode = hashCode * -1521134295 + Id.GetHashCode();
+                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
                 return hashCode;
             }
         }

@@ -7,10 +7,6 @@ namespace Mikodev.Testing
     [TestClass]
     public class AllocatorTest
     {
-        private const int loop = 4096;
-        private readonly Random random = new Random();
-        private readonly Cache cache;
-
         private sealed class Box<T>
         {
             public T Value { get; set; }
@@ -33,6 +29,12 @@ namespace Mikodev.Testing
                 return new Box<byte[]> { Value = memory.ToArray() };
             }
         }
+
+        private const int loop = 4096;
+
+        private readonly Random random = new Random();
+
+        private readonly Cache cache;
 
         public AllocatorTest()
         {

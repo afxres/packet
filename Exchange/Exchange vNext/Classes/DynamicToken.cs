@@ -7,7 +7,7 @@ namespace Mikodev.Binary
 {
     internal sealed class DynamicToken : DynamicMetaObject
     {
-        private static readonly HashSet<Type> assignable;
+        private static readonly HashSet<Type> assignableTypes;
 
         static DynamicToken()
         {
@@ -15,7 +15,7 @@ namespace Mikodev.Binary
             var collection = new HashSet<Type>(type.GetInterfaces()) { type };
             while ((type = type.BaseType) != null)
                 collection.Add(type);
-            assignable = collection;
+            assignableTypes = collection;
         }
 
         public DynamicToken(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
@@ -24,7 +24,7 @@ namespace Mikodev.Binary
         {
             var value = Value;
             var type = binder.Type;
-            if (!assignable.Contains(type))
+            if (!assignableTypes.Contains(type))
                 value = ((Token)value).As(type);
             var constant = Expression.Constant(value, type);
             return new DynamicMetaObject(constant, BindingRestrictions.GetTypeRestriction(Expression, LimitType));

@@ -59,7 +59,7 @@ namespace Mikodev.Testing
             var token = cache.AsToken(t1);
             var reader = new PacketReader(t2);
 
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<IObject>(t1));
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<IObject>(t1), x => x.Message.StartsWith("Unable to get value"));
             AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize<IObject>(t2));
 
 
@@ -69,6 +69,5 @@ namespace Mikodev.Testing
             Assert.AreEqual(value.Id, token["Id"].As<string>());
             AssertExtension.MustFail<KeyNotFoundException>(() => token["Guid"].As<Guid>());
         }
-
     }
 }

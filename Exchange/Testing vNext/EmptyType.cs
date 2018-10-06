@@ -12,8 +12,6 @@ namespace Mikodev.Testing
 
         private sealed class EmptyClass { }
 
-        private static Cache cache = new Cache();
-
         private sealed class SetOnlyClass
         {
             public int Number { set { } }
@@ -23,6 +21,8 @@ namespace Mikodev.Testing
         {
             public int Number { get => default; }
         }
+
+        private static Cache cache = new Cache();
 
         [TestMethod]
         public void Anonymous()

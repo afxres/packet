@@ -62,7 +62,7 @@ namespace Mikodev.Binary
                 if (!adapters.TryGetValue(adapterType, out var adapter))
                 {
                     if (elementTypes[0] == typeof(object))
-                        throw new InvalidOperationException($"Invalid dictionary key type: object");
+                        throw new InvalidOperationException($"Invalid dictionary key type: {typeof(object)}");
                     var keyConverter = GetOrGenerateConverter(elementTypes[0]);
                     var valueConverter = GetOrGenerateConverter(elementTypes[1]);
                     adapter = (DictionaryAdapter)Activator.CreateInstance(adapterType, keyConverter, valueConverter);

@@ -279,6 +279,35 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
+        public void AssignableTest()
+        {
+            var anonymous = new
+            {
+                id = random.Next(),
+                name = $"{random.Next()}",
+                guid = Guid.NewGuid(),
+            };
+
+            var buffer = cache.ToBytes(anonymous);
+            var value = cache.ToValue<object>(buffer);
+            var objects = cache.ToValue<Dictionary<string, object>>(buffer);
+
+            Assert.IsTrue(objects.Count == 3);
+
+            Assert.IsTrue(typeof(IDynamicMetaObjectProvider).IsAssignableFrom(typeof(Token)));
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<Token>(buffer));
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<Dictionary<string, Token>>(buffer));
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<IDynamicMetaObjectProvider>(buffer));
+        }
+
+        [TestMethod]
+        public void InternalType()
+        {
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToBytes(default(Token)), x => x.Message.StartsWith("Invalid type"));
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToBytes(default(Cache)), x => x.Message.StartsWith("Invalid type"));
+        }
+
+        [TestMethod]
         public void IPTest()
         {
             var anonymous = new
