@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace Mikodev.Testing
 {
     [TestClass]
-    public class AbstractType
+    public class AbstractAndInterfaceTest
     {
         private interface IObject
         {

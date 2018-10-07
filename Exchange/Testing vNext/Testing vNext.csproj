@@ -68,20 +68,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AbstractType.cs" />
+    <Compile Include="AbstractAndInterfaceTest.cs" />
     <Compile Include="AllocatorTest.cs" />
     <Compile Include="AssertExtension.cs" />
     <Compile Include="CacheTest.cs" />
-    <Compile Include="CircularReference.cs" />
+    <Compile Include="CircularReferenceTest.cs" />
     <Compile Include="CollectionTest.cs" />
     <Compile Include="ConverterTest.cs" />
-    <Compile Include="EmptyType.cs" />
-    <Compile Include="Entrance.cs" />
+    <Compile Include="EmptyTypeTest.cs" />
+    <Compile Include="MiscTest.cs" />
     <Compile Include="EnumTest.cs" />
-    <Compile Include="NullTest.cs" />
+    <Compile Include="NullOrEmptyTest.cs" />
     <Compile Include="ObjectTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RecordLike.cs" />
+    <Compile Include="RecordTypeTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

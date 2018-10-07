@@ -9,7 +9,7 @@ using System.Net;
 namespace Mikodev.Testing
 {
     [TestClass]
-    public class NullTest
+    public class NullOrEmptyTest
     {
         private sealed class TestClass
         {
@@ -111,36 +111,58 @@ namespace Mikodev.Testing
         public void Tuple()
         {
             // default value is null
-            var emptyTuple = default(Tuple<string, int>);
-            var buffer = cache.ToBytes(emptyTuple);
-            Assert.IsTrue(buffer.Length == 0);
-            var emptyTupleResult = cache.ToValue<Tuple<string, int>>(Array.Empty<byte>());
-            Assert.AreEqual(emptyTupleResult, null);
+            var v1 = default(Tuple<string, int>);
+            var t1 = cache.ToBytes(v1);
+            Assert.IsTrue(t1.Length == 0);
+            var r1 = cache.ToValue<Tuple<string, int>>(Array.Empty<byte>());
+            Assert.AreEqual(r1, null);
 
             // default value not null
-            var emptyValueTuple = default((int, string));
-            var valueBuffer = cache.ToBytes(emptyValueTuple);
-            Assert.IsTrue(valueBuffer.Length != 0);
+            var v2 = default((int, string));
+            var t2 = cache.ToBytes(v2);
+            Assert.IsTrue(t2.Length != 0);
             AssertExtension.MustFail<OverflowException>(() => cache.ToValue<(int, string)>(Array.Empty<byte>()));
+
+            var anonymous = new
+            {
+                tuple = default(Tuple<int, string>),
+                value = default((string text, int)),
+            };
+            var t3 = cache.ToBytes(anonymous);
+            var r3 = cache.ToValue(t3, anonymous);
+
+            Assert.IsFalse(ReferenceEquals(r3, anonymous));
+            Assert.IsTrue(r3.tuple == null);
+            Assert.IsTrue(r3.value.text == string.Empty);
+            AssertExtension.MustFail<OverflowException>(() => cache.ToValue(t3, new { tuple = default((int, string)) }));
         }
 
         [TestMethod]
         public void Class()
         {
             var source = default(TestClass);
-            var buffer = cache.ToBytes(source);
-            Assert.IsTrue(buffer.Length == 0);
-            var result = cache.ToValue<TestClass>(Array.Empty<byte>());
-            Assert.IsTrue(result == null);
+            var t1 = cache.ToBytes(source);
+            var t2 = PacketConvert.Serialize(source);
+            Assert.IsTrue(t1.Length == 0);
+            Assert.IsTrue(t2.Length == 0);
+
+            var r1 = cache.ToValue<TestClass>(Array.Empty<byte>());
+            var r2 = PacketConvert.Deserialize<TestClass>(Array.Empty<byte>());
+            Assert.IsTrue(r1 == null);
+            Assert.IsTrue(r2 == null);
         }
 
         [TestMethod]
         public void ValueType()
         {
             var source = default(TestStruct);
-            var buffer = cache.ToBytes(source);
-            Assert.IsTrue(buffer.Length != 0);
+            var t1 = cache.ToBytes(source);
+            var t2 = PacketConvert.Serialize(source);
+            Assert.IsTrue(t1.Length != 0);
+            Assert.IsTrue(t2.Length != 0);
+
             AssertExtension.MustFail<OverflowException>(() => cache.ToValue<TestStruct>(Array.Empty<byte>()));
+            AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize<TestStruct>(Array.Empty<byte>()), x => x.ErrorCode == PacketError.Overflow);
         }
     }
 }

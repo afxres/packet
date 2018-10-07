@@ -86,6 +86,8 @@ namespace Mikodev.Network
             var set = Cache.GetSetInfo(valueType);
             if (set == null)
                 throw PacketException.InvalidType(valueType);
+            if (block.Length == 0)
+                return set.ThrowOrNull();
             var functor = set.Functor;
             var arguments = set.Arguments;
             var source = new object[arguments.Length];

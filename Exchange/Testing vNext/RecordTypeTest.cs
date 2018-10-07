@@ -8,7 +8,7 @@ using System.Net;
 namespace Mikodev.Testing
 {
     [TestClass]
-    public class RecordLike
+    public class RecordTypeTest
     {
         private struct SimpleStructure : IEquatable<SimpleStructure>
         {

@@ -50,7 +50,7 @@ namespace Mikodev.Network
             var expression = Expression.Lambda<Action<object, object[]>>(block, parameter, objectArray);
             return new GetInfo(propertyList.ToArray(), expression.Compile());
 
-            fail:
+        fail:
             throw PacketException.InvalidType(type);
         }
 
@@ -84,7 +84,7 @@ namespace Mikodev.Network
             // Reference type
             var instance = Expression.New(constructorInfo, expressionArray);
             var expression = Expression.Lambda<Func<object[], object>>(instance, parameter);
-            return new SetInfo(propertyList, expression.Compile());
+            return new SetInfo(type, expression.Compile(), propertyList);
         }
 
         private static SetInfo InternalGetSetInfoProperties(Type type, PropertyInfo[] properties)
@@ -122,7 +122,7 @@ namespace Mikodev.Network
 
             var block = Expression.Block(new[] { instance }, expressionList);
             var expression = Expression.Lambda<Func<object[], object>>(block, parameter);
-            return new SetInfo(propertyList.ToArray(), expression.Compile());
+            return new SetInfo(type, expression.Compile(), propertyList.ToArray());
         }
 
         private static SetInfo InternalGetSetInfo(Type type)
@@ -136,7 +136,7 @@ namespace Mikodev.Network
             return type.IsValueType || constructorInfos != null
                 ? InternalGetSetInfoProperties(type, properties)
                 : InternalGetSetInfoAnonymousType(type, properties);
-            fail:
+        fail:
             throw PacketException.InvalidType(type);
         }
 

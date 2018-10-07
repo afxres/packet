@@ -6,7 +6,7 @@ using System;
 namespace Mikodev.Testing
 {
     [TestClass]
-    public class EmptyType
+    public class EmptyTypeTest
     {
         private readonly struct EmptyStructure { }
 

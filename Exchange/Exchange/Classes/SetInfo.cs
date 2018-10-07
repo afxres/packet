@@ -5,14 +5,27 @@ namespace Mikodev.Network
 {
     internal sealed class SetInfo
     {
-        internal KeyValuePair<string, Type>[] Arguments { get; }
+        private readonly Type type;
+
+        private readonly bool valueType;
 
         internal Func<object[], object> Functor { get; }
 
-        internal SetInfo(KeyValuePair<string, Type>[] arguments, Func<object[], object> functor)
+        internal KeyValuePair<string, Type>[] Arguments { get; }
+
+        internal SetInfo(Type type, Func<object[], object> functor, KeyValuePair<string, Type>[] arguments)
         {
-            Arguments = arguments;
+            this.type = type;
+            valueType = type.IsValueType;
             Functor = functor;
+            Arguments = arguments;
+        }
+
+        internal object ThrowOrNull()
+        {
+            if (valueType)
+                throw PacketException.Overflow();
+            return null;
         }
     }
 }

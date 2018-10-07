@@ -6,7 +6,7 @@ using System.Linq;
 namespace Mikodev.Testing
 {
     [TestClass]
-    public class CircularReference
+    public class CircularReferenceTest
     {
         private sealed class LinkedNode<T>
         {

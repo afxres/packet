@@ -11,7 +11,7 @@ using System.Net;
 namespace Mikodev.Testing
 {
     [TestClass]
-    public class Entrance
+    public class MiscTest
     {
         private const int loop = 1024;
 
