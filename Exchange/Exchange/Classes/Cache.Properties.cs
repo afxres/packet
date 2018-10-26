@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -19,15 +20,15 @@ namespace Mikodev.Network
             var methodInfos = new List<MethodInfo>();
             for (var i = 0; i < properties.Length; i++)
             {
-                var current = properties[i];
-                var getter = current.GetGetMethod();
+                var item = properties[i];
+                var getter = item.GetGetMethod();
                 if (getter == null)
                     continue;
                 var parameters = getter.GetParameters();
                 // Length != 0 -> indexer
                 if (parameters == null || parameters.Length != 0)
                     continue;
-                propertyList.Add(new KeyValuePair<string, Type>(current.Name, current.PropertyType));
+                propertyList.Add(new KeyValuePair<string, Type>(item.Name, item.PropertyType));
                 methodInfos.Add(getter);
             }
 
@@ -56,53 +57,47 @@ namespace Mikodev.Network
 
         private static SetInfo InternalGetSetInfoAnonymousType(Type type, PropertyInfo[] properties)
         {
-            var constructorInfos = type.GetConstructors();
-            if (constructorInfos.Length != 1)
+            var constructorInfo = type.GetConstructors()?.FirstOrDefault(t => t.GetParameters().Select(x => x.ParameterType).SequenceEqual(properties.Select(x => x.PropertyType)));
+            if (constructorInfo == null || constructorInfo.GetParameters().Select(x => x.Name.ToUpperInvariant()).SequenceEqual(properties.Select(x => x.Name.ToUpperInvariant())) == false)
                 return null;
-
-            var constructorInfo = constructorInfos[0];
-            var constructorParameters = constructorInfo.GetParameters();
-            if (properties.Length != constructorParameters.Length)
-                return null;
-
-            for (var i = 0; i < properties.Length; i++)
-                if (properties[i].Name != constructorParameters[i].Name || properties[i].PropertyType != constructorParameters[i].ParameterType)
-                    return null;
 
             var parameter = Expression.Parameter(typeof(object[]), "parameters");
-            var expressionArray = new Expression[constructorParameters.Length];
-            var propertyList = new KeyValuePair<string, Type>[constructorParameters.Length];
-            for (var i = 0; i < constructorParameters.Length; i++)
+            var expressionArray = new Expression[properties.Length];
+            var propertyList = new KeyValuePair<string, Type>[properties.Length];
+            for (var i = 0; i < properties.Length; i++)
             {
-                var current = constructorParameters[i];
+                var item = properties[i];
                 var arrayIndex = Expression.ArrayIndex(parameter, Expression.Constant(i));
-                var convert = Expression.Convert(arrayIndex, current.ParameterType);
-                expressionArray[i] = convert;
-                propertyList[i] = new KeyValuePair<string, Type>(current.Name, current.ParameterType);
+                var unbox = Expression.Convert(arrayIndex, item.PropertyType);
+                expressionArray[i] = unbox;
+                propertyList[i] = new KeyValuePair<string, Type>(item.Name, item.PropertyType);
             }
 
             // Reference type
             var instance = Expression.New(constructorInfo, expressionArray);
-            var expression = Expression.Lambda<Func<object[], object>>(instance, parameter);
+            var box = Expression.Convert(instance, typeof(object));
+            var expression = Expression.Lambda<Func<object[], object>>(box, parameter);
             return new SetInfo(type, expression.Compile(), propertyList);
         }
 
         private static SetInfo InternalGetSetInfoProperties(Type type, PropertyInfo[] properties)
         {
+            if (!type.IsValueType && type.GetConstructor(Type.EmptyTypes) == null)
+                return null;
             var propertyList = new List<KeyValuePair<string, Type>>();
             var methodInfos = new List<MethodInfo>();
 
             for (var i = 0; i < properties.Length; i++)
             {
-                var current = properties[i];
-                var getter = current.GetGetMethod();
-                var setter = current.GetSetMethod();
+                var item = properties[i];
+                var getter = item.GetGetMethod();
+                var setter = item.GetSetMethod();
                 if (getter == null || setter == null)
                     continue;
                 var setterParameters = setter.GetParameters();
                 if (setterParameters == null || setterParameters.Length != 1)
                     continue;
-                propertyList.Add(new KeyValuePair<string, Type>(current.Name, current.PropertyType));
+                propertyList.Add(new KeyValuePair<string, Type>(item.Name, item.PropertyType));
                 methodInfos.Add(setter);
             }
 
@@ -132,10 +127,7 @@ namespace Mikodev.Network
             var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             if (properties.Length == 0)
                 goto fail;
-            var constructorInfos = type.GetConstructor(Type.EmptyTypes);
-            return type.IsValueType || constructorInfos != null
-                ? InternalGetSetInfoProperties(type, properties)
-                : InternalGetSetInfoAnonymousType(type, properties);
+            return InternalGetSetInfoAnonymousType(type, properties) ?? InternalGetSetInfoProperties(type, properties);
         fail:
             throw PacketException.InvalidType(type);
         }

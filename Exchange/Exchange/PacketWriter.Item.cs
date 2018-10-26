@@ -128,15 +128,15 @@ namespace Mikodev.Network
                 var list = (List<KeyValuePair<byte[], byte[]>>)data;
                 for (var i = 0; i < list.Count; i++)
                 {
-                    var current = list[i];
+                    var item = list[i];
                     if (indexLength > 0)
-                        stream.Append(current.Key);
+                        stream.Append(item.Key);
                     else
-                        stream.AppendExtend(current.Key);
+                        stream.AppendExtend(item.Key);
                     if (elementLength > 0)
-                        stream.Append(current.Value);
+                        stream.Append(item.Value);
                     else
-                        stream.AppendExtend(current.Value);
+                        stream.AppendExtend(item.Value);
                 }
             }
 
@@ -145,12 +145,12 @@ namespace Mikodev.Network
                 var list = (List<KeyValuePair<byte[], Item>>)data;
                 for (var i = 0; i < list.Count; i++)
                 {
-                    var current = list[i];
+                    var item = list[i];
                     if (elementLength > 0)
-                        stream.Append(current.Key);
+                        stream.Append(item.Key);
                     else
-                        stream.AppendExtend(current.Key);
-                    current.Value.GetBytes(stream, level);
+                        stream.AppendExtend(item.Key);
+                    item.Value.GetBytes(stream, level);
                 }
             }
 

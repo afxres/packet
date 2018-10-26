@@ -75,6 +75,56 @@ namespace Mikodev.Testing
             }
         }
 
+        private readonly struct TestStructure : IEquatable<TestStructure>
+        {
+            public string Id { get; }
+
+            public double Item { get; }
+
+            public TestStructure(string id, double item) : this()
+            {
+                Id = id ?? throw new ArgumentNullException(nameof(id));
+                Item = item;
+            }
+
+            public override bool Equals(object obj) => obj is TestStructure && Equals((TestStructure)obj);
+
+            public bool Equals(TestStructure other) => Id == other.Id && Item == other.Item;
+
+            public override int GetHashCode()
+            {
+                var hashCode = -1659428602;
+                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Id);
+                hashCode = hashCode * -1521134295 + Item.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        private sealed class TestClass : IEquatable<TestClass>
+        {
+            public string Name { get; }
+
+            public string Test { get; }
+
+            public TestClass(string name, string test)
+            {
+                Name = name ?? throw new ArgumentNullException(nameof(name));
+                Test = test ?? throw new ArgumentNullException(nameof(test));
+            }
+
+            public override bool Equals(object obj) => Equals(obj as TestClass);
+
+            public bool Equals(TestClass other) => other != null && Name == other.Name && Test == other.Test;
+
+            public override int GetHashCode()
+            {
+                var hashCode = 1344153595;
+                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
+                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Test);
+                return hashCode;
+            }
+        }
+
         private static Cache cache = new Cache();
 
         [TestMethod]
@@ -93,10 +143,37 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Class()
         {
-            var value = new SimpleClass(Guid.NewGuid(), new IPEndPoint(IPAddress.Loopback, 3389)); var t1 = cache.ToBytes(value);
+            var value = new SimpleClass(Guid.NewGuid(), new IPEndPoint(IPAddress.Loopback, 3389));
+            var t1 = cache.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
             var r1 = PacketConvert.Deserialize<SimpleClass>(t1);
             var r2 = cache.ToValue<SimpleClass>(t2);
+
+            Assert.AreEqual(value, r1);
+            Assert.AreEqual(value, r2);
+        }
+
+        [TestMethod]
+        public void StructureInformal()
+        {
+            var value = new TestStructure("world", 2.71);
+            var t1 = cache.ToBytes(value);
+            var t2 = PacketConvert.Serialize(value);
+            var r1 = PacketConvert.Deserialize<TestStructure>(t1);
+            var r2 = cache.ToValue<TestStructure>(t2);
+
+            Assert.AreEqual(value, r1);
+            Assert.AreEqual(value, r2);
+        }
+
+        [TestMethod]
+        public void ClassInformal()
+        {
+            var value = new TestClass("hello", "The quick...");
+            var t1 = cache.ToBytes(value);
+            var t2 = PacketConvert.Serialize(value);
+            var r1 = PacketConvert.Deserialize<TestClass>(t1);
+            var r2 = cache.ToValue<TestClass>(t2);
 
             Assert.AreEqual(value, r1);
             Assert.AreEqual(value, r2);

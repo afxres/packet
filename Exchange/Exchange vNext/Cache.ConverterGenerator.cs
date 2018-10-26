@@ -397,28 +397,15 @@ namespace Mikodev.Binary
                 if (type.IsAbstract || type.IsInterface)
                     return null;
                 var delegateType = typeof(Func<,>).MakeGenericType(typeof(Dictionary<string, ReadOnlyMemory<byte>>), type);
-                var constructorInfo = type.GetConstructor(Type.EmptyTypes);
-                return type.IsValueType || constructorInfo != null
-                    ? ToValueDelegateProperties(type, delegateType, properties)
-                    : ToValueDelegateAnonymousType(type, delegateType, properties);
+                return ToValueDelegateAnonymousType(type, delegateType, properties) ?? ToValueDelegateProperties(type, delegateType, properties);
             }
 
             private Delegate ToValueDelegateAnonymousType(Type type, Type delegateType, PropertyInfo[] properties)
             {
                 // anonymous type or record
-                var constructors = type.GetConstructors();
-                if (constructors.Length != 1)
+                var constructorInfo = type.GetConstructors()?.FirstOrDefault(t => t.GetParameters().Select(x => x.ParameterType).SequenceEqual(properties.Select(x => x.PropertyType)));
+                if (constructorInfo == null || constructorInfo.GetParameters().Select(x => x.Name.ToUpperInvariant()).SequenceEqual(properties.Select(x => x.Name.ToUpperInvariant())) == false)
                     return null;
-
-                var constructorInfo = constructors[0];
-                var constructorParameters = constructorInfo.GetParameters();
-                if (properties.Length != constructorParameters.Length)
-                    return null;
-
-                for (var i = 0; i < properties.Length; i++)
-                    if (properties[i].Name != constructorParameters[i].Name || properties[i].PropertyType != constructorParameters[i].ParameterType)
-                        return null;
-
                 var dictionary = Expression.Parameter(typeof(Dictionary<string, ReadOnlyMemory<byte>>), "dictionary");
                 var expressionArray = new Expression[properties.Length];
                 for (var i = 0; i < properties.Length; i++)
@@ -434,6 +421,8 @@ namespace Mikodev.Binary
 
             private Delegate ToValueDelegateProperties(Type type, Type delegateType, PropertyInfo[] properties)
             {
+                if (!type.IsValueType && type.GetConstructor(Type.EmptyTypes) == null)
+                    return null;
                 var dictionary = Expression.Parameter(typeof(Dictionary<string, ReadOnlyMemory<byte>>), "dictionary");
                 var instance = Expression.Variable(type, "instance");
                 var expressionList = new List<Expression> { Expression.Assign(instance, Expression.New(type)) };
