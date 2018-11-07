@@ -8,6 +8,7 @@ namespace Sample
         internal static Action<string, TimeSpan> InstanceDisposed = null;
 
         internal readonly string message = null;
+
         internal readonly Stopwatch watch = new Stopwatch();
 
         internal TraceWatch()

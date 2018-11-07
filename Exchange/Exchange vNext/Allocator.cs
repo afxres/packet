@@ -61,8 +61,8 @@ namespace Mikodev.Binary
         internal unsafe void AppendBytesExtend(byte[] source)
         {
             var length = source.Length;
+            fixed (byte* dstptr = Allocate(length + sizeof(int)))
             fixed (byte* srcptr = &source[0])
-            fixed (byte* dstptr = &Allocate(length + sizeof(int)))
             {
                 UnmanagedValueConverter<int>.UnsafeToBytes(dstptr, length);
                 Unsafe.Copy(dstptr + sizeof(int), srcptr, length);
@@ -73,25 +73,14 @@ namespace Mikodev.Binary
         #endregion
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Memory<byte> AllocateMemory(int length)
+        public Span<byte> Allocate(int length)
         {
             var offset = position;
             var target = buffer;
             if ((uint)length > (uint)(target.Length - offset))
                 target = ReAllocate(offset, length);
             position = offset + length;
-            return new Memory<byte>(target, offset, length);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ref byte Allocate(int length)
-        {
-            var offset = position;
-            var target = buffer;
-            if ((uint)length > (uint)(target.Length - offset))
-                target = ReAllocate(offset, length);
-            position = offset + length;
-            return ref target[offset];
+            return new Span<byte>(target, offset, length);
         }
 
         public unsafe void Append(ReadOnlySpan<char> span)
@@ -124,7 +113,7 @@ namespace Mikodev.Binary
             if (span.IsEmpty)
                 return;
             var limits = span.Length;
-            fixed (byte* dstptr = &Allocate(limits))
+            fixed (byte* dstptr = Allocate(limits))
             fixed (byte* srcptr = span)
                 Unsafe.Copy(dstptr, srcptr, limits);
         }

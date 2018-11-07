@@ -69,7 +69,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AbstractAndInterfaceTest.cs" />
-    <Compile Include="AllocatorTest.cs" />
     <Compile Include="AssertExtension.cs" />
     <Compile Include="CacheTest.cs" />
     <Compile Include="CircularReferenceTest.cs" />

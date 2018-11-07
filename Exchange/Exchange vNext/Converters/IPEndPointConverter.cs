@@ -13,7 +13,7 @@ namespace Mikodev.Binary.Converters
                 return;
             var addressBytes = value.Address.GetAddressBytes();
             var addressLength = addressBytes.Length;
-            fixed (byte* dstptr = &allocator.Allocate(addressLength + sizeof(ushort)))
+            fixed (byte* dstptr = allocator.Allocate(addressLength + sizeof(ushort)))
             {
                 fixed (byte* srcptr = &addressBytes[0])
                     Unsafe.Copy(dstptr, srcptr, addressLength);

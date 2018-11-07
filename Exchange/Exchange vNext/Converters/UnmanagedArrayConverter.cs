@@ -13,7 +13,7 @@ namespace Mikodev.Binary.Converters
             if (array == null || array.Length == 0)
                 return;
             var length = checked(array.Length * sizeof(T));
-            fixed (byte* dstptr = &allocator.Allocate(length))
+            fixed (byte* dstptr = allocator.Allocate(length))
             fixed (T* srcptr = &array[0])
             {
                 if (origin)

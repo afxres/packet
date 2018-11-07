@@ -11,7 +11,7 @@ namespace Mikodev.Binary.Converters
         public override unsafe void ToBytes(Allocator allocator, decimal value)
         {
             var source = decimal.GetBits(value);
-            fixed (byte* dstptr = &allocator.Allocate(sizeof(decimal)))
+            fixed (byte* dstptr = allocator.Allocate(sizeof(decimal)))
             fixed (int* srcptr = &source[0])
             {
                 if (origin)

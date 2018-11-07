@@ -21,7 +21,7 @@ namespace Mikodev.Binary.Converters
 
         public override unsafe void ToBytes(Allocator allocator, Guid value)
         {
-            fixed (byte* dstptr = &allocator.Allocate(sizeof(Guid)))
+            fixed (byte* dstptr = allocator.Allocate(sizeof(Guid)))
             {
                 if (origin)
                     *(Guid*)dstptr = value;

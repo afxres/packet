@@ -11,7 +11,7 @@
     <Company>Mikodev</Company>
     <Copyright>Mikodev 2018</Copyright>
     <Product>Mikodev.Binary</Product>
-    <Version>2.4.2</Version>
+    <Version>2.5.1</Version>
     <PackageTags>binary packet dynamic serialize</PackageTags>
     <PackageProjectUrl>https://github.com/afxres/packet</PackageProjectUrl>
   </PropertyGroup>

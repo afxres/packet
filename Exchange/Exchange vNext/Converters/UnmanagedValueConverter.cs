@@ -29,7 +29,7 @@ namespace Mikodev.Binary.Converters
 
         internal static unsafe void Bytes(Allocator allocator, T value)
         {
-            fixed (byte* dstptr = &allocator.Allocate(sizeof(T)))
+            fixed (byte* dstptr = allocator.Allocate(sizeof(T)))
                 UnsafeToBytes(dstptr, value);
         }
 
