@@ -12,6 +12,7 @@ namespace Mikodev.Binary
     {
         private readonly struct ConverterGenerator
         {
+            #region const & static
             private const int TupleMaximumItems = 8;
 
             private const int TupleMinimumItems = 1;
@@ -21,24 +22,31 @@ namespace Mikodev.Binary
             private static readonly MethodInfo sliceMethodInfo = typeof(ReadOnlyMemory<byte>).GetMethod(nameof(ReadOnlyMemory<byte>.Slice), new[] { typeof(int), typeof(int) });
 
             private static MethodInfo fsToListMethodInfo;
+            #endregion
 
             private readonly Cache cache;
 
             private readonly HashSet<Type> types;
 
-            private ConverterGenerator(Cache cache)
+            internal ConverterGenerator(Cache cache)
             {
                 this.cache = cache;
                 types = new HashSet<Type>();
             }
 
-            internal static Converter GenerateConverter(Cache cache, Type type)
+            internal Converter GetOrGenerateConverter(Type type)
             {
-                var generator = new ConverterGenerator(cache);
-                var converter = generator.GetOrGenerateConverter(type);
-                return converter;
+                var converters = cache.converters;
+                if (cache.converters.TryGetValue(type, out var result))
+                    return result;
+                if (!types.Add(type))
+                    throw new InvalidOperationException($"Circular type reference detected! type: {type}");
+                var converter = GenerateConverter(type);
+                converter.Initialize(cache);
+                return cache.converters.GetOrAdd(type, converter);
             }
 
+            #region misc
             private static MethodCallExpression MakeDelegateCall(Delegate functor, params Expression[] arguments)
             {
                 var method = functor.Method;
@@ -46,41 +54,25 @@ namespace Mikodev.Binary
                 return Expression.Call(instance, method, arguments);
             }
 
-            #region get or generate
             private byte[] GetOrCache(string key)
             {
-                var texts = cache.texts;
-                if (!texts.TryGetValue(key, out var bytes))
-                    texts.TryAdd(key, (bytes = Converter.Encoding.GetBytes(key)));
-                return bytes;
+                if (cache.texts.TryGetValue(key, out var result))
+                    return result;
+                var bytes = Converter.Encoding.GetBytes(key);
+                return cache.texts.GetOrAdd(key, bytes);
             }
 
             private DictionaryAdapter GetOrGenerateDictionaryAdapter(params Type[] elementTypes)
             {
-                var adapters = cache.adapters;
                 var adapterType = typeof(DictionaryAdapter<,>).MakeGenericType(elementTypes);
-                if (!adapters.TryGetValue(adapterType, out var adapter))
-                {
-                    if (elementTypes[0] == typeof(object))
-                        throw new InvalidOperationException($"Invalid dictionary key type: {typeof(object)}");
-                    var keyConverter = GetOrGenerateConverter(elementTypes[0]);
-                    var valueConverter = GetOrGenerateConverter(elementTypes[1]);
-                    adapter = (DictionaryAdapter)Activator.CreateInstance(adapterType, keyConverter, valueConverter);
-                    adapters.TryAdd(adapterType, adapter);
-                }
-                return adapter;
-            }
-
-            private Converter GetOrGenerateConverter(Type type)
-            {
-                var converters = cache.converters;
-                if (converters.TryGetValue(type, out var converter))
-                    return converter;
-                if (!types.Add(type))
-                    throw new InvalidOperationException($"Circular type reference detected! type: {type}");
-                converter = GenerateConverter(type);
-                converters.TryAdd(type, converter);
-                return converter;
+                if (cache.adapters.TryGetValue(adapterType, out var result))
+                    return result;
+                if (elementTypes[0] == typeof(object))
+                    throw new InvalidOperationException($"Invalid dictionary key type: {typeof(object)}");
+                var keyConverter = GetOrGenerateConverter(elementTypes[0]);
+                var valueConverter = GetOrGenerateConverter(elementTypes[1]);
+                var adapter = (DictionaryAdapter)Activator.CreateInstance(adapterType, keyConverter, valueConverter);
+                return cache.adapters.GetOrAdd(adapterType, adapter);
             }
             #endregion
 

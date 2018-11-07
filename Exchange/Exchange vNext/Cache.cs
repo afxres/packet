@@ -92,9 +92,10 @@ namespace Mikodev.Binary
 
         internal Converter GetConverter(Type type)
         {
-            if (!converters.TryGetValue(type, out var converter))
-                converter = ConverterGenerator.GenerateConverter(this, type);
-            return converter;
+            if (converters.TryGetValue(type, out var result))
+                return result;
+            var generator = new ConverterGenerator(this);
+            return generator.GetOrGenerateConverter(type);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
