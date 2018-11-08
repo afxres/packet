@@ -21,12 +21,12 @@ namespace Mikodev.Binary.Converters
             }
         }
 
-        public override unsafe decimal ToValue(ReadOnlyMemory<byte> memory)
+        public override unsafe decimal ToValue(ReadOnlySpan<byte> memory)
         {
             if (memory.Length < sizeof(decimal))
                 ThrowHelper.ThrowOverflow();
             var bits = new int[4];
-            fixed (byte* srcptr = memory.Span)
+            fixed (byte* srcptr = memory)
             fixed (int* dstptr = &bits[0])
             {
                 if (origin)

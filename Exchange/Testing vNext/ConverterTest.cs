@@ -24,14 +24,14 @@ namespace Mikodev.Testing
                 Tested = true;
             }
 
-            public override EmptyClass ToValue(ReadOnlyMemory<byte> memory)
+            public override EmptyClass ToValue(ReadOnlySpan<byte> memory)
             {
                 throw new NotImplementedException();
             }
 
             public override void ToBytesAny(Allocator allocator, object value) => base.ToBytesAny(allocator, value);
 
-            public override object ToValueAny(ReadOnlyMemory<byte> memory) => base.ToValueAny(memory);
+            public override object ToValueAny(ReadOnlySpan<byte> memory) => base.ToValueAny(memory);
         }
 
         private sealed class Person : IEquatable<Person>
@@ -62,7 +62,7 @@ namespace Mikodev.Testing
 
             public override void ToBytes(Allocator allocator, Person value) => throw new NotImplementedException();
 
-            public override Person ToValue(ReadOnlyMemory<byte> memory) => throw new NotImplementedException();
+            public override Person ToValue(ReadOnlySpan<byte> memory) => throw new NotImplementedException();
 
             public override void ToBytesAny(Allocator allocator, object value)
             {
@@ -73,7 +73,7 @@ namespace Mikodev.Testing
                 converter.ToBytes(allocator, (person.Id, person.Name));
             }
 
-            public override object ToValueAny(ReadOnlyMemory<byte> memory)
+            public override object ToValueAny(ReadOnlySpan<byte> memory)
             {
                 if (memory.IsEmpty)
                     return null;

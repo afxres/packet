@@ -102,14 +102,14 @@ namespace Mikodev.Binary
         internal Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
 
         #region deserialize
-        public T ToValue<T>(ReadOnlyMemory<byte> memory)
+        public T ToValue<T>(ReadOnlySpan<byte> memory)
         {
             var converter = GetConverter<T>();
             var value = converter.ToValue(memory);
             return value;
         }
 
-        public object ToValue(ReadOnlyMemory<byte> memory, Type type)
+        public object ToValue(ReadOnlySpan<byte> memory, Type type)
         {
             if (type == null)
                 ThrowHelper.ThrowArgumentNull();
@@ -118,7 +118,7 @@ namespace Mikodev.Binary
             return value;
         }
 
-        public T ToValue<T>(ReadOnlyMemory<byte> memory, T anonymous) => ToValue<T>(memory);
+        public T ToValue<T>(ReadOnlySpan<byte> memory, T anonymous) => ToValue<T>(memory);
         #endregion
 
         #region serialize, token

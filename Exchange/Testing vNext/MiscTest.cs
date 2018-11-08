@@ -132,8 +132,8 @@ namespace Mikodev.Testing
                 var expand = new byte[buffer.Length + 64];
                 var offset = random.Next(0, 64);
                 Buffer.BlockCopy(buffer, 0, expand, offset, length);
-                var r1 = cache.ToValue(new ReadOnlyMemory<byte>(expand, offset, length), anonymous);
-                var r2 = cache.ToValue(new ReadOnlyMemory<byte>(expand, offset, length), anonymous.GetType());
+                var r1 = cache.ToValue(new ReadOnlySpan<byte>(expand, offset, length), anonymous);
+                var r2 = cache.ToValue(new ReadOnlySpan<byte>(expand, offset, length), anonymous.GetType());
                 var r3 = cache.AsToken(new ReadOnlyMemory<byte>(expand, offset, length)).As(anonymous);
                 var r4 = cache.AsToken(new ReadOnlyMemory<byte>(expand, offset, length)).As(anonymous.GetType());
 
@@ -289,10 +289,8 @@ namespace Mikodev.Testing
             };
 
             var buffer = cache.ToBytes(anonymous);
-            var value = cache.ToValue<object>(buffer);
-            var objects = cache.ToValue<Dictionary<string, object>>(buffer);
-
-            Assert.IsTrue(objects.Count == 3);
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<object>(buffer), x => x.Message.StartsWith("Invalid type"));
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<Dictionary<string, object>>(buffer), x => x.Message.StartsWith("Invalid type"));
 
             Assert.IsTrue(typeof(IDynamicMetaObjectProvider).IsAssignableFrom(typeof(Token)));
             AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<Token>(buffer));

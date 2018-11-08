@@ -24,7 +24,7 @@ namespace Mikodev.Binary.RuntimeConverters
             toBytes.Invoke(allocator, value);
         }
 
-        public override unsafe T ToValue(ReadOnlyMemory<byte> memory)
+        public override unsafe T ToValue(ReadOnlySpan<byte> memory)
         {
             if (toValue == null)
                 throw new InvalidOperationException($"Unable to get value, type: {typeof(T)}");
@@ -32,7 +32,7 @@ namespace Mikodev.Binary.RuntimeConverters
                 return ThrowHelper.ThrowOverflowOrNull<T>();
 
             var dictionary = new HybridDictionary(capacity);
-            fixed (byte* srcptr = memory.Span)
+            fixed (byte* srcptr = memory)
             {
                 var vernier = new Vernier(srcptr, memory.Length);
                 while (vernier.Any())
@@ -40,11 +40,11 @@ namespace Mikodev.Binary.RuntimeConverters
                     vernier.Update();
                     var key = Encoding.GetString(srcptr + vernier.offset, vernier.length);
                     vernier.Update();
-                    var value = memory.Slice(vernier.offset, vernier.length);
+                    var value = new Segment(vernier.offset, vernier.length);
                     dictionary.Add(key, value);
                 }
             }
-            return toValue.Invoke(dictionary);
+            return toValue.Invoke(memory, dictionary);
         }
     }
 }

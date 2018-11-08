@@ -21,7 +21,7 @@ namespace Mikodev.Binary.Converters
             }
         }
 
-        public override unsafe IPEndPoint ToValue(ReadOnlyMemory<byte> memory)
+        public override unsafe IPEndPoint ToValue(ReadOnlySpan<byte> memory)
         {
             if (memory.IsEmpty)
                 return null;
@@ -30,7 +30,7 @@ namespace Mikodev.Binary.Converters
                 ThrowHelper.ThrowOverflow();
             int port;
             var addressBytes = new byte[addressLength];
-            fixed (byte* srcptr = memory.Span)
+            fixed (byte* srcptr = memory)
             {
                 fixed (byte* dstptr = &addressBytes[0])
                     Unsafe.Copy(dstptr, srcptr, addressLength);

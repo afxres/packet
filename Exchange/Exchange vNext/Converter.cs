@@ -48,7 +48,7 @@ namespace Mikodev.Binary
 
         public abstract void ToBytesAny(Allocator allocator, object value);
 
-        public abstract object ToValueAny(ReadOnlyMemory<byte> memory);
+        public abstract object ToValueAny(ReadOnlySpan<byte> memory);
 
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -74,10 +74,10 @@ namespace Mikodev.Binary
 
         public override void ToBytesAny(Allocator allocator, object value) => ToBytes(allocator, (T)value);
 
-        public override object ToValueAny(ReadOnlyMemory<byte> memory) => ToValue(memory);
+        public override object ToValueAny(ReadOnlySpan<byte> memory) => ToValue(memory);
 
         public abstract void ToBytes(Allocator allocator, T value);
 
-        public abstract T ToValue(ReadOnlyMemory<byte> memory);
+        public abstract T ToValue(ReadOnlySpan<byte> memory);
     }
 }

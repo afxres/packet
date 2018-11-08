@@ -40,7 +40,7 @@ namespace Sample
 
             for (var k = 0; k < loop; k++)
             {
-                using (new TraceWatch("ToBytes")) // 379.582 ms
+                using (new TraceWatch("ToBytes")) // 366.247 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -48,7 +48,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("ToValue")) // 785.532 ms
+                using (new TraceWatch("ToValue")) // 714.640 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -56,7 +56,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketWriter")) // 1995.900 ms
+                using (new TraceWatch("PacketWriter")) // 1911.050 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -64,7 +64,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketReader")) // 1887.156 ms
+                using (new TraceWatch("PacketReader")) // 1848.211 ms
                 {
                     for (var i = 0; i < max; i++)
                     {

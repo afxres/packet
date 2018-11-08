@@ -30,12 +30,12 @@ namespace Mikodev.Binary.Converters
             }
         }
 
-        public override unsafe Guid ToValue(ReadOnlyMemory<byte> memory)
+        public override unsafe Guid ToValue(ReadOnlySpan<byte> memory)
         {
             if (memory.Length < sizeof(Guid))
                 ThrowHelper.ThrowOverflow();
             var result = default(Guid);
-            fixed (byte* srcptr = memory.Span)
+            fixed (byte* srcptr = memory)
             {
                 if (origin)
                     result = *(Guid*)srcptr;

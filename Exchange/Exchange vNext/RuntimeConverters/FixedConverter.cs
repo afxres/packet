@@ -21,11 +21,11 @@ namespace Mikodev.Binary.RuntimeConverters
             toBytes.Invoke(allocator, value);
         }
 
-        public override unsafe T ToValue(ReadOnlyMemory<byte> memory)
+        public override unsafe T ToValue(ReadOnlySpan<byte> memory)
         {
             if (memory.IsEmpty)
                 return ThrowHelper.ThrowOverflowOrNull<T>();
-            fixed (byte* srcptr = memory.Span)
+            fixed (byte* srcptr = memory)
                 return toValue.Invoke(memory, new Vernier(srcptr, memory.Length));
         }
     }

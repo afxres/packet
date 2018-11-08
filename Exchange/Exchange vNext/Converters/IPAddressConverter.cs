@@ -15,7 +15,7 @@ namespace Mikodev.Binary.Converters
             allocator.Append(result);
         }
 
-        public override IPAddress ToValue(ReadOnlyMemory<byte> memory)
+        public override IPAddress ToValue(ReadOnlySpan<byte> memory)
         {
             if (memory.IsEmpty)
                 return null;

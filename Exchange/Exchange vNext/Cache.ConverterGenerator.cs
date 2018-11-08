@@ -19,7 +19,7 @@ namespace Mikodev.Binary
 
             private static readonly string fsNamespace = "Microsoft.FSharp.Collections";
 
-            private static readonly MethodInfo sliceMethodInfo = typeof(ReadOnlyMemory<byte>).GetMethod(nameof(ReadOnlyMemory<byte>.Slice), new[] { typeof(int), typeof(int) });
+            private static readonly MethodInfo sliceMethodInfo = typeof(ReadOnlySpan<byte>).GetMethod(nameof(ReadOnlySpan<byte>.Slice), new[] { typeof(int), typeof(int) });
 
             private static MethodInfo fsToListMethodInfo;
             #endregion
@@ -170,7 +170,7 @@ namespace Mikodev.Binary
                     // fs map
                     if (IsFSharpMap(type, out var constructorInfo))
                     {
-                        var memory = Expression.Parameter(typeof(ReadOnlyMemory<byte>), "memory");
+                        var memory = Expression.Parameter(typeof(ReadOnlySpan<byte>), "memory");
                         var instance = Expression.New(constructorInfo, MakeDelegateCall(adapter.GetToTupleDelegate(), memory));
                         var delegateType = typeof(ToValue<>).MakeGenericType(type);
                         var lambda = Expression.Lambda(delegateType, instance, memory);
@@ -235,7 +235,7 @@ namespace Mikodev.Binary
 
             private static LambdaExpression TupleToValueExpression(Type type, ConstructorInfo constructorInfo, Converter[] converters)
             {
-                var memory = Expression.Parameter(typeof(ReadOnlyMemory<byte>), "memory");
+                var memory = Expression.Parameter(typeof(ReadOnlySpan<byte>), "memory");
                 var vernier = Expression.Parameter(typeof(Vernier), "vernier");
                 var expressions = new List<Expression>();
                 var variables = new ParameterExpression[converters.Length];
@@ -392,22 +392,26 @@ namespace Mikodev.Binary
                 return ToValueDelegateAnonymousType(type, delegateType, properties) ?? ToValueDelegateProperties(type, delegateType, properties);
             }
 
+            private MethodCallExpression ToValueFromDictionary(ParameterExpression memory, ParameterExpression dictionary, PropertyInfo property)
+            {
+                var converter = GetOrGenerateConverter(property.PropertyType);
+                var segment = Expression.Call(dictionary, HybridDictionary.GetValueMethodInfo, Expression.Constant(property.Name));
+                var slice = Expression.Call(memory, sliceMethodInfo, Expression.Field(segment, Segment.OffsetFieldInfo), Expression.Field(segment, Segment.LengthFieldInfo));
+                return MakeDelegateCall(converter.GetToValueDelegate(), slice);
+            }
+
             private Delegate ToValueDelegateAnonymousType(Type type, Type delegateType, PropertyInfo[] properties)
             {
                 // anonymous type or record
                 var constructorInfo = type.GetConstructors()?.FirstOrDefault(t => t.GetParameters().Select(x => x.ParameterType).SequenceEqual(properties.Select(x => x.PropertyType)));
                 if (constructorInfo == null || constructorInfo.GetParameters().Select(x => x.Name.ToUpperInvariant()).SequenceEqual(properties.Select(x => x.Name.ToUpperInvariant())) == false)
                     return null;
+                var memory = Expression.Parameter(typeof(ReadOnlySpan<byte>), "memory");
                 var dictionary = Expression.Parameter(typeof(HybridDictionary), "dictionary");
                 var expressionArray = new Expression[properties.Length];
                 for (var i = 0; i < properties.Length; i++)
-                {
-                    var item = properties[i];
-                    var converter = GetOrGenerateConverter(item.PropertyType);
-                    var memory = Expression.Call(dictionary, HybridDictionary.GetValueMethodInfo, Expression.Constant(item.Name));
-                    expressionArray[i] = MakeDelegateCall(converter.GetToValueDelegate(), memory);
-                }
-                var lambda = Expression.Lambda(delegateType, Expression.New(constructorInfo, expressionArray), dictionary);
+                    expressionArray[i] = ToValueFromDictionary(memory, dictionary, properties[i]);
+                var lambda = Expression.Lambda(delegateType, Expression.New(constructorInfo, expressionArray), memory, dictionary);
                 return lambda.Compile();
             }
 
@@ -415,6 +419,7 @@ namespace Mikodev.Binary
             {
                 if (!type.IsValueType && type.GetConstructor(Type.EmptyTypes) == null)
                     return null;
+                var memory = Expression.Parameter(typeof(ReadOnlySpan<byte>), "memory");
                 var dictionary = Expression.Parameter(typeof(HybridDictionary), "dictionary");
                 var instance = Expression.Variable(type, "instance");
                 var expressionList = new List<Expression> { Expression.Assign(instance, Expression.New(type)) };
@@ -422,13 +427,11 @@ namespace Mikodev.Binary
                 {
                     if (property.GetSetMethod() == null)
                         throw new InvalidOperationException($"Property '{property.Name}' does not have a public setter, type: {type}");
-                    var converter = GetOrGenerateConverter(property.PropertyType);
-                    var memory = Expression.Call(dictionary, HybridDictionary.GetValueMethodInfo, Expression.Constant(property.Name));
-                    var expression = MakeDelegateCall(converter.GetToValueDelegate(), memory);
+                    var expression = ToValueFromDictionary(memory, dictionary, property);
                     expressionList.Add(Expression.Assign(Expression.Property(instance, property), expression));
                 }
                 expressionList.Add(instance);
-                var lambda = Expression.Lambda(delegateType, Expression.Block(new[] { instance }, expressionList), dictionary);
+                var lambda = Expression.Lambda(delegateType, Expression.Block(new[] { instance }, expressionList), memory, dictionary);
                 return lambda.Compile();
             }
             #endregion

@@ -29,7 +29,7 @@ namespace Mikodev.Binary.RuntimeConverters
                     converter.ToBytes(allocator, i);
         }
 
-        public override T ToValue(ReadOnlyMemory<byte> memory)
+        public override T ToValue(ReadOnlySpan<byte> memory)
         {
             if (toValue == null)
                 throw new InvalidOperationException($"Unable to get collection, type: {typeof(T)}");

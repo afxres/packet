@@ -33,11 +33,11 @@ namespace Mikodev.Binary.Converters
                 UnsafeToBytes(dstptr, value);
         }
 
-        internal static unsafe T Value(ReadOnlyMemory<byte> memory)
+        internal static unsafe T Value(ReadOnlySpan<byte> memory)
         {
             if (memory.Length < sizeof(T))
                 ThrowHelper.ThrowOverflow();
-            fixed (byte* srcptr = memory.Span)
+            fixed (byte* srcptr = memory)
                 return UnsafeToValue(srcptr);
         }
 
@@ -45,6 +45,6 @@ namespace Mikodev.Binary.Converters
 
         public override void ToBytes(Allocator allocator, T value) => Bytes(allocator, value);
 
-        public override T ToValue(ReadOnlyMemory<byte> memory) => Value(memory);
+        public override T ToValue(ReadOnlySpan<byte> memory) => Value(memory);
     }
 }

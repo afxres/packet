@@ -49,11 +49,10 @@ namespace Mikodev.Testing
             var t1 = cache.ToBytes(anonymous);
             var t2 = PacketConvert.Serialize(anonymous);
             var r1 = PacketConvert.Deserialize(t1, anonymous);
-            var r2 = cache.ToValue(t2, anonymous);
+            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue(t2, anonymous), x => x.Message.StartsWith("Invalid type"));
+            var r2 = (dynamic)cache.AsToken(t2);
 
             Assert.IsFalse(ReferenceEquals(anonymous, r1));
-            Assert.IsFalse(ReferenceEquals(anonymous, r2));
-
             var n1 = r1.normal;
             var n2 = r2.normal;
 

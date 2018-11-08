@@ -23,7 +23,7 @@ namespace Mikodev.Binary.Converters
             }
         }
 
-        public override unsafe T[] ToValue(ReadOnlyMemory<byte> memory)
+        public override unsafe T[] ToValue(ReadOnlySpan<byte> memory)
         {
             if (memory.IsEmpty)
                 return Array.Empty<T>();
@@ -32,7 +32,7 @@ namespace Mikodev.Binary.Converters
             if (remainder != 0)
                 ThrowHelper.ThrowOverflow();
             var target = new T[quotient];
-            fixed (byte* srcptr = memory.Span)
+            fixed (byte* srcptr = memory)
             fixed (T* dstptr = &target[0])
             {
                 if (origin)

@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testing", "Testing\Testing.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Exchange vNext", "Exchange vNext\Exchange vNext.csproj", "{E0C3C8F9-97AF-4338-970F-E3616CB64080}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample vNext", "Sample vNext\Sample vNext.csproj", "{1E09A520-39A9-45A3-8D05-36607E93B990}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample vNext", "Sample vNext\Sample vNext.csproj", "{1E09A520-39A9-45A3-8D05-36607E93B990}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testing vNext", "Testing vNext\Testing vNext.csproj", "{7A676699-3895-4CCE-93ED-1F59EEE5F0D7}"
 EndProject

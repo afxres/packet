@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using TValue = System.ReadOnlyMemory<byte>;
+using TValue = Mikodev.Binary.Segment;
 
 namespace Mikodev.Binary
 {

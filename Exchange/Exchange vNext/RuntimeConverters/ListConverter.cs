@@ -18,7 +18,7 @@ namespace Mikodev.Binary.RuntimeConverters
                     converter.ToBytes(allocator, value[i]);
         }
 
-        internal static unsafe List<T> Value(ReadOnlyMemory<byte> memory, Converter<T> converter)
+        internal static unsafe List<T> Value(ReadOnlySpan<byte> memory, Converter<T> converter)
         {
             if (memory.IsEmpty)
                 return new List<T>(0);
@@ -26,7 +26,7 @@ namespace Mikodev.Binary.RuntimeConverters
             if (definition == 0)
             {
                 var list = new List<T>(8);
-                fixed (byte* srcptr = memory.Span)
+                fixed (byte* srcptr = memory)
                 {
                     var vernier = new Vernier(srcptr, memory.Length);
                     while (vernier.Any())
@@ -63,6 +63,6 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public override void ToBytes(Allocator allocator, List<T> value) => Bytes(allocator, value, converter);
 
-        public override List<T> ToValue(ReadOnlyMemory<byte> memory) => arrayConverter == null ? Value(memory, converter) : new List<T>(arrayConverter.ToValue(memory));
+        public override List<T> ToValue(ReadOnlySpan<byte> memory) => arrayConverter == null ? Value(memory, converter) : new List<T>(arrayConverter.ToValue(memory));
     }
 }

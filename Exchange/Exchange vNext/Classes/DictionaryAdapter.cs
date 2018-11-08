@@ -47,12 +47,12 @@ namespace Mikodev.Binary
             }
         }
 
-        public unsafe Dictionary<TK, TV> Value(ReadOnlyMemory<byte> memory)
+        public unsafe Dictionary<TK, TV> Value(ReadOnlySpan<byte> memory)
         {
             if (memory.IsEmpty)
                 return new Dictionary<TK, TV>(0);
             var dictionary = new Dictionary<TK, TV>(8);
-            fixed (byte* srcptr = memory.Span)
+            fixed (byte* srcptr = memory)
             {
                 var vernier = new Vernier(srcptr, memory.Length);
                 while (vernier.Any())
@@ -67,12 +67,12 @@ namespace Mikodev.Binary
             return dictionary;
         }
 
-        public unsafe List<Tuple<TK, TV>> Tuple(ReadOnlyMemory<byte> memory)
+        public unsafe List<Tuple<TK, TV>> Tuple(ReadOnlySpan<byte> memory)
         {
             if (memory.IsEmpty)
                 return new List<Tuple<TK, TV>>(0);
             var list = new List<Tuple<TK, TV>>(8);
-            fixed (byte* srcptr = memory.Span)
+            fixed (byte* srcptr = memory)
             {
                 var vernier = new Vernier(srcptr, memory.Length);
                 while (vernier.Any())
