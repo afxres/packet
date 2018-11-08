@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Mikodev.Binary.RuntimeConverters
 {
@@ -7,11 +6,11 @@ namespace Mikodev.Binary.RuntimeConverters
     {
         private readonly ToBytes<T> toBytes;
 
-        private readonly Func<Dictionary<string, ReadOnlyMemory<byte>>, T> toValue;
+        private readonly ToValueExpando<T> toValue;
 
         private readonly int capacity;
 
-        public ExpandoConverter(ToBytes<T> toBytes, Func<Dictionary<string, ReadOnlyMemory<byte>>, T> toValue, int capacity) : base(0)
+        public ExpandoConverter(ToBytes<T> toBytes, ToValueExpando<T> toValue, int capacity) : base(0)
         {
             this.toBytes = toBytes;
             this.toValue = toValue;
@@ -32,7 +31,7 @@ namespace Mikodev.Binary.RuntimeConverters
             if (memory.IsEmpty)
                 return ThrowHelper.ThrowOverflowOrNull<T>();
 
-            var dictionary = new Dictionary<string, ReadOnlyMemory<byte>>(capacity);
+            var dictionary = new HybridDictionary(capacity);
             fixed (byte* srcptr = memory.Span)
             {
                 var vernier = new Vernier(srcptr, memory.Length);

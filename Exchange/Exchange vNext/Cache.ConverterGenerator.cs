@@ -388,7 +388,7 @@ namespace Mikodev.Binary
             {
                 if (type.IsAbstract || type.IsInterface)
                     return null;
-                var delegateType = typeof(Func<,>).MakeGenericType(typeof(Dictionary<string, ReadOnlyMemory<byte>>), type);
+                var delegateType = typeof(ToValueExpando<>).MakeGenericType(type);
                 return ToValueDelegateAnonymousType(type, delegateType, properties) ?? ToValueDelegateProperties(type, delegateType, properties);
             }
 
@@ -398,13 +398,13 @@ namespace Mikodev.Binary
                 var constructorInfo = type.GetConstructors()?.FirstOrDefault(t => t.GetParameters().Select(x => x.ParameterType).SequenceEqual(properties.Select(x => x.PropertyType)));
                 if (constructorInfo == null || constructorInfo.GetParameters().Select(x => x.Name.ToUpperInvariant()).SequenceEqual(properties.Select(x => x.Name.ToUpperInvariant())) == false)
                     return null;
-                var dictionary = Expression.Parameter(typeof(Dictionary<string, ReadOnlyMemory<byte>>), "dictionary");
+                var dictionary = Expression.Parameter(typeof(HybridDictionary), "dictionary");
                 var expressionArray = new Expression[properties.Length];
                 for (var i = 0; i < properties.Length; i++)
                 {
                     var item = properties[i];
                     var converter = GetOrGenerateConverter(item.PropertyType);
-                    var memory = Expression.Property(dictionary, "Item", Expression.Constant(item.Name));
+                    var memory = Expression.Call(dictionary, HybridDictionary.GetValueMethodInfo, Expression.Constant(item.Name));
                     expressionArray[i] = MakeDelegateCall(converter.GetToValueDelegate(), memory);
                 }
                 var lambda = Expression.Lambda(delegateType, Expression.New(constructorInfo, expressionArray), dictionary);
@@ -415,7 +415,7 @@ namespace Mikodev.Binary
             {
                 if (!type.IsValueType && type.GetConstructor(Type.EmptyTypes) == null)
                     return null;
-                var dictionary = Expression.Parameter(typeof(Dictionary<string, ReadOnlyMemory<byte>>), "dictionary");
+                var dictionary = Expression.Parameter(typeof(HybridDictionary), "dictionary");
                 var instance = Expression.Variable(type, "instance");
                 var expressionList = new List<Expression> { Expression.Assign(instance, Expression.New(type)) };
                 foreach (var property in properties)
@@ -423,7 +423,7 @@ namespace Mikodev.Binary
                     if (property.GetSetMethod() == null)
                         throw new InvalidOperationException($"Property '{property.Name}' does not have a public setter, type: {type}");
                     var converter = GetOrGenerateConverter(property.PropertyType);
-                    var memory = Expression.Property(dictionary, "Item", Expression.Constant(property.Name));
+                    var memory = Expression.Call(dictionary, HybridDictionary.GetValueMethodInfo, Expression.Constant(property.Name));
                     var expression = MakeDelegateCall(converter.GetToValueDelegate(), memory);
                     expressionList.Add(Expression.Assign(Expression.Property(instance, property), expression));
                 }
