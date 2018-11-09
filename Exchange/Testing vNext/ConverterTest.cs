@@ -8,23 +8,24 @@ namespace Mikodev.Testing
     [TestClass]
     public class ConverterTest
     {
-        private sealed class EmptyClass { }
+        private sealed class Empty { }
 
-        private sealed class EmptyClassConverter : Converter<EmptyClass>
+        private sealed class EmptyConverter : Converter<Empty>
         {
-            public bool Tested { get; private set; } = false;
+            public bool Pass { get; private set; } = false;
 
-            public EmptyClassConverter() : base(0) { }
+            public EmptyConverter() : base(0) { }
 
-            public override void ToBytes(ref Allocator allocator, EmptyClass value)
+            public override void ToBytes(ref Allocator allocator, Empty value)
             {
                 Assert.IsTrue(GetConverter<int>() != null);
                 Assert.IsTrue(GetConverter(typeof(double)) != null);
+                Assert.IsTrue(GetConverter(new { id = 0 }) != null);
                 AssertExtension.MustFail<ArgumentNullException>(() => GetConverter(null));
-                Tested = true;
+                Pass = true;
             }
 
-            public override EmptyClass ToValue(ReadOnlySpan<byte> memory)
+            public override Empty ToValue(ReadOnlySpan<byte> memory)
             {
                 throw new NotImplementedException();
             }
@@ -86,7 +87,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void NotInitialized()
         {
-            var converter = new EmptyClassConverter();
+            var converter = new EmptyConverter();
             AssertExtension.MustFail<InvalidOperationException>(() =>
             {
                 var allocator = default(Allocator);
@@ -98,12 +99,19 @@ namespace Mikodev.Testing
         [TestMethod]
         public void AlreadyInitialized()
         {
-            var converter = new EmptyClassConverter();
-            var c1 = new Cache(new[] { converter });
+            var converter = new EmptyConverter();
+            var _ = new Cache(new[] { converter });
             AssertExtension.MustFail<InvalidOperationException>(() => new Cache(new[] { converter }), x => x.Message.Contains("already initialized"));
+        }
+
+        [TestMethod]
+        public void GetConverter()
+        {
             var allocator = default(Allocator);
+            var converter = new EmptyConverter();
+            Assert.IsFalse(converter.Pass);
             converter.ToBytes(ref allocator, null);
-            Assert.IsTrue(converter.Tested);
+            Assert.IsTrue(converter.Pass);
         }
 
         [TestMethod]

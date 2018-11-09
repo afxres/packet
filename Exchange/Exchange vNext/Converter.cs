@@ -28,10 +28,9 @@ namespace Mikodev.Binary
             ThrowHelper.ThrowConverterInitialized();
         }
 
+        #region protected
         protected Converter GetConverter(Type type)
         {
-            if (type == null)
-                ThrowHelper.ThrowArgumentNull();
             var cache = this.cache;
             if (cache == null)
                 ThrowHelper.ThrowConverterNotInitialized();
@@ -39,6 +38,9 @@ namespace Mikodev.Binary
         }
 
         protected Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
+
+        protected Converter<T> GetConverter<T>(T anonymous) => (Converter<T>)GetConverter(typeof(T));
+        #endregion
 
         internal abstract Type GetValueType();
 
