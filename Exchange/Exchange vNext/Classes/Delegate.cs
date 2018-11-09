@@ -4,7 +4,7 @@ namespace Mikodev.Binary
 {
     internal delegate T ToValue<out T>(ReadOnlySpan<byte> memory);
 
-    internal delegate void ToBytes<in T>(Allocator allocator, T value);
+    internal delegate void ToBytes<in T>(ref Allocator allocator, T value);
 
     internal delegate T ToValueFixed<out T>(ReadOnlySpan<byte> memory, Vernier vernier);
 

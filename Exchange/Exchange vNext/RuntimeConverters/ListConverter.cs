@@ -6,7 +6,7 @@ namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class ListConverter<T> : Converter<List<T>>
     {
-        internal static void Bytes(Allocator allocator, List<T> value, Converter<T> converter)
+        internal static void Bytes(ref Allocator allocator, List<T> value, Converter<T> converter)
         {
             if (value == null || value.Count == 0)
                 return;
@@ -15,7 +15,7 @@ namespace Mikodev.Binary.RuntimeConverters
                     allocator.AppendValueExtend(converter, value[i]);
             else
                 for (var i = 0; i < value.Count; i++)
-                    converter.ToBytes(allocator, value[i]);
+                    converter.ToBytes(ref allocator, value[i]);
         }
 
         internal static unsafe List<T> Value(ReadOnlySpan<byte> memory, Converter<T> converter)
@@ -61,7 +61,7 @@ namespace Mikodev.Binary.RuntimeConverters
             this.arrayConverter = (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(UnmanagedArrayConverter<>)) ? arrayConverter : null;
         }
 
-        public override void ToBytes(Allocator allocator, List<T> value) => Bytes(allocator, value, converter);
+        public override void ToBytes(ref Allocator allocator, List<T> value) => Bytes(ref allocator, value, converter);
 
         public override List<T> ToValue(ReadOnlySpan<byte> memory) => arrayConverter == null ? Value(memory, converter) : new List<T>(arrayConverter.ToValue(memory));
     }

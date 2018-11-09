@@ -7,7 +7,7 @@ namespace Mikodev.Binary.Converters
     {
         public unsafe TimeSpanConverter() : base(sizeof(T)) { }
 
-        public override void ToBytes(Allocator allocator, TimeSpan value) => UnmanagedValueConverter<T>.Bytes(allocator, value.Ticks);
+        public override void ToBytes(ref Allocator allocator, TimeSpan value) => UnmanagedValueConverter<T>.Bytes(ref allocator, value.Ticks);
 
         public override TimeSpan ToValue(ReadOnlySpan<byte> memory) => new TimeSpan(UnmanagedValueConverter<T>.Value(memory));
     }

@@ -7,7 +7,7 @@ namespace Mikodev.Binary.Converters
     {
         public IPAddressConverter() : base(0) { }
 
-        public override void ToBytes(Allocator allocator, IPAddress value)
+        public override void ToBytes(ref Allocator allocator, IPAddress value)
         {
             if (value == null)
                 return;

@@ -6,7 +6,7 @@ namespace Mikodev.Binary.RuntimeConverters
     {
         public ObjectConverter() : base(0) { }
 
-        public override void ToBytes(Allocator allocator, object value)
+        public override void ToBytes(ref Allocator allocator, object value)
         {
             if (value == null)
                 return;
@@ -14,7 +14,7 @@ namespace Mikodev.Binary.RuntimeConverters
             if (type == typeof(object))
                 throw new InvalidOperationException($"Invalid type: {typeof(object)}");
             var converter = GetConverter(type);
-            converter.ToBytesAny(allocator, value);
+            converter.ToBytesAny(ref allocator, value);
         }
 
         public override object ToValue(ReadOnlySpan<byte> memory) => throw new InvalidOperationException($"Invalid type: {typeof(object)}");

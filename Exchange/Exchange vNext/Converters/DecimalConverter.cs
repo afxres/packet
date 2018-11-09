@@ -8,7 +8,7 @@ namespace Mikodev.Binary.Converters
 
         public DecimalConverter() : base(sizeof(decimal)) { }
 
-        public override unsafe void ToBytes(Allocator allocator, decimal value)
+        public override unsafe void ToBytes(ref Allocator allocator, decimal value)
         {
             var source = decimal.GetBits(value);
             fixed (byte* dstptr = allocator.Allocate(sizeof(decimal)))

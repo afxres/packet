@@ -4,7 +4,7 @@ namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class ArrayConverter<T> : Converter<T[]>
     {
-        internal static void Bytes(Allocator allocator, T[] value, Converter<T> converter)
+        internal static void Bytes(ref Allocator allocator, T[] value, Converter<T> converter)
         {
             if (value == null || value.Length == 0)
                 return;
@@ -14,7 +14,7 @@ namespace Mikodev.Binary.RuntimeConverters
                     allocator.AppendValueExtend(converter, value[i]);
             else
                 for (var i = 0; i < value.Length; i++)
-                    converter.ToBytes(allocator, value[i]);
+                    converter.ToBytes(ref allocator, value[i]);
         }
 
         internal static T[] Value(ReadOnlySpan<byte> memory, Converter<T> converter)
@@ -38,7 +38,7 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public ArrayConverter(Converter<T> converter) : base(0) => this.converter = converter;
 
-        public override void ToBytes(Allocator allocator, T[] value) => Bytes(allocator, value, converter);
+        public override void ToBytes(ref Allocator allocator, T[] value) => Bytes(ref allocator, value, converter);
 
         public override T[] ToValue(ReadOnlySpan<byte> memory) => Value(memory, converter);
     }

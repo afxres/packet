@@ -19,7 +19,7 @@ namespace Mikodev.Binary.Converters
             *(uint64*)(target + 8) = *(uint64*)(source + 8);
         }
 
-        public override unsafe void ToBytes(Allocator allocator, Guid value)
+        public override unsafe void ToBytes(ref Allocator allocator, Guid value)
         {
             fixed (byte* dstptr = allocator.Allocate(sizeof(Guid)))
             {

@@ -14,7 +14,7 @@ namespace Mikodev.Binary.RuntimeConverters
             this.toValue = toValue;
         }
 
-        public override void ToBytes(Allocator allocator, T value) => toBytes.Invoke(allocator, value);
+        public override void ToBytes(ref Allocator allocator, T value) => toBytes.Invoke(ref allocator, value);
 
         public override T ToValue(ReadOnlySpan<byte> memory) => toValue.Invoke(memory);
     }

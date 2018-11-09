@@ -46,7 +46,7 @@ namespace Mikodev.Binary
 
         internal abstract Delegate GetToValueDelegate();
 
-        public abstract void ToBytesAny(Allocator allocator, object value);
+        public abstract void ToBytesAny(ref Allocator allocator, object value);
 
         public abstract object ToValueAny(ReadOnlySpan<byte> memory);
 
@@ -72,11 +72,11 @@ namespace Mikodev.Binary
 
         internal sealed override Delegate GetToValueDelegate() => new ToValue<T>(ToValue);
 
-        public override void ToBytesAny(Allocator allocator, object value) => ToBytes(allocator, (T)value);
+        public override void ToBytesAny(ref Allocator allocator, object value) => ToBytes(ref allocator, (T)value);
 
         public override object ToValueAny(ReadOnlySpan<byte> memory) => ToValue(memory);
 
-        public abstract void ToBytes(Allocator allocator, T value);
+        public abstract void ToBytes(ref Allocator allocator, T value);
 
         public abstract T ToValue(ReadOnlySpan<byte> memory);
     }

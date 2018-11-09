@@ -27,7 +27,7 @@ namespace Mikodev.Binary.Converters
             return result;
         }
 
-        internal static unsafe void Bytes(Allocator allocator, T value)
+        internal static unsafe void Bytes(ref Allocator allocator, T value)
         {
             fixed (byte* dstptr = allocator.Allocate(sizeof(T)))
                 UnsafeToBytes(dstptr, value);
@@ -43,7 +43,7 @@ namespace Mikodev.Binary.Converters
 
         public unsafe UnmanagedValueConverter() : base(sizeof(T)) { }
 
-        public override void ToBytes(Allocator allocator, T value) => Bytes(allocator, value);
+        public override void ToBytes(ref Allocator allocator, T value) => Bytes(ref allocator, value);
 
         public override T ToValue(ReadOnlySpan<byte> memory) => Value(memory);
     }

@@ -7,7 +7,7 @@ namespace Mikodev.Binary.Converters
     {
         public IPEndPointConverter() : base(0) { }
 
-        public override unsafe void ToBytes(Allocator allocator, IPEndPoint value)
+        public override unsafe void ToBytes(ref Allocator allocator, IPEndPoint value)
         {
             if (value == null)
                 return;

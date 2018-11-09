@@ -30,7 +30,7 @@ namespace Mikodev.Binary
 
         public sealed override Delegate GetToTupleDelegate() => new ToValue<List<Tuple<TK, TV>>>(Tuple);
 
-        public void Bytes(Allocator allocator, IEnumerable<KeyValuePair<TK, TV>> value)
+        public void Bytes(ref Allocator allocator, IEnumerable<KeyValuePair<TK, TV>> value)
         {
             if (value == null)
                 return;
@@ -39,11 +39,11 @@ namespace Mikodev.Binary
                 if (keyConverter.length == 0)
                     allocator.AppendValueExtend(keyConverter, i.Key);
                 else
-                    keyConverter.ToBytes(allocator, i.Key);
+                    keyConverter.ToBytes(ref allocator, i.Key);
                 if (valueConverter.length == 0)
                     allocator.AppendValueExtend(valueConverter, i.Value);
                 else
-                    valueConverter.ToBytes(allocator, i.Value);
+                    valueConverter.ToBytes(ref allocator, i.Value);
             }
         }
 

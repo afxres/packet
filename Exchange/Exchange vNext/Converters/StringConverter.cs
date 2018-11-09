@@ -6,7 +6,7 @@ namespace Mikodev.Binary.Converters
     {
         public StringConverter() : base(0) { }
 
-        public override void ToBytes(Allocator allocator, string value)
+        public override void ToBytes(ref Allocator allocator, string value)
         {
             allocator.Append(value.AsSpan());
         }

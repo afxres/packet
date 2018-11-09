@@ -5,9 +5,9 @@ using System.Runtime.CompilerServices;
 
 namespace Mikodev.Binary
 {
-    public sealed class Allocator
+    public ref struct Allocator
     {
-        #region non-public
+        #region static or constant
         internal static readonly MethodInfo AppendBytesExtendMethodInfo = typeof(Allocator).GetMethod(nameof(AppendBytesExtend), BindingFlags.Instance | BindingFlags.NonPublic);
 
         internal static readonly MethodInfo AppendValueExtendMethodInfo = typeof(Allocator).GetMethod(nameof(AppendValueExtend), BindingFlags.Instance | BindingFlags.NonPublic);
@@ -15,13 +15,15 @@ namespace Mikodev.Binary
         private const int InitialLength = 256;
 
         private const int MaximumLength = 0x4000_0000;
+        #endregion
 
-        private byte[] buffer = new byte[InitialLength];
+        #region private fields
+        private byte[] buffer;
 
-        private int position = 0;
+        private int position;
+        #endregion
 
-        internal Allocator() { }
-
+        #region non-public methods
         [MethodImpl(MethodImplOptions.NoInlining)]
         private unsafe byte[] ReAllocate(int offset, int require)
         {
@@ -29,16 +31,15 @@ namespace Mikodev.Binary
                 ThrowHelper.ThrowOverflow();
             var source = buffer;
             var limits = (long)(offset + require);
-            var length = (long)(source.Length);
-            do
-            {
-                length <<= 2;
-                if (length > MaximumLength)
+            var length = (long)(source?.Length ?? 0);
+            if (length == 0)
+                length = InitialLength;
+            while (length < limits)
+                if ((length <<= 2) > MaximumLength)
                     ThrowHelper.ThrowOverflow();
-            }
-            while (length < limits);
             var target = new byte[(int)length];
-            Unsafe.Copy(target, source, offset);
+            if (offset != 0)
+                Unsafe.Copy(target, source, offset);
             buffer = target;
             return target;
         }
@@ -47,15 +48,18 @@ namespace Mikodev.Binary
         {
             var offset = position;
             var target = buffer;
-            if (sizeof(int) > (uint)(target.Length - offset))
+            if (target == null || sizeof(int) > (uint)(target.Length - offset))
                 target = ReAllocate(offset, sizeof(int));
-            position = offset + sizeof(int);
+            var size = offset + sizeof(int);
+            position = size;
 
-            converter.ToBytes(this, value);
+            converter.ToBytes(ref this, value);
 
-            const int cursor = sizeof(int) - 1;
-            fixed (byte* dstptr = &buffer[offset + cursor])
-                UnmanagedValueConverter<int>.UnsafeToBytes(dstptr - cursor, position - offset - sizeof(int));
+            target = buffer;
+            if (target == null || target.Length < size)
+                ThrowHelper.ThrowAllocatorModified();
+            fixed (byte* dstptr = &target[offset])
+                UnmanagedValueConverter<int>.UnsafeToBytes(dstptr, position - size);
         }
 
         internal unsafe void AppendBytesExtend(byte[] source)
@@ -68,16 +72,41 @@ namespace Mikodev.Binary
                 Unsafe.Copy(dstptr + sizeof(int), srcptr, length);
             }
         }
-
-        internal byte[] ToArray() => new ReadOnlySpan<byte>(buffer, 0, position).ToArray();
         #endregion
+
+        public int Length => position;
+
+        public int Capacity => buffer?.Length ?? 0;
+
+        public Allocator(byte[] arrayPool)
+        {
+            if (arrayPool == null)
+                ThrowHelper.ThrowArgumentNull();
+            buffer = arrayPool;
+            position = 0;
+        }
+
+        public ReadOnlyMemory<byte> AsMemory()
+        {
+            return new ReadOnlyMemory<byte>(buffer, 0, position);
+        }
+
+        public ReadOnlySpan<byte> AsSpan()
+        {
+            return new ReadOnlySpan<byte>(buffer, 0, position);
+        }
+
+        public byte[] ToArray()
+        {
+            return AsSpan().ToArray();
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Span<byte> Allocate(int length)
         {
             var offset = position;
             var target = buffer;
-            if ((uint)length > (uint)(target.Length - offset))
+            if (target == null || (uint)length > (uint)(target.Length - offset))
                 target = ReAllocate(offset, length);
             position = offset + length;
             return new Span<byte>(target, offset, length);
@@ -97,7 +126,7 @@ namespace Mikodev.Binary
                 charCount = Math.Min(charCount, limits - cursor);
                 var byteCount = encoding.GetMaxByteCount(charCount);
                 var target = buffer;
-                if ((uint)byteCount > (uint)(target.Length - offset))
+                if (target == null || (uint)byteCount > (uint)(target.Length - offset))
                     target = ReAllocate(offset, byteCount);
                 fixed (char* srcptr = &span[cursor])
                 fixed (byte* dstptr = &target[offset])
@@ -120,13 +149,13 @@ namespace Mikodev.Binary
 
         #region override
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override bool Equals(object obj) => throw new NotSupportedException();
+        public override bool Equals(object obj) => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override int GetHashCode() => throw new NotSupportedException();
+        public override int GetHashCode() => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override string ToString() => $"{nameof(Allocator)}(Length: {position}, Capacity: {buffer.Length})";
+        public override string ToString() => $"{nameof(Allocator)}(Length: {Length}, Capacity: {Capacity})";
         #endregion
     }
 }

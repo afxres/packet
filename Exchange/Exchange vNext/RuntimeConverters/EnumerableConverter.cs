@@ -17,7 +17,7 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public Delegate GetToEnumerableDelegate() => toValue;
 
-        public override void ToBytes(Allocator allocator, T value)
+        public override void ToBytes(ref Allocator allocator, T value)
         {
             if (value == null)
                 return;
@@ -26,7 +26,7 @@ namespace Mikodev.Binary.RuntimeConverters
                     allocator.AppendValueExtend(converter, i);
             else
                 foreach (var i in value)
-                    converter.ToBytes(allocator, i);
+                    converter.ToBytes(ref allocator, i);
         }
 
         public override T ToValue(ReadOnlySpan<byte> memory)

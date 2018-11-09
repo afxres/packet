@@ -260,7 +260,7 @@ namespace Mikodev.Binary
             private static LambdaExpression TupleToBytesExpression(Type type, Converter[] converters, int length)
             {
                 var tuple = Expression.Parameter(type, "tuple");
-                var allocator = Expression.Parameter(typeof(Allocator), "allocator");
+                var allocator = Expression.Parameter(typeof(Allocator).MakeByRefType(), "allocator");
                 var offset = default(ParameterExpression);
                 var variables = new List<ParameterExpression>();
                 var expressions = new List<Expression>();
@@ -366,7 +366,7 @@ namespace Mikodev.Binary
             private Delegate ToBytesDelegate(Type type, PropertyInfo[] properties)
             {
                 var instance = Expression.Parameter(type, "instance");
-                var allocator = Expression.Parameter(typeof(Allocator), "allocator");
+                var allocator = Expression.Parameter(typeof(Allocator).MakeByRefType(), "allocator");
                 var position = Expression.Variable(typeof(int), "position");
                 var list = new List<Expression>();
                 foreach (var property in properties)

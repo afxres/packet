@@ -16,7 +16,7 @@ namespace Mikodev.Testing
 
             public EmptyClassConverter() : base(0) { }
 
-            public override void ToBytes(Allocator allocator, EmptyClass value)
+            public override void ToBytes(ref Allocator allocator, EmptyClass value)
             {
                 Assert.IsTrue(GetConverter<int>() != null);
                 Assert.IsTrue(GetConverter(typeof(double)) != null);
@@ -29,7 +29,7 @@ namespace Mikodev.Testing
                 throw new NotImplementedException();
             }
 
-            public override void ToBytesAny(Allocator allocator, object value) => base.ToBytesAny(allocator, value);
+            public override void ToBytesAny(ref Allocator allocator, object value) => base.ToBytesAny(ref allocator, value);
 
             public override object ToValueAny(ReadOnlySpan<byte> memory) => base.ToValueAny(memory);
         }
@@ -60,17 +60,17 @@ namespace Mikodev.Testing
         {
             public PersonConverter() : base(0) { }
 
-            public override void ToBytes(Allocator allocator, Person value) => throw new NotImplementedException();
+            public override void ToBytes(ref Allocator allocator, Person value) => throw new NotImplementedException();
 
             public override Person ToValue(ReadOnlySpan<byte> memory) => throw new NotImplementedException();
 
-            public override void ToBytesAny(Allocator allocator, object value)
+            public override void ToBytesAny(ref Allocator allocator, object value)
             {
                 if (value == null)
                     return;
                 var person = (Person)value;
                 var converter = GetConverter<(int id, string name)>();
-                converter.ToBytes(allocator, (person.Id, person.Name));
+                converter.ToBytes(ref allocator, (person.Id, person.Name));
             }
 
             public override object ToValueAny(ReadOnlySpan<byte> memory)
@@ -87,7 +87,12 @@ namespace Mikodev.Testing
         public void NotInitialized()
         {
             var converter = new EmptyClassConverter();
-            AssertExtension.MustFail<InvalidOperationException>(() => converter.ToBytes(null, null), x => x.Message.Contains("not initialized"));
+            AssertExtension.MustFail<InvalidOperationException>(() =>
+            {
+                var allocator = default(Allocator);
+                converter.ToBytes(ref allocator, null);
+            },
+            x => x.Message.Contains("not initialized"));
         }
 
         [TestMethod]
@@ -96,7 +101,8 @@ namespace Mikodev.Testing
             var converter = new EmptyClassConverter();
             var c1 = new Cache(new[] { converter });
             AssertExtension.MustFail<InvalidOperationException>(() => new Cache(new[] { converter }), x => x.Message.Contains("already initialized"));
-            converter.ToBytes(null, null);
+            var allocator = default(Allocator);
+            converter.ToBytes(ref allocator, null);
             Assert.IsTrue(converter.Tested);
         }
 

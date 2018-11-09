@@ -17,11 +17,11 @@ namespace Mikodev.Binary.RuntimeConverters
             this.capacity = capacity;
         }
 
-        public override void ToBytes(Allocator allocator, T value)
+        public override void ToBytes(ref Allocator allocator, T value)
         {
             if (value == null)
                 return;
-            toBytes.Invoke(allocator, value);
+            toBytes.Invoke(ref allocator, value);
         }
 
         public override unsafe T ToValue(ReadOnlySpan<byte> memory)

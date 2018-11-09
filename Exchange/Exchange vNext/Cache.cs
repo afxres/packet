@@ -90,8 +90,10 @@ namespace Mikodev.Binary
             this.converters = dictionary;
         }
 
-        internal Converter GetConverter(Type type)
+        public Converter GetConverter(Type type)
         {
+            if (type == null)
+                ThrowHelper.ThrowArgumentNull();
             if (converters.TryGetValue(type, out var result))
                 return result;
             var generator = new ConverterGenerator(this);
@@ -99,7 +101,10 @@ namespace Mikodev.Binary
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
+        public Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Converter<T> GetConverter<T>(T anonymous) => (Converter<T>)GetConverter(typeof(T));
 
         #region deserialize
         public T ToValue<T>(ReadOnlySpan<byte> memory)
@@ -126,7 +131,7 @@ namespace Mikodev.Binary
         {
             var converter = GetConverter<T>();
             var allocator = new Allocator();
-            converter.ToBytes(allocator, value);
+            converter.ToBytes(ref allocator, value);
             return allocator.ToArray();
         }
 
@@ -136,7 +141,7 @@ namespace Mikodev.Binary
                 ThrowHelper.ThrowArgumentNull();
             var converter = GetConverter(value.GetType());
             var allocator = new Allocator();
-            converter.ToBytesAny(allocator, value);
+            converter.ToBytesAny(ref allocator, value);
             return allocator.ToArray();
         }
 

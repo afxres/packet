@@ -8,7 +8,7 @@ namespace Mikodev.Binary.Converters
 
         public UnmanagedArrayConverter() : base(0) { }
 
-        public override unsafe void ToBytes(Allocator allocator, T[] array)
+        public override unsafe void ToBytes(ref Allocator allocator, T[] array)
         {
             if (array == null || array.Length == 0)
                 return;

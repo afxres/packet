@@ -43,7 +43,7 @@ namespace Mikodev.Binary
                 if (string.Equals(key, item.Key))
                     return item.Value;
             }
-            throw new KeyNotFoundException();
+            return ThrowHelper.ThrowKeyNotFoundException<TValue>();
         }
     }
 }

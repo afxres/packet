@@ -35,12 +35,14 @@ namespace Sample
             };
 
             var tmp = PacketConvert.Serialize(abo);
+            var converter = cache.GetConverter(abo);
+            var arrayPool = new byte[4096];
 
             /* i7 7700hq, .net core 2.1, release */
 
             for (var k = 0; k < loop; k++)
             {
-                using (new TraceWatch("ToBytes")) // 366.247 ms
+                using (new TraceWatch("ToBytes")) // 367.080 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -48,7 +50,17 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("ToValue")) // 714.640 ms
+                using (new TraceWatch("ToBytes (Converter)")) // 290.836 ms
+                {
+                    for (var i = 0; i < max; i++)
+                    {
+                        var allocator = new Allocator(arrayPool);
+                        converter.ToBytes(ref allocator, abo);
+                        var _ = allocator.ToArray();
+                    }
+                }
+
+                using (new TraceWatch("ToValue")) // 713.233 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -56,7 +68,15 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketWriter")) // 1911.050 ms
+                using (new TraceWatch("ToValue (Converter)")) // 678.498 ms
+                {
+                    for (var i = 0; i < max; i++)
+                    {
+                        var _ = converter.ToValue(tmp);
+                    }
+                }
+
+                using (new TraceWatch("PacketWriter")) // 1884.821 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -64,7 +84,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketReader")) // 1848.211 ms
+                using (new TraceWatch("PacketReader")) // 1794.236 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
