@@ -12,23 +12,22 @@ namespace Mikodev.Testing
 
         private sealed class EmptyConverter : Converter<Empty>
         {
-            public bool Pass { get; private set; } = false;
+            public bool Initialized { get; private set; } = false;
+
+            public Converter<(int, string)> Converter { get; private set; }
 
             public EmptyConverter() : base(0) { }
 
-            public override void ToBytes(ref Allocator allocator, Empty value)
+            protected override void OnInitialize(Cache cache)
             {
-                Assert.IsTrue(GetConverter<int>() != null);
-                Assert.IsTrue(GetConverter(typeof(double)) != null);
-                Assert.IsTrue(GetConverter(new { id = 0 }) != null);
-                AssertExtension.MustFail<ArgumentNullException>(() => GetConverter(null));
-                Pass = true;
+                base.OnInitialize(cache);
+                Initialized = true;
+                Converter = cache.GetConverter<(int, string)>();
             }
 
-            public override Empty ToValue(ReadOnlySpan<byte> memory)
-            {
-                throw new NotImplementedException();
-            }
+            public override void ToBytes(ref Allocator allocator, Empty value) => throw new NotImplementedException();
+
+            public override Empty ToValue(ReadOnlySpan<byte> memory) => throw new NotImplementedException();
 
             public override void ToBytesAny(ref Allocator allocator, object value) => base.ToBytesAny(ref allocator, value);
 
@@ -59,7 +58,14 @@ namespace Mikodev.Testing
 
         private sealed class PersonConverter : Converter<Person>
         {
+            private Converter<(int, string)> converter;
+
             public PersonConverter() : base(0) { }
+
+            protected override void OnInitialize(Cache cache)
+            {
+                converter = cache.GetConverter<(int, string)>();
+            }
 
             public override void ToBytes(ref Allocator allocator, Person value) => throw new NotImplementedException();
 
@@ -70,7 +76,6 @@ namespace Mikodev.Testing
                 if (value == null)
                     return;
                 var person = (Person)value;
-                var converter = GetConverter<(int id, string name)>();
                 converter.ToBytes(ref allocator, (person.Id, person.Name));
             }
 
@@ -78,22 +83,20 @@ namespace Mikodev.Testing
             {
                 if (memory.IsEmpty)
                     return null;
-                var converter = GetConverter<(int id, string name)>();
                 var (id, name) = converter.ToValue(memory);
                 return new Person { Id = id, Name = name };
             }
         }
 
         [TestMethod]
-        public void NotInitialized()
+        public void Initialize()
         {
             var converter = new EmptyConverter();
-            AssertExtension.MustFail<InvalidOperationException>(() =>
-            {
-                var allocator = default(Allocator);
-                converter.ToBytes(ref allocator, null);
-            },
-            x => x.Message.Contains("not initialized"));
+            Assert.IsFalse(converter.Initialized);
+            Assert.IsTrue(converter.Converter == null);
+            var _ = new Cache(new[] { converter });
+            Assert.IsTrue(converter.Initialized);
+            Assert.IsTrue(converter.Converter != null);
         }
 
         [TestMethod]
@@ -102,16 +105,6 @@ namespace Mikodev.Testing
             var converter = new EmptyConverter();
             var _ = new Cache(new[] { converter });
             AssertExtension.MustFail<InvalidOperationException>(() => new Cache(new[] { converter }), x => x.Message.Contains("already initialized"));
-        }
-
-        [TestMethod]
-        public void GetConverter()
-        {
-            var allocator = default(Allocator);
-            var converter = new EmptyConverter();
-            Assert.IsFalse(converter.Pass);
-            converter.ToBytes(ref allocator, null);
-            Assert.IsTrue(converter.Pass);
         }
 
         [TestMethod]

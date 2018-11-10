@@ -242,7 +242,7 @@ namespace Mikodev.Binary
                 for (var i = 0; i < converters.Length; i++)
                 {
                     var converter = converters[i];
-                    var variable = Expression.Variable(converter.GetValueType(), $"item{i + 1}");
+                    var variable = Expression.Variable(converter.type, $"item{i + 1}");
                     variables[i] = variable;
                     var update = Expression.Call(vernier, Vernier.UpdateExceptMethodInfo, Expression.Constant(converter.length, typeof(int)));
                     var offset = Expression.Field(vernier, Vernier.OffsetFieldInfo);
@@ -274,7 +274,7 @@ namespace Mikodev.Binary
                 {
                     var converter = converters[i];
                     var expression = converter.length == 0
-                        ? Expression.Call(allocator, Allocator.AppendValueExtendMethodInfo.MakeGenericMethod(converter.GetValueType()), Expression.Constant(converter), items[i])
+                        ? Expression.Call(allocator, Allocator.AppendValueExtendMethodInfo.MakeGenericMethod(converter.type), Expression.Constant(converter), items[i])
                         : MakeDelegateCall(converter.GetToBytesDelegate(), allocator, items[i]);
                     expressions.Add(expression);
                 }

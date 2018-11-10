@@ -58,14 +58,14 @@ namespace Mikodev.Binary
             converterTypes = dictionary;
         }
 
-        private static ConcurrentDictionary<Type, Converter> GetConverters(IEnumerable<Converter> converters)
+        private static ConcurrentDictionary<Type, Converter> CombineConverters(IEnumerable<Converter> converters)
         {
             var dictionary = new ConcurrentDictionary<Type, Converter>();
             // add user-defined converters
             if (converters != null)
                 foreach (var i in converters)
                     if (i != null)
-                        dictionary.TryAdd(i.GetValueType(), i);
+                        dictionary.TryAdd(i.type, i);
             // try add converters
             foreach (var i in converterTypes)
                 if (!dictionary.ContainsKey(i.Key))
@@ -84,10 +84,10 @@ namespace Mikodev.Binary
 
         public Cache(IEnumerable<Converter> converters = null)
         {
-            var dictionary = GetConverters(converters);
-            foreach (var converter in dictionary.Values)
+            this.converters = CombineConverters(converters);
+            foreach (var converter in this.converters.Values)
                 converter.Initialize(this);
-            this.converters = dictionary;
+            return;
         }
 
         public Converter GetConverter(Type type)

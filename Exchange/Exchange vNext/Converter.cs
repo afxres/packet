@@ -12,41 +12,30 @@ namespace Mikodev.Binary
 
         internal readonly int length;
 
+        internal readonly Type type;
+
         internal Cache cache;
 
-        internal Converter(int length)
+        internal Converter(Type type, int length)
         {
             if (length < 0)
-                ThrowHelper.ThrowArgumentOutOfRange();
+                ThrowHelper.ThrowConverterLengthOutOfRange();
             this.length = length;
+            this.type = type;
         }
-
-        internal void Initialize(Cache cache)
-        {
-            if (Interlocked.CompareExchange(ref this.cache, cache, null) == null)
-                return;
-            ThrowHelper.ThrowConverterInitialized();
-        }
-
-        #region protected
-        protected Converter GetConverter(Type type)
-        {
-            var cache = this.cache;
-            if (cache == null)
-                ThrowHelper.ThrowConverterNotInitialized();
-            return cache.GetConverter(type);
-        }
-
-        protected Converter<T> GetConverter<T>() => (Converter<T>)GetConverter(typeof(T));
-
-        protected Converter<T> GetConverter<T>(T anonymous) => (Converter<T>)GetConverter(typeof(T));
-        #endregion
-
-        internal abstract Type GetValueType();
 
         internal abstract Delegate GetToBytesDelegate();
 
         internal abstract Delegate GetToValueDelegate();
+
+        internal void Initialize(Cache cache)
+        {
+            if (Interlocked.CompareExchange(ref this.cache, cache, null) != null)
+                ThrowHelper.ThrowConverterInitialized();
+            OnInitialize(cache);
+        }
+
+        protected virtual void OnInitialize(Cache cache) { }
 
         public abstract void ToBytesAny(ref Allocator allocator, object value);
 
@@ -60,15 +49,13 @@ namespace Mikodev.Binary
         public sealed override int GetHashCode() => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override string ToString() => $"{nameof(Converter)}(Type: {GetValueType()}, Length: {length})";
+        public sealed override string ToString() => $"{nameof(Converter)}(Type: {type}, Length: {length})";
         #endregion
     }
 
     public abstract class Converter<T> : Converter
     {
-        protected Converter(int length) : base(length) { }
-
-        internal sealed override Type GetValueType() => typeof(T);
+        protected Converter(int length) : base(typeof(T), length) { }
 
         internal sealed override Delegate GetToBytesDelegate() => new ToBytes<T>(ToBytes);
 

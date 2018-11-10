@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 namespace Mikodev.Binary
 {
     [DebuggerTypeProxy(typeof(TokenDebugProxy))]
-    public sealed class Token : IDynamicMetaObjectProvider
+    public sealed partial class Token : IDynamicMetaObjectProvider
     {
         private static readonly Dictionary<string, Token> empty = new Dictionary<string, Token>();
 

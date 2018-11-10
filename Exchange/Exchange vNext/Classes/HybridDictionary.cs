@@ -36,13 +36,11 @@ namespace Mikodev.Binary
         {
             if (dictionary != null)
                 return dictionary[key];
-            var length = collection.Count;
-            for (var i = 0; i < length; i++)
-            {
-                var item = collection[i];
-                if (string.Equals(key, item.Key))
+            var size = collection.Count;
+            var item = default(KeyValuePair<string, TValue>);
+            for (var i = 0; i < size; i++)
+                if (string.Equals((item = collection[i]).Key, key))
                     return item.Value;
-            }
             return ThrowHelper.ThrowKeyNotFoundException<TValue>();
         }
     }

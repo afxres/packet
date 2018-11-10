@@ -42,7 +42,7 @@ namespace Sample
 
             for (var k = 0; k < loop; k++)
             {
-                using (new TraceWatch("ToBytes")) // 367.080 ms
+                using (new TraceWatch("ToBytes")) // 345.713 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -50,7 +50,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("ToBytes (Converter)")) // 290.836 ms
+                using (new TraceWatch("ToBytes (Converter)")) // 272.248 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -60,7 +60,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("ToValue")) // 713.233 ms
+                using (new TraceWatch("ToValue")) // 696.004 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -68,7 +68,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("ToValue (Converter)")) // 678.498 ms
+                using (new TraceWatch("ToValue (Converter)")) // 657.397 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -76,7 +76,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketWriter")) // 1884.821 ms
+                using (new TraceWatch("PacketWriter")) // 1798.623 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -84,7 +84,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketReader")) // 1794.236 ms
+                using (new TraceWatch("PacketReader")) // 1734.935 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
