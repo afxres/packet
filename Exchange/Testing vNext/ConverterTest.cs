@@ -117,5 +117,33 @@ namespace Mikodev.Testing
             var result = cache.ToValue(buffer, typeof(Person));
             Assert.AreEqual(person, result);
         }
+
+        [TestMethod]
+        public void ObjectConverter()
+        {
+            var cache = new Cache();
+            var converter = cache.GetConverter<object>();
+            var source = (object)(1, 2.3);
+            var allocator = new Allocator();
+            converter.ToBytes(ref allocator, source);
+            var buffer = allocator.ToArray();
+            var result = cache.ToValue<(int, double)>(buffer);
+            Assert.AreEqual(source, result);
+        }
+
+        [TestMethod]
+        public void ObjectConverterNotInitialized()
+        {
+            // HACK!
+            var type = new Cache().GetConverter<object>().GetType();
+            var converter = (Converter<object>)Activator.CreateInstance(type);
+
+            AssertExtension.MustFail<InvalidOperationException>(() =>
+            {
+                var allocator = new Allocator();
+                converter.ToBytes(ref allocator, string.Empty);
+            },
+            x => x.Message.Contains("not initialized"));
+        }
     }
 }

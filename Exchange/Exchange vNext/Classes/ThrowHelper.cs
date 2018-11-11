@@ -19,6 +19,9 @@ namespace Mikodev.Binary
         internal static void ThrowConverterInitialized() => throw new InvalidOperationException("Converter already initialized!");
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        internal static void ThrowConverterNotInitialized() => throw new InvalidOperationException("Converter not initialized!");
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         internal static void ThrowAllocatorModified() => throw new InvalidOperationException("Allocator has been modified!");
 
         [MethodImpl(MethodImplOptions.NoInlining)]

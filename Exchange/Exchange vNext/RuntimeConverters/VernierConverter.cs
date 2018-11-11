@@ -2,13 +2,13 @@
 
 namespace Mikodev.Binary.RuntimeConverters
 {
-    internal sealed class FixedConverter<T> : Converter<T>
+    internal sealed class VernierConverter<T> : Converter<T>
     {
         private readonly ToBytes<T> toBytes;
 
-        private readonly ToValueFixed<T> toValue;
+        private readonly ToValueVernier<T> toValue;
 
-        public FixedConverter(ToBytes<T> toBytes, ToValueFixed<T> toValue, int length) : base(length)
+        public VernierConverter(ToBytes<T> toBytes, ToValueVernier<T> toValue, int length) : base(length)
         {
             this.toBytes = toBytes;
             this.toValue = toValue;

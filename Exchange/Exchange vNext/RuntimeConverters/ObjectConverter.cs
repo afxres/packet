@@ -4,7 +4,14 @@ namespace Mikodev.Binary.RuntimeConverters
 {
     internal sealed class ObjectConverter : Converter<object>
     {
+        private Cache cache;
+
         public ObjectConverter() : base(0) { }
+
+        protected override void OnInitialize(Cache cache)
+        {
+            this.cache = cache;
+        }
 
         public override void ToBytes(ref Allocator allocator, object value)
         {
@@ -13,6 +20,9 @@ namespace Mikodev.Binary.RuntimeConverters
             var type = value.GetType();
             if (type == typeof(object))
                 throw new InvalidOperationException($"Invalid type: {typeof(object)}");
+            var cache = this.cache;
+            if (cache == null)
+                ThrowHelper.ThrowConverterNotInitialized();
             var converter = cache.GetConverter(type);
             converter.ToBytesAny(ref allocator, value);
         }

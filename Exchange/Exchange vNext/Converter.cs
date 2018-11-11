@@ -10,11 +10,13 @@ namespace Mikodev.Binary
 
         public static readonly bool UseLittleEndian = true;
 
-        internal readonly int length;
+        private const int None = 0, Initialized = 1;
+
+        private int status = None;
 
         internal readonly Type type;
 
-        internal Cache cache;
+        internal readonly int length;
 
         internal Converter(Type type, int length)
         {
@@ -30,7 +32,7 @@ namespace Mikodev.Binary
 
         internal void Initialize(Cache cache)
         {
-            if (Interlocked.CompareExchange(ref this.cache, cache, null) != null)
+            if (Interlocked.CompareExchange(ref status, Initialized, None) != None)
                 ThrowHelper.ThrowConverterInitialized();
             OnInitialize(cache);
         }

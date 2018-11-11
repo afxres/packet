@@ -230,7 +230,7 @@ namespace Mikodev.Binary
                 var length = definitions.Any(x => x == 0) ? 0 : definitions.Sum();
                 var toBytes = TupleToBytesExpression(type, converters, length);
                 var toValue = TupleToValueExpression(type, constructorInfo, converters);
-                return (Converter)Activator.CreateInstance(typeof(FixedConverter<>).MakeGenericType(type), toBytes.Compile(), toValue.Compile(), length);
+                return (Converter)Activator.CreateInstance(typeof(VernierConverter<>).MakeGenericType(type), toBytes.Compile(), toValue.Compile(), length);
             }
 
             private static LambdaExpression TupleToValueExpression(Type type, ConstructorInfo constructorInfo, Converter[] converters)
@@ -253,7 +253,7 @@ namespace Mikodev.Binary
                     expressions.Add(assign);
                 }
                 expressions.Add(Expression.New(constructorInfo, variables));
-                var delegateType = typeof(ToValueFixed<>).MakeGenericType(type);
+                var delegateType = typeof(ToValueVernier<>).MakeGenericType(type);
                 return Expression.Lambda(delegateType, Expression.Block(variables, expressions), memory, vernier);
             }
 

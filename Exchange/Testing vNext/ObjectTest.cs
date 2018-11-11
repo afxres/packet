@@ -20,7 +20,7 @@ namespace Mikodev.Testing
         }
 
         [TestMethod]
-        public void ObjectValue()
+        public void ObjectProperties()
         {
             var anonymousOther = new
             {
