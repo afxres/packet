@@ -10,7 +10,7 @@ namespace Mikodev.Binary
 
         public static readonly bool UseLittleEndian = true;
 
-        private const int None = 0, Initialized = 1;
+        private const int None = 0, Exchanged = 1, Initialized = 2;
 
         private int status = None;
 
@@ -32,12 +32,20 @@ namespace Mikodev.Binary
 
         internal void Initialize(Cache cache)
         {
-            if (Interlocked.CompareExchange(ref status, Initialized, None) != None)
+            if (Interlocked.CompareExchange(ref status, Exchanged, None) != None)
                 ThrowHelper.ThrowConverterInitialized();
             OnInitialize(cache);
+            status = Initialized;
         }
 
         protected virtual void OnInitialize(Cache cache) { }
+
+        protected void EnsureInitialized()
+        {
+            if (status == Initialized)
+                return;
+            ThrowHelper.ThrowConverterNotInitialized();
+        }
 
         public abstract void ToBytesAny(ref Allocator allocator, object value);
 

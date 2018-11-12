@@ -15,14 +15,13 @@ namespace Mikodev.Binary.RuntimeConverters
 
         public override void ToBytes(ref Allocator allocator, object value)
         {
+            EnsureInitialized();
+
             if (value == null)
                 return;
             var type = value.GetType();
             if (type == typeof(object))
                 throw new InvalidOperationException($"Invalid type: {typeof(object)}");
-            var cache = this.cache;
-            if (cache == null)
-                ThrowHelper.ThrowConverterNotInitialized();
             var converter = cache.GetConverter(type);
             converter.ToBytesAny(ref allocator, value);
         }
