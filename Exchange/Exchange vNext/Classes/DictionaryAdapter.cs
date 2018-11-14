@@ -36,11 +36,11 @@ namespace Mikodev.Binary
                 return;
             foreach (var i in value)
             {
-                if (keyConverter.length == 0)
+                if (keyConverter.Length == 0)
                     allocator.AppendValueExtend(keyConverter, i.Key);
                 else
                     keyConverter.ToBytes(ref allocator, i.Key);
-                if (valueConverter.length == 0)
+                if (valueConverter.Length == 0)
                     allocator.AppendValueExtend(valueConverter, i.Value);
                 else
                     valueConverter.ToBytes(ref allocator, i.Value);
@@ -57,9 +57,9 @@ namespace Mikodev.Binary
                 var vernier = new Vernier(srcptr, memory.Length);
                 while (vernier.Any())
                 {
-                    vernier.UpdateExcept(keyConverter.length);
+                    vernier.UpdateExcept(keyConverter.Length);
                     var key = keyConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
-                    vernier.UpdateExcept(valueConverter.length);
+                    vernier.UpdateExcept(valueConverter.Length);
                     var value = valueConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
                     dictionary.Add(key, value);
                 }
@@ -77,9 +77,9 @@ namespace Mikodev.Binary
                 var vernier = new Vernier(srcptr, memory.Length);
                 while (vernier.Any())
                 {
-                    vernier.UpdateExcept(keyConverter.length);
+                    vernier.UpdateExcept(keyConverter.Length);
                     var key = keyConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
-                    vernier.UpdateExcept(valueConverter.length);
+                    vernier.UpdateExcept(valueConverter.Length);
                     var value = valueConverter.ToValue(memory.Slice(vernier.offset, vernier.length));
                     list.Add(new Tuple<TK, TV>(key, value));
                 }

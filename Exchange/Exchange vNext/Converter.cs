@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
 
@@ -6,24 +7,25 @@ namespace Mikodev.Binary
 {
     public abstract class Converter
     {
+        private const int None = 0, Exchanged = 1, Initialized = 2;
+
         public static readonly Encoding Encoding = Encoding.UTF8;
 
         public static readonly bool UseLittleEndian = true;
 
-        private const int None = 0, Exchanged = 1, Initialized = 2;
+        public int Length { get; }
 
         private int status = None;
 
         internal readonly Type type;
 
-        internal readonly int length;
-
         internal Converter(Type type, int length)
         {
             if (length < 0)
                 ThrowHelper.ThrowConverterLengthOutOfRange();
-            this.length = length;
+            Debug.Assert(type != null);
             this.type = type;
+            Length = length;
         }
 
         internal abstract Delegate GetToBytesDelegate();
@@ -35,7 +37,8 @@ namespace Mikodev.Binary
             if (Interlocked.CompareExchange(ref status, Exchanged, None) != None)
                 ThrowHelper.ThrowConverterInitialized();
             OnInitialize(cache);
-            status = Initialized;
+            var origin = Interlocked.Exchange(ref status, Initialized);
+            Debug.Assert(origin == Exchanged);
         }
 
         protected virtual void OnInitialize(Cache cache) { }
@@ -59,7 +62,7 @@ namespace Mikodev.Binary
         public sealed override int GetHashCode() => throw new NotSupportedException();
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public sealed override string ToString() => $"{nameof(Converter)}(Type: {type}, Length: {length})";
+        public sealed override string ToString() => $"{nameof(Converter)}(Type: {type}, Length: {Length})";
         #endregion
     }
 

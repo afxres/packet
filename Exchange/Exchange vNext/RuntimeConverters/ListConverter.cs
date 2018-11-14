@@ -10,7 +10,7 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (value == null || value.Count == 0)
                 return;
-            if (converter.length == 0)
+            if (converter.Length == 0)
                 for (var i = 0; i < value.Count; i++)
                     allocator.AppendValueExtend(converter, value[i]);
             else
@@ -22,7 +22,7 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (memory.IsEmpty)
                 return new List<T>(0);
-            var definition = converter.length;
+            var definition = converter.Length;
             if (definition == 0)
             {
                 var list = new List<T>(8);

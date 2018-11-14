@@ -226,7 +226,7 @@ namespace Mikodev.Binary
                 var converters = new Converter[elementCount];
                 for (var i = 0; i < elementCount; i++)
                     converters[i] = GetOrGenerateConverter(elementTypes[i]);
-                var definitions = converters.Select(x => x.length).ToArray();
+                var definitions = converters.Select(x => x.Length).ToArray();
                 var length = definitions.Any(x => x == 0) ? 0 : definitions.Sum();
                 var toBytes = TupleToBytesExpression(type, converters, length);
                 var toValue = TupleToValueExpression(type, constructorInfo, converters);
@@ -244,7 +244,7 @@ namespace Mikodev.Binary
                     var converter = converters[i];
                     var variable = Expression.Variable(converter.type, $"item{i + 1}");
                     variables[i] = variable;
-                    var update = Expression.Call(vernier, Vernier.UpdateExceptMethodInfo, Expression.Constant(converter.length, typeof(int)));
+                    var update = Expression.Call(vernier, Vernier.UpdateExceptMethodInfo, Expression.Constant(converter.Length, typeof(int)));
                     var offset = Expression.Field(vernier, Vernier.OffsetFieldInfo);
                     var length = Expression.Field(vernier, Vernier.LengthFieldInfo);
                     var invoke = Expression.Call(memory, sliceMethodInfo, offset, length);
@@ -273,7 +273,7 @@ namespace Mikodev.Binary
                 for (var i = 0; i < converters.Length; i++)
                 {
                     var converter = converters[i];
-                    var expression = converter.length == 0
+                    var expression = converter.Length == 0
                         ? Expression.Call(allocator, Allocator.AppendValueExtendMethodInfo.MakeGenericMethod(converter.type), Expression.Constant(converter), items[i])
                         : MakeDelegateCall(converter.GetToBytesDelegate(), allocator, items[i]);
                     expressions.Add(expression);
@@ -331,7 +331,7 @@ namespace Mikodev.Binary
                 };
 
                 var converter = GetOrGenerateConverter(elementType);
-                if (converter.length == 0)
+                if (converter.Length == 0)
                 {
                     var listType = typeof(List<>).MakeGenericType(elementType);
                     var list = Expression.Variable(listType, "list");

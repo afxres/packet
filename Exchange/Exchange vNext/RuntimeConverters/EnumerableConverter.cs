@@ -21,7 +21,7 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (value == null)
                 return;
-            if (converter.length == 0)
+            if (converter.Length == 0)
                 foreach (var i in value)
                     allocator.AppendValueExtend(converter, i);
             else
@@ -33,7 +33,7 @@ namespace Mikodev.Binary.RuntimeConverters
         {
             if (toValue == null)
                 throw new InvalidOperationException($"Unable to get collection, type: {typeof(T)}");
-            var enumerable = converter.length == 0
+            var enumerable = converter.Length == 0
                 ? (IEnumerable<TItem>)ListConverter<TItem>.Value(memory, converter)
                 : ArrayConverter<TItem>.Value(memory, converter);
             return toValue.Invoke(enumerable);
