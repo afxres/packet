@@ -9,7 +9,9 @@ type Person = { id : int ; name : string }
 
 type Book(id : int, name : string, price : decimal) =
     member __.id = id
+
     member __.name = name
+
     member __.price = price
 
     override __.ToString() = sprintf "id : %d, name : %s, price : %f" id name price
@@ -37,7 +39,7 @@ type CollectionTest () =
         let a1 = reader.Deserialize<int array>()
         let s1 = reader.Deserialize<int seq>()
         
-        let token = cache.AsToken((ReadOnlyMemory<byte>)b2)
+        let token = cache.AsToken(new ReadOnlyMemory<byte>(b2))
         let l2 = token.As<int list>()
         let a2 = token.As<int array>()
         let s2 = token.As<int seq>()
@@ -63,7 +65,7 @@ type CollectionTest () =
         let a1 = reader.Deserialize<Person array>()
         let s1 = reader.Deserialize<Person seq>()
 
-        let token = cache.AsToken((ReadOnlyMemory<byte>)b2)
+        let token = cache.AsToken(new ReadOnlyMemory<byte>(b2))
         let l2 = token.As<Person list>()
         let a2 = token.As<Person array>()
         let s2 = token.As<Person seq>()
@@ -88,8 +90,8 @@ type CollectionTest () =
 
         let ra1 = PacketConvert.Deserialize<Map<string, Person>>(ta1)
         let rb1 = PacketConvert.Deserialize<Map<int, string>>(tb1)
-        let ra2 = cache.ToValue<Map<string, Person>>((ReadOnlyMemory<byte>)ta2)
-        let rb2 = cache.ToValue<Map<int, string>>((ReadOnlyMemory<byte>)tb2)
+        let ra2 = cache.ToValue<Map<string, Person>>(new ReadOnlySpan<byte>(ta2))
+        let rb2 = cache.ToValue<Map<int, string>>(new ReadOnlySpan<byte>(tb2))
 
         Extension.AreMapEqual a ra1
         Extension.AreMapEqual b rb1
@@ -113,9 +115,9 @@ type CollectionTest () =
         let ra1 = PacketConvert.Deserialize<Set<int>>(ta1)
         let rb1 = PacketConvert.Deserialize<Set<string>>(tb1)
         let rc1 = PacketConvert.Deserialize<Set<Person>>(tc1)
-        let ra2 = cache.ToValue<Set<int>>((ReadOnlyMemory<byte>)ta2)
-        let rb2 = cache.ToValue<Set<string>>((ReadOnlyMemory<byte>)tb2)
-        let rc2 = cache.ToValue<Set<Person>>((ReadOnlyMemory<byte>)tc2)
+        let ra2 = cache.ToValue<Set<int>>(new ReadOnlySpan<byte>(ta2))
+        let rb2 = cache.ToValue<Set<string>>(new ReadOnlySpan<byte>(tb2))
+        let rc2 = cache.ToValue<Set<Person>>(new ReadOnlySpan<byte>(tc2))
 
         Extension.AreSetEqual a ra1
         Extension.AreSetEqual b rb1
@@ -133,7 +135,7 @@ type CollectionTest () =
         let t1 = cache.ToBytes(a)
         let r = new PacketReader(t1)
         let r1 = r.Deserialize<Book>()
-        let r2 = cache.ToValue<Book>((ReadOnlyMemory<byte>)t2)
+        let r2 = cache.ToValue<Book>(new ReadOnlySpan<byte>(t2))
         Assert.AreEqual(a, r1)
         Assert.AreEqual(a, r2)
         ()
