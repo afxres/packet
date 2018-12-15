@@ -1,9 +1,10 @@
 ﻿using Mikodev.Network.Converters;
+using Mikodev.Network.Tokens;
 using System.Runtime.CompilerServices;
 
 namespace Mikodev.Network
 {
-    internal sealed class UnsafeStream
+    internal sealed class Allocator
     {
         /* 警告: 该类仅应用于单线程环境 */
 
@@ -34,7 +35,7 @@ namespace Mikodev.Network
             buffer = target;
             return;
 
-            fail:
+        fail:
             throw PacketException.Overflow();
         }
 
@@ -55,7 +56,7 @@ namespace Mikodev.Network
             Unsafe.Copy(ref buffer[offset], in source[0], source.Length);
         }
 
-        internal void AppendExtend(byte[] source)
+        internal void AppendValueExtend(byte[] source)
         {
             var offset = Allocate(source.Length + sizeof(int));
             UnmanagedValueConverter<int>.UnsafeToBytes(ref buffer[offset], source.Length);
@@ -64,11 +65,15 @@ namespace Mikodev.Network
             Unsafe.Copy(ref buffer[offset + sizeof(int)], in source[0], source.Length);
         }
 
-        internal void AppendKey(string key) => AppendExtend(PacketConvert.Encoding.GetBytes(key));
+        internal void AppendKey(string key) => AppendValueExtend(PacketConvert.Encoding.GetBytes(key));
 
-        internal int AnchorExtend() => Allocate(sizeof(int));
-
-        internal void FinishExtend(int offset) => UnmanagedValueConverter<int>.UnsafeToBytes(ref buffer[offset], (position - offset - sizeof(int)));
+        internal void AppendTokenExtend(Token token, int level)
+        {
+            PacketException.VerifyRecursionError(ref level);
+            var offset = Allocate(sizeof(int));
+            token.FlushTo(this, level);
+            UnmanagedValueConverter<int>.UnsafeToBytes(ref buffer[offset], (position - offset - sizeof(int)));
+        }
 
         internal byte[] GetBytes()
         {

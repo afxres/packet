@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Mikodev.Network.Tokens;
+using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Expressions;
@@ -10,73 +11,65 @@ namespace Mikodev.Network
     {
         internal readonly ConverterDictionary converters;
 
-        private Item item;
+        internal Token token;
 
-        internal PacketWriter(ConverterDictionary converters, Item item)
+        internal PacketWriter(ConverterDictionary converters, Token token)
         {
             this.converters = converters;
-            this.item = item;
+            this.token = token;
         }
 
         internal PacketWriter(ConverterDictionary converters, PacketWriter writer)
         {
             this.converters = converters;
-            item = (writer != null ? writer.item : Item.Empty);
+            token = (writer != null ? writer.token : Token.Empty);
         }
 
         public PacketWriter(ConverterDictionary converters = null)
         {
             this.converters = converters;
-            item = Item.Empty;
+            token = Token.Empty;
         }
 
         internal IEnumerable<string> GetKeys()
         {
-            var item = this.item;
-            return item.flag == ItemFlags.Dictionary
-                ? ((Dictionary<string, PacketWriter>)item.data).Keys
+            var token = this.token;
+            return token is Expando data
+                ? data.data.Keys
                 : System.Linq.Enumerable.Empty<string>();
         }
 
         internal Dictionary<string, PacketWriter> GetDictionary()
         {
-            var item = this.item;
-            if (item.flag == ItemFlags.Dictionary)
-                return (Dictionary<string, PacketWriter>)item.data;
+            var token = this.token;
+            if (token is Expando data)
+                return data.data;
             var dictionary = new Dictionary<string, PacketWriter>(Extension.Capacity);
-            this.item = NewItem(dictionary);
+            this.token = new Expando(dictionary);
             return dictionary;
         }
 
         internal static PacketWriter GetWriter(ConverterDictionary converters, object value, int level)
         {
-            return new PacketWriter(converters, GetItem(converters, value, level));
+            return new PacketWriter(converters, GetToken(converters, value, level));
         }
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicWriter(parameter, this);
 
         public byte[] GetBytes()
         {
-            var item = this.item;
-            switch (item.flag)
-            {
-                case ItemFlags.None:
-                    return Empty.Array<byte>();
-                case ItemFlags.Buffer:
-                    return (byte[])item.data;
-                default:
-                    var stream = new UnsafeStream();
-                    item.GetBytesMatch(stream, 0);
-                    return stream.GetBytes();
-            }
+            var token = this.token;
+            var allocator = new Allocator();
+            token.FlushTo(allocator, 0);
+            return allocator.GetBytes();
         }
 
         public override string ToString()
         {
-            var data = item.data;
-            if (data is byte[] bytes)
-                return $"{nameof(PacketWriter)}(Bytes: {bytes.Length})";
-            return $"{nameof(PacketWriter)}(Nodes: {(data as ICollection)?.Count ?? 0})";
+            var data = token.Data;
+            return data is byte[] bytes
+                ? $"{nameof(PacketWriter)}(Bytes: {bytes.Length})"
+                : $"{nameof(PacketWriter)}(Nodes: {(data as ICollection)?.Count ?? 0})";
         }
 
         public static PacketWriter Serialize(object value, ConverterDictionary converters = null) => GetWriter(converters, value, 0);
