@@ -76,7 +76,7 @@ namespace Mikodev.Network
         {
             ThrowIfArgumentError(key);
             ThrowIfArgumentError(reader);
-            return reader.GetItem(key, nothrow);
+            return reader.GetReader(key, nothrow);
         }
 
         public static PacketReader GetItem(this PacketReader reader, IEnumerable<string> keys, bool nothrow = false)
@@ -84,7 +84,7 @@ namespace Mikodev.Network
             ThrowIfArgumentError(reader);
             if (keys == null)
                 throw new ArgumentNullException(nameof(keys));
-            return reader.GetItem(keys, nothrow);
+            return reader.GetReader(keys, nothrow);
         }
     }
 }

@@ -59,6 +59,11 @@ namespace Mikodev.Network
         public byte[] GetBytes()
         {
             var token = this.token;
+            var data = token.Data;
+            if (data == null)
+                return Empty.Array<byte>();
+            if (data is byte[] bytes)
+                return bytes;
             var allocator = new Allocator();
             token.FlushTo(allocator, 0);
             return allocator.GetBytes();

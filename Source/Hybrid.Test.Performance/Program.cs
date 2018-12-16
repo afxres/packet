@@ -43,7 +43,7 @@ namespace Sample
 
             for (var k = 0; k < loop; k++)
             {
-                using (new TraceWatch("BitConverter"))
+                using (new TraceWatch("BitConverter")) // 5.099 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -52,7 +52,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("PacketWriter"))
+                using (new TraceWatch("PacketWriter")) // 1433.147 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -67,7 +67,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("ToBytes")) // 345.713 ms
+                using (new TraceWatch("ToBytes")) // 343.723 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -75,7 +75,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("ToBytes (Converter)")) // 272.248 ms
+                using (new TraceWatch("ToBytes (Converter)")) // 273.200 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -85,7 +85,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("ToValue")) // 696.004 ms
+                using (new TraceWatch("ToValue")) // 693.167 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -93,7 +93,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("ToValue (Converter)")) // 657.397 ms
+                using (new TraceWatch("ToValue (Converter)")) // 649.977 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -101,7 +101,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("Packet Serialize")) // 1798.623 ms
+                using (new TraceWatch("Packet Serialize")) // 1736.535 ms
                 {
                     for (var i = 0; i < max; i++)
                     {
@@ -109,7 +109,7 @@ namespace Sample
                     }
                 }
 
-                using (new TraceWatch("Packet Deserialize")) // 1734.935 ms
+                using (new TraceWatch("Packet Deserialize")) // 1698.635 ms
                 {
                     for (var i = 0; i < max; i++)
                     {

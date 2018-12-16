@@ -14,10 +14,10 @@ namespace Mikodev.Network
                 return Token.Empty;
             var type = value.GetType();
             var info = Cache.GetConverterOrInfo(converters, type, out var converter);
-            return info == null ? new Value(converter.GetBytesChecked(value)) : GetItemMatch(converters, value, level, info);
+            return info == null ? new Value(converter.GetBytesChecked(value)) : GetTokenMatch(converters, value, level, info);
         }
 
-        private static Token GetItemMatch(ConverterDictionary converters, object value, int level, Info valueInfo)
+        private static Token GetTokenMatch(ConverterDictionary converters, object value, int level, Info valueInfo)
         {
             PacketException.VerifyRecursionError(ref level);
             switch (valueInfo.From)
@@ -49,7 +49,7 @@ namespace Mikodev.Network
                 return new ValueArray(valueInfo.FromEnumerable(converter, value), converter.Length);
             var list = new List<Token>();
             foreach (var i in ((IEnumerable)value))
-                list.Add(GetItemMatch(converters, i, level, info));
+                list.Add(GetTokenMatch(converters, i, level, info));
             return new TokenArray(list);
         }
 
@@ -70,7 +70,7 @@ namespace Mikodev.Network
                     list.Add(new KeyValuePair<byte[], Token>(i.Key, GetToken(converters, i.Value, level)));
             else
                 foreach (var i in adapter)
-                    list.Add(new KeyValuePair<byte[], Token>(i.Key, GetItemMatch(converters, i.Value, level, info)));
+                    list.Add(new KeyValuePair<byte[], Token>(i.Key, GetTokenMatch(converters, i.Value, level, info)));
             return new TokenDictionary(list, key.Length);
         }
 

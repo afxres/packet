@@ -24,17 +24,17 @@ namespace Mikodev.Network
                 case InfoFlags.RawReader:
                     return new PacketRawReader(this);
                 case InfoFlags.Collection:
-                    return GetValueMatchCollection(level, valueInfo);
+                    return GetValueCollection(level, valueInfo);
                 case InfoFlags.Enumerable:
-                    return GetValueMatchEnumerable(level, valueInfo);
+                    return GetValueEnumerable(level, valueInfo);
                 case InfoFlags.Dictionary:
-                    return GetValueMatchDictionary(level, valueInfo);
+                    return GetValueDictionary(level, valueInfo);
                 default:
-                    return GetValueMatchDefault(valueType, level);
+                    return GetValueDefault(valueType, level);
             }
         }
 
-        private object GetValueMatchCollection(int level, Info valueInfo)
+        private object GetValueCollection(int level, Info valueInfo)
         {
             var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
             if (info == null)
@@ -48,7 +48,7 @@ namespace Mikodev.Network
             return result;
         }
 
-        private object GetValueMatchEnumerable(int level, Info valueInfo)
+        private object GetValueEnumerable(int level, Info valueInfo)
         {
             var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var converter);
             return info == null
@@ -56,7 +56,7 @@ namespace Mikodev.Network
                 : valueInfo.ToEnumerableAdapter(this, info, level);
         }
 
-        private object GetValueMatchDictionary(int level, Info valueInfo)
+        private object GetValueDictionary(int level, Info valueInfo)
         {
             var indexConverter = Cache.GetConverter(converters, valueInfo.IndexType, true);
             if (indexConverter == null)
@@ -81,7 +81,7 @@ namespace Mikodev.Network
             return valueInfo.ToDictionaryExtend(collection);
         }
 
-        private object GetValueMatchDefault(Type valueType, int level)
+        private object GetValueDefault(Type valueType, int level)
         {
             var set = Cache.GetSetInfo(valueType);
             if (set == null)
@@ -93,7 +93,7 @@ namespace Mikodev.Network
             var source = new object[arguments.Length];
             for (var i = 0; i < arguments.Length; i++)
             {
-                var reader = GetItem(arguments[i].Key, false);
+                var reader = GetReader(arguments[i].Key, false);
                 var result = reader.GetValue(arguments[i].Value, level);
                 source[i] = result;
             }

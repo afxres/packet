@@ -8,7 +8,7 @@ namespace Mikodev.Network
     {
         public DynamicWriter(Expression parameter, object value) : base(parameter, BindingRestrictions.Empty, value) { }
 
-        private PacketWriter GetItem(PacketWriter writer, string key)
+        private PacketWriter GetWriter(PacketWriter writer, string key)
         {
             var dictionary = writer.GetDictionary();
             if (dictionary.TryGetValue(key, out var value))
@@ -20,7 +20,7 @@ namespace Mikodev.Network
 
         public override DynamicMetaObject BindGetMember(GetMemberBinder binder)
         {
-            var writer = GetItem((PacketWriter)Value, binder.Name);
+            var writer = GetWriter((PacketWriter)Value, binder.Name);
             var constant = Expression.Constant(writer);
             return new DynamicMetaObject(constant, BindingRestrictions.GetTypeRestriction(Expression, LimitType));
         }

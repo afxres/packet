@@ -95,7 +95,7 @@ namespace Mikodev.Network
         /// <summary>
         /// <paramref name="key"/> not null
         /// </summary>
-        internal PacketReader GetItem(string key, bool nothrow)
+        internal PacketReader GetReader(string key, bool nothrow)
         {
             var dic = GetDictionary();
             if (dic != null && dic.TryGetValue(key, out var val))
@@ -108,11 +108,11 @@ namespace Mikodev.Network
         /// <summary>
         /// <paramref name="keys"/> not null
         /// </summary>
-        internal PacketReader GetItem(IEnumerable<string> keys, bool nothrow)
+        internal PacketReader GetReader(IEnumerable<string> keys, bool nothrow)
         {
             var rdr = this;
             foreach (var i in keys)
-                if ((rdr = rdr.GetItem(i ?? throw new ArgumentNullException(), nothrow)) == null)
+                if ((rdr = rdr.GetReader(i ?? throw new ArgumentNullException(), nothrow)) == null)
                     return null;
             return rdr;
         }
@@ -130,7 +130,7 @@ namespace Mikodev.Network
                 if (path == null)
                     throw new ArgumentNullException(nameof(path));
                 var key = path.Split(Extension.Separator);
-                var val = GetItem(key, nothrow);
+                var val = GetReader(key, nothrow);
                 return val;
             }
         }
