@@ -26,7 +26,7 @@ namespace Mikodev.Testing
                 var buffer = cache.ToBytes(linked);
                 Assert.Fail();
             }
-            catch (InvalidOperationException ex)
+            catch (ArgumentException ex)
             {
                 Assert.IsTrue(ex.Message.StartsWith("Circular type reference"));
             }

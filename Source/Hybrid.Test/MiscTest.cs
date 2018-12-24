@@ -289,20 +289,20 @@ namespace Mikodev.Testing
             };
 
             var buffer = cache.ToBytes(anonymous);
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<object>(buffer), x => x.Message.StartsWith("Invalid type"));
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<Dictionary<string, object>>(buffer), x => x.Message.StartsWith("Invalid type"));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToValue<object>(buffer), x => x.Message.StartsWith("Invalid type"));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToValue<Dictionary<string, object>>(buffer), x => x.Message.StartsWith("Invalid type"));
 
             Assert.IsTrue(typeof(IDynamicMetaObjectProvider).IsAssignableFrom(typeof(Token)));
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<Token>(buffer));
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<Dictionary<string, Token>>(buffer));
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<IDynamicMetaObjectProvider>(buffer));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToValue<Token>(buffer));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToValue<Dictionary<string, Token>>(buffer));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToValue<IDynamicMetaObjectProvider>(buffer));
         }
 
         [TestMethod]
         public void InternalType()
         {
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToBytes(default(Token)), x => x.Message.StartsWith("Invalid type"));
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToBytes(default(Cache)), x => x.Message.StartsWith("Invalid type"));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToBytes(default(Token)), x => x.Message.StartsWith("Invalid type"));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToBytes(default(Cache)), x => x.Message.StartsWith("Invalid type"));
         }
 
         [TestMethod]

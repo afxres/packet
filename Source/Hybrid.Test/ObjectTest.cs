@@ -15,7 +15,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void Object()
         {
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToBytes(new object()), x => x.Message.Contains("Invalid type"));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToBytes(new object()), x => x.Message.Contains("Invalid type"));
             AssertExtension.MustFail<PacketException>(() => PacketConvert.Serialize(new object()), x => x.ErrorCode == PacketError.InvalidType);
         }
 
@@ -49,7 +49,7 @@ namespace Mikodev.Testing
             var t1 = cache.ToBytes(anonymous);
             var t2 = PacketConvert.Serialize(anonymous);
             var r1 = PacketConvert.Deserialize(t1, anonymous);
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue(t2, anonymous), x => x.Message.StartsWith("Invalid type"));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToValue(t2, anonymous), x => x.Message.StartsWith("Invalid type"));
             var r2 = (dynamic)cache.AsToken(t2);
 
             Assert.IsFalse(ReferenceEquals(anonymous, r1));
@@ -97,8 +97,8 @@ namespace Mikodev.Testing
                 AssertExtension.MustFail<PacketException>(() => PacketConvert.Serialize(item), x => x.ErrorCode == PacketError.InvalidElementType);
                 AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize<T>(Array.Empty<byte>()), x => x.ErrorCode == PacketError.InvalidElementType);
 
-                AssertExtension.MustFail<InvalidOperationException>(() => cache.ToBytes(item), x => x.Message.Contains("Invalid collection"));
-                AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<T>(Array.Empty<byte>()), x => x.Message.Contains("Invalid collection"));
+                AssertExtension.MustFail<ArgumentException>(() => cache.ToBytes(item), x => x.Message.Contains("Invalid collection"));
+                AssertExtension.MustFail<ArgumentException>(() => cache.ToValue<T>(Array.Empty<byte>()), x => x.Message.Contains("Invalid collection"));
             }
 
             Assert(new object[] { });

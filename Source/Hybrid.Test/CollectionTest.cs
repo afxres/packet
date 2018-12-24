@@ -328,8 +328,8 @@ namespace Mikodev.Testing
         {
             var dictionary = new Dictionary<object, string>();
 
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToBytes(dictionary), x => x.Message.StartsWith("Invalid dictionary key type"));
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<Dictionary<object, int>>(Array.Empty<byte>()), x => x.Message.StartsWith("Invalid dictionary key type"));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToBytes(dictionary), x => x.Message.StartsWith("Invalid dictionary key type"));
+            AssertExtension.MustFail<ArgumentException>(() => cache.ToValue<Dictionary<object, int>>(Array.Empty<byte>()), x => x.Message.StartsWith("Invalid dictionary key type"));
 
             AssertExtension.MustFail<PacketException>(() => PacketConvert.Serialize(dictionary), x => x.ErrorCode == PacketError.InvalidKeyType);
             AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize<Dictionary<object, int>>(Array.Empty<byte>()), x => x.ErrorCode == PacketError.InvalidKeyType);
