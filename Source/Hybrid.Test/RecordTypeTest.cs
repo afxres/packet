@@ -125,16 +125,16 @@ namespace Mikodev.Testing
             }
         }
 
-        private static Cache cache = new Cache();
+        private static Generator generator = new Generator();
 
         [TestMethod]
         public void Structure()
         {
             var value = new SimpleStructure(int.MaxValue, "sharp");
-            var t1 = cache.ToBytes(value);
+            var t1 = generator.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
             var r1 = PacketConvert.Deserialize<SimpleStructure>(t1);
-            var r2 = cache.ToValue<SimpleStructure>(t2);
+            var r2 = generator.ToValue<SimpleStructure>(t2);
 
             Assert.AreEqual(value, r1);
             Assert.AreEqual(value, r2);
@@ -144,10 +144,10 @@ namespace Mikodev.Testing
         public void Class()
         {
             var value = new SimpleClass(Guid.NewGuid(), new IPEndPoint(IPAddress.Loopback, 3389));
-            var t1 = cache.ToBytes(value);
+            var t1 = generator.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
             var r1 = PacketConvert.Deserialize<SimpleClass>(t1);
-            var r2 = cache.ToValue<SimpleClass>(t2);
+            var r2 = generator.ToValue<SimpleClass>(t2);
 
             Assert.AreEqual(value, r1);
             Assert.AreEqual(value, r2);
@@ -157,10 +157,10 @@ namespace Mikodev.Testing
         public void StructureInformal()
         {
             var value = new TestStructure("world", 2.71);
-            var t1 = cache.ToBytes(value);
+            var t1 = generator.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
             var r1 = PacketConvert.Deserialize<TestStructure>(t1);
-            var r2 = cache.ToValue<TestStructure>(t2);
+            var r2 = generator.ToValue<TestStructure>(t2);
 
             Assert.AreEqual(value, r1);
             Assert.AreEqual(value, r2);
@@ -170,10 +170,10 @@ namespace Mikodev.Testing
         public void ClassInformal()
         {
             var value = new TestClass("hello", "The quick...");
-            var t1 = cache.ToBytes(value);
+            var t1 = generator.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
             var r1 = PacketConvert.Deserialize<TestClass>(t1);
-            var r2 = cache.ToValue<TestClass>(t2);
+            var r2 = generator.ToValue<TestClass>(t2);
 
             Assert.AreEqual(value, r1);
             Assert.AreEqual(value, r2);

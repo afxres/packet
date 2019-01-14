@@ -28,18 +28,18 @@ namespace Mikodev.Testing
             public SimpleClass(string Id, Guid Guid) : base(Id) => this.Guid = Guid;
         }
 
-        private readonly Cache cache = new Cache();
+        private readonly Generator generator = new Generator();
 
         [TestMethod]
         public void Abstract()
         {
             var value = (AbstractObject)new SimpleClass("2048", Guid.NewGuid());
-            var t1 = cache.ToBytes(value);
+            var t1 = generator.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
-            var token = cache.AsToken(t1);
+            var token = generator.AsToken(t1);
             var reader = new PacketReader(t2);
 
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<AbstractObject>(t1));
+            AssertExtension.MustFail<InvalidOperationException>(() => generator.ToValue<AbstractObject>(t1));
             AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize<AbstractObject>(t2));
 
 
@@ -54,12 +54,12 @@ namespace Mikodev.Testing
         public void Interface()
         {
             var value = (IObject)new SimpleClass("2048", Guid.NewGuid());
-            var t1 = cache.ToBytes(value);
+            var t1 = generator.ToBytes(value);
             var t2 = PacketConvert.Serialize(value);
-            var token = cache.AsToken(t1);
+            var token = generator.AsToken(t1);
             var reader = new PacketReader(t2);
 
-            AssertExtension.MustFail<InvalidOperationException>(() => cache.ToValue<IObject>(t1), x => x.Message.StartsWith("Unable to get value"));
+            AssertExtension.MustFail<InvalidOperationException>(() => generator.ToValue<IObject>(t1), x => x.Message.StartsWith("Unable to get value"));
             AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize<IObject>(t2));
 
 

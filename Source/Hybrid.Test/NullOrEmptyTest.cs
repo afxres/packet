@@ -25,7 +25,7 @@ namespace Mikodev.Testing
             public string Tag { get; set; }
         }
 
-        private static readonly Cache cache = new Cache();
+        private static readonly Generator generator = new Generator();
 
         [TestMethod]
         public void BasicValues()
@@ -38,10 +38,10 @@ namespace Mikodev.Testing
                 intArray = default(int[]),
                 textArray = default(string[]),
             };
-            var t1 = cache.ToBytes(anonymous);
+            var t1 = generator.ToBytes(anonymous);
             var t2 = PacketConvert.Serialize(anonymous);
             var r1 = PacketConvert.Deserialize(t1, anonymous);
-            var r2 = cache.ToValue(t2, anonymous);
+            var r2 = generator.ToValue(t2, anonymous);
 
             Assert.IsFalse(ReferenceEquals(anonymous, r1));
             Assert.IsFalse(ReferenceEquals(anonymous, r2));
@@ -76,10 +76,10 @@ namespace Mikodev.Testing
                 dictionary = default(Dictionary<int, string>),
                 idictionary = default(IDictionary<string, int>),
             };
-            var t1 = cache.ToBytes(anonymous);
+            var t1 = generator.ToBytes(anonymous);
             var t2 = PacketConvert.Serialize(anonymous);
             var r1 = PacketConvert.Deserialize(t1, anonymous);
-            var r2 = cache.ToValue(t2, anonymous);
+            var r2 = generator.ToValue(t2, anonymous);
 
             Assert.IsFalse(ReferenceEquals(anonymous, r1));
             Assert.IsFalse(ReferenceEquals(anonymous, r2));
@@ -112,41 +112,41 @@ namespace Mikodev.Testing
         {
             // default value is null
             var v1 = default(Tuple<string, int>);
-            var t1 = cache.ToBytes(v1);
+            var t1 = generator.ToBytes(v1);
             Assert.IsTrue(t1.Length == 0);
-            var r1 = cache.ToValue<Tuple<string, int>>(Array.Empty<byte>());
+            var r1 = generator.ToValue<Tuple<string, int>>(Array.Empty<byte>());
             Assert.AreEqual(r1, null);
 
             // default value not null
             var v2 = default((int, string));
-            var t2 = cache.ToBytes(v2);
+            var t2 = generator.ToBytes(v2);
             Assert.IsTrue(t2.Length != 0);
-            AssertExtension.MustFail<OverflowException>(() => cache.ToValue<(int, string)>(Array.Empty<byte>()));
+            AssertExtension.MustFail<OverflowException>(() => generator.ToValue<(int, string)>(Array.Empty<byte>()));
 
             var anonymous = new
             {
                 tuple = default(Tuple<int, string>),
                 value = default((string text, int)),
             };
-            var t3 = cache.ToBytes(anonymous);
-            var r3 = cache.ToValue(t3, anonymous);
+            var t3 = generator.ToBytes(anonymous);
+            var r3 = generator.ToValue(t3, anonymous);
 
             Assert.IsFalse(ReferenceEquals(r3, anonymous));
             Assert.IsTrue(r3.tuple == null);
             Assert.IsTrue(r3.value.text == string.Empty);
-            AssertExtension.MustFail<OverflowException>(() => cache.ToValue(t3, new { tuple = default((int, string)) }));
+            AssertExtension.MustFail<OverflowException>(() => generator.ToValue(t3, new { tuple = default((int, string)) }));
         }
 
         [TestMethod]
         public void Class()
         {
             var source = default(TestClass);
-            var t1 = cache.ToBytes(source);
+            var t1 = generator.ToBytes(source);
             var t2 = PacketConvert.Serialize(source);
             Assert.IsTrue(t1.Length == 0);
             Assert.IsTrue(t2.Length == 0);
 
-            var r1 = cache.ToValue<TestClass>(Array.Empty<byte>());
+            var r1 = generator.ToValue<TestClass>(Array.Empty<byte>());
             var r2 = PacketConvert.Deserialize<TestClass>(Array.Empty<byte>());
             Assert.IsTrue(r1 == null);
             Assert.IsTrue(r2 == null);
@@ -156,12 +156,12 @@ namespace Mikodev.Testing
         public void ValueType()
         {
             var source = default(TestStruct);
-            var t1 = cache.ToBytes(source);
+            var t1 = generator.ToBytes(source);
             var t2 = PacketConvert.Serialize(source);
             Assert.IsTrue(t1.Length != 0);
             Assert.IsTrue(t2.Length != 0);
 
-            AssertExtension.MustFail<OverflowException>(() => cache.ToValue<TestStruct>(Array.Empty<byte>()));
+            AssertExtension.MustFail<OverflowException>(() => generator.ToValue<TestStruct>(Array.Empty<byte>()));
             AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize<TestStruct>(Array.Empty<byte>()), x => x.ErrorCode == PacketError.Overflow);
         }
     }

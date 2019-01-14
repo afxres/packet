@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mikodev.Binary;
+using Mikodev.Binary.Abstractions;
 using System;
 using System.Collections.Generic;
 
@@ -8,32 +9,6 @@ namespace Mikodev.Testing
     [TestClass]
     public class ConverterTest
     {
-        private sealed class Empty { }
-
-        private sealed class EmptyConverter : Converter<Empty>
-        {
-            public bool Initialized { get; private set; } = false;
-
-            public Converter<(int, string)> Converter { get; private set; }
-
-            public EmptyConverter() : base(0) { }
-
-            protected override void OnInitialize(Cache cache)
-            {
-                base.OnInitialize(cache);
-                Initialized = true;
-                Converter = cache.GetConverter<(int, string)>();
-            }
-
-            public override void ToBytes(ref Allocator allocator, Empty value) => throw new NotImplementedException();
-
-            public override Empty ToValue(ReadOnlySpan<byte> memory) => throw new NotImplementedException();
-
-            public override void ToBytesAny(ref Allocator allocator, object value) => base.ToBytesAny(ref allocator, value);
-
-            public override object ToValueAny(ReadOnlySpan<byte> memory) => base.ToValueAny(memory);
-        }
-
         private sealed class Person : IEquatable<Person>
         {
             public int Id { get; set; }
@@ -56,15 +31,13 @@ namespace Mikodev.Testing
             }
         }
 
-        private sealed class PersonConverter : Converter<Person>
+        private sealed class PersonConverter : VariableConverter<Person>
         {
-            private Converter<(int, string)> converter;
+            private readonly Converter<(int, string)> converter;
 
-            public PersonConverter() : base(0) { }
-
-            protected override void OnInitialize(Cache cache)
+            public PersonConverter(Converter<(int, string)> converter)
             {
-                converter = cache.GetConverter<(int, string)>();
+                this.converter = converter ?? throw new ArgumentNullException(nameof(converter));
             }
 
             public override void ToBytes(ref Allocator allocator, Person value) => throw new NotImplementedException();
@@ -88,62 +61,39 @@ namespace Mikodev.Testing
             }
         }
 
-        [TestMethod]
-        public void Initialize()
+        private sealed class PersonConverterCreator : IConverterCreator
         {
-            var converter = new EmptyConverter();
-            Assert.IsFalse(converter.Initialized);
-            Assert.IsTrue(converter.Converter == null);
-            var _ = new Cache(new[] { converter });
-            Assert.IsTrue(converter.Initialized);
-            Assert.IsTrue(converter.Converter != null);
-        }
-
-        [TestMethod]
-        public void AlreadyInitialized()
-        {
-            var converter = new EmptyConverter();
-            var _ = new Cache(new[] { converter });
-            AssertExtension.MustFail<InvalidOperationException>(() => new Cache(new[] { converter }), x => x.Message.Contains("already initialized"));
+            public Converter GetConverter(IGeneratorContext context, Type type)
+            {
+                if (type != typeof(Person))
+                    return null;
+                var converter = context.GetConverter(typeof((int, string)));
+                return new PersonConverter((Converter<(int, string)>)converter);
+            }
         }
 
         [TestMethod]
         public void CustomConverter()
         {
-            var converter = new PersonConverter();
-            var cache = new Cache(new[] { converter });
+            var creator = new PersonConverterCreator();
+            var generator = new Generator(creators: new[] { creator });
             var person = (object)new Person { Id = 1024, Name = "sharp" };
-            var buffer = cache.ToBytes(person);
-            var result = cache.ToValue(buffer, typeof(Person));
+            var buffer = generator.ToBytes(person);
+            var result = generator.ToValue(buffer, typeof(Person));
             Assert.AreEqual(person, result);
         }
 
         [TestMethod]
         public void ObjectConverter()
         {
-            var cache = new Cache();
-            var converter = cache.GetConverter<object>();
+            var generator = new Generator();
+            var converter = generator.GetConverter<object>();
             var source = (object)(1, 2.3);
             var allocator = new Allocator();
             converter.ToBytes(ref allocator, source);
             var buffer = allocator.ToArray();
-            var result = cache.ToValue<(int, double)>(buffer);
+            var result = generator.ToValue<(int, double)>(buffer);
             Assert.AreEqual(source, result);
-        }
-
-        [TestMethod]
-        public void ObjectConverterNotInitialized()
-        {
-            // HACK!
-            var type = new Cache().GetConverter<object>().GetType();
-            var converter = (Converter<object>)Activator.CreateInstance(type);
-
-            AssertExtension.MustFail<InvalidOperationException>(() =>
-            {
-                var allocator = new Allocator();
-                converter.ToBytes(ref allocator, string.Empty);
-            },
-            x => x.Message.Contains("not initialized"));
         }
     }
 }

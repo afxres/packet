@@ -15,7 +15,7 @@ namespace Mikodev.Testing
             public T Item { get; set; }
         }
 
-        private readonly Cache cache = new Cache();
+        private readonly Generator generator = new Generator();
 
         [TestMethod]
         public void LinkedList()
@@ -23,7 +23,7 @@ namespace Mikodev.Testing
             try
             {
                 var linked = Enumerable.Range(0, 9).Aggregate(default(LinkedNode<int>), (last, index) => new LinkedNode<int> { Next = last, Item = index });
-                var buffer = cache.ToBytes(linked);
+                var buffer = generator.ToBytes(linked);
                 Assert.Fail();
             }
             catch (ArgumentException ex)

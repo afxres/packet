@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\submodules\binary\Source\Binary\Binary.csproj" />
+    <ProjectReference Include="..\..\submodules\binary\Source\Binary.FSharp\Binary.FSharp.fsproj" />
     <ProjectReference Include="..\Packet\Packet.csproj" />
   </ItemGroup>
 

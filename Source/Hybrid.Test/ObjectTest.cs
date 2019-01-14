@@ -10,12 +10,12 @@ namespace Mikodev.Testing
     [TestClass]
     public class ObjectTest
     {
-        private readonly Cache cache = new Cache();
+        private readonly Generator generator = new Generator();
 
         [TestMethod]
         public void Object()
         {
-            AssertExtension.MustFail<ArgumentException>(() => cache.ToBytes(new object()), x => x.Message.Contains("Invalid type"));
+            AssertExtension.MustFail<ArgumentException>(() => generator.ToBytes(new object()), x => x.Message.Contains("Invalid type"));
             AssertExtension.MustFail<PacketException>(() => PacketConvert.Serialize(new object()), x => x.ErrorCode == PacketError.InvalidType);
         }
 
@@ -46,11 +46,11 @@ namespace Mikodev.Testing
                 sharp = (object)anonymousSharp,
             };
 
-            var t1 = cache.ToBytes(anonymous);
+            var t1 = generator.ToBytes(anonymous);
             var t2 = PacketConvert.Serialize(anonymous);
             var r1 = PacketConvert.Deserialize(t1, anonymous);
-            AssertExtension.MustFail<ArgumentException>(() => cache.ToValue(t2, anonymous), x => x.Message.StartsWith("Invalid type"));
-            var r2 = (dynamic)cache.AsToken(t2);
+            AssertExtension.MustFail<ArgumentException>(() => generator.ToValue(t2, anonymous), x => x.Message.StartsWith("Invalid type"));
+            var r2 = (dynamic)generator.AsToken(t2);
 
             Assert.IsFalse(ReferenceEquals(anonymous, r1));
             var n1 = r1.normal;
@@ -96,9 +96,6 @@ namespace Mikodev.Testing
             {
                 AssertExtension.MustFail<PacketException>(() => PacketConvert.Serialize(item), x => x.ErrorCode == PacketError.InvalidElementType);
                 AssertExtension.MustFail<PacketException>(() => PacketConvert.Deserialize<T>(Array.Empty<byte>()), x => x.ErrorCode == PacketError.InvalidElementType);
-
-                AssertExtension.MustFail<ArgumentException>(() => cache.ToBytes(item), x => x.Message.Contains("Invalid collection"));
-                AssertExtension.MustFail<ArgumentException>(() => cache.ToValue<T>(Array.Empty<byte>()), x => x.Message.Contains("Invalid collection"));
             }
 
             Assert(new object[] { });

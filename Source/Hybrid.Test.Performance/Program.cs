@@ -25,11 +25,11 @@ namespace Sample
             const int max = 1 << 20;
             const int loop = 6;
 
-            var cache = new Cache();
+            var generator = new Generator();
             var result = new Dictionary<string, List<TimeSpan>>();
 
             var bytes = PacketConvert.Serialize(obj);
-            var converter = cache.GetConverter(obj);
+            var converter = generator.GetConverter(obj);
             var arrayPool = new byte[4096];
 
             TraceWatch.InstanceDisposed = (tag, span) =>
@@ -71,7 +71,7 @@ namespace Sample
                 {
                     for (var i = 0; i < max; i++)
                     {
-                        var _ = cache.ToBytes(obj);
+                        var _ = generator.ToBytes(obj);
                     }
                 }
 
@@ -89,7 +89,7 @@ namespace Sample
                 {
                     for (var i = 0; i < max; i++)
                     {
-                        var _ = cache.ToValue(bytes, obj);
+                        var _ = generator.ToValue(bytes, obj);
                     }
                 }
 

@@ -8,7 +8,7 @@ namespace Mikodev.Testing
     [TestClass]
     public class AllocatorTest
     {
-        private readonly Cache cache = new Cache();
+        private readonly Generator generator = new Generator();
 
         private readonly Random random = new Random();
 
@@ -38,7 +38,7 @@ namespace Mikodev.Testing
         public void ConstructorDefault()
         {
             var source = new { id = 2048, name = "some" };
-            var converter = cache.GetConverter(source);
+            var converter = generator.GetConverter(source);
 
             var allocator = new Allocator();
             converter.ToBytes(ref allocator, source);
@@ -58,7 +58,7 @@ namespace Mikodev.Testing
         [TestMethod]
         public void ConstructorArray()
         {
-            var converter = cache.GetConverter<(int, string)>();
+            var converter = generator.GetConverter<(int, string)>();
 
             for (var i = 0; i < 512; i += 4)
             {

@@ -26,12 +26,12 @@ type Book(id : int, name : string, price : decimal) =
 [<TestClass>]
 type CollectionTest () =
     
-    let cache = new Cache()
+    let generator = new Generator()
     
     [<TestMethod>]
     member __.BasicCollections () =
         let source = [ for i in 0..9 do yield i * i ]
-        let b1 = cache.ToBytes(source)
+        let b1 = generator.ToBytes(source)
         let b2 = PacketConvert.Serialize(source)
 
         let reader = new PacketReader(b1)
@@ -39,7 +39,7 @@ type CollectionTest () =
         let a1 = reader.Deserialize<int array>()
         let s1 = reader.Deserialize<int seq>()
         
-        let token = cache.AsToken(new ReadOnlyMemory<byte>(b2))
+        let token = generator.AsToken(new ReadOnlyMemory<byte>(b2))
         let l2 = token.As<int list>()
         let a2 = token.As<int array>()
         let s2 = token.As<int seq>()
@@ -58,14 +58,14 @@ type CollectionTest () =
         let source = 
             [for i in 0..9 do 
                 yield { id = i; name = sprintf "%02x" i }]
-        let b1 = cache.ToBytes(source)
+        let b1 = generator.ToBytes(source)
         let b2 = PacketConvert.Serialize(source)
         let reader = new PacketReader(b1)
         let l1 = reader.Deserialize<Person list>()
         let a1 = reader.Deserialize<Person array>()
         let s1 = reader.Deserialize<Person seq>()
 
-        let token = cache.AsToken(new ReadOnlyMemory<byte>(b2))
+        let token = generator.AsToken(new ReadOnlyMemory<byte>(b2))
         let l2 = token.As<Person list>()
         let a2 = token.As<Person array>()
         let s2 = token.As<Person seq>()
@@ -83,15 +83,15 @@ type CollectionTest () =
     member __.Map () =
         let a = [0..15] |> List.map (fun r -> (sprintf "%d" r, { id = -r; name = sprintf "%02x" r })) |> Map
         let b = [0..15] |> List.map (fun r -> (r, sprintf "%d" r)) |> Map
-        let ta1 = cache.ToBytes(a)
-        let tb1 = cache.ToBytes(b)
+        let ta1 = generator.ToBytes(a)
+        let tb1 = generator.ToBytes(b)
         let ta2 = PacketConvert.Serialize(a)
         let tb2 = PacketConvert.Serialize(b)
 
         let ra1 = PacketConvert.Deserialize<Map<string, Person>>(ta1)
         let rb1 = PacketConvert.Deserialize<Map<int, string>>(tb1)
-        let ra2 = cache.ToValue<Map<string, Person>>(new ReadOnlySpan<byte>(ta2))
-        let rb2 = cache.ToValue<Map<int, string>>(new ReadOnlySpan<byte>(tb2))
+        let ra2 = generator.ToValue<Map<string, Person>>(new ReadOnlySpan<byte>(ta2))
+        let rb2 = generator.ToValue<Map<int, string>>(new ReadOnlySpan<byte>(tb2))
 
         Extension.AreMapEqual a ra1
         Extension.AreMapEqual b rb1
@@ -105,9 +105,9 @@ type CollectionTest () =
         let b = [0..15] |> List.map (sprintf "%d") |> Set
         let c = [0..15] |> List.map (fun r -> { id = r; name = sprintf "%d" r }) |> Set
 
-        let ta1 = cache.ToBytes(a)
-        let tb1 = cache.ToBytes(b)
-        let tc1 = cache.ToBytes(c)
+        let ta1 = generator.ToBytes(a)
+        let tb1 = generator.ToBytes(b)
+        let tc1 = generator.ToBytes(c)
         let ta2 = PacketConvert.Serialize(a)
         let tb2 = PacketConvert.Serialize(b)
         let tc2 = PacketConvert.Serialize(c)
@@ -115,9 +115,9 @@ type CollectionTest () =
         let ra1 = PacketConvert.Deserialize<Set<int>>(ta1)
         let rb1 = PacketConvert.Deserialize<Set<string>>(tb1)
         let rc1 = PacketConvert.Deserialize<Set<Person>>(tc1)
-        let ra2 = cache.ToValue<Set<int>>(new ReadOnlySpan<byte>(ta2))
-        let rb2 = cache.ToValue<Set<string>>(new ReadOnlySpan<byte>(tb2))
-        let rc2 = cache.ToValue<Set<Person>>(new ReadOnlySpan<byte>(tc2))
+        let ra2 = generator.ToValue<Set<int>>(new ReadOnlySpan<byte>(ta2))
+        let rb2 = generator.ToValue<Set<string>>(new ReadOnlySpan<byte>(tb2))
+        let rc2 = generator.ToValue<Set<Person>>(new ReadOnlySpan<byte>(tc2))
 
         Extension.AreSetEqual a ra1
         Extension.AreSetEqual b rb1
@@ -132,10 +132,10 @@ type CollectionTest () =
         let a = new Book(1, "F# Pro", decimal(50))
         let w = PacketWriter.Serialize(a)
         let t2 = w.GetBytes()
-        let t1 = cache.ToBytes(a)
+        let t1 = generator.ToBytes(a)
         let r = new PacketReader(t1)
         let r1 = r.Deserialize<Book>()
-        let r2 = cache.ToValue<Book>(new ReadOnlySpan<byte>(t2))
+        let r2 = generator.ToValue<Book>(new ReadOnlySpan<byte>(t2))
         Assert.AreEqual(a, r1)
         Assert.AreEqual(a, r2)
         ()
