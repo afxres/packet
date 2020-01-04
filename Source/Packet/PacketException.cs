@@ -17,10 +17,13 @@ namespace Mikodev.Network
             {
                 case PacketError.ConversionError:
                     return "See the inner exception for details";
+
                 case PacketError.Overflow:
                     return "Data length overflow";
+
                 case PacketError.InvalidPath:
                     return "Path does not exist";
+
                 default:
                     return "Undefined error";
             }
@@ -28,24 +31,24 @@ namespace Mikodev.Network
 
         public PacketError ErrorCode { get; private set; } = PacketError.None;
 
-        internal PacketException(PacketError code) : base(GetMessage(code)) => ErrorCode = code;
+        internal PacketException(PacketError code) : base(GetMessage(code)) => this.ErrorCode = code;
 
-        internal PacketException(PacketError code, string message) : base(message) => ErrorCode = code;
+        internal PacketException(PacketError code, string message) : base(message) => this.ErrorCode = code;
 
-        internal PacketException(PacketError code, Exception exception) : base(GetMessage(code), exception) => ErrorCode = code;
+        internal PacketException(PacketError code, Exception exception) : base(GetMessage(code), exception) => this.ErrorCode = code;
 
         internal PacketException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));
-            ErrorCode = (PacketError)info.GetValue(nameof(PacketError), typeof(PacketError));
+            this.ErrorCode = (PacketError)info.GetValue(nameof(PacketError), typeof(PacketError));
         }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));
-            info.AddValue(nameof(PacketError), ErrorCode);
+            info.AddValue(nameof(PacketError), this.ErrorCode);
             base.GetObjectData(info, context);
         }
 

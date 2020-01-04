@@ -8,10 +8,10 @@ namespace Mikodev.Network
         internal object GetValue(Type type, int level)
         {
             PacketException.VerifyRecursionError(ref level);
-            var info = Cache.GetConverterOrInfo(converters, type, out var converter);
+            var info = Cache.GetConverterOrInfo(this.converters, type, out var converter);
             return info == null
-                ? converter.GetObjectChecked(block, true)
-                : GetValueMatch(type, level, info);
+                ? converter.GetObjectChecked(this.block, true)
+                : this.GetValueMatch(type, level, info);
         }
 
         internal object GetValueMatch(Type valueType, int level, Info valueInfo)
@@ -21,25 +21,30 @@ namespace Mikodev.Network
             {
                 case InfoFlags.Reader:
                     return this;
+
                 case InfoFlags.RawReader:
                     return new PacketRawReader(this);
+
                 case InfoFlags.Collection:
-                    return GetValueCollection(level, valueInfo);
+                    return this.GetValueCollection(level, valueInfo);
+
                 case InfoFlags.Enumerable:
-                    return GetValueEnumerable(level, valueInfo);
+                    return this.GetValueEnumerable(level, valueInfo);
+
                 case InfoFlags.Dictionary:
-                    return GetValueDictionary(level, valueInfo);
+                    return this.GetValueDictionary(level, valueInfo);
+
                 default:
-                    return GetValueDefault(valueType, level);
+                    return this.GetValueDefault(valueType, level);
             }
         }
 
         private object GetValueCollection(int level, Info valueInfo)
         {
-            var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var con);
+            var info = Cache.GetConverterOrInfo(this.converters, valueInfo.ElementType, out var con);
             if (info == null)
                 return valueInfo.ToCollection(this, con);
-            var list = GetList();
+            var list = this.GetList();
             var length = list.Count;
             var source = new object[length];
             for (var i = 0; i < length; i++)
@@ -50,7 +55,7 @@ namespace Mikodev.Network
 
         private object GetValueEnumerable(int level, Info valueInfo)
         {
-            var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var converter);
+            var info = Cache.GetConverterOrInfo(this.converters, valueInfo.ElementType, out var converter);
             return info == null
                 ? valueInfo.ToEnumerable(this, converter)
                 : valueInfo.ToEnumerableAdapter(this, info, level);
@@ -58,22 +63,22 @@ namespace Mikodev.Network
 
         private object GetValueDictionary(int level, Info valueInfo)
         {
-            var indexConverter = Cache.GetConverter(converters, valueInfo.IndexType, true);
+            var indexConverter = Cache.GetConverter(this.converters, valueInfo.IndexType, true);
             if (indexConverter == null)
                 throw PacketException.InvalidKeyType(valueInfo.IndexType, valueInfo.Type);
-            var info = Cache.GetConverterOrInfo(converters, valueInfo.ElementType, out var elementConverter);
+            var info = Cache.GetConverterOrInfo(this.converters, valueInfo.ElementType, out var elementConverter);
             if (info == null)
                 return valueInfo.ToDictionary(this, indexConverter, elementConverter);
 
             var collection = new List<object>();
-            var vernier = (Vernier)block;
+            var vernier = (Vernier)this.block;
             while (vernier.Any)
             {
                 vernier.FlushExcept(indexConverter.Length);
                 // Wrap error non-check
                 var key = indexConverter.GetObjectChecked(vernier.Buffer, vernier.Offset, vernier.Length);
                 vernier.Flush();
-                var reader = new PacketReader((Block)vernier, converters);
+                var reader = new PacketReader((Block)vernier, this.converters);
                 var value = reader.GetValueMatch(valueInfo.ElementType, level, info);
                 collection.Add(key);
                 collection.Add(value);
@@ -86,14 +91,14 @@ namespace Mikodev.Network
             var set = Cache.GetSetInfo(valueType);
             if (set == null)
                 throw PacketException.InvalidType(valueType);
-            if (block.Length == 0)
+            if (this.block.Length == 0)
                 return set.ThrowOrNull();
             var functor = set.Functor;
             var arguments = set.Arguments;
             var source = new object[arguments.Length];
             for (var i = 0; i < arguments.Length; i++)
             {
-                var reader = GetReader(arguments[i].Key, false);
+                var reader = this.GetReader(arguments[i].Key, false);
                 var result = reader.GetValue(arguments[i].Value, level);
                 source[i] = result;
             }

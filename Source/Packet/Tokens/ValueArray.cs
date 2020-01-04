@@ -6,7 +6,7 @@
 
         internal readonly int length;
 
-        public override object Data => data;
+        public override object Data => this.data;
 
         public ValueArray(byte[][] data, int length)
         {
@@ -16,14 +16,14 @@
 
         public override void FlushTo(Allocator context, int level)
         {
-            if (data == null)
+            if (this.data == null)
                 return;
-            if (length > 0)
-                for (var i = 0; i < data.Length; i++)
-                    context.Append(data[i]);
+            if (this.length > 0)
+                for (var i = 0; i < this.data.Length; i++)
+                    context.Append(this.data[i]);
             else
-                for (var i = 0; i < data.Length; i++)
-                    context.AppendValueExtend(data[i]);
+                for (var i = 0; i < this.data.Length; i++)
+                    context.AppendValueExtend(this.data[i]);
         }
     }
 }

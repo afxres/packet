@@ -6,7 +6,7 @@ namespace Mikodev.Network.Tokens
     {
         internal readonly List<Token> data;
 
-        public override object Data => data;
+        public override object Data => this.data;
 
         public TokenArray(List<Token> data)
         {
@@ -15,10 +15,10 @@ namespace Mikodev.Network.Tokens
 
         public override void FlushTo(Allocator context, int level)
         {
-            if (data == null)
+            if (this.data == null)
                 return;
-            for (var i = 0; i < data.Count; i++)
-                context.AppendTokenExtend(data[i], level);
+            for (var i = 0; i < this.data.Count; i++)
+                context.AppendTokenExtend(this.data[i], level);
         }
     }
 }

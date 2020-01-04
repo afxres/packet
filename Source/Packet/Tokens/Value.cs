@@ -4,7 +4,7 @@
     {
         private readonly byte[] data;
 
-        public override object Data => data;
+        public override object Data => this.data;
 
         public Value(byte[] data)
         {
@@ -13,9 +13,9 @@
 
         public override void FlushTo(Allocator context, int level)
         {
-            if (data == null)
+            if (this.data == null)
                 return;
-            context.Append(data);
+            context.Append(this.data);
         }
     }
 }

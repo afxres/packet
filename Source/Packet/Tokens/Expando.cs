@@ -6,7 +6,7 @@ namespace Mikodev.Network.Tokens
     {
         internal readonly Dictionary<string, PacketWriter> data;
 
-        public override object Data => data;
+        public override object Data => this.data;
 
         public Expando(Dictionary<string, PacketWriter> data)
         {
@@ -15,9 +15,9 @@ namespace Mikodev.Network.Tokens
 
         public override void FlushTo(Allocator context, int level)
         {
-            if (data == null)
+            if (this.data == null)
                 return;
-            foreach (var i in data)
+            foreach (var i in this.data)
             {
                 context.AppendKey(i.Key);
                 context.AppendTokenExtend(i.Value.token, level);

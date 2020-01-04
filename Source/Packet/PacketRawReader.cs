@@ -12,42 +12,41 @@ namespace Mikodev.Network
 
         public PacketRawReader(PacketReader source)
         {
-            converters = source.converters;
-            block = source.block;
-            vernier = (Vernier)block;
+            this.converters = source.converters;
+            this.block = source.block;
+            this.vernier = (Vernier)this.block;
         }
 
         public PacketRawReader(byte[] buffer, ConverterDictionary converters = null)
         {
             this.converters = converters;
-            block = new Block(buffer);
-            vernier = (Vernier)block;
+            this.block = new Block(buffer);
+            this.vernier = (Vernier)this.block;
         }
 
         public PacketRawReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
             this.converters = converters;
-            block = new Block(buffer, offset, length);
-            vernier = (Vernier)block;
+            this.block = new Block(buffer, offset, length);
+            this.vernier = (Vernier)this.block;
         }
 
         internal object Next(PacketConverter converter)
         {
-            vernier.FlushExcept(converter.Length);
-            return converter.GetObjectChecked(vernier.Buffer, vernier.Offset, vernier.Length);
+            this.vernier.FlushExcept(converter.Length);
+            return converter.GetObjectChecked(this.vernier.Buffer, this.vernier.Offset, this.vernier.Length);
         }
 
         internal T Next<T>(PacketConverter<T> converter)
         {
-            vernier.FlushExcept(converter.Length);
-            return converter.GetValueChecked(vernier.Buffer, vernier.Offset, vernier.Length);
+            this.vernier.FlushExcept(converter.Length);
+            return converter.GetValueChecked(this.vernier.Buffer, this.vernier.Offset, this.vernier.Length);
         }
 
+        public bool Any => this.vernier.Any;
 
-        public bool Any => vernier.Any;
+        public void Reset() => this.vernier = (Vernier)this.block;
 
-        public void Reset() => vernier = (Vernier)block;
-
-        public override string ToString() => $"{nameof(PacketRawReader)}(Bytes: {block.Length})";
+        public override string ToString() => $"{nameof(PacketRawReader)}(Bytes: {this.block.Length})";
     }
 }

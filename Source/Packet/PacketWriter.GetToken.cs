@@ -24,18 +24,25 @@ namespace Mikodev.Network
             {
                 case InfoFlags.Writer:
                     return ((PacketWriter)value).token;
+
                 case InfoFlags.RawWriter:
                     return new Value(((PacketRawWriter)value).stream.ToArray());
+
                 case InfoFlags.Bytes:
                     return new Value(((ICollection<byte>)value).ToBytes());
+
                 case InfoFlags.SBytes:
                     return new Value(((ICollection<sbyte>)value).ToBytes());
+
                 case InfoFlags.Enumerable:
                     return GetTokenEnumerable(converters, value, level, valueInfo);
+
                 case InfoFlags.Dictionary:
                     return GetTokenDictionary(converters, value, level, valueInfo);
+
                 case InfoFlags.Expando:
                     return GetTokenExpando(converters, value, level);
+
                 default:
                     return GetTokenDefault(converters, value, level, valueInfo);
             }

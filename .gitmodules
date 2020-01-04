@@ -1,3 +1,0 @@
-[submodule "submodules/binary"]
-	path = submodules/binary
-	url = https://github.com/afxres/binary.git

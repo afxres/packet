@@ -33,28 +33,28 @@ namespace Mikodev.Network
 
         public PacketReader(byte[] buffer, ConverterDictionary converters = null)
         {
-            block = new Block(buffer);
+            this.block = new Block(buffer);
             this.converters = converters;
         }
 
         public PacketReader(byte[] buffer, int offset, int length, ConverterDictionary converters = null)
         {
-            block = new Block(buffer, offset, length);
+            this.block = new Block(buffer, offset, length);
             this.converters = converters;
         }
 
-        internal Dictionary<string, PacketReader> GetDictionary() => dictionary ?? InitializeDictionary();
+        internal Dictionary<string, PacketReader> GetDictionary() => this.dictionary ?? this.InitializeDictionary();
 
-        internal List<PacketReader> GetList() => list ?? InitializeList();
+        internal List<PacketReader> GetList() => this.list ?? this.InitializeList();
 
         private Dictionary<string, PacketReader> InitializeDictionary()
         {
-            if ((flags & Flags.Dictionary) != 0)
+            if ((this.flags & Flags.Dictionary) != 0)
                 return null;
-            flags |= Flags.Dictionary;
+            this.flags |= Flags.Dictionary;
 
             var collection = new Dictionary<string, PacketReader>(Extension.Capacity);
-            var vernier = (Vernier)block;
+            var vernier = (Vernier)this.block;
             try
             {
                 while (vernier.Any)
@@ -64,31 +64,31 @@ namespace Mikodev.Network
                     var key = PacketConvert.Encoding.GetString(vernier.Buffer, vernier.Offset, vernier.Length);
                     if (!vernier.TryFlush())
                         return null;
-                    collection.Add(key, new PacketReader((Block)vernier, converters));
+                    collection.Add(key, new PacketReader((Block)vernier, this.converters));
                 }
             }
             catch (ArgumentException)
             {
                 return null;
             }
-            dictionary = collection;
+            this.dictionary = collection;
             return collection;
         }
 
         private List<PacketReader> InitializeList()
         {
-            if ((flags & Flags.List) != 0)
+            if ((this.flags & Flags.List) != 0)
                 throw PacketException.Overflow();
-            flags |= Flags.List;
+            this.flags |= Flags.List;
 
             var collection = new List<PacketReader>();
-            var vernier = (Vernier)block;
+            var vernier = (Vernier)this.block;
             while (vernier.Any)
             {
                 vernier.Flush();
-                collection.Add(new PacketReader((Block)vernier, converters));
+                collection.Add(new PacketReader((Block)vernier, this.converters));
             }
-            list = collection;
+            this.list = collection;
             return collection;
         }
 
@@ -97,7 +97,7 @@ namespace Mikodev.Network
         /// </summary>
         internal PacketReader GetReader(string key, bool nothrow)
         {
-            var dic = GetDictionary();
+            var dic = this.GetDictionary();
             if (dic != null && dic.TryGetValue(key, out var val))
                 return val;
             if (nothrow)
@@ -119,9 +119,9 @@ namespace Mikodev.Network
 
         DynamicMetaObject IDynamicMetaObjectProvider.GetMetaObject(Expression parameter) => new DynamicReader(parameter, this);
 
-        public int Count => GetDictionary()?.Count ?? 0;
+        public int Count => this.GetDictionary()?.Count ?? 0;
 
-        public IEnumerable<string> Keys => GetDictionary()?.Keys ?? System.Linq.Enumerable.Empty<string>();
+        public IEnumerable<string> Keys => this.GetDictionary()?.Keys ?? System.Linq.Enumerable.Empty<string>();
 
         public PacketReader this[string path, bool nothrow = false]
         {
@@ -130,22 +130,22 @@ namespace Mikodev.Network
                 if (path == null)
                     throw new ArgumentNullException(nameof(path));
                 var key = path.Split(Extension.Separator);
-                var val = GetReader(key, nothrow);
+                var val = this.GetReader(key, nothrow);
                 return val;
             }
         }
 
-        public override string ToString() => $"{nameof(PacketReader)}(Nodes: {GetDictionary()?.Count ?? 0}, Bytes: {block.Length})";
+        public override string ToString() => $"{nameof(PacketReader)}(Nodes: {this.GetDictionary()?.Count ?? 0}, Bytes: {this.block.Length})";
 
-        public T Deserialize<T>() => (T)GetValue(typeof(T), 0);
+        public T Deserialize<T>() => (T)this.GetValue(typeof(T), 0);
 
-        public T Deserialize<T>(T anonymous) => (T)GetValue(typeof(T), 0);
+        public T Deserialize<T>(T anonymous) => (T)this.GetValue(typeof(T), 0);
 
         public object Deserialize(Type type)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
-            return GetValue(type, 0);
+            return this.GetValue(type, 0);
         }
     }
 }

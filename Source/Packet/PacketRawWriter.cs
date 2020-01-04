@@ -11,8 +11,8 @@ namespace Mikodev.Network
 
         public PacketRawWriter(ConverterDictionary converters = null) => this.converters = converters;
 
-        public byte[] GetBytes() => stream.ToArray();
+        public byte[] GetBytes() => this.stream.ToArray();
 
-        public override string ToString() => $"{nameof(PacketRawWriter)}(Bytes: {stream.Position}, Capacity: {stream.Capacity})";
+        public override string ToString() => $"{nameof(PacketRawWriter)}(Bytes: {this.stream.Position}, Capacity: {this.stream.Capacity})";
     }
 }

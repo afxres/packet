@@ -14,12 +14,12 @@ namespace Sample
             var port = new Random().Next(40000, 50000);
             var server = new UdpClient(port);
 
-            var _ = Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 while (true)
                 {
                     var result = await server.ReceiveAsync();
-                    var value = PacketConvert.Deserialize(result.Buffer, new
+                    var value = PacketConvert.Deserialize(result.Buffer, anonymous: new
                     {
                         id = default(int),
                         name = default(string),
@@ -32,7 +32,8 @@ namespace Sample
 
                     var message =
                         $"message from : {result.RemoteEndPoint}" + Environment.NewLine +
-                        $"id : {value.id}" + $"name : {value.name}" + Environment.NewLine +
+                        $"id : {value.id}" + Environment.NewLine +
+                        $"name : {value.name}" + Environment.NewLine +
                         $"token : {value.data.token}" + Environment.NewLine +
                         $"datetime : {value.data.datetime:u}" + Environment.NewLine;
                     Console.WriteLine(message);
@@ -51,7 +52,7 @@ namespace Sample
             });
 
             var client = new UdpClient();
-            await client.SendAsync(buffer, buffer.Length, new IPEndPoint(IPAddress.Loopback, port));
+            _ = await client.SendAsync(buffer, buffer.Length, new IPEndPoint(IPAddress.Loopback, port));
             await Task.Delay(Timeout.Infinite);
         }
     }

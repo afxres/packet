@@ -11,6 +11,7 @@ namespace Mikodev.Network
         public static readonly bool UseLittleEndian = true;
 
         #region Throw If Argument Error
+
         private static void ThrowIfArgumentError(string key)
         {
             if (key == null)
@@ -68,6 +69,7 @@ namespace Mikodev.Network
                 throw new ArgumentOutOfRangeException();
             return;
         }
+
         #endregion
 
         public static object GetValue(byte[] buffer, Type type)
@@ -108,6 +110,7 @@ namespace Mikodev.Network
         }
 
         #region deserialize
+
         public static object Deserialize(byte[] buffer, Type type, ConverterDictionary converters = null)
         {
             ThrowIfArgumentError(type);
@@ -147,6 +150,7 @@ namespace Mikodev.Network
         {
             return (T)Deserialize(buffer, offset, length, typeof(T), converters);
         }
+
         #endregion
 
         public static byte[] Serialize(object value, ConverterDictionary converters = null)

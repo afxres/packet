@@ -22,13 +22,13 @@ namespace Mikodev.Network
         internal PacketWriter(ConverterDictionary converters, PacketWriter writer)
         {
             this.converters = converters;
-            token = (writer != null ? writer.token : Token.Empty);
+            this.token = (writer != null ? writer.token : Token.Empty);
         }
 
         public PacketWriter(ConverterDictionary converters = null)
         {
             this.converters = converters;
-            token = Token.Empty;
+            this.token = Token.Empty;
         }
 
         internal IEnumerable<string> GetKeys()
@@ -71,7 +71,7 @@ namespace Mikodev.Network
 
         public override string ToString()
         {
-            var data = token.Data;
+            var data = this.token.Data;
             return data is byte[] bytes
                 ? $"{nameof(PacketWriter)}(Bytes: {bytes.Length})"
                 : $"{nameof(PacketWriter)}(Nodes: {(data as ICollection)?.Count ?? 0})";

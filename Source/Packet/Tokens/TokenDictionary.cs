@@ -8,7 +8,7 @@ namespace Mikodev.Network.Tokens
 
         internal readonly List<KeyValuePair<byte[], Token>> data;
 
-        public override object Data => data;
+        public override object Data => this.data;
 
         public TokenDictionary(List<KeyValuePair<byte[], Token>> data, int indexLength)
         {
@@ -18,12 +18,12 @@ namespace Mikodev.Network.Tokens
 
         public override void FlushTo(Allocator context, int level)
         {
-            if (data == null)
+            if (this.data == null)
                 return;
-            for (var i = 0; i < data.Count; i++)
+            for (var i = 0; i < this.data.Count; i++)
             {
-                var item = data[i];
-                if (indexLength > 0)
+                var item = this.data[i];
+                if (this.indexLength > 0)
                     context.Append(item.Key);
                 else
                     context.AppendValueExtend(item.Key);

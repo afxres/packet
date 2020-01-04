@@ -10,7 +10,7 @@ namespace Mikodev.Network
         {
             if (length < 0)
                 throw new ArgumentOutOfRangeException(nameof(length));
-            Length = length;
+            this.Length = length;
         }
 
         public abstract byte[] GetBytes(object value);
@@ -26,8 +26,8 @@ namespace Mikodev.Network
 
         public abstract T GetValue(byte[] buffer, int offset, int length);
 
-        public override byte[] GetBytes(object value) => GetBytes((T)value);
+        public override byte[] GetBytes(object value) => this.GetBytes((T)value);
 
-        public override object GetObject(byte[] buffer, int offset, int length) => GetValue(buffer, offset, length);
+        public override object GetObject(byte[] buffer, int offset, int length) => this.GetValue(buffer, offset, length);
     }
 }
