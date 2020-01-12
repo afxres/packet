@@ -1,6 +1,6 @@
 ﻿using Mikodev.Network.Converters;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal struct Vernier
     {

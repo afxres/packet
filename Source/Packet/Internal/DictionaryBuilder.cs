@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal sealed class DictionaryBuilder<TK, TV> : DictionaryAbstract<TK, TV>
     {

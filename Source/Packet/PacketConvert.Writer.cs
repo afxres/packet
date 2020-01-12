@@ -1,7 +1,9 @@
-﻿using Mikodev.Network.Tokens;
+﻿using Mikodev.Network.Internal;
+using Mikodev.Network.Tokens;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Convert = Mikodev.Network.Internal.Convert;
 
 namespace Mikodev.Network
 {

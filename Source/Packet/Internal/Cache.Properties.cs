@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal partial class Cache
     {

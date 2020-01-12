@@ -1,4 +1,5 @@
-﻿using Mikodev.Network.Tokens;
+﻿using Mikodev.Network.Internal;
+using Mikodev.Network.Tokens;
 using System.Collections;
 using System.Collections.Generic;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
@@ -20,32 +21,17 @@ namespace Mikodev.Network
         private static Token GetTokenMatch(ConverterDictionary converters, object value, int level, Info valueInfo)
         {
             PacketException.VerifyRecursionError(ref level);
-            switch (valueInfo.From)
+            return valueInfo.From switch
             {
-                case InfoFlags.Writer:
-                    return ((PacketWriter)value).token;
-
-                case InfoFlags.RawWriter:
-                    return new Value(((PacketRawWriter)value).stream.ToArray());
-
-                case InfoFlags.Bytes:
-                    return new Value(((ICollection<byte>)value).ToBytes());
-
-                case InfoFlags.SBytes:
-                    return new Value(((ICollection<sbyte>)value).ToBytes());
-
-                case InfoFlags.Enumerable:
-                    return GetTokenEnumerable(converters, value, level, valueInfo);
-
-                case InfoFlags.Dictionary:
-                    return GetTokenDictionary(converters, value, level, valueInfo);
-
-                case InfoFlags.Expando:
-                    return GetTokenExpando(converters, value, level);
-
-                default:
-                    return GetTokenDefault(converters, value, level, valueInfo);
-            }
+                InfoFlags.Writer => ((PacketWriter)value).token,
+                InfoFlags.RawWriter => new Value(((PacketRawWriter)value).stream.ToArray()),
+                InfoFlags.Bytes => new Value(((ICollection<byte>)value).ToBytes()),
+                InfoFlags.SBytes => new Value(((ICollection<sbyte>)value).ToBytes()),
+                InfoFlags.Enumerable => GetTokenEnumerable(converters, value, level, valueInfo),
+                InfoFlags.Dictionary => GetTokenDictionary(converters, value, level, valueInfo),
+                InfoFlags.Expando => GetTokenExpando(converters, value, level),
+                _ => GetTokenDefault(converters, value, level, valueInfo),
+            };
         }
 
         private static Token GetTokenEnumerable(ConverterDictionary converters, object value, int level, Info valueInfo)

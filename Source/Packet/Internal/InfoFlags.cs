@@ -1,4 +1,4 @@
-﻿namespace Mikodev.Network
+﻿namespace Mikodev.Network.Internal
 {
     internal enum InfoFlags : int
     {

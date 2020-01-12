@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Mikodev.Network.Internal;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Convert = Mikodev.Network.Internal.Convert;
 
 namespace Mikodev.Network
 {

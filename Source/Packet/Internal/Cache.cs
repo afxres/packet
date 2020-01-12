@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal static partial class Cache
     {

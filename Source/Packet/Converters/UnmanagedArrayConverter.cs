@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Network.Internal;
+using System;
 
 namespace Mikodev.Network.Converters
 {

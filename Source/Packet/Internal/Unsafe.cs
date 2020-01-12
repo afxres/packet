@@ -1,16 +1,7 @@
-﻿namespace Mikodev.Network
+﻿namespace Mikodev.Network.Internal
 {
     internal static class Unsafe
     {
-#if NETFULL
-        internal static unsafe void Copy<T, U>(ref T target, in U source, int length) where T : unmanaged where U : unmanaged
-        {
-            fixed (T* dst = &target)
-            fixed (U* src = &source)
-                System.Buffer.MemoryCopy(src, dst, length, length);
-        }
-#else
-
         internal static unsafe void Copy<T, U>(ref T target, in U source, int length) where T : unmanaged where U : unmanaged
         {
             fixed (T* dst = &target)
@@ -46,7 +37,5 @@
                 *target = *source;
             }
         }
-
-#endif
     }
 }

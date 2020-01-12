@@ -8,7 +8,7 @@ using ToCollectionFunction = System.Func<Mikodev.Network.PacketReader, Mikodev.N
 using ToDictionaryExtendFunction = System.Func<System.Collections.Generic.List<object>, object>;
 using ToDictionaryFunction = System.Func<Mikodev.Network.PacketReader, Mikodev.Network.PacketConverter, Mikodev.Network.PacketConverter, object>;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal partial class Convert
     {

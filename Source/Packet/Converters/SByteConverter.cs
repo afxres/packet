@@ -1,4 +1,6 @@
-﻿namespace Mikodev.Network.Converters
+﻿using Mikodev.Network.Internal;
+
+namespace Mikodev.Network.Converters
 {
     [Converter(typeof(sbyte))]
     internal sealed class SByteConverter : PacketConverter<sbyte>

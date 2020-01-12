@@ -1,4 +1,6 @@
-﻿namespace Mikodev.Network.Converters
+﻿using Mikodev.Network.Internal;
+
+namespace Mikodev.Network.Converters
 {
     [Converter(typeof(string))]
     internal sealed class StringConverter : PacketConverter<string>

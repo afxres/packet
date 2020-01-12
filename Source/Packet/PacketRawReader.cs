@@ -1,4 +1,5 @@
-﻿using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
+﻿using Mikodev.Network.Internal;
+using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
 namespace Mikodev.Network
 {

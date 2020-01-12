@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal static partial class Convert
     {

@@ -13,20 +13,13 @@ namespace Mikodev.Network
 
         private static string GetMessage(PacketError code)
         {
-            switch (code)
+            return code switch
             {
-                case PacketError.ConversionError:
-                    return "See the inner exception for details";
-
-                case PacketError.Overflow:
-                    return "Data length overflow";
-
-                case PacketError.InvalidPath:
-                    return "Path does not exist";
-
-                default:
-                    return "Undefined error";
-            }
+                PacketError.ConversionError => "See the inner exception for details",
+                PacketError.Overflow => "Data length overflow",
+                PacketError.InvalidPath => "Path does not exist",
+                _ => "Undefined error",
+            };
         }
 
         public PacketError ErrorCode { get; private set; } = PacketError.None;

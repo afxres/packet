@@ -3,7 +3,7 @@ using System.Dynamic;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal sealed class DynamicWriter : DynamicMetaObject
     {

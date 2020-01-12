@@ -2,7 +2,7 @@
 using Mikodev.Network.Tokens;
 using System.Runtime.CompilerServices;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal sealed class Allocator
     {

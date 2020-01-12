@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using ConverterDictionary = System.Collections.Generic.Dictionary<System.Type, Mikodev.Network.PacketConverter>;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal static partial class Extension
     {

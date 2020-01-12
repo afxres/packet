@@ -1,4 +1,6 @@
-﻿namespace Mikodev.Network.Tokens
+﻿using Mikodev.Network.Internal;
+
+namespace Mikodev.Network.Tokens
 {
     internal class ValueArray : Token
     {

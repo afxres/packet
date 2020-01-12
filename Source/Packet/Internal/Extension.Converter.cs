@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal partial class Extension
     {

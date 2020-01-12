@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
     internal sealed class ConverterAttribute : Attribute

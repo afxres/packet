@@ -2,7 +2,7 @@
 using uint32 = System.UInt32;
 using uint64 = System.UInt64;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal static class Endian
     {

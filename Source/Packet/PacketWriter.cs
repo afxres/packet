@@ -1,4 +1,5 @@
-﻿using Mikodev.Network.Tokens;
+﻿using Mikodev.Network.Internal;
+using Mikodev.Network.Tokens;
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -61,7 +62,7 @@ namespace Mikodev.Network
             var token = this.token;
             var data = token.Data;
             if (data == null)
-                return Empty.Array<byte>();
+                return Internal.Empty.Array<byte>();
             if (data is byte[] bytes)
                 return bytes;
             var allocator = new Allocator();

@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Mikodev.Network
+namespace Mikodev.Network.Internal
 {
     internal struct Block
     {

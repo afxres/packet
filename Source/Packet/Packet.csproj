@@ -9,15 +9,11 @@
     <LangVersion>latest</LangVersion>
     <Authors>Mikodev</Authors>
     <Company>Mikodev</Company>
-    <Copyright>Mikodev 2018</Copyright>
+    <Copyright>Mikodev 2020</Copyright>
     <Product>Mikodev.Network</Product>
     <Version>1.6.12</Version>
-    <PackageTags>binary packet dynamic serialize</PackageTags>
+    <PackageTags>binary dynamic serialization</PackageTags>
     <PackageProjectUrl>https://github.com/afxres/packet</PackageProjectUrl>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' != 'net40' ">
-    <DefineConstants>NETFULL</DefineConstants>
   </PropertyGroup>
 
 </Project>

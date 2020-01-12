@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Mikodev.Network.Internal;
+using System.Collections.Generic;
 
 namespace Mikodev.Network.Tokens
 {

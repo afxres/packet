@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Network.Internal;
+using System;
 using uint16 = System.UInt16;
 using uint32 = System.UInt32;
 using uint64 = System.UInt64;

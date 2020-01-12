@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mikodev.Network.Internal;
+using System;
 using System.Collections.Generic;
 
 namespace Mikodev.Network
@@ -17,26 +18,15 @@ namespace Mikodev.Network
         internal object GetValueMatch(Type valueType, int level, Info valueInfo)
         {
             PacketException.VerifyRecursionError(ref level);
-            switch (valueInfo.To)
+            return valueInfo.To switch
             {
-                case InfoFlags.Reader:
-                    return this;
-
-                case InfoFlags.RawReader:
-                    return new PacketRawReader(this);
-
-                case InfoFlags.Collection:
-                    return this.GetValueCollection(level, valueInfo);
-
-                case InfoFlags.Enumerable:
-                    return this.GetValueEnumerable(level, valueInfo);
-
-                case InfoFlags.Dictionary:
-                    return this.GetValueDictionary(level, valueInfo);
-
-                default:
-                    return this.GetValueDefault(valueType, level);
-            }
+                InfoFlags.Reader => this,
+                InfoFlags.RawReader => new PacketRawReader(this),
+                InfoFlags.Collection => this.GetValueCollection(level, valueInfo),
+                InfoFlags.Enumerable => this.GetValueEnumerable(level, valueInfo),
+                InfoFlags.Dictionary => this.GetValueDictionary(level, valueInfo),
+                _ => this.GetValueDefault(valueType, level),
+            };
         }
 
         private object GetValueCollection(int level, Info valueInfo)
